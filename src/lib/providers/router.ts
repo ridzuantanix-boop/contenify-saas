@@ -34,10 +34,18 @@ export class ProviderRouter {
     }
 
     if (requestedProvider === 'nexabot') {
+      if (!process.env.NEXABOT_API_KEY) {
+        console.warn('[ProviderRouter] NEXABOT_API_KEY not configured. Falling back to Mock adapter.');
+        return this.mock;
+      }
       return this.nexabot;
     }
 
     if (requestedProvider === 'runninghub') {
+      if (!process.env.RUNNINGHUB_API_KEY) {
+        console.warn('[ProviderRouter] RUNNINGHUB_API_KEY not configured. Falling back to Mock adapter.');
+        return this.mock;
+      }
       return this.runningHub;
     }
 
@@ -45,10 +53,18 @@ export class ProviderRouter {
     // 10s -> Nexabot priority (natural Malaysian Malay spoken creator videos)
     // 15s -> RunningHub priority
     if (durationSeconds === 10) {
+      if (!process.env.NEXABOT_API_KEY) {
+        console.warn('[ProviderRouter] NEXABOT_API_KEY not configured. Falling back to Mock adapter.');
+        return this.mock;
+      }
       return this.nexabot;
     }
 
     if (durationSeconds === 15) {
+      if (!process.env.RUNNINGHUB_API_KEY) {
+        console.warn('[ProviderRouter] RUNNINGHUB_API_KEY not configured. Falling back to Mock adapter.');
+        return this.mock;
+      }
       return this.runningHub;
     }
 
