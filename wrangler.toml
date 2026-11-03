@@ -1,0 +1,19 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "contenify"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# ==============================================================================
+# Cloudflare R2 Bucket Binding (Blueprint Section 3)
+# ==============================================================================
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "contenify-private-assets"
+
+# ==============================================================================
+# Cloudflare Environment Variables (Non-sensitive defaults)
+# ==============================================================================
+[vars]
+NODE_ENV = "production"
+USE_MOCK_PROVIDERS = "true"
