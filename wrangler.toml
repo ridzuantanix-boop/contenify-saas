@@ -7,9 +7,9 @@ pages_build_output_dir = ".vercel/output/static"
 # ==============================================================================
 # Cloudflare R2 Bucket Binding (Blueprint Section 3)
 # ==============================================================================
-[[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "contenify-private-assets"
+# [[r2_buckets]]
+# binding = "R2_BUCKET"
+# bucket_name = "contenify-private-assets"
 
 # ==============================================================================
 # Cloudflare Environment Variables (Non-sensitive defaults)
