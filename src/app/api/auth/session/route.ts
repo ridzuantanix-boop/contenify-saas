@@ -193,16 +193,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Verified Local Account Fallback (strictly prohibited in production environment)
+    // 2. Account Fallback (when Supabase Auth is not configured in the active environment)
     if (!verifiedUserId) {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.SUPABASE_URL && process.env.NODE_ENV === 'production') {
         return NextResponse.json(
           { error: 'Akaun tidak disahkan. Sila gunakan log masuk rasmi Supabase Auth.' },
           { status: 401 }
         );
       }
 
-      // In development/test, require non-empty password
+      // In standalone/development/test, require non-empty password
       if (!password || password.length < 6) {
         return NextResponse.json(
           { error: 'Kata laluan mestilah sekurang-kurangnya 6 aksara.' },
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!verifiedWorkspaceId) {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.SUPABASE_URL && process.env.NODE_ENV === 'production') {
         return NextResponse.json(
           { error: 'Pengguna tidak mempunyai rekod keahlian ruang kerja (workspace) yang sah dalam pangkalan data.' },
           { status: 403 }

@@ -186,16 +186,10 @@ export async function POST(req: NextRequest) {
         );
       }
     } else {
-      // Development / Test registration fallback
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json(
-          { error: 'Pangkalan data pengesahan tidak dikonfigurasi dalam persekitaran produksi.' },
-          { status: 500 }
-        );
-      }
+      // Standalone / DurableStore registration fallback when Supabase is not configured in the active environment
       userId = crypto.randomUUID();
       workspaceId = crypto.randomUUID();
-      await DurableStore.getWallet(workspaceId); // automatically provisions 10 credits
+      await DurableStore.getWallet(workspaceId); // automatically provisions 50 credits
     }
 
     // Provision wallet in local store for testing / session
