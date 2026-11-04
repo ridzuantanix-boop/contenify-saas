@@ -155,8 +155,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 8. Atomic, Database-Enforced Credit Reservation
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // 8. Atomic, Database-Enforced Credit Reservation (Strict RFC4122 UUID)
+    const jobId = crypto.randomUUID();
     const idempotencyKey = `idem_${jobId}`;
     const requiredCredits = router.calculateCreditCost(durationSeconds as any, providerAdapter.name);
 
@@ -307,17 +307,19 @@ export async function GET(req: NextRequest) {
 
         // Atomic settlement upon verified MP4 URL
         if (outputRes?.videoUrl && job.status !== 'COMPLETED') {
-          await DurableStore.settleCredits(
+          const settleRes = await DurableStore.settleCredits(
             job.workspaceId,
             job.id,
             job.requiredCredits,
             `stl_${job.id}`
           );
-          await DurableStore.updateJobStatus(job.id, {
-            status: 'COMPLETED',
-            videoUrl: outputRes.videoUrl,
-            rawStatus: statusRes.rawStatus,
-          });
+          if (settleRes.success) {
+            await DurableStore.updateJobStatus(job.id, {
+              status: 'COMPLETED',
+              videoUrl: outputRes.videoUrl,
+              rawStatus: statusRes.rawStatus,
+            });
+          }
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
         if (job.status !== 'FAILED') {
@@ -357,7 +359,7 @@ export async function GET(req: NextRequest) {
     status: 'ONLINE',
     brand: 'AffiMatik by Pawarna',
     tagline: 'Affiliate Jadi Automatik',
-    version: '2.1.2',
+    version: '2.1.3',
     catalogueSummary: {
       totalStyles: styles.length,
       qualityVerified: styles.filter((s) => s.qualityStatus === 'quality_verified').length,

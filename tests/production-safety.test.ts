@@ -200,6 +200,72 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
       expect(walletAfterRelease.reservedBalance).toBe(0);
     });
 
+    it('rejects settlement if reservation was already released', async () => {
+      const workspaceId = crypto.randomUUID();
+      const jobId = crypto.randomUUID();
+      DurableStore.setWallet({
+        workspaceId,
+        balance: 30,
+        reservedBalance: 0,
+        lifetimeGranted: 30,
+        lifetimeSpent: 0,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await DurableStore.reserveCredits(workspaceId, jobId, 10, 'res_key_rel');
+      await DurableStore.releaseCredits(workspaceId, jobId, 'rel_key_rel');
+
+      // Attempt to settle released reservation MUST fail
+      const settleRes = await DurableStore.settleCredits(workspaceId, jobId, 10, 'stl_after_release');
+      expect(settleRes.success).toBe(false);
+      expect(settleRes.error).toContain('dilepaskan');
+    });
+
+    it('rejects settlement if settlement amount does not match reserved amount', async () => {
+      const workspaceId = crypto.randomUUID();
+      const jobId = crypto.randomUUID();
+      DurableStore.setWallet({
+        workspaceId,
+        balance: 30,
+        reservedBalance: 0,
+        lifetimeGranted: 30,
+        lifetimeSpent: 0,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await DurableStore.reserveCredits(workspaceId, jobId, 10, 'res_key_mismatch');
+
+      // Attempt to settle with 15 instead of 10
+      const settleRes = await DurableStore.settleCredits(workspaceId, jobId, 15, 'stl_mismatch_amount');
+      expect(settleRes.success).toBe(false);
+      expect(settleRes.error).toContain('tidak sepadan');
+    });
+
+    it('enforces clientRequestId deduplication for idempotent job creation', async () => {
+      const workspaceId = crypto.randomUUID();
+      const clientRequestId = crypto.randomUUID();
+      const jobId = crypto.randomUUID();
+
+      await DurableStore.saveJob({
+        id: jobId,
+        workspaceId,
+        userId: crypto.randomUUID(),
+        clientRequestId,
+        styleId: 'NX01',
+        styleName: 'Sembang Kawan',
+        provider: 'nexabot',
+        durationSeconds: 10,
+        status: 'PROCESSING',
+        requiredCredits: 10,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      const existingJob = await DurableStore.getJobByClientRequestId(workspaceId, clientRequestId);
+      expect(existingJob).toBeDefined();
+      expect(existingJob?.id).toBe(jobId);
+    });
+
     it('fails closed safely when database is unavailable', async () => {
       DurableStore.setDatabaseUnavailableForTesting(true);
 

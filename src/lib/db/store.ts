@@ -37,8 +37,8 @@ export interface CreditReservationRecord {
 }
 
 export interface VideoJobRecord {
-  id: string;
-  workspaceId: string;
+  id: string; // RFC4122 UUID
+  workspaceId: string; // RFC4122 UUID
   userId: string;
   clientRequestId?: string;
   styleId: string;
@@ -144,13 +144,27 @@ export class DurableStore {
   }
 
   /**
+   * Fail-closed check: Enforce database connectivity in production
+   */
+  private static checkFailClosed(): void {
+    if (localDb.forceDbDown) {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+    if (
+      process.env.NODE_ENV === 'production' &&
+      !this.isSupabaseConfigured() &&
+      process.env.USE_MOCK_PROVIDERS !== 'true'
+    ) {
+      throw new Error('Database configuration missing in production: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
+    }
+  }
+
+  /**
    * Fetches tenant's wallet.
    * If new workspace, initializes with 10 free credits (NOT 160 Pro credits).
    */
   static async getWallet(workspaceId: string): Promise<CreditWalletRecord> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
-    }
+    this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
       try {
@@ -205,9 +219,7 @@ export class DurableStore {
     amount: number,
     idempotencyKey: string
   ): Promise<{ success: boolean; error?: string }> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
-    }
+    this.checkFailClosed();
 
     // Production: Supabase PostgreSQL RPC with SELECT ... FOR UPDATE
     if (this.isSupabaseConfigured()) {
@@ -304,6 +316,10 @@ export class DurableStore {
 
   /**
    * Settle Credits upon Verified MP4 Video Generation
+   * Rules:
+   * - Cannot settle a reservation that was RELEASED
+   * - Cannot settle twice (idempotent if same key)
+   * - Settlement amount must equal reserved amount
    */
   static async settleCredits(
     workspaceId: string,
@@ -311,9 +327,7 @@ export class DurableStore {
     amount: number,
     idempotencyKey: string
   ): Promise<{ success: boolean; error?: string }> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
-    }
+    this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
       try {
@@ -341,10 +355,33 @@ export class DurableStore {
 
     const releaseLock = await acquireWorkspaceLock(workspaceId);
     try {
+      // 1. Idempotency Check
       if (localDb.ledger[idempotencyKey]) {
+        return { success: true };
+      }
+
+      // 2. Reservation Check
+      const reservation = localDb.reservations[jobId];
+      if (!reservation) {
+        return { success: false, error: 'Tiada rekod tempahan kredit ditemui untuk tugasan ini.' };
+      }
+
+      if (reservation.status === 'RELEASED') {
+        return { success: false, error: 'Tempahan kredit ini telah dilepaskan/dibatalkan dan tidak boleh diselesaikan.' };
+      }
+
+      if (reservation.status === 'SETTLED') {
         return { success: true }; // Already settled
       }
 
+      if (reservation.amount !== amount) {
+        return {
+          success: false,
+          error: `Jumlah penyelesaian (${amount} kredit) tidak sepadan dengan tempahan asal (${reservation.amount} kredit).`,
+        };
+      }
+
+      // 3. Wallet deduction
       const wallet = localDb.wallets[workspaceId];
       if (!wallet) {
         return { success: false, error: 'Dompet kredit tidak ditemui.' };
@@ -356,10 +393,8 @@ export class DurableStore {
       wallet.updatedAt = new Date().toISOString();
       localDb.wallets[workspaceId] = wallet;
 
-      if (localDb.reservations[jobId]) {
-        localDb.reservations[jobId].status = 'SETTLED';
-        localDb.reservations[jobId].settledAt = new Date().toISOString();
-      }
+      reservation.status = 'SETTLED';
+      reservation.settledAt = new Date().toISOString();
 
       const ledgerEntry: CreditLedgerRecord = {
         id: `ldg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -388,9 +423,7 @@ export class DurableStore {
     jobId: string,
     idempotencyKey: string
   ): Promise<{ success: boolean; error?: string }> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
-    }
+    this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
       try {
@@ -458,25 +491,130 @@ export class DurableStore {
   // PERSISTENT JOB OPERATIONS
   // =========================================================================
 
+  private static mapJobFromDb(row: any): VideoJobRecord {
+    return {
+      id: row.id,
+      workspaceId: row.workspace_id,
+      userId: row.user_id || row.workspace_id,
+      clientRequestId: row.client_request_id || undefined,
+      styleId: row.preset_id || 'NX01',
+      styleName: row.style_name || row.preset_id || 'Standard Style',
+      provider: row.provider || 'nexabot',
+      providerTaskId: row.provider_task_id || undefined,
+      durationSeconds: row.duration_seconds || 10,
+      status: row.status || 'QUEUED',
+      productName: row.product_name || undefined,
+      productCategory: row.product_category || undefined,
+      requiredCredits: row.required_credits || (row.duration_seconds === 10 ? 10 : 15),
+      videoUrl: row.result_video_url || undefined,
+      errorMessage: row.error_message || undefined,
+      rawStatus: row.raw_status || undefined,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at || row.created_at,
+    };
+  }
+
   static async saveJob(job: VideoJobRecord): Promise<void> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            Prefer: 'resolution=merge-duplicates',
+          },
+          body: JSON.stringify({
+            id: job.id,
+            workspace_id: job.workspaceId,
+            client_request_id: job.clientRequestId || null,
+            preset_id: job.styleId,
+            preset_version: 2,
+            provider: job.provider,
+            duration_seconds: job.durationSeconds,
+            aspect_ratio: '9:16',
+            voice_accent: 'ms-MY-standard',
+            status: job.status,
+            provider_task_id: job.providerTaskId || null,
+            idempotency_key: `job_idem_${job.id}`,
+            result_video_url: job.videoUrl || null,
+            error_message: job.errorMessage || null,
+            created_at: job.createdAt,
+            updated_at: job.updatedAt,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error('[DurableStore] Supabase saveJob failed:', err);
+          throw new Error('Gagal menyimpan rekod tugasan video ke pangkalan data.');
+        }
+        return;
+      } catch (err: unknown) {
+        console.error('[DurableStore] Supabase saveJob error:', err);
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     localDb.jobs[job.id] = { ...job, updatedAt: new Date().toISOString() };
   }
 
   static async getJob(jobId: string): Promise<VideoJobRecord | null> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}&select=*`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows && rows.length > 0) {
+            return this.mapJobFromDb(rows[0]);
+          }
+          return null;
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     const job = localDb.jobs[jobId];
     return job ? { ...job } : null;
   }
 
   static async getJobByClientRequestId(workspaceId: string, clientRequestId: string): Promise<VideoJobRecord | null> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&client_request_id=eq.${encodeURIComponent(clientRequestId)}&select=*`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows && rows.length > 0) {
+            return this.mapJobFromDb(rows[0]);
+          }
+          return null;
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     const job = Object.values(localDb.jobs).find(
       (j) => j.workspaceId === workspaceId && j.clientRequestId === clientRequestId
     );
@@ -484,9 +622,29 @@ export class DurableStore {
   }
 
   static async getJobByProviderTaskId(providerTaskId: string, workspaceId: string): Promise<VideoJobRecord | null> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?provider_task_id=eq.${encodeURIComponent(providerTaskId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=*`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows && rows.length > 0) {
+            return this.mapJobFromDb(rows[0]);
+          }
+          return null;
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     const job = Object.values(localDb.jobs).find(
       (j) => j.providerTaskId === providerTaskId && j.workspaceId === workspaceId
     );
@@ -494,9 +652,26 @@ export class DurableStore {
   }
 
   static async listJobs(workspaceId: string, limit = 20): Promise<VideoJobRecord[]> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          return rows.map((r: any) => this.mapJobFromDb(r));
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     return Object.values(localDb.jobs)
       .filter((j) => j.workspaceId === workspaceId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -504,9 +679,26 @@ export class DurableStore {
   }
 
   static async countActiveJobs(workspaceId: string): Promise<number> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=in.(QUEUED,SUBMITTING,PROCESSING)&select=id`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          return Array.isArray(rows) ? rows.length : 0;
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     return Object.values(localDb.jobs).filter(
       (j) => j.workspaceId === workspaceId && (j.status === 'QUEUED' || j.status === 'SUBMITTING' || j.status === 'PROCESSING')
     ).length;
@@ -516,9 +708,41 @@ export class DurableStore {
     jobId: string,
     updates: Partial<Pick<VideoJobRecord, 'status' | 'videoUrl' | 'errorMessage' | 'rawStatus' | 'providerTaskId'>>
   ): Promise<VideoJobRecord | null> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const patchPayload: Record<string, any> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (updates.status) patchPayload.status = updates.status;
+        if (updates.providerTaskId) patchPayload.provider_task_id = updates.providerTaskId;
+        if (updates.videoUrl) patchPayload.result_video_url = updates.videoUrl;
+        if (updates.errorMessage) patchPayload.error_message = updates.errorMessage;
+
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}`;
+        const res = await fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            Prefer: 'return=representation',
+          },
+          body: JSON.stringify(patchPayload),
+        });
+
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows && rows.length > 0) {
+            return this.mapJobFromDb(rows[0]);
+          }
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     const job = localDb.jobs[jobId];
     if (!job) return null;
 
@@ -527,18 +751,62 @@ export class DurableStore {
   }
 
   static async listPendingJobsForReconciliation(): Promise<VideoJobRecord[]> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?status=in.(SUBMITTING,PROCESSING)&order=created_at.asc&limit=100&select=*`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          return rows.map((r: any) => this.mapJobFromDb(r));
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     return Object.values(localDb.jobs).filter(
       (j) => j.status === 'SUBMITTING' || j.status === 'PROCESSING'
     );
   }
 
   static async getLedgerHistory(workspaceId: string, limit = 20): Promise<CreditLedgerRecord[]> {
-    if (localDb.forceDbDown) {
-      throw new Error('Database connection unavailable: fail-closed.');
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      try {
+        const url = `${process.env.SUPABASE_URL}/rest/v1/credit_ledger?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
+        const res = await fetch(url, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          return rows.map((r: any) => ({
+            id: r.id,
+            workspaceId: r.workspace_id,
+            amount: r.amount,
+            eventType: r.event_type,
+            referenceType: r.reference_type,
+            referenceId: r.reference_id,
+            idempotencyKey: r.idempotency_key,
+            timestamp: r.created_at,
+            description: r.description,
+          }));
+        }
+      } catch {
+        throw new Error('Database connection unavailable: fail-closed.');
+      }
     }
+
     return Object.values(localDb.ledger)
       .filter((entry) => entry.workspaceId === workspaceId)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

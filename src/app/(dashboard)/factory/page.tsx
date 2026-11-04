@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Upload,
@@ -75,22 +75,23 @@ function VideoFactoryContent() {
   }, [selectedStyleId]);
 
   // Load account balance from server session
-  useEffect(() => {
-    async function loadAccountData() {
-      try {
-        const res = await fetch('/api/auth/session');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.wallet) {
-            setUserBalance(data.wallet.balance);
-          }
+  const refreshAccountBalance = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.wallet) {
+          setUserBalance(data.wallet.balance);
         }
-      } catch {
-        // ignore
       }
+    } catch {
+      // ignore
     }
-    loadAccountData();
   }, []);
+
+  useEffect(() => {
+    refreshAccountBalance();
+  }, [refreshAccountBalance]);
 
   // Restore running job from sessionStorage if user reloaded
   useEffect(() => {
@@ -206,11 +207,14 @@ function VideoFactoryContent() {
   // Preflight calculations (Single image OR product name + sufficient credits)
   const duration = selectedStyle.durationSeconds;
   const expectedCredits = duration === 10 ? 10 : 15;
-  const currentAvailableCredits = userBalance ?? 160;
-  const hasEnoughCredits = currentAvailableCredits >= expectedCredits;
-  const canGenerate = (images.length > 0 || productName.trim().length > 0) && hasEnoughCredits;
+  const isBalanceLoading = userBalance === null;
+  const currentAvailableCredits = userBalance ?? 0;
+  const hasEnoughCredits = !isBalanceLoading && currentAvailableCredits >= expectedCredits;
+  const canGenerate = (images.length > 0 || productName.trim().length > 0) && hasEnoughCredits && !isBalanceLoading;
 
   const handleGenerate = async () => {
+    if (!canGenerate || isSubmitting) return;
+
     setIsSubmitting(true);
     setSubmitError(null);
     setSubmitSuccess(null);
@@ -218,11 +222,14 @@ function VideoFactoryContent() {
     setActiveJobProgress(10);
     setGeneratedVideoUrl(null);
 
+    const clientRequestId = crypto.randomUUID();
+
     try {
       const res = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          clientRequestId,
           styleId: selectedStyle.id,
           productName: productName.trim() || undefined,
           productCategory: productCategory.trim() || undefined,
@@ -267,12 +274,13 @@ function VideoFactoryContent() {
             setActiveJobStatus('Selesai!');
             setActiveJobProgress(100);
             setGeneratedVideoUrl(pollData.output.videoUrl);
-            setUserBalance((prev) => (prev !== null ? Math.max(0, prev - expectedCredits) : null));
+            refreshAccountBalance();
           } else if (pollData.status === 'FAILED') {
             clearInterval(pollInterval);
             sessionStorage.removeItem('affimatik_active_job');
             setIsSubmitting(false);
             setSubmitError(`Penjanaan video gagal: ${pollData.rawStatus || 'Ralat tidak diketahui'}`);
+            refreshAccountBalance();
           } else {
             setActiveJobProgress((prev) => Math.min(prev + 5, 90));
             setActiveJobStatus(`Sedang diproses (${pollData.rawStatus || 'rendering'})...`);
@@ -285,12 +293,14 @@ function VideoFactoryContent() {
           clearInterval(pollInterval);
           sessionStorage.removeItem('affimatik_active_job');
           setIsSubmitting(false);
+          refreshAccountBalance();
         }
       }, 4000);
 
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : String(err));
       setIsSubmitting(false);
+      refreshAccountBalance();
     }
   };
 
@@ -779,6 +789,16 @@ function VideoFactoryContent() {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Mengesahkan & Menghantar...</span>
+                </>
+              ) : isBalanceLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Memuatkan Baki Akaun...</span>
+                </>
+              ) : !hasEnoughCredits ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Kredit Tidak Mencukupi (Perlu {expectedCredits}, Baki {currentAvailableCredits})</span>
                 </>
               ) : (
                 <>
