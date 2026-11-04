@@ -17,16 +17,21 @@ import {
   Clock,
   Volume2,
   VolumeX,
-  Heart,
-  Search,
-  Filter,
+  Play,
+  Download,
+  RotateCcw,
   Check,
-  Zap,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Eye,
+  Info,
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
 import { AICreativeDirector } from '@/lib/engine/creative-director';
-import { SmartStyleMatcher } from '@/lib/engine/smart-match';
+import { DynamicPromptCompiler } from '@/lib/engine/compiler';
+import { VoiceoverDirector } from '@/lib/engine/voiceover-director';
 
 interface UploadedFilePreview {
   id: string;
@@ -35,44 +40,79 @@ interface UploadedFilePreview {
   dataUrl: string;
 }
 
+interface ActiveJobDisplay {
+  jobId: string;
+  providerTaskId?: string;
+  provider: 'nexabot' | 'runninghub' | 'mock';
+  styleName: string;
+  durationSeconds: number;
+  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  requiredCredits: number;
+  videoUrl?: string;
+  errorMessage?: string;
+  rawStatus?: string;
+  createdAt: string;
+}
+
 function VideoFactoryContent() {
   const searchParams = useSearchParams();
   const initialStyleId = searchParams.get('styleId') || 'NX01';
 
+  // Mode: Quick (default for affiliate creators) vs Advanced
   const [mode, setMode] = useState<'quick' | 'advanced'>('quick');
 
-  // Step 1: Product Assets (Optional details, Auto-Research)
+  // Step 1: Product Assets & Intelligence
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
-  const [productFacts, setProductFacts] = useState('');
+  const [confirmedFeature, setConfirmedFeature] = useState('');
   const [images, setImages] = useState<UploadedFilePreview[]>([]);
+  const [isVisionSupported, setIsVisionSupported] = useState(false);
 
-  // Step 2: Selected Video Style
+  // Step 2: Engine Selector & Selected Video Style
+  const [selectedEngine, setSelectedEngine] = useState<'all' | 'nexabot' | 'runninghub'>('all');
   const [selectedStyleId, setSelectedStyleId] = useState<string>(initialStyleId);
   const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
-  const [voiceFilter, setVoiceFilter] = useState<'all' | 'with_voice' | 'no_voice'>('all');
   const [styleSearch, setStyleSearch] = useState('');
-  const [favorites, setFavorites] = useState<string[]>(['NX01', 'RH01']);
 
-  // Step 3: Advanced Studio Controls
+  // Step 3: Script & Advanced Studio Controls
+  const [customScript, setCustomScript] = useState('');
+  const [isEditingScript, setIsEditingScript] = useState(false);
   const [ctaOption, setCtaOption] = useState<'spoken_button' | 'spoken_bio' | 'none'>('spoken_button');
   const [isMuslimahModest, setIsMuslimahModest] = useState(true);
-  const [customPrompt, setCustomPrompt] = useState('');
-  const [customEnvironment, setCustomEnvironment] = useState('');
+  const [creativeInstruction, setCreativeInstruction] = useState('');
 
-  // Status & Polling
+  // Status, Wallet & Durable Database Jobs
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [activeJobStatus, setActiveJobStatus] = useState<string | null>(null);
-  const [activeJobProgress, setActiveJobProgress] = useState<number>(0);
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const [userBalance, setUserBalance] = useState<number | null>(null);
+  const [activeJob, setActiveJob] = useState<ActiveJobDisplay | null>(null);
+  const [recentJobs, setRecentJobs] = useState<ActiveJobDisplay[]>([]);
+  const [pollElapsedTime, setPollElapsedTime] = useState<number>(0);
 
-  // Selected Style
+  // Selected Style Reference
   const selectedStyle = useMemo(() => {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
+
+  // Structured Product Profile derived safely
+  const productProfile = useMemo(() => {
+    return AICreativeDirector.extractProductProfile({
+      productName: productName.trim() || undefined,
+      productCategory: productCategory.trim() || undefined,
+      productFacts: confirmedFeature.trim() ? [confirmedFeature.trim()] : [],
+      imageKeyOrUrl: images[0]?.dataUrl,
+    });
+  }, [productName, productCategory, confirmedFeature, images]);
+
+  // Spoken script preview according to V3 priority
+  const generatedScriptPreview = useMemo(() => {
+    if (selectedStyle.engine === 'runninghub') return '';
+    if (customScript.trim()) return customScript.trim();
+    return DynamicPromptCompiler.resolveSpokenScript(productProfile, selectedStyle, {
+      callToAction: ctaOption,
+    });
+  }, [productProfile, selectedStyle, customScript, ctaOption]);
 
   // Load account balance from server session
   const refreshAccountBalance = useCallback(async () => {
@@ -89,728 +129,797 @@ function VideoFactoryContent() {
     }
   }, []);
 
-  useEffect(() => {
-    refreshAccountBalance();
-  }, [refreshAccountBalance]);
-
-  // Restore running job from sessionStorage if user reloaded
-  useEffect(() => {
+  // Restore and list persistent jobs directly from database
+  const refreshJobsFromDatabase = useCallback(async () => {
     try {
-      const savedJob = sessionStorage.getItem('affimatik_active_job');
-      if (savedJob) {
-        const parsed = JSON.parse(savedJob);
-        if (Date.now() - parsed.startTime < 10 * 60 * 1000) {
-          setIsSubmitting(true);
-          setActiveJobStatus('Menyambung semula semakan status AI...');
-          setActiveJobProgress(50);
-          setSubmitSuccess(`Menyambung semakan tugasan: ${parsed.providerTaskId} (${parsed.styleName})`);
-          
-          let pollCount = 0;
-          const pollInterval = setInterval(async () => {
-            pollCount++;
-            try {
-              const pollRes = await fetch(`/api/jobs?providerTaskId=${parsed.providerTaskId}&provider=${parsed.providerName}`);
-              const pollData = await pollRes.json();
-              if (pollData.status === 'COMPLETED' && pollData.output?.videoUrl) {
-                clearInterval(pollInterval);
-                sessionStorage.removeItem('affimatik_active_job');
-                setIsSubmitting(false);
-                setActiveJobStatus('Selesai!');
-                setActiveJobProgress(100);
-                setGeneratedVideoUrl(pollData.output.videoUrl);
-              } else if (pollData.status === 'FAILED') {
-                clearInterval(pollInterval);
-                sessionStorage.removeItem('affimatik_active_job');
-                setIsSubmitting(false);
-                setSubmitError(`Penjanaan video gagal: ${pollData.rawStatus || 'Ralat tidak diketahui'}`);
-              } else {
-                setActiveJobProgress((prev) => Math.min(prev + 5, 90));
-                setActiveJobStatus(`Sedang diproses (${pollData.rawStatus || 'rendering'})...`);
-              }
-            } catch {
-              // ignore
-            }
-
-            if (pollCount > 60) {
-              clearInterval(pollInterval);
-              sessionStorage.removeItem('affimatik_active_job');
-              setIsSubmitting(false);
-            }
-          }, 4000);
-
-          return () => clearInterval(pollInterval);
-        } else {
-          sessionStorage.removeItem('affimatik_active_job');
+      const res = await fetch('/api/jobs?list=true');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.jobs && Array.isArray(data.jobs)) {
+          setRecentJobs(data.jobs);
+          // If there is an incomplete job in the queue, track it
+          const pending = data.jobs.find(
+            (j: ActiveJobDisplay) => j.status === 'PROCESSING' || j.status === 'SUBMITTING' || j.status === 'QUEUED'
+          );
+          if (pending && !activeJob) {
+            setActiveJob(pending);
+          }
         }
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [activeJob]);
 
-  // Product Profile & Smart Style Match
-  const productProfile = useMemo(() => {
-    return AICreativeDirector.extractProductProfile({
-      productName,
-      productCategory,
-      productFacts: productFacts ? productFacts.split(',').map((s) => s.trim()).filter(Boolean) : [],
-    });
-  }, [productName, productCategory, productFacts]);
+  useEffect(() => {
+    refreshAccountBalance();
+    refreshJobsFromDatabase();
+  }, [refreshAccountBalance, refreshJobsFromDatabase]);
 
-  const smartRecommendations = useMemo(() => {
-    return SmartStyleMatcher.recommend(productProfile, VIDEO_STYLES_REGISTRY);
-  }, [productProfile]);
+  // Polling for active job with honest elapsed time (No fake percentage increments)
+  useEffect(() => {
+    if (!activeJob || activeJob.status === 'COMPLETED' || activeJob.status === 'FAILED') {
+      return;
+    }
 
-  // Filtered Styles
-  const filteredStyles = useMemo(() => {
-    return filterVideoStyles({
-      category: styleCategoryFilter === 'all' ? undefined : styleCategoryFilter,
-      hasVoice: voiceFilter === 'all' ? undefined : voiceFilter === 'with_voice',
-      searchQuery: styleSearch.trim() || undefined,
-    });
-  }, [styleCategoryFilter, voiceFilter, styleSearch]);
+    setPollElapsedTime(0);
+    const timerInterval = setInterval(() => {
+      setPollElapsedTime((prev) => prev + 1);
+    }, 1000);
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/jobs?jobId=${activeJob.jobId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.status === 'COMPLETED') {
+          setActiveJob((prev) => prev ? {
+            ...prev,
+            status: 'COMPLETED',
+            videoUrl: data.output?.videoUrl || data.videoUrl,
+          } : null);
+          refreshAccountBalance();
+          refreshJobsFromDatabase();
+          clearInterval(pollInterval);
+        } else if (data.status === 'FAILED') {
+          setActiveJob((prev) => prev ? {
+            ...prev,
+            status: 'FAILED',
+            errorMessage: data.errorMessage || data.rawStatus || 'Penjanaan video gagal di pelayan AI.',
+          } : null);
+          refreshAccountBalance();
+          refreshJobsFromDatabase();
+          clearInterval(pollInterval);
+        } else if (data.status === 'RUNNING' || data.status === 'PROCESSING') {
+          setActiveJob((prev) => prev ? { ...prev, status: 'PROCESSING', rawStatus: data.rawStatus } : null);
+        }
+      } catch {
+        // Keep job alive; network glitch does not fail the job
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(timerInterval);
+      clearInterval(pollInterval);
+    };
+  }, [activeJob?.jobId, activeJob?.status, refreshAccountBalance, refreshJobsFromDatabase]);
 
   // Image upload handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImages((prev) => [
-          ...prev,
-          {
-            id: `img_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-            name: file.name,
-            size: file.size,
-            dataUrl: event.target?.result as string,
-          },
-        ]);
-      };
-      reader.readAsDataURL(file);
+    const file = files[0];
+    if (file.size > 25 * 1024 * 1024) {
+      setSubmitError('Saiz imej melebihi had 25MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setImages([
+        {
+          id: crypto.randomUUID(),
+          name: file.name,
+          size: file.size,
+          dataUrl,
+        },
+      ]);
+      // If product name is empty, provide a clean default from filename
+      if (!productName) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        setProductName(cleanName);
+      }
+      setSubmitError(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Regeneration of spoken script (Free of charge)
+  const handleRegenerateScript = () => {
+    const freshScript = VoiceoverDirector.generateAuthenticScript(productProfile, selectedStyle, ctaOption);
+    setCustomScript(freshScript);
+    setIsEditingScript(false);
+  };
+
+  // Filtered styles catalogue
+  const displayedStyles = useMemo(() => {
+    return filterVideoStyles({
+      engine: selectedEngine === 'all' ? undefined : selectedEngine,
+      category: styleCategoryFilter === 'all' ? undefined : styleCategoryFilter,
+      searchQuery: styleSearch,
     });
-  };
+  }, [selectedEngine, styleCategoryFilter, styleSearch]);
 
-  const removeImage = (id: string) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
-  };
-
-  // Preflight calculations (Single image OR product name + sufficient credits)
-  const duration = selectedStyle.durationSeconds;
-  const expectedCredits = duration === 10 ? 10 : 15;
-  const isBalanceLoading = userBalance === null;
-  const currentAvailableCredits = userBalance ?? 0;
-  const hasEnoughCredits = !isBalanceLoading && currentAvailableCredits >= expectedCredits;
-  const canGenerate = (images.length > 0 || productName.trim().length > 0) && hasEnoughCredits && !isBalanceLoading;
-
-  const handleGenerate = async () => {
-    if (!canGenerate || isSubmitting) return;
-
-    setIsSubmitting(true);
+  // Primary Action: Submit Generation Task
+  const handleGenerateVideo = async () => {
     setSubmitError(null);
     setSubmitSuccess(null);
-    setActiveJobStatus('Memulakan penjanaan AffiMatik...');
-    setActiveJobProgress(10);
-    setGeneratedVideoUrl(null);
 
-    const clientRequestId = crypto.randomUUID();
+    if (images.length === 0) {
+      setSubmitError('Sila muat naik sekurang-kurangnya satu gambar produk untuk menjana video.');
+      return;
+    }
+
+    const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
+    if (userBalance !== null && userBalance < requiredCredits) {
+      setSubmitError(`Baki kredit anda (${userBalance}) tidak mencukupi untuk gaya ini (${requiredCredits} kredit). Sila tambah kredit langganan.`);
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
+      const clientRequestId = `req_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+      const payload: Record<string, unknown> = {
+        clientRequestId,
+        styleId: selectedStyle.id,
+        productName: productName.trim() || undefined,
+        productCategory: productCategory.trim() || undefined,
+        productFacts: confirmedFeature.trim() ? [confirmedFeature.trim()] : [],
+        customScript: customScript.trim() || undefined,
+        callToAction: ctaOption,
+        isMuslimahModest,
+        customPrompt: creativeInstruction.trim() || undefined,
+        imageKeys: [images[0].dataUrl],
+      };
+
       const res = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientRequestId,
-          styleId: selectedStyle.id,
-          productName: productName.trim() || undefined,
-          productCategory: productCategory.trim() || undefined,
-          productFacts: productFacts ? productFacts.split(',').map((s) => s.trim()).filter(Boolean) : [],
-          callToAction: ctaOption,
-          isMuslimahModest,
-          customPrompt: mode === 'advanced' ? customPrompt : undefined,
-          imageKeys: images.map((img) => img.dataUrl),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal menghantar tugasan video');
+        throw new Error(data.error || 'Gagal menghantar tugasan penjanaan video.');
       }
 
-      setSubmitSuccess(`Tugasan dihantar! ID Task: ${data.providerTaskId} (${selectedStyle.name})`);
-      setActiveJobStatus('Sedang diproses oleh pelayan AI...');
-      setActiveJobProgress(30);
-
-      // Save to sessionStorage for persistence across page reloads
-      const providerTaskId = data.providerTaskId;
-      const providerName = data.provider || selectedStyle.engine;
-      sessionStorage.setItem('affimatik_active_job', JSON.stringify({
-        providerTaskId,
-        providerName,
+      setSubmitSuccess('Tugasan penjanaan video berjaya didaftarkan. Sistem sedang memproses babak.');
+      const newJobDisplay: ActiveJobDisplay = {
+        jobId: data.jobId,
+        providerTaskId: data.providerTaskId,
+        provider: data.provider || selectedStyle.engine,
         styleName: selectedStyle.name,
-        startTime: Date.now(),
-      }));
+        durationSeconds: selectedStyle.durationSeconds,
+        status: 'PROCESSING',
+        requiredCredits,
+        createdAt: new Date().toISOString(),
+      };
 
-      // Mulakan polling status
-      let pollCount = 0;
-      const pollInterval = setInterval(async () => {
-        pollCount++;
-        try {
-          const pollRes = await fetch(`/api/jobs?providerTaskId=${providerTaskId}&provider=${providerName}`);
-          const pollData = await pollRes.json();
-          if (pollData.status === 'COMPLETED' && pollData.output?.videoUrl) {
-            clearInterval(pollInterval);
-            sessionStorage.removeItem('affimatik_active_job');
-            setIsSubmitting(false);
-            setActiveJobStatus('Selesai!');
-            setActiveJobProgress(100);
-            setGeneratedVideoUrl(pollData.output.videoUrl);
-            refreshAccountBalance();
-          } else if (pollData.status === 'FAILED') {
-            clearInterval(pollInterval);
-            sessionStorage.removeItem('affimatik_active_job');
-            setIsSubmitting(false);
-            setSubmitError(`Penjanaan video gagal: ${pollData.rawStatus || 'Ralat tidak diketahui'}`);
-            refreshAccountBalance();
-          } else {
-            setActiveJobProgress((prev) => Math.min(prev + 5, 90));
-            setActiveJobStatus(`Sedang diproses (${pollData.rawStatus || 'rendering'})...`);
-          }
-        } catch {
-          // ignore transient poll error
-        }
-
-        if (pollCount > 60) {
-          clearInterval(pollInterval);
-          sessionStorage.removeItem('affimatik_active_job');
-          setIsSubmitting(false);
-          refreshAccountBalance();
-        }
-      }, 4000);
-
-    } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : String(err));
-      setIsSubmitting(false);
+      setActiveJob(newJobDisplay);
+      setRecentJobs((prev) => [newJobDisplay, ...prev.filter((j) => j.jobId !== newJobDisplay.jobId)]);
       refreshAccountBalance();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSubmitError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // Reuse finished job configuration
+  const handleReuseJobSettings = (job: ActiveJobDisplay) => {
+    const style = VIDEO_STYLES_REGISTRY.find((s) => s.name === job.styleName);
+    if (style) {
+      setSelectedStyleId(style.id);
+    }
+    setActiveJob(null);
+    setSubmitSuccess(null);
+    setSubmitError(null);
+  };
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
-      {/* Header & Mode Switch */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">AffiMatik Video Factory</h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-              by Pawarna
+            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+              AffiMatik Video Factory
+            </h1>
+            <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">
+              V1 Creative
             </span>
           </div>
-          <p className="text-sm font-medium text-slate-700 mt-1">
-            Affiliate Jadi Automatik.
-          </p>
-          <p className="text-xs text-slate-500">
-            Satu Produk + Satu Video Style + Satu Klik = Satu Video Realistik.
+          <p className="text-sm text-slate-500 mt-1">
+            Upload produk, pilih gaya, terus jana video affiliate berkualiti tinggi.
           </p>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-slate-200/70 border border-slate-200 text-xs font-semibold self-start sm:self-auto">
-          <button
-            onClick={() => setMode('quick')}
-            className={`px-4 py-1.5 rounded-lg transition-all ${
-              mode === 'quick' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Quick Factory
-          </button>
-          <button
-            onClick={() => setMode('advanced')}
-            className={`px-4 py-1.5 rounded-lg transition-all ${
-              mode === 'advanced' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Advanced Studio
-          </button>
+        {/* Quick vs Advanced Switch & Balance */}
+        <div className="flex items-center gap-3">
+          <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setMode('quick')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                mode === 'quick' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Quick Mode
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('advanced')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                mode === 'advanced' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Advanced Mode
+            </button>
+          </div>
+
+          <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-800">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Baki: {userBalance !== null ? `${userBalance} Kredit` : 'Memuatkan...'}</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Factory Flow (2 cols) */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* ================================================================= */}
-          {/* STEP 1: Select Product (Upload or My Products)                    */}
-          {/* ================================================================= */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {/* Main Grid: Left Creation Studio vs Right Live Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN: CREATION STUDIO (7 Cols) */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* STEP 1: UPLOAD PRODUCT */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
                   1
-                </div>
-                <h3 className="font-bold text-slate-900 text-sm">Pilih atau Muat Naik Foto Produk</h3>
+                </span>
+                <h3 className="text-sm font-bold text-slate-900">Gambar & Maklumat Produk</h3>
               </div>
-              <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-emerald-600" />
-                AI Creative Director Aktif
-              </span>
+              <span className="text-[11px] text-slate-500">Imej Rujukan Visual (Bukan Wajib Frame Pertama)</span>
             </div>
 
-            {/* Upload Area */}
-            <div>
-              <label className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-2xl p-7 flex flex-col items-center justify-center cursor-pointer bg-indigo-50/20 hover:bg-indigo-50/40 transition">
-                <div className="w-12 h-12 rounded-xl bg-white shadow-2xs flex items-center justify-center mb-3 text-indigo-600 border border-indigo-100">
-                  <Upload className="w-6 h-6" />
+            {images.length === 0 ? (
+              <label className="border-2 border-dashed border-slate-200 hover:border-primary/50 hover:bg-slate-50/50 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all">
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+                  <Upload className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-bold text-slate-800">Muat Naik Gambar Produk Anda</span>
-                <span className="text-xs text-slate-500 mt-1 text-center max-w-sm">
-                  Cukup sekadar muat naik foto produk. AI akan mengesan bungkusan, teks label, dan menyediakan video secara automatik.
-                </span>
-                <span className="text-[11px] text-indigo-600 font-semibold mt-3 px-3 py-1 bg-white rounded-lg border border-indigo-100 shadow-2xs">
-                  Pilih Gambar (PNG, JPG, WEBP)
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                <span className="text-xs font-bold text-slate-800">Pilih atau Seret Gambar Produk</span>
+                <span className="text-[11px] text-slate-400 mt-0.5">JPG, PNG atau WebP (Maksimum 25MB)</span>
               </label>
-            </div>
-
-            {/* Uploaded Previews */}
-            {images.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Gambar Produk Dimuat Naik ({images.length} fail):</span>
+            ) : (
+              <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <img
+                  src={images[0].dataUrl}
+                  alt="Product preview"
+                  className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-slate-900 truncate">{productName || images[0].name}</div>
+                  <div className="text-[11px] text-slate-500">
+                    Kategori: {productProfile.category} • Format: {productProfile.packagingFormat}
+                  </div>
+                  <div className="text-[10px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Identiti produk dikunci untuk kesinambungan visual</span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {images.map((img) => (
-                    <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(img.id)}
-                        className="absolute top-1 right-1 p-1 bg-black/70 rounded-full text-white hover:bg-rose-600 transition"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setImages([])}
+                  className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-white transition-all"
+                  title="Tukar gambar"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
 
-            {/* Optional Metadata Section */}
-            <div className="pt-2 border-t border-slate-100">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Maklumat Produk Tambahan (Pilihan / Optional)</h4>
-                  <p className="text-[11px] text-slate-500">
-                    Biarkan kosong jika mahu AI buat research dan kenalpasti produk terus daripada foto di atas.
-                  </p>
-                </div>
+            {/* Product Meta Input (Simple in Quick, Expandable in Advanced) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Nama Produk <span className="text-slate-400 font-normal">(Pilihan)</span>
+                </label>
+                <input
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="Contoh: Serum Rawatan Wajah"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Nama Produk <span className="text-slate-400 font-normal">(Pilihan)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={productName}
-                      onChange={(e) => setProductName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="Contoh: Sambal Hijau Tok Wan (Auto-detect jika kosong)"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Kategori <span className="text-slate-400 font-normal">(Pilihan)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={productCategory}
-                      onChange={(e) => setProductCategory(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="Contoh: Makanan & Minuman / Skincare"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                    Fakta / Kelebihan Khas Produk <span className="text-slate-400 font-normal">(Pilihan)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={productFacts}
-                    onChange={(e) => setProductFacts(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Contoh: Rangup, Pedas Manja, Tanpa Pengawet"
-                  />
-                </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  1 Kelebihan Utama Sahih <span className="text-slate-400 font-normal">(Pilihan)</span>
+                </label>
+                <input
+                  type="text"
+                  value={confirmedFeature}
+                  onChange={(e) => setConfirmedFeature(e.target.value)}
+                  placeholder="Contoh: Melembapkan kulit secara semulajadi"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
               </div>
             </div>
+
+            {mode === 'advanced' && (
+              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+                <span>Sumber Profil: {productProfile.provenance === 'manual_user_entry' ? 'Input Manual Telus' : 'Vision Grounded'}</span>
+                <span>Medan Tidak Diketahui: {productProfile.unknownFields?.length || 0} dielakkan daripada rekaan palsu</span>
+              </div>
+            )}
           </div>
 
-          {/* ================================================================= */}
-          {/* STEP 2: Choose Video Style (Smart Match + Library)                */}
-          {/* ================================================================= */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          {/* STEP 2: CHOOSE ENGINE & VIDEO STYLE */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
                   2
-                </div>
-                <h3 className="font-bold text-slate-900 text-sm">Pilih Video Style (Gaya Video)</h3>
+                </span>
+                <h3 className="text-sm font-bold text-slate-900">Pilih Jenis Video & Gaya</h3>
               </div>
-              <span className="text-xs text-slate-500">
-                Gaya Dipilih: <strong className="text-indigo-600">{selectedStyle.name}</strong>
+              <span className="text-xs font-bold text-primary">
+                {selectedStyle.name} ({selectedStyle.durationSeconds}s • {selectedStyle.engine === 'nexabot' ? '10' : '15'} Kredit)
               </span>
             </div>
 
-            {/* Smart Style Match Recommendations */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  Cadangan Smart Style Match (AI Match):
-                </span>
-                <span className="text-[10px] text-slate-400">Padanan berdasar format & kategori produk</span>
-              </div>
+            {/* Engine Tabs (Nexabot 10s vs RunningHub 15s) */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEngine('nexabot');
+                  if (selectedStyle.engine !== 'nexabot') setSelectedStyleId('NX01');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
+                  selectedStyle.engine === 'nexabot'
+                    ? 'border-primary bg-primary/5 text-slate-900 shadow-sm ring-1 ring-primary'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <Volume2 className="w-3.5 h-3.5 text-primary" />
+                    <span>Nexabot Omni 10s</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Percakapan BM Malaysia Asli (10 Kredit)</p>
+                </div>
+                {selectedStyle.engine === 'nexabot' && <Check className="w-4 h-4 text-primary" />}
+              </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {smartRecommendations.map(({ style, matchReason }) => {
-                  const isSelected = style.id === selectedStyle.id;
-                  const hasVoice = style.audioMode === 'spoken_bm';
-
-                  return (
-                    <div
-                      key={style.id}
-                      onClick={() => setSelectedStyleId(style.id)}
-                      className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500 shadow-xs'
-                          : 'border-slate-200 hover:border-indigo-300 bg-white'
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase font-mono text-indigo-600">
-                            {style.id}
-                          </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">
-                            {style.durationSeconds}s
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-xs text-slate-900 mt-1">{style.name}</h4>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{style.benefit}</p>
-                      </div>
-
-                      <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] text-emerald-700 font-medium flex items-center gap-1">
-                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span className="truncate">{matchReason}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEngine('runninghub');
+                  if (selectedStyle.engine !== 'runninghub') setSelectedStyleId('RH01');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
+                  selectedStyle.engine === 'runninghub'
+                    ? 'border-primary bg-primary/5 text-slate-900 shadow-sm ring-1 ring-primary'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <VolumeX className="w-3.5 h-3.5 text-slate-700" />
+                    <span>RunningHub 15s</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Visual Senyap Estetik (15 Kredit)</p>
+                </div>
+                {selectedStyle.engine === 'runninghub' && <Check className="w-4 h-4 text-primary" />}
+              </button>
             </div>
 
-            {/* Full Style Library Filter Toolbar */}
-            <div className="pt-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Semak Semua Video Styles ({filteredStyles.length}):</span>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={voiceFilter}
-                    onChange={(e) => setVoiceFilter(e.target.value as any)}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs bg-white text-slate-700"
-                  >
-                    <option value="all">Semua Audio</option>
-                    <option value="with_voice">Dengan Suara (10s)</option>
-                    <option value="no_voice">Tanpa Suara (15s)</option>
-                  </select>
-                </div>
+            {/* Style Cards Grid */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                <span>Pilih daripada 13 Gaya Video Rasmi:</span>
+                <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya tersedia</span>
               </div>
 
-              {/* Grid of Styles */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                {filteredStyles.map((style) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
-                  const hasVoice = style.audioMode === 'spoken_bm';
+                  const hasVerifiedSample = Boolean(style.previewVideoUrl);
 
                   return (
-                    <div
+                    <button
                       key={style.id}
+                      type="button"
                       onClick={() => setSelectedStyleId(style.id)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      className={`p-3 rounded-xl border text-left transition-all relative ${
                         isSelected
-                          ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500 shadow-xs'
+                          ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase">
-                            {style.id}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">
-                              {style.durationSeconds}s
-                            </span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                              hasVoice ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'
-                            }`}>
-                              {hasVoice ? 'Voice' : 'No Voice'}
-                            </span>
-                          </div>
-                        </div>
-                        <h4 className="font-bold text-xs text-slate-900 mt-1">{style.name}</h4>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                          {style.benefit}
-                        </p>
-                      </div>
-
-                      <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-                        <span>Enjin: <strong className="text-slate-700 uppercase">{style.engine}</strong></span>
-                        <span className="font-semibold text-indigo-600">
-                          {isSelected ? '✓ Dipilih' : 'Pilih'}
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="font-bold text-xs text-slate-900">{style.name}</div>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">
+                          {style.durationSeconds}s
                         </span>
                       </div>
-                    </div>
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                        {style.benefit}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100 text-[10px]">
+                        <span className={hasVerifiedSample ? 'text-emerald-700 font-semibold' : 'text-slate-400'}>
+                          {hasVerifiedSample ? '✓ Sampel Sah' : '○ Prompt Sah'}
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-slate-500 font-medium">
+                          {style.engine === 'nexabot' ? 'Suara BM' : 'Visual Sahaja'}
+                        </span>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
           </div>
 
-          {/* ================================================================= */}
-          {/* ADVANCED STUDIO (Only shown in Advanced Mode)                     */}
-          {/* ================================================================= */}
-          {mode === 'advanced' && (
-            <div className="p-6 rounded-2xl bg-white border border-indigo-200 shadow-xs space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Sliders className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900 text-sm">Advanced Studio (Kawalan Tersuai)</h3>
+          {/* STEP 3: SPOKEN SCRIPT REVIEW (For Nexabot 10s) */}
+          {selectedStyle.engine === 'nexabot' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
+                    3
+                  </span>
+                  <h3 className="text-sm font-bold text-slate-900">Skrip Percakapan BM (10 Saat)</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRegenerateScript}
+                    className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Jana Semula</span>
+                  </button>
+                  <span className="text-slate-300">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingScript(!isEditingScript)}
+                    className="text-xs text-slate-600 font-semibold hover:text-slate-900"
+                  >
+                    {isEditingScript ? 'Selesai Edit' : 'Edit Skrip'}
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {isEditingScript ? (
+                <div className="space-y-2">
+                  <textarea
+                    rows={3}
+                    value={customScript || generatedScriptPreview}
+                    onChange={(e) => setCustomScript(e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary leading-relaxed"
+                    placeholder="Tulis skrip BM santai (14-23 patah perkataan)..."
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Petua: Elakkan slanga Indonesia atau dakwaan perubatan/overclaim tanpa bukti makmal.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl relative">
+                  <p className="text-xs font-medium text-slate-800 italic leading-relaxed">
+                    "{generatedScriptPreview || 'Skrip akan dijana mengikut fakta produk...'}"
+                  </p>
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-500">
+                    <span className="font-semibold text-slate-700">
+                      {generatedScriptPreview.split(/\s+/).filter(Boolean).length} perkataan
+                    </span>
+                    <span>• Sesuai untuk tempoh 10 saat tanpa laju atau terpotong</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ADVANCED STUDIO CONTROLS (Only visible in Advanced Mode) */}
+          {mode === 'advanced' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-primary" />
+                <span>Kawalan Studio Lanjutan</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Call To Action (CTA) Pertuturan
-                  </label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Pilihan Call-to-Action (CTA)</label>
                   <select
                     value={ctaOption}
                     onChange={(e) => setCtaOption(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white"
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
                   >
-                    <option value="spoken_button">Lisan: &quot;Tekan butang di bawah&quot;</option>
-                    <option value="spoken_bio">Lisan: &quot;Tengok link di bio&quot;</option>
-                    <option value="none">Tiada Call To Action (Neutral)</option>
+                    <option value="spoken_button">Suara: Tekan butang di bawah (Disyorkan)</option>
+                    <option value="spoken_bio">Suara: Tengok pautan di bio</option>
+                    <option value="none">Tiada CTA lisan</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Modesti Muslimah (Shariah Lock)
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Kawalan Kesopanan Shariah</label>
+                  <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-2">
+                    <input
+                      type="checkbox"
+                      checked={isMuslimahModest}
+                      onChange={(e) => setIsMuslimahModest(e.target.checked)}
+                      className="rounded text-primary focus:ring-primary w-4 h-4"
+                    />
+                    <span>Kunci Pematuhan Muslimah (Tudung labuh, aurat terjaga)</span>
                   </label>
-                  <select
-                    value={isMuslimahModest ? 'true' : 'false'}
-                    onChange={(e) => setIsMuslimahModest(e.target.value === 'true')}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white"
-                  >
-                    <option value="true">Muslimah Modest (Bertudung & Lengan Panjang)</option>
-                    <option value="false">Kasual Moden Sopan Malaysia</option>
-                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Custom Spoken Script / Prompt Injection (Pilihan)
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Arahan Kreatif Tambahan <span className="text-slate-400 font-normal">(Pilihan)</span>
                 </label>
-                <textarea
-                  rows={2}
-                  value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder="Masukkan ayat pertuturan khas dalam Bahasa Melayu (hanya untuk gaya 10s)..."
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                <input
+                  type="text"
+                  value={creativeInstruction}
+                  onChange={(e) => setCreativeInstruction(e.target.value)}
+                  placeholder="Contoh: Model pegang produk sambil senyum ke arah cahaya tingkap"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
             </div>
           )}
-        </div>
 
-        {/* Right Column: Preflight & Generation (1 col) */}
-        <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-24 space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
-                3
+          {/* GENERATE ACTION BUTTON */}
+          <div className="space-y-2">
+            {submitError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-bold">Penjanaan Tidak Dapat Diteruskan</div>
+                  <div className="mt-0.5">{submitError}</div>
+                </div>
               </div>
-              <h3 className="font-bold text-slate-900 text-sm">Generation Preflight</h3>
-            </div>
-
-            {/* Preflight Details */}
-            <div className="space-y-2.5 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Gaya Video:</span>
-                <span className="font-bold text-slate-900 text-right">[{selectedStyle.id}] {selectedStyle.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Enjin Sasaran:</span>
-                <span className="font-bold uppercase text-indigo-600">{selectedStyle.engine}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Durasi:</span>
-                <span className="font-semibold text-slate-900">{selectedStyle.durationSeconds} Saat</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Status Audio:</span>
-                <span className="font-semibold text-slate-900">
-                  {selectedStyle.audioMode === 'spoken_bm' ? 'Spoken BM Asli' : 'Strictly No Speech'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Nisbah Format:</span>
-                <span className="font-semibold text-slate-900">9:16 Menegak (TikTok/Shopee)</span>
-              </div>
-            </div>
-
-            {/* Credit Cost Box */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Kredit Diperlukan:</span>
-                <span className="font-bold text-slate-900">{expectedCredits} Kredit</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Baki Tersedia Anda:</span>
-                <span className={`font-bold ${hasEnoughCredits ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  {userBalance} Kredit
-                </span>
-              </div>
-            </div>
-
-            {/* Realism & Modesty Alert */}
-            <div className="p-3 rounded-lg bg-indigo-50/70 border border-indigo-200 text-[11px] text-indigo-900 flex items-start gap-2">
-              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-indigo-600" />
-              <span>
-                <strong>Realism & Product Lock:</strong> Visual UGC iPhone 15 Pro, pencahayaan 5500K neutral, tiada butang kuning palsu atas visual.
-              </span>
-            </div>
+            )}
 
             {submitSuccess && (
-              <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
-                {submitSuccess}
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{submitSuccess}</span>
               </div>
             )}
 
-            {submitError && (
-              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800">
-                {submitError}
-              </div>
-            )}
-
-            {/* Realtime Progress Bar */}
-            {activeJobStatus && isSubmitting && (
-              <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-indigo-900">
-                  <span className="flex items-center gap-1.5">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                    {activeJobStatus}
-                  </span>
-                  <span>{activeJobProgress}%</span>
-                </div>
-                <div className="w-full bg-indigo-200/60 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${activeJobProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* In-App Video Player */}
-            {generatedVideoUrl && (
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Video Siap Dijana!
-                  </span>
-                </div>
-                <div className="rounded-lg overflow-hidden bg-black aspect-[9/16] max-h-[380px] mx-auto shadow-inner flex items-center justify-center">
-                  <video
-                    src={generatedVideoUrl}
-                    controls
-                    autoPlay
-                    loop
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <a
-                  href={generatedVideoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  download="affimatik_video.mp4"
-                  className="w-full py-2 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition"
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  Muat Turun MP4 (HD)
-                </a>
-              </div>
-            )}
-
-            {/* Primary Action Button */}
             <button
               type="button"
-              disabled={!canGenerate || isSubmitting}
-              onClick={handleGenerate}
-              className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition shadow-sm ${
-                canGenerate && !isSubmitting
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-indigo-200'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              onClick={handleGenerateVideo}
+              disabled={Boolean(isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
+              className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
+                isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
+                  ? 'bg-slate-400 cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary/95 active:scale-[0.99]'
               }`}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Mengesahkan & Menghantar...</span>
+                  <span>Mendaftarkan Tugasan Video...</span>
                 </>
-              ) : isBalanceLoading ? (
+              ) : activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING') ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Memuatkan Baki Akaun...</span>
-                </>
-              ) : !hasEnoughCredits ? (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Kredit Tidak Mencukupi (Perlu {expectedCredits}, Baki {currentAvailableCredits})</span>
+                  <span>Sedang Memproses Video Di Pelayan AI...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Jana Video Sekarang ({expectedCredits} Kredit)</span>
+                  <span>
+                    Jana Video Sekarang ({selectedStyle.engine === 'nexabot' ? '10' : '15'} Kredit)
+                  </span>
                 </>
               )}
             </button>
-            <p className="text-[10px] text-center text-slate-400">
-              Pemprosesan awan berterusan di latar belakang. Anda boleh menutup browser dengan selamat.
-            </p>
           </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN: LIVE STATUS, PREVIEW & PERSISTENT OUTPUT (5 Cols) */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* ACTIVE GENERATION STATUS / COMPLETED WORKSPACE */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <span className="text-xs font-bold text-slate-800">Ruang Status & Hasil Video</span>
+              {activeJob && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                  activeJob.status === 'COMPLETED'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : activeJob.status === 'FAILED'
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {activeJob.status === 'COMPLETED' ? 'Video Siap' : activeJob.status === 'FAILED' ? 'Gagal' : 'Sedang Menjana'}
+                </span>
+              )}
+            </div>
+
+            <div className="p-5 space-y-4">
+              {activeJob ? (
+                <div className="space-y-4">
+                  {/* Active Processing State */}
+                  {(activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING' || activeJob.status === 'QUEUED') && (
+                    <div className="text-center py-6 space-y-3">
+                      <div className="w-14 h-14 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
+                        <Loader2 className="w-7 h-7 animate-spin" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">Sedang Menjana Video AI</h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Gaya: {activeJob.styleName} ({activeJob.durationSeconds}s)
+                        </p>
+                      </div>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-[11px] font-mono text-slate-600">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Masa berlalu: {pollElapsedTime}s</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                        Tugasan selamat disimpan di pangkalan data. Anda boleh muat semula atau tinggalkan halaman ini tanpa kehilangan kerja.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Completed State (Interactive MP4 Video Player) */}
+                  {activeJob.status === 'COMPLETED' && (
+                    <div className="space-y-3">
+                      <div className="relative aspect-[9/16] max-h-96 w-full rounded-xl overflow-hidden bg-black mx-auto shadow-inner">
+                        {activeJob.videoUrl ? (
+                          <video
+                            src={activeJob.videoUrl}
+                            controls
+                            playsInline
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-slate-400 text-xs">
+                            Pautan video sedang disediakan...
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        {activeJob.videoUrl && (
+                          <a
+                            href={activeJob.videoUrl}
+                            download={`affimatik_${activeJob.jobId.slice(0, 8)}.mp4`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Muat Turun MP4</span>
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleReuseJobSettings(activeJob)}
+                          className="px-3.5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+                          title="Guna semula gaya dan tetapan ini"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Guna Semula</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Failed State */}
+                  {activeJob.status === 'FAILED' && (
+                    <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-2">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                        <span>Penjanaan Terhenti</span>
+                      </div>
+                      <p>{activeJob.errorMessage || 'Tugasan tidak dapat diselesaikan oleh pelayan video AI.'}</p>
+                      <button
+                        type="button"
+                        onClick={() => setActiveJob(null)}
+                        className="mt-2 px-3 py-1.5 bg-white border border-rose-300 rounded-lg text-rose-700 font-bold hover:bg-rose-100 transition-all text-xs"
+                      >
+                        Ubah Prompt & Cuba Semula
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Empty / Ready State with Selected Style Specifications */
+                <div className="text-center py-8 space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 mx-auto flex items-center justify-center">
+                    <Video className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Sedia Untuk Menjana</h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                      Pilih produk dan gaya di sebelah kiri, kemudian tekan butang jana untuk memulakan video anda.
+                    </p>
+                  </div>
+
+                  {/* Style Specification Snapshot */}
+                  <div className="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-[11px] space-y-1.5 text-slate-600">
+                    <div className="font-bold text-slate-800 text-xs pb-1 border-b border-slate-200">
+                      Spesifikasi Gaya: {selectedStyle.name}
+                    </div>
+                    <div>• Format: 9:16 Menegak (UGC Smartphone)</div>
+                    <div>• Durasi: {selectedStyle.durationSeconds} Saat ({selectedStyle.engine === 'nexabot' ? '10' : '15'} Kredit)</div>
+                    <div>• Audio: {selectedStyle.engine === 'nexabot' ? 'Pertuturan BM Malaysia Santai' : 'Visual Estetik Sahaja'}</div>
+                    <div>• Kesopanan: {isMuslimahModest ? 'Pematuhan Muslimah Aktif' : 'Moden Santai'}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RECENT PERSISTENT JOBS LIST (Durable restoration) */}
+          {recentJobs.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">Senarai Tugasan Terkini</span>
+                <span className="text-[11px] text-slate-400 font-medium">Auto-pulih dari pangkalan data</span>
+              </div>
+
+              <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                {recentJobs.slice(0, 5).map((job) => (
+                  <div key={job.jobId} className="py-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <div className="font-semibold text-slate-800">{job.styleName}</div>
+                      <div className="text-[10px] text-slate-400">
+                        {new Date(job.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {job.durationSeconds}s
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        job.status === 'COMPLETED'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : job.status === 'FAILED'
+                          ? 'bg-rose-50 text-rose-700'
+                          : 'bg-amber-50 text-amber-700'
+                      }`}>
+                        {job.status === 'COMPLETED' ? 'Siap' : job.status === 'FAILED' ? 'Gagal' : 'Memproses'}
+                      </span>
+                      {job.videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveJob(job)}
+                          className="text-[11px] text-primary font-bold hover:underline"
+                        >
+                          Lihat
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -819,13 +928,7 @@ function VideoFactoryContent() {
 
 export default function VideoFactoryPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Memuatkan AffiMatik Video Factory...</div>}>
       <VideoFactoryContent />
     </Suspense>
   );

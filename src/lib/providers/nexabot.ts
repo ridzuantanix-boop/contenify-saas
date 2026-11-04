@@ -70,12 +70,10 @@ export class NexabotAdapter implements IProviderAdapter {
 
     // Determine mode according to Nexabot spec:
     // "t2v" = Text to Video (no image)
-    // "sfv" = Start Frame to Video (1 image)
-    // "i2v" = Ingredient Img to Video (1-3 images)
+    // "i2v" = Ingredient / Subject Reference Image to Video (1-3 product reference images)
+    // "sfv" = Start Frame to Video (only when explicitly requested as mandatory starting frame)
     let mode = 't2v';
-    if (images.length === 1) {
-      mode = 'sfv';
-    } else if (images.length > 1) {
+    if (images.length > 0) {
       mode = 'i2v';
     }
 

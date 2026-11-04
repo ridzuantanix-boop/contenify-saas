@@ -73,7 +73,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
       endPose: 'Holds product steady with friendly smile',
       cameraMovement: 'Steady handheld 1x framing, chest-up medium close up',
       lightingSpec: 'Soft neutral daylight (5500K), clear illumination on product label',
-      scriptTemplate: 'Bagi yang tengah cari produk macam ni, finishing dia memang nampak kemas dan kualiti terjamin.',
+      scriptTemplate: 'Bagi yang tengah cari produk macam ni, kemasan bungkusan dia nampak kemas dan rekaan praktikal.',
     },
   },
   {
@@ -106,7 +106,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
       endPose: 'Smiles and gestures approval towards product',
       cameraMovement: 'Handheld dynamic tracking slightly shifting angle',
       lightingSpec: 'Bright natural daylight with clear reflections on packaging',
-      scriptTemplate: 'Bila tengok packaging dan rekaan dia, memang nampak kemas dan kualiti terjamin.',
+      scriptTemplate: 'Bila tengok bungkusan dan rekaan dia, memang nampak kemas dan padat untuk kegunaan harian.',
     },
   },
   {
@@ -239,7 +239,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
       endPose: 'Slight tilt upwards showing bottle cap or closure',
       cameraMovement: 'Macro-like clarity at standard 1x distance, steady',
       lightingSpec: 'Even daylight exposure across entire text on packaging',
-      scriptTemplate: 'Semua maklumat jelas ada kat label ni, bahan selamat dan standard kualiti terjaga.',
+      scriptTemplate: 'Maklumat bungkusan tertera kemas pada label ni, rekaan ringkas dan mudah dibaca.',
     },
   },
 
