@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
       provider: requestedProvider,
       callToAction = 'spoken_button',
       isMuslimahModest = true,
+      customScript,
+      creativeInstruction,
       customPrompt,
       imageKeys = [],
     } = body;
@@ -128,10 +130,37 @@ export async function POST(req: NextRequest) {
       modestyLock: isMuslimahModest,
     });
 
+    // Resolve Canonical API Contract:
+    // customScript: Approved spoken dialogue, Nexabot only
+    // creativeInstruction: User-specified visual direction, both providers
+    // customPrompt: Backward compatibility fallback
+    let resolvedCustomScript: string | undefined = undefined;
+    if (typeof customScript === 'string' && customScript.trim().length > 0) {
+      resolvedCustomScript = customScript.trim();
+    } else if (style.engine === 'nexabot' && typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
+      resolvedCustomScript = customPrompt.trim();
+    }
+
+    let resolvedCreativeInstruction: string | undefined = undefined;
+    if (typeof creativeInstruction === 'string' && creativeInstruction.trim().length > 0) {
+      resolvedCreativeInstruction = creativeInstruction.trim();
+    } else if (style.engine === 'runninghub' && typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
+      resolvedCreativeInstruction = customPrompt.trim();
+    }
+
+    // RunningHub hard rule: Never allow customScript as spoken dialogue
+    if (style.engine === 'runninghub' && resolvedCustomScript) {
+      return NextResponse.json(
+        { error: 'Gaya 15 saat RunningHub adalah visual sepenuhnya dan tidak menerima sebarang skrip pertuturan.' },
+        { status: 400 }
+      );
+    }
+
     const compiled = DynamicPromptCompiler.compile(productProfile, style, scenePlan, {
       callToAction,
       isMuslimahModest,
-      customScript: customPrompt,
+      customScript: resolvedCustomScript,
+      creativeInstruction: resolvedCreativeInstruction,
     });
 
     if (!compiled.preflightValid) {

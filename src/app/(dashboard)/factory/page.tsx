@@ -73,9 +73,12 @@ function VideoFactoryContent() {
   const [selectedStyleId, setSelectedStyleId] = useState<string>(initialStyleId);
   const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
   const [styleSearch, setStyleSearch] = useState('');
+  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
+  const [modalPreviewStyle, setModalPreviewStyle] = useState<VideoStyle | null>(null);
 
   // Step 3: Script & Advanced Studio Controls
   const [customScript, setCustomScript] = useState('');
+  const [scriptVariationIndex, setScriptVariationIndex] = useState(0);
   const [isEditingScript, setIsEditingScript] = useState(false);
   const [ctaOption, setCtaOption] = useState<'spoken_button' | 'spoken_bio' | 'none'>('spoken_button');
   const [isMuslimahModest, setIsMuslimahModest] = useState(true);
@@ -111,8 +114,9 @@ function VideoFactoryContent() {
     if (customScript.trim()) return customScript.trim();
     return DynamicPromptCompiler.resolveSpokenScript(productProfile, selectedStyle, {
       callToAction: ctaOption,
+      variationIndex: scriptVariationIndex,
     });
-  }, [productProfile, selectedStyle, customScript, ctaOption]);
+  }, [productProfile, selectedStyle, customScript, ctaOption, scriptVariationIndex]);
 
   // Load account balance from server session
   const refreshAccountBalance = useCallback(async () => {
@@ -237,9 +241,11 @@ function VideoFactoryContent() {
     reader.readAsDataURL(file);
   };
 
-  // Regeneration of spoken script (Free of charge)
+  // Regeneration of spoken script (Free of charge - variations)
   const handleRegenerateScript = () => {
-    const freshScript = VoiceoverDirector.generateAuthenticScript(productProfile, selectedStyle, ctaOption);
+    const nextIdx = scriptVariationIndex + 1;
+    setScriptVariationIndex(nextIdx);
+    const freshScript = VoiceoverDirector.generateAuthenticScript(productProfile, selectedStyle, ctaOption, nextIdx);
     setCustomScript(freshScript);
     setIsEditingScript(false);
   };
@@ -280,9 +286,9 @@ function VideoFactoryContent() {
         productCategory: productCategory.trim() || undefined,
         productFacts: confirmedFeature.trim() ? [confirmedFeature.trim()] : [],
         customScript: customScript.trim() || undefined,
+        creativeInstruction: creativeInstruction.trim() || undefined,
         callToAction: ctaOption,
         isMuslimahModest,
-        customPrompt: creativeInstruction.trim() || undefined,
         imageKeys: [images[0].dataUrl],
       };
 
@@ -532,48 +538,104 @@ function VideoFactoryContent() {
               </button>
             </div>
 
-            {/* Style Cards Grid */}
+            {/* Style Cards Grid (Hover-to-Play Video Gallery) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span>Pilih daripada 13 Gaya Video Rasmi:</span>
+                <span>Pilih daripada 13 Gaya Video Rasmi (Gerakkan tetikus untuk lihat sampel):</span>
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya tersedia</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                 {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
+                  const isHovered = hoveredStyleId === style.id;
                   const hasVerifiedSample = Boolean(style.previewVideoUrl);
 
                   return (
-                    <button
+                    <div
                       key={style.id}
-                      type="button"
+                      onMouseEnter={() => setHoveredStyleId(style.id)}
+                      onMouseLeave={() => setHoveredStyleId(null)}
                       onClick={() => setSelectedStyleId(style.id)}
-                      className={`p-3 rounded-xl border text-left transition-all relative ${
+                      className={`p-3 rounded-xl border text-left transition-all relative group flex flex-col justify-between cursor-pointer ${
                         isSelected
                           ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-1">
-                        <div className="font-bold text-xs text-slate-900">{style.name}</div>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">
-                          {style.durationSeconds}s
-                        </span>
+                      {/* Video Preview Box (9:16 vertical ratio) */}
+                      {hasVerifiedSample && (
+                        <div className="relative w-full aspect-[9/16] max-h-36 rounded-lg overflow-hidden bg-slate-950 mb-2">
+                          <video
+                            src={style.previewVideoUrl || undefined}
+                            muted
+                            playsInline
+                            loop
+                            preload="none"
+                            ref={(el) => {
+                              if (el) {
+                                if (isHovered) {
+                                  el.play().catch(() => {});
+                                } else {
+                                  el.pause();
+                                  el.currentTime = 0;
+                                }
+                              }
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
+                            {style.durationSeconds}s
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalPreviewStyle(style);
+                            }}
+                            className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                            title="Tonton pratonton penuh"
+                          >
+                            <div className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all">
+                              <Play className="w-4 h-4 fill-white" />
+                            </div>
+                          </button>
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="font-bold text-xs text-slate-900">{style.name}</div>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">
+                            {style.durationSeconds}s
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                          {style.benefit}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                        {style.benefit}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100 text-[10px]">
-                        <span className={hasVerifiedSample ? 'text-emerald-700 font-semibold' : 'text-slate-400'}>
-                          {hasVerifiedSample ? '✓ Sampel Sah' : '○ Prompt Sah'}
+
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 text-[10px]">
+                        <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          ✓ Kualiti Sah ({style.engine === 'nexabot' ? '10' : '15'} Kr)
                         </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-slate-500 font-medium">
-                          {style.engine === 'nexabot' ? 'Suara BM' : 'Visual Sahaja'}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedStyleId(style.id);
+                          }}
+                          className={`px-2 py-0.5 rounded font-bold text-[10px] transition-all ${
+                            isSelected
+                              ? 'bg-primary text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {isSelected ? 'Dipilih' : 'Pilih Gaya'}
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -922,6 +984,65 @@ function VideoFactoryContent() {
           )}
         </div>
       </div>
+
+      {/* ENLARGED STYLE PREVIEW MODAL */}
+      {modalPreviewStyle && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl flex flex-col border border-slate-200">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <span>{modalPreviewStyle.name}</span>
+                  <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono font-bold">
+                    {modalPreviewStyle.durationSeconds}s
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">{modalPreviewStyle.benefit}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalPreviewStyle(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative aspect-[9/16] bg-slate-950 max-h-[460px] flex items-center justify-center">
+              {modalPreviewStyle.previewVideoUrl ? (
+                <video
+                  src={modalPreviewStyle.previewVideoUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="text-xs text-slate-400">Pratonton video sedang dimuatkan...</div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div className="text-xs text-slate-600">
+                <span className="font-bold">{modalPreviewStyle.engine === 'nexabot' ? 'Nexabot Omni (10 Kredit)' : 'RunningHub (15 Kredit)'}</span>
+                <div className="text-[11px] text-slate-500">
+                  {modalPreviewStyle.engine === 'nexabot' ? 'Pertuturan Bahasa Melayu Malaysia' : 'Visual Estetik Tanpa Suara'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStyleId(modalPreviewStyle.id);
+                  setModalPreviewStyle(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/95 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                Pilih Gaya Ini
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

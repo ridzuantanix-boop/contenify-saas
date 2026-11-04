@@ -18,6 +18,7 @@ export interface CompilerOptions {
   customScript?: string;
   creativeInstruction?: string;
   imageRole?: 'reference' | 'start_frame';
+  variationIndex?: number;
 }
 
 export interface PromptPreviewResult {
@@ -98,7 +99,7 @@ export class DynamicPromptCompiler {
 
     // 2. Product-specific dynamically generated script using confirmed facts or truthful visual observation
     const ctaMode = options.callToAction || 'spoken_button';
-    return VoiceoverDirector.generateAuthenticScript(product, style, ctaMode);
+    return VoiceoverDirector.generateAuthenticScript(product, style, ctaMode, options.variationIndex ?? 0);
   }
 
   /**
@@ -187,6 +188,7 @@ export class DynamicPromptCompiler {
         product,
         style,
         scenePlan,
+        options,
         realismDirectives,
         identityLockDirectives,
         modestyDirectives,
@@ -272,6 +274,7 @@ export class DynamicPromptCompiler {
     product: ProductProfile,
     style: VideoStyle,
     scenePlan: ScenePlan,
+    options: CompilerOptions,
     realismDirectives: string,
     identityLockDirectives: string,
     modestyDirectives: string,
@@ -295,8 +298,9 @@ export class DynamicPromptCompiler {
       realismDirectives,
       identityLockDirectives,
       modestyDirectives,
+      options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
       'Audio: Purely silent visuals or ambient background sound only. Strictly NO spoken dialogue and NO lip-sync movement.',
-    ].join(' ');
+    ].filter(Boolean).join(' ');
 
     return {
       provider: 'runninghub',

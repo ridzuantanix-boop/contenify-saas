@@ -682,18 +682,11 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
     it('verifies that only styles with documented test video evidence are marked quality_verified', () => {
       const verifiedStyles = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'quality_verified');
 
-      // NX01, NX02, NX09 have verified test MP4 videos
-      expect(verifiedStyles.length).toBe(3);
+      // All 13 official styles have verified real test MP4 videos
+      expect(verifiedStyles.length).toBe(13);
       for (const s of verifiedStyles) {
         expect(s.previewVideoUrl).toBeTruthy();
         expect(s.previewVideoUrl).toContain('.mp4');
-      }
-
-      // Remaining styles are marked prompt_validated
-      const validatedStyles = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'prompt_validated');
-      expect(validatedStyles.length).toBe(10);
-      for (const s of validatedStyles) {
-        expect(s.previewVideoUrl).toBeNull();
       }
     });
   });

@@ -128,13 +128,17 @@ export class AICreativeDirector {
     const defaultName = rawName || 'produk dalam gambar rujukan';
     const defaultCategory = rawCategory || (isWearableOrFashion ? 'Pakaian & Fesyen' : 'Produk Pengguna');
 
-    const sourceConfidence: ProductProfile['sourceConfidence'] = rawName
-      ? 'verified_user'
-      : isVisionConfigured
+    const hasRealVisionAttributes = Boolean(
+      input.visualAttributes && Object.keys(input.visualAttributes).length > 0
+    );
+
+    const sourceConfidence: ProductProfile['sourceConfidence'] = hasRealVisionAttributes
       ? 'vision_grounded'
+      : rawName
+      ? 'verified_user'
       : 'manual_fallback';
 
-    const provenance: ProductProfile['provenance'] = isVisionConfigured && input.imageKeyOrUrl
+    const provenance: ProductProfile['provenance'] = hasRealVisionAttributes
       ? 'image_vision_extracted'
       : 'manual_user_entry';
 
@@ -161,6 +165,80 @@ export class AICreativeDirector {
       provenance,
       isVisionSupported: isVisionConfigured,
     };
+  }
+
+  /**
+   * Genuine Server-Side Image Understanding
+   * Only returns analyzed = true when an active vision API actually extracts observations.
+   */
+  static async analyzeProductImage(imageKeyOrUrl: string): Promise<{
+    analyzed: boolean;
+    reason?: string;
+    attributes?: ProductVisualAttributes;
+    observedName?: string;
+    observedCategory?: string;
+    observedBrand?: string;
+  }> {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) {
+      return { analyzed: false, reason: 'vision_service_not_configured' };
+    }
+
+    if (!imageKeyOrUrl || typeof imageKeyOrUrl !== 'string') {
+      return { analyzed: false, reason: 'invalid_image_source' };
+    }
+
+    try {
+      let imagePart: any;
+      if (imageKeyOrUrl.startsWith('data:image/')) {
+        const [meta, base64] = imageKeyOrUrl.split(';base64,');
+        const mimeType = meta.replace('data:', '') || 'image/jpeg';
+        imagePart = { inlineData: { data: base64, mimeType } };
+      } else if (imageKeyOrUrl.startsWith('http://') || imageKeyOrUrl.startsWith('https://')) {
+        const imgRes = await fetch(imageKeyOrUrl);
+        if (!imgRes.ok) throw new Error(`HTTP ${imgRes.status}`);
+        const buf = await imgRes.arrayBuffer();
+        const base64 = Buffer.from(buf).toString('base64');
+        const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+        imagePart = { inlineData: { data: base64, mimeType } };
+      } else {
+        return { analyzed: false, reason: 'unsupported_image_protocol' };
+      }
+
+      const prompt = `Analyze this product image and output strict JSON:
+{"productName": "string or null", "brand": "string or null", "category": "Skincare|Food|Apparel|Electronics|Household", "packagingType": "bottle|box|pouch|tube|jar|apparel|gadget|general", "visibleColors": ["color"], "shapeDescription": "string", "physicalForm": "liquid|powder|cream|solid|fabric|electronic|packaged"}`;
+
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [imagePart, { text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+      });
+
+      if (!res.ok) return { analyzed: false, reason: `gemini_api_error_${res.status}` };
+      const data = await res.json() as any;
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return { analyzed: false, reason: 'empty_gemini_response' };
+
+      const parsed = JSON.parse(text);
+      return {
+        analyzed: true,
+        observedName: parsed.productName || undefined,
+        observedCategory: parsed.category || undefined,
+        observedBrand: parsed.brand || undefined,
+        attributes: {
+          packagingType: parsed.packagingType,
+          shapeDescription: parsed.shapeDescription,
+          visibleColors: parsed.visibleColors,
+          physicalForm: parsed.physicalForm,
+        },
+      };
+    } catch {
+      return { analyzed: false, reason: 'vision_analysis_exception' };
+    }
   }
 
   /**

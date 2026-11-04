@@ -62,11 +62,14 @@ export class VoiceoverDirector {
    * Priority:
    * 1. Uses confirmedFeatures if supplied by the customer
    * 2. Falls back to neutral visual observation (never fabricates unverified claims)
+   * 
+   * Supports variationIndex to provide distinct alternative scripts on "Jana Semula"
    */
   static generateAuthenticScript(
     product: ProductProfile,
     style: VideoStyle,
-    ctaMode: 'spoken_button' | 'spoken_bio' | 'none' = 'spoken_button'
+    ctaMode: 'spoken_button' | 'spoken_bio' | 'none' = 'spoken_button',
+    variationIndex: number = 0
   ): string {
     // RunningHub styles must NOT have any voiceover
     if (style.engine === 'runninghub') {
@@ -76,26 +79,62 @@ export class VoiceoverDirector {
     const category = product.category.toLowerCase();
     const format = product.packagingFormat;
     const name = product.sourceConfidence === 'verified_user' ? product.name : 'produk dalam gambar ni';
+    const vIdx = Math.abs(Math.floor(variationIndex)) % 4;
 
     let coreSentence = '';
 
-    // If customer supplied genuine confirmed features, integrate them concisely
+    // If customer supplied genuine confirmed features, integrate them concisely with variations
     if (product.confirmedFeatures && product.confirmedFeatures.length > 0) {
-      const topFeature = product.confirmedFeatures[0];
-      // Keep phrasing lean (12-22 words) even with longer product names
-      coreSentence = `Korang tengok ${name} ni, ia ${topFeature.toLowerCase()} untuk kegunaan harian.`;
+      const topFeature = product.confirmedFeatures[0].toLowerCase();
+      const confirmedVariants = [
+        `Korang tengok ${name} ni, ia ${topFeature} untuk kegunaan harian.`,
+        `Bagi yang tengah cari ${name}, fungsi ${topFeature} ni memang praktikal.`,
+        `Ni dia ${name}, kemasan elok dan ${topFeature} sesuai untuk guna harian.`,
+        `Kalau korang perlukan ${name}, ia ${topFeature} untuk memudahkan urusan korang.`,
+      ];
+      coreSentence = confirmedVariants[vIdx];
     } else {
       // Truthful visual observation fallback without inventing unverified performance claims
       if (category.includes('makanan') || category.includes('masakan') || format === 'jar') {
-        coreSentence = `Korang tengok bungkusan ${name} ni, saiz hidangan dia nampak padat dan kemas untuk stok dapur.`;
+        const foodVariants = [
+          `Korang tengok bungkusan ${name} ni, saiz hidangan dia nampak padat dan kemas untuk stok dapur.`,
+          `Bagi pencinta masakan, ${name} ni sedap dihidang bersama makanan dan bungkusan dia kemas.`,
+          `Tengok pek ${name} ni, hidangan dia nampak menyelerakan dan sesuai dinikmati seisi keluarga.`,
+          `Kalau korang cari sajian ringkas, ${name} ni mudah dihidang bersama hidangan harian.`,
+        ];
+        coreSentence = foodVariants[vIdx];
       } else if (category.includes('skincare') || category.includes('kecantikan') || format === 'bottle') {
-        coreSentence = `Korang tengok botol ${name} ni, saiz dia padat dan rekaan penutup dia nampak kemas untuk dibawa travel.`;
+        const beautyVariants = [
+          `Korang tengok botol ${name} ni, saiz dia padat dan rekaan penutup dia nampak kemas untuk dibawa travel.`,
+          `Bagi rutin penjagaan diri, botol ${name} ni kemas dan mudah digunakan setiap hari.`,
+          `Rekaan botol ${name} ni memang praktikal, saiz senang dipegang dan penutup botol kemas.`,
+          `Kalau korang perlukan penjagaan harian, ${name} ni nampak selesa dan kemas dibawa ke mana-mana.`,
+        ];
+        coreSentence = beautyVariants[vIdx];
       } else if (category.includes('tudung') || category.includes('fesyen') || format === 'apparel') {
-        coreSentence = `Korang tengok kemasan kain ${name} ni, jahitan tepi kemas dan nampak terletak elok bila dipakai.`;
+        const fashionVariants = [
+          `Korang tengok kemasan kain ${name} ni, jahitan tepi kemas dan nampak terletak elok bila dipakai.`,
+          `Bagi yang nak bergaya kemas, ${name} ni terletak cantik dan selesa bila digayakan.`,
+          `Material kain ${name} ni nampak lembut, bidang pun terletak elok bila dipakai keluar.`,
+          `Tengok fabrik ${name} ni, tekstur dia nampak kemas dan senang digayakan untuk harian.`,
+        ];
+        coreSentence = fashionVariants[vIdx];
       } else if (category.includes('elektronik') || category.includes('gadget') || format === 'gadget') {
-        coreSentence = `Korang tengok rekaan ${name} ni, binaan dia padat dan ringkas untuk kemudahan kerja korang.`;
+        const gadgetVariants = [
+          `Korang tengok rekaan ${name} ni, binaan dia padat dan ringkas untuk kemudahan kerja korang.`,
+          `Bagi memudahkan urusan harian, ${name} ni mudah dikendalikan dan binaan luar dia kemas.`,
+          `Binaan peranti ${name} ni nampak kemas dan moden, praktikal dibawa ke mana-mana.`,
+          `Kalau korang cari gajet ringkas, ${name} ni mudah digunakan untuk kegunaan seharian korang.`,
+        ];
+        coreSentence = gadgetVariants[vIdx];
       } else {
-        coreSentence = `Korang tengok ${name} ni, kemasan bungkusan dia nampak kemas dan elok untuk kegunaan seharian.`;
+        const generalVariants = [
+          `Korang tengok ${name} ni, kemasan bungkusan dia nampak kemas dan elok untuk kegunaan seharian.`,
+          `Bagi kegunaan harian, ${name} ni saiz dia praktikal dan kemasan bungkusan nampak teratur.`,
+          `Rekaan ${name} ni nampak ringkas dan padat, senang disimpan untuk kemudahan harian.`,
+          `Kalau korang nak pilihan praktikal, ${name} ni kemas dan sesuai untuk keperluan seharian.`,
+        ];
+        coreSentence = generalVariants[vIdx];
       }
     }
 
