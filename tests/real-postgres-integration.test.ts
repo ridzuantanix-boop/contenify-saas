@@ -17,13 +17,14 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       await db.exec(stubsSql);
     }
 
-    // 3. Read and apply all 4 forward migrations in strict sequential order
+    // 3. Read and apply all 5 forward migrations in strict sequential order
     const migrationsDir = path.resolve(process.cwd(), 'supabase/migrations');
     const migrationFiles = [
       '00001_initial_schema.sql',
       '00002_atomic_credit_and_job_security.sql',
       '00003_secure_financial_rpc_and_job_admission.sql',
       '00004_fix_migration_compatibility_and_concurrency.sql',
+      '00005_workspace_status_and_alignment.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -417,5 +418,66 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     );
     expect(ledgerCheck.rows[0].count).toBe(1);
     expect(ledgerCheck.rows[0].total).toBe(10);
+  });
+
+  it('proves migration 00005 adds status to workspaces and verifies workspace membership query with status active', async () => {
+    // 1. Verify 'status' column exists in workspaces
+    const colRes = await db.query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'workspaces' AND column_name = 'status';`
+    );
+    expect(colRes.rows.length).toBe(1);
+
+    // 2. Setup user profile with authoritative tier
+    const testUserId = 'a0000000-1111-2222-3333-444455556666';
+    const testWsId = 'b0000000-1111-2222-3333-444455556666';
+    const suspendedWsId = 'c0000000-1111-2222-3333-444455556666';
+
+    await db.query(
+      `INSERT INTO workspaces (id, name, slug, owner_id, status) VALUES ($1, 'Active WS', 'active-ws', $2, 'active');`,
+      [testWsId, testUserId]
+    );
+    await db.query(
+      `INSERT INTO workspaces (id, name, slug, owner_id, status) VALUES ($1, 'Suspended WS', 'suspended-ws', $2, 'suspended');`,
+      [suspendedWsId, testUserId]
+    );
+
+    // Insert profile with tier 'pro'
+    await db.query(
+      `INSERT INTO profiles (id, email, full_name, tier, default_workspace_id) VALUES ($1, 'testuser@example.com', 'Test User', 'pro', $2);`,
+      [testUserId, testWsId]
+    );
+
+    // Insert workspace membership
+    await db.query(
+      `INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, 'owner');`,
+      [testWsId, testUserId]
+    );
+    await db.query(
+      `INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, 'member');`,
+      [suspendedWsId, testUserId]
+    );
+
+    // 3. Simulate the Supabase REST join query: select role, workspaces(id, status)
+    const joinRes = await db.query<{ role: string; ws_id: string; ws_status: string }>(
+      `SELECT wm.role, w.id as ws_id, w.status as ws_status
+       FROM workspace_members wm
+       JOIN workspaces w ON wm.workspace_id = w.id
+       WHERE wm.user_id = $1 AND wm.workspace_id = $2;`,
+      [testUserId, testWsId]
+    );
+    expect(joinRes.rows.length).toBe(1);
+    expect(joinRes.rows[0].role).toBe('owner');
+    expect(joinRes.rows[0].ws_status).toBe('active');
+
+    // 4. Verify suspended workspace query shows non-active status
+    const suspendedJoin = await db.query<{ role: string; ws_id: string; ws_status: string }>(
+      `SELECT wm.role, w.id as ws_id, w.status as ws_status
+       FROM workspace_members wm
+       JOIN workspaces w ON wm.workspace_id = w.id
+       WHERE wm.user_id = $1 AND wm.workspace_id = $2;`,
+      [testUserId, suspendedWsId]
+    );
+    expect(suspendedJoin.rows.length).toBe(1);
+    expect(suspendedJoin.rows[0].ws_status).toBe('suspended');
   });
 });

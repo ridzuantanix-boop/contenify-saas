@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
           // 1. Check default_workspace_id first if specified
           if (verifiedWorkspaceId) {
             const memberRes = await fetch(
-              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?workspace_id=eq.${encodeURIComponent(verifiedWorkspaceId)}&user_id=eq.${encodeURIComponent(verifiedUserId)}&select=role,workspaces(id,status,tier)`,
+              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?workspace_id=eq.${encodeURIComponent(verifiedWorkspaceId)}&user_id=eq.${encodeURIComponent(verifiedUserId)}&select=role,workspaces(id,status)`,
               {
                 headers: {
                   apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -145,7 +145,6 @@ export async function POST(req: NextRequest) {
                 const ws = mem.workspaces;
                 if (ws && ws.status === 'active') {
                   verifiedRole = mem.role || 'member';
-                  verifiedTier = ws.tier || verifiedTier;
                   activeMembershipFound = true;
                 }
               }
@@ -155,7 +154,7 @@ export async function POST(req: NextRequest) {
           // 2. If default workspace membership is missing or invalid, search for any valid active workspace membership
           if (!activeMembershipFound) {
             const anyMemberRes = await fetch(
-              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?user_id=eq.${encodeURIComponent(verifiedUserId)}&select=workspace_id,role,workspaces(id,status,tier)&limit=1`,
+              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?user_id=eq.${encodeURIComponent(verifiedUserId)}&select=workspace_id,role,workspaces(id,status)&limit=1`,
               {
                 headers: {
                   apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -171,7 +170,6 @@ export async function POST(req: NextRequest) {
                 if (ws && ws.status === 'active') {
                   verifiedWorkspaceId = mem.workspace_id;
                   verifiedRole = mem.role || 'member';
-                  verifiedTier = ws.tier || verifiedTier;
                   activeMembershipFound = true;
                 }
               }

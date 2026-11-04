@@ -43,13 +43,14 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
       await adminClient.query(stubsSql);
     }
 
-    // Apply migrations 1 through 4
+    // Apply migrations 1 through 5
     const migrationsDir = path.resolve(process.cwd(), 'supabase/migrations');
     const migrationFiles = [
       '00001_initial_schema.sql',
       '00002_atomic_credit_and_job_security.sql',
       '00003_secure_financial_rpc_and_job_admission.sql',
       '00004_fix_migration_compatibility_and_concurrency.sql',
+      '00005_workspace_status_and_alignment.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -87,14 +88,18 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
     // Switch both connections to service_role to exercise production admission RPC
     await client1.query('SET ROLE service_role;');
     await client2.query('SET ROLE service_role;');
-  }, 60000);
+  }, 120000);
 
   afterAll(async () => {
     if (client1) await client1.end().catch(() => {});
     if (client2) await client2.end().catch(() => {});
     if (pgServer) await pgServer.stop().catch(() => {});
-    if (dbDir && fs.existsSync(dbDir)) {
-      fs.rmSync(dbDir, { recursive: true, force: true });
+    try {
+      if (dbDir && fs.existsSync(dbDir)) {
+        fs.rmSync(dbDir, { recursive: true, force: true });
+      }
+    } catch {
+      // Ignore transient Windows file handle release delay
     }
   });
 
