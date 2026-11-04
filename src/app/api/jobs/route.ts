@@ -5,36 +5,42 @@ import { DynamicPromptCompiler } from '@/lib/engine/compiler';
 import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { getSessionFromRequest } from '@/lib/auth/session';
-import { DurableStore } from '@/lib/db/store';
+import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
 
 export const runtime = 'edge';
 
 const router = new ProviderRouter();
 
-// Simple in-memory rate limiter per workspace (sliding window: max 10 requests / min)
-const rateLimitMap: Map<string, number[]> = new Map();
-
-function checkRateLimit(workspaceId: string): boolean {
-  const now = Date.now();
-  const windowMs = 60 * 1000;
-  const maxReqs = 10;
-
-  const timestamps = (rateLimitMap.get(workspaceId) || []).filter((t) => now - t < windowMs);
-  if (timestamps.length >= maxReqs) {
-    return false;
+/**
+ * Validates CSRF via Origin / Referer header for state-changing POST requests
+ */
+function isCsrfSafe(req: NextRequest): boolean {
+  if (process.env.NODE_ENV === 'test') return true;
+  const origin = req.headers.get('origin');
+  const host = req.headers.get('host');
+  if (origin && host) {
+    try {
+      const originHost = new URL(origin).host;
+      return originHost === host;
+    } catch {
+      return false;
+    }
   }
-  timestamps.push(now);
-  rateLimitMap.set(workspaceId, timestamps);
   return true;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Authenticate Session
+    // 1. CSRF Protection
+    if (!isCsrfSafe(req)) {
+      return NextResponse.json({ error: 'Permintaan ditolak: Ralat pengesahan Origin CSRF.' }, { status: 403 });
+    }
+
+    // 2. Strict Authentication Requirement
     const session = await getSessionFromRequest(req);
     if (!session) {
       return NextResponse.json(
-        { error: 'Sila log masuk untuk menghantar tugasan penjanaan video.' },
+        { error: 'Akses Ditolak: Anda mesti log masuk untuk menghantar tugasan penjanaan video.' },
         { status: 401 }
       );
     }
@@ -42,16 +48,21 @@ export async function POST(req: NextRequest) {
     const workspaceId = session.workspaceId;
     const isSuperAdmin = session.role === 'superadmin';
 
-    // 2. Apply Rate Limiting
-    if (!checkRateLimit(workspaceId)) {
+    // 3. Plan-Specific Concurrency Limit Enforcement
+    const maxConcurrent = PLAN_CONCURRENCY_LIMITS[session.tier] || 1;
+    const activeJobsCount = await DurableStore.countActiveJobs(workspaceId);
+    if (activeJobsCount >= maxConcurrent && !isSuperAdmin) {
       return NextResponse.json(
-        { error: 'Had permintaan tercapai (Maksimum 10 tugasan per minit). Sila tunggu sebentar.' },
+        {
+          error: `Had penjanaan serentak dicapai (${activeJobsCount}/${maxConcurrent} tugasan aktif). Pelan ${session.tier.toUpperCase()} membenarkan ${maxConcurrent} video diproses serentak. Sila tunggu video semasa selesai.`,
+        },
         { status: 429 }
       );
     }
 
     const body = await req.json();
     const {
+      clientRequestId,
       productName,
       productCategory = 'General',
       productFacts = [],
@@ -64,24 +75,51 @@ export async function POST(req: NextRequest) {
       imageKeys = [],
     } = body;
 
-    // Disallow mock provider for normal users in production
+    // Disallow mock provider for non-admin accounts in production
     if (requestedProvider === 'mock' && !isSuperAdmin && process.env.NODE_ENV === 'production') {
       return NextResponse.json(
-        { error: 'Pembekal Mock tidak dibenarkan dalam akaun produksi.' },
+        { error: 'Pembekal Mock dilarang sama sekali dalam persekitaran produksi.' },
         { status: 403 }
       );
     }
 
+    // 4. Stable Idempotency & Duplicate Request Protection
+    if (clientRequestId && typeof clientRequestId === 'string') {
+      const existingJob = await DurableStore.getJobByClientRequestId(workspaceId, clientRequestId);
+      if (existingJob) {
+        // Return existing acknowledged job without triggering a new chargeable task
+        return NextResponse.json({
+          success: true,
+          jobId: existingJob.id,
+          providerTaskId: existingJob.providerTaskId || null,
+          provider: existingJob.provider,
+          styleId: existingJob.styleId,
+          styleName: existingJob.styleName,
+          status: existingJob.status,
+          reservedCredits: existingJob.requiredCredits,
+          isDuplicateSubmission: true,
+        });
+      }
+    }
+
+    // 5. Video Style Verification
     const targetStyleId = styleId || presetId || 'NX01';
     const style = getVideoStyle(targetStyleId);
     if (!style) {
       return NextResponse.json(
-        { error: `Gaya video '${targetStyleId}' tidak ditemui dalam Video Style Registry.` },
+        { error: `Gaya video '${targetStyleId}' tidak sah atau tiada dalam Video Style Registry.` },
         { status: 400 }
       );
     }
 
-    // Provider resolution & compatibility check
+    if (style.publicationStatus !== 'published') {
+      return NextResponse.json(
+        { error: `Gaya video '${targetStyleId}' belum diterbitkan untuk kegunaan umum.` },
+        { status: 400 }
+      );
+    }
+
+    // 6. Provider Resolution & Explicit Configuration Check
     const durationSeconds = style.durationSeconds;
     const providerName = (requestedProvider || style.engine) as any;
 
@@ -93,7 +131,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 503 });
     }
 
-    // 3. Extract Product Intelligence & Scene Plan via AI Creative Director
+    // 7. Product Profile & Prompt Compilation
     const productProfile = AICreativeDirector.extractProductProfile({
       productName,
       productCategory,
@@ -104,7 +142,6 @@ export async function POST(req: NextRequest) {
       modestyLock: isMuslimahModest,
     });
 
-    // 4. Compile Provider-Specific Prompt with Deterministic Preflight & Script Validation
     const compiled = DynamicPromptCompiler.compile(productProfile, style, scenePlan, {
       callToAction,
       isMuslimahModest,
@@ -118,7 +155,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Atomic, Transactional Credit Reservation
+    // 8. Atomic, Database-Enforced Credit Reservation
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const idempotencyKey = `idem_${jobId}`;
     const requiredCredits = router.calculateCreditCost(durationSeconds as any, providerAdapter.name);
@@ -134,12 +171,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: reservation.error }, { status: 402 });
     }
 
-    // 6. Job State Transitions
-    JobStateMachine.transition('DRAFT', 'VALIDATING', { jobId });
-    JobStateMachine.transition('VALIDATING', 'QUEUED', { jobId });
-    JobStateMachine.transition('QUEUED', 'SUBMITTING', { jobId });
+    // 9. Persist Job Record to Database with SUBMITTING status BEFORE calling provider API
+    await DurableStore.saveJob({
+      id: jobId,
+      workspaceId,
+      userId: session.userId,
+      clientRequestId,
+      styleId: style.id,
+      styleName: style.name,
+      provider: providerAdapter.name,
+      durationSeconds,
+      status: 'SUBMITTING',
+      productName: productProfile.name,
+      productCategory: productProfile.category,
+      requiredCredits,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
 
-    // 7. Dispatch to AI Provider Adapter
+    // 10. Provider API Dispatch
     const mainImage = imageKeys.length > 0 ? imageKeys[0] : undefined;
     let submitResult;
     try {
@@ -153,31 +203,23 @@ export async function POST(req: NextRequest) {
         mainImageKeyOrUrl: mainImage,
         referenceImageKeysOrUrls: imageKeys.slice(1),
       });
+
+      // Immediately persist providerTaskId and transition status to PROCESSING
+      await DurableStore.updateJobStatus(jobId, {
+        providerTaskId: submitResult.providerTaskId,
+        status: 'PROCESSING',
+      });
     } catch (submitErr: unknown) {
-      // Release reserved credits immediately on upstream submission crash
+      // Safe Rollback: release reserved credits immediately if provider dispatch fails
       await DurableStore.releaseCredits(workspaceId, jobId, `rel_${idempotencyKey}`);
+      await DurableStore.updateJobStatus(jobId, {
+        status: 'FAILED',
+        errorMessage: submitErr instanceof Error ? submitErr.message : 'Kegagalan komunikasi pembekal AI.',
+      });
       throw submitErr;
     }
 
-    // 8. Persist Job Record to Durable Store
-    await DurableStore.saveJob({
-      id: jobId,
-      workspaceId,
-      userId: session.userId,
-      styleId: style.id,
-      styleName: style.name,
-      provider: providerAdapter.name,
-      providerTaskId: submitResult.providerTaskId,
-      durationSeconds,
-      status: 'SUBMITTED',
-      productName: productProfile.name,
-      productCategory: productProfile.category,
-      requiredCredits,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    // 9. Build Customer-Safe Response (Do not expose internal prompt compilation to non-admins)
+    // 11. Customer-Safe Response
     const baseResponse: Record<string, unknown> = {
       success: true,
       jobId,
@@ -185,7 +227,7 @@ export async function POST(req: NextRequest) {
       provider: providerAdapter.name,
       styleId: style.id,
       styleName: style.name,
-      status: 'SUBMITTED',
+      status: 'PROCESSING',
       reservedCredits: requiredCredits,
       estimatedWaitSeconds: submitResult.estimatedWaitSeconds || 45,
     };
@@ -207,28 +249,38 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const providerTaskId = searchParams.get('providerTaskId');
   const jobId = searchParams.get('jobId');
-  const provider = searchParams.get('provider') || 'nexabot';
   const listMode = searchParams.get('list');
 
-  // Authenticate session for user-specific queries
+  // Authenticate session
   const session = await getSessionFromRequest(req);
 
-  // 1. Polling a Specific Job Status
+  // 1. Polling a Specific Job (Strict Ownership Verification)
   if (providerTaskId || jobId) {
     if (!session) {
       return NextResponse.json(
-        { error: 'Sila log masuk untuk menyemak status tugasan.' },
+        { error: 'Akses Ditolak: Anda mesti log masuk untuk menyemak status tugasan.' },
         { status: 401 }
       );
     }
 
-    // Look up job in durable store
-    const job = jobId
-      ? await DurableStore.getJob(jobId)
-      : await DurableStore.getJobByProviderTaskId(providerTaskId!);
+    // Strict Database Lookup: Task must exist in the database
+    let job = null;
+    if (jobId) {
+      job = await DurableStore.getJob(jobId);
+    } else if (providerTaskId) {
+      job = await DurableStore.getJobByProviderTaskId(providerTaskId, session.workspaceId);
+    }
 
-    // Enforce Tenant Ownership: users can only view their own jobs
-    if (job && job.workspaceId !== session.workspaceId && session.role !== 'superadmin') {
+    // If job does not exist in our system, return 404
+    if (!job) {
+      return NextResponse.json(
+        { error: 'Tugasan video tidak ditemui dalam pangkalan data.' },
+        { status: 404 }
+      );
+    }
+
+    // Enforce Tenant Ownership: Reject cross-workspace inspection
+    if (job.workspaceId !== session.workspaceId && session.role !== 'superadmin') {
       return NextResponse.json(
         { error: 'Akses Ditolak: Anda tidak mempunyai kebenaran melihat tugasan akaun lain.' },
         { status: 403 }
@@ -236,21 +288,25 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const activeTaskId = providerTaskId || job?.providerTaskId;
+      const activeTaskId = job.providerTaskId;
       if (!activeTaskId) {
-        return NextResponse.json({ error: 'ID tugasan pembekal tidak ditemui.' }, { status: 404 });
+        return NextResponse.json({
+          jobId: job.id,
+          status: job.status,
+          rawStatus: 'Menunggu dispatch pembekal...',
+        });
       }
 
-      const activeProvider = (job?.provider || provider) as any;
-      const adapter = router.resolveProvider(10, activeProvider, session.role === 'superadmin');
+      // Query provider adapter using the validated job's providerTaskId
+      const adapter = router.resolveProvider(10, job.provider, session.role === 'superadmin');
       const statusRes = await adapter.getStatus(activeTaskId);
 
       let outputRes = null;
       if (statusRes.normalizedStatus === 'COMPLETED') {
         outputRes = await adapter.getOutputs(activeTaskId);
 
-        // Transactional Credit Settlement when video output is verified
-        if (job && outputRes?.videoUrl) {
+        // Atomic settlement upon verified MP4 URL
+        if (outputRes?.videoUrl && job.status !== 'COMPLETED') {
           await DurableStore.settleCredits(
             job.workspaceId,
             job.id,
@@ -264,8 +320,7 @@ export async function GET(req: NextRequest) {
           });
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
-        // Release reserved credits on failure
-        if (job) {
+        if (job.status !== 'FAILED') {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_${job.id}`);
           await DurableStore.updateJobStatus(job.id, {
             status: 'FAILED',
@@ -276,8 +331,9 @@ export async function GET(req: NextRequest) {
       }
 
       return NextResponse.json({
+        jobId: job.id,
         providerTaskId: activeTaskId,
-        provider: activeProvider,
+        provider: job.provider,
         status: statusRes.normalizedStatus,
         progress: statusRes.progressPercent,
         rawStatus: statusRes.rawStatus,
@@ -289,19 +345,19 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 2. Fetch User's Recent Production Queue / Jobs List
+  // 2. Fetch User's Recent Production Queue
   if (listMode && session) {
     const jobs = await DurableStore.listJobs(session.workspaceId, 20);
     return NextResponse.json({ jobs });
   }
 
-  // 3. Public Service & Video Styles Catalogue Metadata
+  // 3. Public Service & Style Registry Catalogue Summary
   const styles = getAllVideoStyles();
   return NextResponse.json({
     status: 'ONLINE',
     brand: 'AffiMatik by Pawarna',
     tagline: 'Affiliate Jadi Automatik',
-    version: '2.1.1',
+    version: '2.1.2',
     catalogueSummary: {
       totalStyles: styles.length,
       qualityVerified: styles.filter((s) => s.qualityStatus === 'quality_verified').length,
