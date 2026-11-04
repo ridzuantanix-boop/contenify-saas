@@ -105,8 +105,8 @@ BEGIN
 
     IF NOT FOUND THEN
         -- Auto-provision initial wallet with 10 free credits for valid workspace
-        INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_granted, lifetime_spent, created_at, updated_at)
-        VALUES (p_workspace_id, 10, 0, 10, 0, NOW(), NOW())
+        INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_granted, lifetime_spent, updated_at)
+        VALUES (p_workspace_id, 10, 0, 10, 0, NOW())
         RETURNING * INTO v_wallet;
     END IF;
 

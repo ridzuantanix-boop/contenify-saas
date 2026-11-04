@@ -63,6 +63,14 @@ export async function POST(req: NextRequest) {
       imageKeys = [],
     } = body;
 
+    // Mandate clientRequestId to prevent accidental non-idempotent job creation
+    if (!clientRequestId || typeof clientRequestId !== 'string' || clientRequestId.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Permintaan tidak sah: clientRequestId (UUID unik) wajib disertakan untuk setiap penjanaan video.' },
+        { status: 400 }
+      );
+    }
+
     // Disallow mock provider for non-admin accounts in production
     if (requestedProvider === 'mock' && !isSuperAdmin && process.env.NODE_ENV === 'production') {
       return NextResponse.json(

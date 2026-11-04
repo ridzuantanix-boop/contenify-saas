@@ -3,8 +3,37 @@
 -- PostgreSQL / Supabase Migration
 -- ============================================================================
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Ensure Supabase standard roles exist if running on vanilla PostgreSQL
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+        CREATE ROLE anon;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+        CREATE ROLE authenticated;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+        CREATE ROLE service_role;
+    END IF;
+END $$;
+
+-- Enable UUID extension or fallback to native gen_random_uuid()
+DO $$
+BEGIN
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+EXCEPTION WHEN OTHERS THEN
+    NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION uuid_generate_v4() RETURNS uuid AS $$
+    SELECT gen_random_uuid();
+$$ LANGUAGE sql;
+
+-- Ensure auth schema and auth.uid() stub exist for RLS policies
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS $$
+    SELECT '00000000-0000-0000-0000-000000000000'::uuid;
+$$ LANGUAGE sql;
 
 -- ----------------------------------------------------------------------------
 -- 1. TENANCY & WORKSPACES

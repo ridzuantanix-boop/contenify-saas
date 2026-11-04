@@ -124,10 +124,13 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // Fetch member role in workspace
+          // Verify active workspace membership and workspace status
+          let activeMembershipFound = false;
+
+          // 1. Check default_workspace_id first if specified
           if (verifiedWorkspaceId) {
             const memberRes = await fetch(
-              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?workspace_id=eq.${encodeURIComponent(verifiedWorkspaceId)}&user_id=eq.${encodeURIComponent(verifiedUserId)}&select=role`,
+              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?workspace_id=eq.${encodeURIComponent(verifiedWorkspaceId)}&user_id=eq.${encodeURIComponent(verifiedUserId)}&select=role,workspaces(id,status,tier)`,
               {
                 headers: {
                   apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -138,9 +141,49 @@ export async function POST(req: NextRequest) {
             if (memberRes.ok) {
               const members = await memberRes.json();
               if (members && members.length > 0) {
-                verifiedRole = members[0].role || 'member';
+                const mem = members[0];
+                const ws = mem.workspaces;
+                if (ws && ws.status === 'active') {
+                  verifiedRole = mem.role || 'member';
+                  verifiedTier = ws.tier || verifiedTier;
+                  activeMembershipFound = true;
+                }
               }
             }
+          }
+
+          // 2. If default workspace membership is missing or invalid, search for any valid active workspace membership
+          if (!activeMembershipFound) {
+            const anyMemberRes = await fetch(
+              `${process.env.SUPABASE_URL}/rest/v1/workspace_members?user_id=eq.${encodeURIComponent(verifiedUserId)}&select=workspace_id,role,workspaces(id,status,tier)&limit=1`,
+              {
+                headers: {
+                  apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+                  Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+              }
+            );
+            if (anyMemberRes.ok) {
+              const anyMembers = await anyMemberRes.json();
+              if (anyMembers && anyMembers.length > 0) {
+                const mem = anyMembers[0];
+                const ws = mem.workspaces;
+                if (ws && ws.status === 'active') {
+                  verifiedWorkspaceId = mem.workspace_id;
+                  verifiedRole = mem.role || 'member';
+                  verifiedTier = ws.tier || verifiedTier;
+                  activeMembershipFound = true;
+                }
+              }
+            }
+          }
+
+          // 3. In production, strictly reject issuing a session if no active valid membership exists
+          if (!activeMembershipFound && process.env.NODE_ENV === 'production') {
+            return NextResponse.json(
+              { error: 'Akses Ditolak: Tiada rekod keahlian ruang kerja (workspace) yang aktif untuk akaun ini.' },
+              { status: 403 }
+            );
           }
         }
       } catch (err: unknown) {
