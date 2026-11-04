@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Upload,
@@ -35,7 +35,7 @@ interface UploadedFilePreview {
   dataUrl: string;
 }
 
-export default function VideoFactoryPage() {
+function VideoFactoryContent() {
   const searchParams = useSearchParams();
   const initialStyleId = searchParams.get('styleId') || 'NX01';
 
@@ -708,5 +708,19 @@ export default function VideoFactoryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VideoFactoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </div>
+      }
+    >
+      <VideoFactoryContent />
+    </Suspense>
   );
 }
