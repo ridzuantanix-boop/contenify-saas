@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Upload,
   Sparkles,
@@ -15,8 +16,17 @@ import {
   Loader2,
   Clock,
   Volume2,
+  VolumeX,
+  Heart,
+  Search,
+  Filter,
+  Check,
+  Zap,
 } from 'lucide-react';
-import { OFFICIAL_GEMS_PRESETS, PromptPreset } from '@/lib/gems/presets';
+import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles } from '@/lib/styles/registry';
+import { VideoStyle, StyleCategory } from '@/lib/styles/types';
+import { AICreativeDirector } from '@/lib/engine/creative-director';
+import { SmartStyleMatcher } from '@/lib/engine/smart-match';
 
 interface UploadedFilePreview {
   id: string;
@@ -26,23 +36,31 @@ interface UploadedFilePreview {
 }
 
 export default function VideoFactoryPage() {
+  const searchParams = useSearchParams();
+  const initialStyleId = searchParams.get('styleId') || 'NX01';
+
   const [mode, setMode] = useState<'quick' | 'advanced'>('quick');
 
-  // Step 1: Assets (Optional Inputs, Auto-Research from Image)
+  // Step 1: Product Assets (Optional details, Auto-Research)
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
   const [productFacts, setProductFacts] = useState('');
   const [images, setImages] = useState<UploadedFilePreview[]>([]);
 
-  // Step 2: Presets & Controls
-  const [selectedPresetId, setSelectedPresetId] = useState<string>(OFFICIAL_GEMS_PRESETS[0].id);
-  const [duration, setDuration] = useState<10 | 15>(10);
+  // Step 2: Selected Video Style
+  const [selectedStyleId, setSelectedStyleId] = useState<string>(initialStyleId);
+  const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
+  const [voiceFilter, setVoiceFilter] = useState<'all' | 'with_voice' | 'no_voice'>('all');
+  const [styleSearch, setStyleSearch] = useState('');
+  const [favorites, setFavorites] = useState<string[]>(['NX01', 'RH01']);
+
+  // Step 3: Advanced Studio Controls
   const [ctaOption, setCtaOption] = useState<'spoken_button' | 'spoken_bio' | 'none'>('spoken_button');
   const [isMuslimahModest, setIsMuslimahModest] = useState(true);
   const [customPrompt, setCustomPrompt] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState<'auto' | 'nexabot' | 'runninghub'>('auto');
+  const [customEnvironment, setCustomEnvironment] = useState('');
 
-  // Status & Preflight
+  // Status & Polling
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -50,15 +68,42 @@ export default function VideoFactoryPage() {
   const [activeJobProgress, setActiveJobProgress] = useState<number>(0);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
 
-  const selectedPreset = OFFICIAL_GEMS_PRESETS.find(p => p.id === selectedPresetId) || OFFICIAL_GEMS_PRESETS[0];
+  // Selected Style
+  const selectedStyle = useMemo(() => {
+    return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
+  }, [selectedStyleId]);
 
-  // Duration changes preset compatibility
-  const handleSelectPreset = (preset: PromptPreset) => {
-    setSelectedPresetId(preset.id);
-    setDuration(preset.targetDurationSeconds);
+  // Product Profile & Smart Style Match
+  const productProfile = useMemo(() => {
+    return AICreativeDirector.extractProductProfile({
+      productName,
+      productCategory,
+      productFacts: productFacts ? productFacts.split(',').map((s) => s.trim()).filter(Boolean) : [],
+    });
+  }, [productName, productCategory, productFacts]);
+
+  const smartRecommendations = useMemo(() => {
+    return SmartStyleMatcher.recommend(productProfile, VIDEO_STYLES_REGISTRY);
+  }, [productProfile]);
+
+  // Filtered Styles
+  const filteredStyles = useMemo(() => {
+    return filterVideoStyles({
+      category: styleCategoryFilter === 'all' ? undefined : styleCategoryFilter,
+      hasVoice: voiceFilter === 'all' ? undefined : voiceFilter === 'with_voice',
+      searchQuery: styleSearch.trim() || undefined,
+    });
+  }, [styleCategoryFilter, voiceFilter, styleSearch]);
+
+  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
-  // Simulated file upload preview
+  // Image upload handler
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -84,8 +129,8 @@ export default function VideoFactoryPage() {
     setImages((prev) => prev.filter((img) => img.id !== id));
   };
 
-  // Preflight calculations (User only needs at least 1 image OR product name)
-  const resolvedProvider = duration === 10 ? 'nexabot' : 'runninghub';
+  // Preflight calculations (Single image OR product name + sufficient credits)
+  const duration = selectedStyle.durationSeconds;
   const expectedCredits = duration === 10 ? 10 : 15;
   const userBalance = 10;
   const hasEnoughCredits = userBalance >= expectedCredits;
@@ -104,12 +149,10 @@ export default function VideoFactoryPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          styleId: selectedStyle.id,
           productName: productName.trim() || undefined,
           productCategory: productCategory.trim() || undefined,
           productFacts: productFacts ? productFacts.split(',').map((s) => s.trim()).filter(Boolean) : [],
-          presetId: selectedPreset.id,
-          durationSeconds: duration,
-          provider: selectedProvider === 'auto' ? resolvedProvider : selectedProvider,
           callToAction: ctaOption,
           isMuslimahModest,
           customPrompt: mode === 'advanced' ? customPrompt : undefined,
@@ -122,13 +165,13 @@ export default function VideoFactoryPage() {
         throw new Error(data.error || 'Gagal menghantar tugasan video');
       }
 
-      setSubmitSuccess(`Tugasan dihantar! ID Task: ${data.providerTaskId}`);
+      setSubmitSuccess(`Tugasan dihantar! ID Task: ${data.providerTaskId} (${selectedStyle.name})`);
       setActiveJobStatus('Sedang diproses oleh pelayan AI...');
       setActiveJobProgress(30);
 
       // Mulakan polling status
       const providerTaskId = data.providerTaskId;
-      const providerName = data.provider || 'nexabot';
+      const providerName = data.provider || selectedStyle.engine;
       let pollCount = 0;
       const pollInterval = setInterval(async () => {
         pollCount++;
@@ -166,7 +209,7 @@ export default function VideoFactoryPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
       {/* Header & Mode Switch */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
@@ -180,16 +223,16 @@ export default function VideoFactoryPage() {
             Affiliate Jadi Automatik.
           </p>
           <p className="text-xs text-slate-500">
-            Dari Research Produk, Video AI Hingga Auto-Posting — Semua Dalam Satu Platform.
+            Satu Produk + Satu Video Style + Satu Klik = Satu Video Realistik.
           </p>
         </div>
 
         {/* Mode Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-slate-200/70 border border-slate-200 text-xs font-semibold">
+        <div className="flex items-center p-1 rounded-xl bg-slate-200/70 border border-slate-200 text-xs font-semibold self-start sm:self-auto">
           <button
             onClick={() => setMode('quick')}
             className={`px-4 py-1.5 rounded-lg transition-all ${
-              mode === 'quick' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              mode === 'quick' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Quick Factory
@@ -197,7 +240,7 @@ export default function VideoFactoryPage() {
           <button
             onClick={() => setMode('advanced')}
             className={`px-4 py-1.5 rounded-lg transition-all ${
-              mode === 'advanced' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              mode === 'advanced' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Advanced Studio
@@ -206,31 +249,34 @@ export default function VideoFactoryPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Form & Config (2 cols) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* STEP 1: Product Assets (Photo Upload First, Details Optional) */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-5">
+        {/* Left Column: Factory Flow (2 cols) */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* ================================================================= */}
+          {/* STEP 1: Select Product (Upload or My Products)                    */}
+          {/* ================================================================= */}
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
                   1
                 </div>
-                <h3 className="font-semibold text-slate-900 text-sm">Foto Produk (AI Auto-Research)</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Pilih atau Muat Naik Foto Produk</h3>
               </div>
-              <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Pengecaman AI Aktif
+              <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                <Zap className="w-3 h-3 text-emerald-600" />
+                AI Creative Director Aktif
               </span>
             </div>
 
-            {/* Bulk Upload Area */}
+            {/* Upload Area */}
             <div>
               <label className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-2xl p-7 flex flex-col items-center justify-center cursor-pointer bg-indigo-50/20 hover:bg-indigo-50/40 transition">
-                <div className="w-12 h-12 rounded-xl bg-white shadow-xs flex items-center justify-center mb-3 text-indigo-600 border border-indigo-100">
+                <div className="w-12 h-12 rounded-xl bg-white shadow-2xs flex items-center justify-center mb-3 text-indigo-600 border border-indigo-100">
                   <Upload className="w-6 h-6" />
                 </div>
-                <span className="text-sm font-bold text-slate-800">Muat Naik Foto Produk Anda</span>
+                <span className="text-sm font-bold text-slate-800">Muat Naik Gambar Produk Anda</span>
                 <span className="text-xs text-slate-500 mt-1 text-center max-w-sm">
-                  Cukup sekadar muat naik foto produk. Nexabot & AI AffiMatik akan imbas bungkusan produk, teks label, dan jana video affiliate realistik secara automatik.
+                  Cukup sekadar muat naik foto produk. AI akan mengesan bungkusan, teks label, dan menyediakan video secara automatik.
                 </span>
                 <span className="text-[11px] text-indigo-600 font-semibold mt-3 px-3 py-1 bg-white rounded-lg border border-indigo-100 shadow-2xs">
                   Pilih Gambar (PNG, JPG, WEBP)
@@ -254,7 +300,7 @@ export default function VideoFactoryPage() {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {images.map((img) => (
-                    <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+                    <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover" />
                       <button
@@ -270,7 +316,7 @@ export default function VideoFactoryPage() {
               </div>
             )}
 
-            {/* Optional Details (Collapsible/Optional) */}
+            {/* Optional Metadata Section */}
             <div className="pt-2 border-t border-slate-100">
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                 <div>
@@ -323,166 +369,228 @@ export default function VideoFactoryPage() {
             </div>
           </div>
 
-          {/* STEP 2: Official Gems Preset */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center">
-                2
+          {/* ================================================================= */}
+          {/* STEP 2: Choose Video Style (Smart Match + Library)                */}
+          {/* ================================================================= */}
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                  2
+                </div>
+                <h3 className="font-bold text-slate-900 text-sm">Pilih Video Style (Gaya Video)</h3>
               </div>
-              <h3 className="font-semibold text-slate-900 text-sm">Pilih Official Gems Preset</h3>
+              <span className="text-xs text-slate-500">
+                Gaya Dipilih: <strong className="text-indigo-600">{selectedStyle.name}</strong>
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {OFFICIAL_GEMS_PRESETS.map((preset) => {
-                const isSelected = preset.id === selectedPresetId;
-                return (
-                  <div
-                    key={preset.id}
-                    onClick={() => handleSelectPreset(preset)}
-                    className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-indigo-600 bg-indigo-50/40 shadow-xs ring-1 ring-indigo-600'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">{preset.name}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-700">
-                        {preset.targetDurationSeconds}s
-                      </span>
+            {/* Smart Style Match Recommendations */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                  Cadangan Smart Style Match (AI Match):
+                </span>
+                <span className="text-[10px] text-slate-400">Padanan berdasar format & kategori produk</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {smartRecommendations.map(({ style, matchReason }) => {
+                  const isSelected = style.id === selectedStyle.id;
+                  const hasVoice = style.audioMode === 'spoken_bm';
+
+                  return (
+                    <div
+                      key={style.id}
+                      onClick={() => setSelectedStyleId(style.id)}
+                      className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500 shadow-xs'
+                          : 'border-slate-200 hover:border-indigo-300 bg-white'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase font-mono text-indigo-600">
+                            {style.id}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">
+                            {style.durationSeconds}s
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-xs text-slate-900 mt-1">{style.name}</h4>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{style.benefit}</p>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span className="truncate">{matchReason}</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
-                      {preset.description}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Quick Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-100">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Durasi Video</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDuration(10)}
-                    className={`py-1.5 px-3 rounded-lg text-xs font-semibold border ${
-                      duration === 10
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
+            {/* Full Style Library Filter Toolbar */}
+            <div className="pt-2 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">Semak Semua Video Styles ({filteredStyles.length}):</span>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={voiceFilter}
+                    onChange={(e) => setVoiceFilter(e.target.value as any)}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs bg-white text-slate-700"
                   >
-                    10 Saat (Nexabot)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDuration(15)}
-                    className={`py-1.5 px-3 rounded-lg text-xs font-semibold border ${
-                      duration === 15
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    15 Saat (RunningHub)
-                  </button>
+                    <option value="all">Semua Audio</option>
+                    <option value="with_voice">Dengan Suara (10s)</option>
+                    <option value="no_voice">Tanpa Suara (15s)</option>
+                  </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Ajakan Bertindak (CTA)</label>
-                <select
-                  value={ctaOption}
-                  onChange={(e) => setCtaOption(e.target.value as any)}
-                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 bg-white"
-                >
-                  <option value="spoken_button">Lisan: "Tekan butang di bawah"</option>
-                  <option value="spoken_bio">Lisan: "Link di bio"</option>
-                  <option value="none">Tiada CTA Jualan (Branding sahaja)</option>
-                </select>
-              </div>
+              {/* Grid of Styles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                {filteredStyles.map((style) => {
+                  const isSelected = style.id === selectedStyle.id;
+                  const hasVoice = style.audioMode === 'spoken_bm';
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Gaya Model Muslimah</label>
-                <button
-                  type="button"
-                  onClick={() => setIsMuslimahModest(!isMuslimahModest)}
-                  className={`w-full py-1.5 px-3 rounded-lg text-xs font-semibold border ${
-                    isMuslimahModest
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : 'bg-slate-50 text-slate-600 border-slate-200'
-                  }`}
-                >
-                  {isMuslimahModest ? '✓ Bertudung Labuh & Sopan' : 'Gaya Moden Standard'}
-                </button>
+                  return (
+                    <div
+                      key={style.id}
+                      onClick={() => setSelectedStyleId(style.id)}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase">
+                            {style.id}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">
+                              {style.durationSeconds}s
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                              hasVoice ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'
+                            }`}>
+                              {hasVoice ? 'Voice' : 'No Voice'}
+                            </span>
+                          </div>
+                        </div>
+                        <h4 className="font-bold text-xs text-slate-900 mt-1">{style.name}</h4>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                          {style.benefit}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Enjin: <strong className="text-slate-700 uppercase">{style.engine}</strong></span>
+                        <span className="font-semibold text-indigo-600">
+                          {isSelected ? '✓ Dipilih' : 'Pilih'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+          </div>
 
-            {/* Advanced Extra Controls */}
-            {mode === 'advanced' && (
-              <div className="pt-4 border-t border-slate-100 space-y-3">
+          {/* ================================================================= */}
+          {/* ADVANCED STUDIO (Only shown in Advanced Mode)                     */}
+          {/* ================================================================= */}
+          {mode === 'advanced' && (
+            <div className="p-6 rounded-2xl bg-white border border-indigo-200 shadow-xs space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                <Sliders className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-slate-900 text-sm">Advanced Studio (Kawalan Tersuai)</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Pilihan Enjin Pemprosesan (Manual Override)
+                    Call To Action (CTA) Pertuturan
                   </label>
                   <select
-                    value={selectedProvider}
-                    onChange={(e) => setSelectedProvider(e.target.value as any)}
-                    className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+                    value={ctaOption}
+                    onChange={(e) => setCtaOption(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white"
                   >
-                    <option value="auto">Auto Router Pintar (Nexabot 10s / RunningHub 15s)</option>
-                    <option value="nexabot">Nexabot (10s Spoken BM)</option>
-                    <option value="runninghub">RunningHub (15s Visual WebApp)</option>
+                    <option value="spoken_button">Lisan: &quot;Tekan butang di bawah&quot;</option>
+                    <option value="spoken_bio">Lisan: &quot;Tengok link di bio&quot;</option>
+                    <option value="none">Tiada Call To Action (Neutral)</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Custom Prompt Injection (Pilihan Tambahan)
+                    Modesti Muslimah (Shariah Lock)
                   </label>
-                  <textarea
-                    rows={2}
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs"
-                    placeholder="Masukkan arahan terperinci untuk pencahayaan, gerak kamera atau skrip khusus..."
-                  />
+                  <select
+                    value={isMuslimahModest ? 'true' : 'false'}
+                    onChange={(e) => setIsMuslimahModest(e.target.value === 'true')}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white"
+                  >
+                    <option value="true">Muslimah Modest (Bertudung & Lengan Panjang)</option>
+                    <option value="false">Kasual Moden Sopan Malaysia</option>
+                  </select>
                 </div>
               </div>
-            )}
-          </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Custom Spoken Script / Prompt Injection (Pilihan)
+                </label>
+                <textarea
+                  rows={2}
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="Masukkan ayat pertuturan khas dalam Bahasa Melayu (hanya untuk gaya 10s)..."
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Column: Preflight Summary & Generate (1 col) */}
+        {/* Right Column: Preflight & Generation (1 col) */}
         <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm sticky top-24 space-y-5">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-24 space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
                 3
               </div>
-              <h3 className="font-semibold text-slate-900 text-sm">Ringkasan Preflight</h3>
+              <h3 className="font-bold text-slate-900 text-sm">Generation Preflight</h3>
             </div>
 
+            {/* Preflight Details */}
             <div className="space-y-2.5 text-xs text-slate-600">
               <div className="flex justify-between">
-                <span>Preset Dipilih:</span>
-                <span className="font-medium text-slate-900 text-right">{selectedPreset.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Durasi:</span>
-                <span className="font-medium text-slate-900">{duration} Saat</span>
+                <span>Gaya Video:</span>
+                <span className="font-bold text-slate-900 text-right">[{selectedStyle.id}] {selectedStyle.name}</span>
               </div>
               <div className="flex justify-between">
                 <span>Enjin Sasaran:</span>
-                <span className="font-medium text-indigo-700 uppercase">{resolvedProvider}</span>
+                <span className="font-bold uppercase text-indigo-600">{selectedStyle.engine}</span>
               </div>
               <div className="flex justify-between">
-                <span>Dialek & Bahasa:</span>
-                <span className="font-medium text-slate-900">Bahasa Melayu Standard (ms-MY)</span>
+                <span>Durasi:</span>
+                <span className="font-semibold text-slate-900">{selectedStyle.durationSeconds} Saat</span>
               </div>
               <div className="flex justify-between">
-                <span>Format Nisbah:</span>
-                <span className="font-medium text-slate-900">9:16 Menegak (TikTok/Reels)</span>
+                <span>Status Audio:</span>
+                <span className="font-semibold text-slate-900">
+                  {selectedStyle.audioMode === 'spoken_bm' ? 'Spoken BM Asli' : 'Strictly No Speech'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Nisbah Format:</span>
+                <span className="font-semibold text-slate-900">9:16 Menegak (TikTok/Shopee)</span>
               </div>
             </div>
 
@@ -500,11 +608,11 @@ export default function VideoFactoryPage() {
               </div>
             </div>
 
-            {/* Guardrail warnings */}
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
-              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+            {/* Realism & Modesty Alert */}
+            <div className="p-3 rounded-lg bg-indigo-50/70 border border-indigo-200 text-[11px] text-indigo-900 flex items-start gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-indigo-600" />
               <span>
-                <strong>Peraturan Pasaran Malaysia:</strong> Tiada butang kuning palsu pada visual. Audio lisan asli Bahasa Melayu.
+                <strong>Realism & Product Lock:</strong> Visual UGC iPhone 15 Pro, pencahayaan 5500K neutral, tiada butang kuning palsu atas visual.
               </span>
             </div>
 
@@ -520,6 +628,7 @@ export default function VideoFactoryPage() {
               </div>
             )}
 
+            {/* Realtime Progress Bar */}
             {activeJobStatus && isSubmitting && (
               <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-indigo-900">
@@ -538,6 +647,7 @@ export default function VideoFactoryPage() {
               </div>
             )}
 
+            {/* In-App Video Player */}
             {generatedVideoUrl && (
               <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
@@ -568,14 +678,14 @@ export default function VideoFactoryPage() {
               </div>
             )}
 
-            {/* Generate Action */}
+            {/* Primary Action Button */}
             <button
               type="button"
               disabled={!canGenerate || isSubmitting}
               onClick={handleGenerate}
-              className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition shadow-sm ${
+              className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition shadow-sm ${
                 canGenerate && !isSubmitting
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-indigo-200'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >

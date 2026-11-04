@@ -13,19 +13,22 @@ import {
   Film,
   CreditCard,
   ShieldCheck,
+  Send,
+  Sliders,
   Settings,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Video Factory', href: '/factory', icon: Video, badge: 'Quick / Adv' },
+  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '12 Gaya' },
   { name: 'Product Library', href: '/products', icon: ShoppingBag },
   { name: 'Avatar Library', href: '/avatars', icon: Users },
-  { name: 'Prompt Library', href: '/prompts', icon: Sparkles },
-  { name: 'Production Queue', href: '/queue', icon: ListOrdered },
   { name: 'Video Library', href: '/library', icon: Film },
-  { name: 'Billing & Pelan', href: '/billing', icon: CreditCard },
-  { name: 'Admin & Health', href: '/admin', icon: ShieldCheck },
+  { name: 'Production Queue', href: '/queue', icon: ListOrdered },
+  { name: 'Posting Automation', href: '#', icon: Send, badge: 'Akan Datang', disabled: true },
+  { name: 'Billing & Credits', href: '/billing', icon: CreditCard },
+  { name: 'Style Testing Lab', href: '/admin/styles', icon: ShieldCheck, badge: 'Admin' },
 ];
 
 export function Sidebar() {
@@ -57,13 +60,33 @@ export function Sidebar() {
           Studio Utama
         </div>
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = pathname === item.href || (item.href !== '#' && pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
+          if (item.disabled) {
+            return (
+              <div
+                key={item.name}
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-slate-400 opacity-70 cursor-not-allowed select-none"
+                title="Ciri ini akan dilancarkan tidak lama lagi"
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className="w-4 h-4 text-slate-400" />
+                  <span>{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold border border-amber-200">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-indigo-50 text-indigo-700 font-semibold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -74,7 +97,9 @@ export function Sidebar() {
                 <span>{item.name}</span>
               </div>
               {item.badge && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-normal">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-normal ${
+                  isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                }`}>
                   {item.badge}
                 </span>
               )}

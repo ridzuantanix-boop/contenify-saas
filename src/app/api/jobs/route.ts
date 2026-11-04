@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OFFICIAL_GEMS_PRESETS } from '@/lib/gems/presets';
-import { buildUniversalMasterprompt } from '@/lib/gems/prompt-builder';
+import { getVideoStyle, getAllVideoStyles } from '@/lib/styles/registry';
+import { AICreativeDirector } from '@/lib/engine/creative-director';
+import { DynamicPromptCompiler } from '@/lib/engine/compiler';
 import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { CreditManager } from '@/lib/orchestration/credit-manager';
@@ -18,8 +19,8 @@ export async function POST(req: NextRequest) {
       productName,
       productCategory = 'General',
       productFacts = [],
-      presetId = 'gem_real_affiliate',
-      durationSeconds = 10,
+      styleId,
+      presetId, // backward compatibility
       provider: requestedProvider,
       callToAction = 'spoken_button',
       isMuslimahModest = true,
@@ -31,14 +32,41 @@ export async function POST(req: NextRequest) {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const idempotencyKey = `idem_${jobId}`;
 
-    // 1. Find Preset
-    const preset = OFFICIAL_GEMS_PRESETS.find(p => p.id === presetId);
-    if (!preset) {
-      return NextResponse.json({ error: `Preset '${presetId}' tidak ditemui.` }, { status: 400 });
+    // 1. Find Video Style (supports both styleId and legacy presetId)
+    const targetStyleId = styleId || presetId || 'NX01';
+    const style = getVideoStyle(targetStyleId);
+    if (!style) {
+      return NextResponse.json({ error: `Gaya video '${targetStyleId}' tidak ditemui dalam Video Style Registry.` }, { status: 400 });
     }
 
-    // 2. Validate & Reserve Credits
-    const providerAdapter = router.resolveProvider(durationSeconds as any, requestedProvider);
+    // 2. Extract Product Intelligence & Scene Plan via AI Creative Director
+    const productProfile = AICreativeDirector.extractProductProfile({
+      productName,
+      productCategory,
+      productFacts: Array.isArray(productFacts) ? productFacts.filter(Boolean) : [],
+    });
+
+    const scenePlan = AICreativeDirector.createScenePlan(productProfile, style, {
+      modestyLock: isMuslimahModest,
+    });
+
+    // 3. Compile Provider-Specific Prompt with Deterministic Preflight
+    const compiled = DynamicPromptCompiler.compile(productProfile, style, scenePlan, {
+      callToAction,
+      isMuslimahModest,
+      customScript: customPrompt,
+    });
+
+    if (!compiled.preflightValid) {
+      return NextResponse.json(
+        { error: `Preflight gagal: ${compiled.validationErrors.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // 4. Validate & Reserve Credits
+    const durationSeconds = style.durationSeconds;
+    const providerAdapter = router.resolveProvider(durationSeconds as any, requestedProvider || style.engine);
     const requiredCredits = router.calculateCreditCost(durationSeconds as any, providerAdapter.name);
 
     const reservation = creditManager.reserveCredits(workspaceId, jobId, requiredCredits, `res_${idempotencyKey}`);
@@ -46,29 +74,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: reservation.error }, { status: 402 });
     }
 
-    // 3. Compile Universal Masterprompt
-    const compiled = buildUniversalMasterprompt({
-      preset,
-      productName: productName && productName.trim().length > 0 ? productName.trim() : undefined,
-      productCategory: productCategory || 'General',
-      productFacts: Array.isArray(productFacts) ? productFacts.filter(Boolean) : [],
-      callToAction,
-      isMuslimahModest,
-      scriptBody: customPrompt,
-    });
-
-    // 4. Job State Transitions
+    // 5. Job State Transitions
     JobStateMachine.transition('DRAFT', 'VALIDATING', { jobId });
     JobStateMachine.transition('VALIDATING', 'QUEUED', { jobId });
     JobStateMachine.transition('QUEUED', 'SUBMITTING', { jobId });
 
-    // 5. Submit to Provider Adapter
+    // 6. Submit to Provider Adapter
     const mainImage = imageKeys.length > 0 ? imageKeys[0] : undefined;
     const submitResult = await providerAdapter.submit({
       jobId,
       idempotencyKey,
       workspaceId,
-      prompt: compiled.masterPrompt,
+      prompt: compiled.providerPrompt,
       durationSeconds: durationSeconds as any,
       aspectRatio: '9:16',
       mainImageKeyOrUrl: mainImage,
@@ -80,10 +97,14 @@ export async function POST(req: NextRequest) {
       jobId,
       providerTaskId: submitResult.providerTaskId,
       provider: providerAdapter.name,
+      styleId: style.id,
+      styleName: style.name,
       status: 'SUBMITTED',
       reservedCredits: requiredCredits,
       estimatedWaitSeconds: submitResult.estimatedWaitSeconds || 45,
-      compiledPrompt: compiled.masterPrompt,
+      compiledPrompt: compiled.providerPrompt,
+      spokenScript: compiled.spokenScript || null,
+      audioDirective: compiled.audioDirective,
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -120,7 +141,18 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     status: 'ONLINE',
-    version: '0.1.0',
-    availablePresets: OFFICIAL_GEMS_PRESETS.map(p => ({ id: p.id, name: p.name, duration: p.targetDurationSeconds })),
+    brand: 'AffiMatik by Pawarna',
+    tagline: 'Affiliate Jadi Automatik',
+    version: '2.0.0',
+    availableStyles: getAllVideoStyles().map((s) => ({
+      id: s.id,
+      name: s.name,
+      benefit: s.benefit,
+      category: s.category,
+      duration: s.durationSeconds,
+      engine: s.engine,
+      audioMode: s.audioMode,
+      qualityStatus: s.qualityStatus,
+    })),
   });
 }
