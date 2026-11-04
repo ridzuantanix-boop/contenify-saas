@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Video,
@@ -9,12 +11,61 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  AlertTriangle,
+  Gift,
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchSession() {
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.wallet?.balance !== undefined) {
+            setBalance(data.wallet.balance);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    fetchSession();
+  }, []);
+
   return (
     <div className="space-y-8">
+      {/* Soft Launch Notice: 50 Free Credits */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-amber-50 border border-indigo-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <Gift className="w-5 h-5 text-amber-300" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                50 Kredit FREE Untuk Korang! 🎁
+              </h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                Akses Awal Percuma
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Tak payah keluar duit lagi. Cuba jana video AI pertama korang dan tengok sendiri hasilnya.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/factory"
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm whitespace-nowrap"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span>Jana Video Sekarang</span>
+        </Link>
+      </div>
+
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
@@ -52,10 +103,12 @@ export default function DashboardPage() {
             <span>Baki Kredit</span>
             <Sparkles className="w-4 h-4 text-indigo-500" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">10</div>
+          <div className="text-2xl font-bold text-slate-900 mt-2">
+            {balance !== null ? balance : 50}
+          </div>
           <div className="text-[11px] text-emerald-600 mt-1 flex items-center gap-1 font-medium">
             <CheckCircle2 className="w-3 h-3" />
-            <span>Kredit Pelan Asas Aktif</span>
+            <span>50 Kredit Percuma Aktif</span>
           </div>
         </div>
 

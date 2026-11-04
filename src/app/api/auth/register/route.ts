@@ -147,14 +147,14 @@ export async function POST(req: NextRequest) {
             throw new Error(`Pangkalan data gagal menetapkan keahlian ruang kerja: ${errText}`);
           }
 
-          // D. Atomically provision credit wallet (10 free credits + GRANT ledger entry)
+          // D. Atomically provision credit wallet (50 free trial credits + GRANT ledger entry)
           // Uses exact signature p_workspace_id and p_initial_balance
           const provRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
             method: 'POST',
             headers: sHeaders,
             body: JSON.stringify({
               p_workspace_id: workspaceId,
-              p_initial_balance: 10,
+              p_initial_balance: 50,
             }),
           });
 

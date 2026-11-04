@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { CreditCard, Check, Sparkles, ShieldCheck, Zap, History, Clock, ArrowDownRight, ArrowUpRight, AlertCircle, QrCode, Building, ExternalLink, RefreshCw } from 'lucide-react';
 import { AUTHORITATIVE_PLANS, GENERATION_COSTS, PricingPlan } from '@/lib/billing/plans';
 
@@ -34,6 +35,7 @@ export default function BillingPage() {
   const [reservedBalance, setReservedBalance] = useState<number>(0);
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [ledger, setLedger] = useState<LedgerItem[]>([]);
+  const [publicCheckoutEnabled, setPublicCheckoutEnabled] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   
   // Checkout modal states
@@ -55,6 +57,7 @@ export default function BillingPage() {
         setReservedBalance(data.reservedBalance || 0);
         setCurrentTier(data.currentTier || 'free');
         setLedger(data.ledger || []);
+        setPublicCheckoutEnabled(Boolean(data.publicCheckoutEnabled));
       }
     } catch {
       // ignore
@@ -68,6 +71,11 @@ export default function BillingPage() {
   }, []);
 
   async function handleStartCheckout(plan: PricingPlan, method: 'fpx' | 'card' = 'fpx') {
+    if (!publicCheckoutEnabled) {
+      setCheckoutError('Pelan berbayar belum dibuka untuk umum. Duit korang simpan dulu! Nikmati 50 kredit FREE dulu.');
+      return;
+    }
+
     setIsCheckingOut(true);
     setCheckoutError(null);
     setPaymentVerified(false);
@@ -84,7 +92,7 @@ export default function BillingPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal memulakan proses pembayaran.');
+        throw new Error(data.message || data.error || 'Gagal memulakan proses pembayaran.');
       }
 
       setCheckoutData(data);
@@ -167,17 +175,62 @@ export default function BillingPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedPlanModal(AUTHORITATIVE_PLANS[1]);
-            handleStartCheckout(AUTHORITATIVE_PLANS[1], 'fpx');
-          }}
-          className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
-        >
-          Beli Tambahan Kredit
-        </button>
+        {publicCheckoutEnabled ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedPlanModal(AUTHORITATIVE_PLANS[1]);
+              handleStartCheckout(AUTHORITATIVE_PLANS[1], 'fpx');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
+          >
+            Beli Tambahan Kredit
+          </button>
+        ) : (
+          <Link
+            href="/factory"
+            className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm whitespace-nowrap self-start sm:self-auto inline-flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Cuba FREE — 50 Kredit</span>
+          </Link>
+        )}
       </div>
+
+      {/* Soft Launch Notice: Coming Soon Friendly Malaysian Creator Copy */}
+      {!publicCheckoutEnabled && (
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border-2 border-amber-300 text-slate-800 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">😂</span>
+              <h3 className="text-base sm:text-lg font-extrabold text-amber-950">
+                Duit korang simpan dulu. Kami belum nak ambil lagi. 😂
+              </h3>
+            </div>
+            <span className="self-start sm:self-auto text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+              Pelan Berbayar — Coming Soon
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-amber-900 leading-relaxed max-w-3xl">
+            Kami bagi 50 kredit FREE dulu. Korang cuba buat video puas-puas, tengok hasil dia. Bila dah jatuh cinta dengan AffiMatik, baru kita sembang pasal duit. 😎
+          </p>
+          <div className="pt-2 flex flex-wrap items-center gap-4">
+            <Link
+              href="/factory"
+              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm inline-flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Cuba FREE — Dapat 50 Kredit</span>
+            </Link>
+            <a
+              href="mailto:support@affimatik.online?subject=Pertanyaan%20Akses%20Awal%20AffiMatik"
+              className="text-xs font-semibold text-amber-900 hover:text-amber-950 underline decoration-amber-400 hover:decoration-amber-700 transition"
+            >
+              Dah tak sabar nak upgrade? Hubungi team AffiMatik untuk akses awal.
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -226,20 +279,35 @@ export default function BillingPage() {
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedPlanModal(plan);
-                    handleStartCheckout(plan, 'fpx');
-                  }}
-                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    isCurrent
-                      ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
-                  }`}
-                >
-                  {isCurrent ? 'Pelan Semasa (Beli Lagi)' : `Langgan ${plan.name}`}
-                </button>
+                {publicCheckoutEnabled ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlanModal(plan);
+                      handleStartCheckout(plan, 'fpx');
+                    }}
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      isCurrent
+                        ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                    }`}
+                  >
+                    {isCurrent ? 'Pelan Semasa (Beli Lagi)' : `Langgan ${plan.name}`}
+                  </button>
+                ) : (
+                  <div className="space-y-2 text-center">
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                    >
+                      Coming Soon — Simpan Duit Dulu 😆
+                    </button>
+                    <p className="text-[10px] text-slate-500 leading-tight">
+                      Langganan belum dibuka untuk umum. Sementara tu, korang boleh cuba AffiMatik secara percuma.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           );

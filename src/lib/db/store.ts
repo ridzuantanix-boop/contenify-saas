@@ -292,7 +292,7 @@ export class DurableStore {
         };
       }
 
-      // Auto-provision initial wallet with 10 free credits atomically (wallet + GRANT ledger entry in single transaction)
+      // Auto-provision initial wallet with 50 free trial credits atomically (wallet + GRANT ledger entry in single transaction)
       const rpcRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
         method: 'POST',
         headers: {
@@ -302,7 +302,7 @@ export class DurableStore {
         },
         body: JSON.stringify({
           p_workspace_id: workspaceId,
-          p_initial_balance: 10,
+          p_initial_balance: 50,
         }),
       });
 
@@ -331,9 +331,9 @@ export class DurableStore {
     if (!localDb.wallets[workspaceId]) {
       localDb.wallets[workspaceId] = {
         workspaceId,
-        balance: 10, // Initial free credits by policy (never grant 160 unbacked credits)
+        balance: 50, // Initial free credits by policy (50 free trial credits for soft launch)
         reservedBalance: 0,
-        lifetimeGranted: 10,
+        lifetimeGranted: 50,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -342,12 +342,12 @@ export class DurableStore {
       localDb.ledger[grantKey] = {
         id: grantKey,
         workspaceId,
-        amount: 10,
+        amount: 50,
         eventType: 'GRANT',
         referenceType: 'SUBSCRIPTION',
         referenceId: workspaceId,
         idempotencyKey: grantKey,
-        description: 'Pemberian baki permulaan akaun AffiMatik (10 kredit percuma)',
+        description: 'Pemberian baki permulaan akaun AffiMatik (50 kredit percuma)',
         timestamp: new Date().toISOString(),
       };
     }
@@ -446,9 +446,9 @@ export class DurableStore {
       // 3. Balance verification
       const wallet = localDb.wallets[req.workspaceId] || {
         workspaceId: req.workspaceId,
-        balance: 10,
+        balance: 50,
         reservedBalance: 0,
-        lifetimeGranted: 10,
+        lifetimeGranted: 50,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -571,9 +571,9 @@ export class DurableStore {
 
       const wallet = localDb.wallets[workspaceId] || {
         workspaceId,
-        balance: 10,
+        balance: 50,
         reservedBalance: 0,
-        lifetimeGranted: 10,
+        lifetimeGranted: 50,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -1422,9 +1422,9 @@ export class DurableStore {
     // Grant credits
     const wallet = localDb.wallets[order.workspaceId] || {
       workspaceId: order.workspaceId,
-      balance: 10,
+      balance: 50,
       reservedBalance: 0,
-      lifetimeGranted: 10,
+      lifetimeGranted: 50,
       lifetimeSpent: 0,
       updatedAt: new Date().toISOString(),
     };
@@ -1736,9 +1736,9 @@ export class DurableStore {
 
     const wallet = localDb.wallets[workspaceId] || {
       workspaceId,
-      balance: 10,
+      balance: 50,
       reservedBalance: 0,
-      lifetimeGranted: 10,
+      lifetimeGranted: 50,
       lifetimeSpent: 0,
       updatedAt: new Date().toISOString(),
     };
@@ -1827,5 +1827,293 @@ export class DurableStore {
       details,
       createdAt: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Find customer profile and wallet by registered email for admin manual activation.
+   */
+  static async findCustomerByEmail(email: string): Promise<{
+    userId: string;
+    email: string;
+    fullName?: string;
+    tier: string;
+    workspaceId: string;
+    wallet: { balance: number; reservedBalance: number; lifetimeGranted: number };
+  } | null> {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const res = await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(cleanEmail)}&select=*`,
+        {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows && rows.length > 0) {
+          const profile = rows[0];
+          const workspaceId = profile.default_workspace_id || profile.id;
+          const wallet = await DurableStore.getWallet(workspaceId);
+          return {
+            userId: profile.id,
+            email: profile.email,
+            fullName: profile.full_name,
+            tier: profile.tier || 'free',
+            workspaceId,
+            wallet: {
+              balance: wallet.balance,
+              reservedBalance: wallet.reservedBalance,
+              lifetimeGranted: wallet.lifetimeGranted,
+            },
+          };
+        }
+      }
+    }
+
+    // Local / Testing Fallback
+    for (const [wsId, w] of Object.entries(localDb.wallets)) {
+      if (wsId.toLowerCase().includes(cleanEmail.split('@')[0]) || wsId === cleanEmail) {
+        return {
+          userId: wsId,
+          email: cleanEmail,
+          fullName: 'Creator ' + cleanEmail.split('@')[0],
+          tier: 'free',
+          workspaceId: wsId,
+          wallet: {
+            balance: w.balance,
+            reservedBalance: w.reservedBalance,
+            lifetimeGranted: w.lifetimeGranted,
+          },
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Owner-Only Manual Customer Activation:
+   * Supports Type A (Complimentary Early Access) and Type B (Manually Paid Customer).
+   */
+  static async manualActivateCustomer(params: {
+    workspaceId: string;
+    userId?: string;
+    activationType: 'COMPLIMENTARY' | 'MANUAL_PAID';
+    planId?: string;
+    credits?: number;
+    tier?: string;
+    amountPaidMyr?: number;
+    paymentReference?: string;
+    reason?: string;
+    adminEmail: string;
+  }): Promise<{
+    success: boolean;
+    activationType: string;
+    balance: number;
+    tier?: string;
+    orderId?: string;
+    message: string;
+  }> {
+    const {
+      workspaceId,
+      userId,
+      activationType,
+      planId,
+      credits,
+      tier,
+      amountPaidMyr,
+      paymentReference,
+      reason,
+      adminEmail,
+    } = params;
+
+    if (!workspaceId) {
+      throw new Error('workspaceId wajib disertakan.');
+    }
+
+    if (activationType === 'COMPLIMENTARY') {
+      const grantCredits = typeof credits === 'number' && credits > 0 ? credits : 50;
+      const targetTier = tier || 'starter';
+      const adjResult = await DurableStore.adjustCredits(
+        workspaceId,
+        grantCredits,
+        `Akses Awal Percuma (Promosi): ${reason || 'Beta Early Access'}`,
+        adminEmail
+      );
+
+      // Update tier in Supabase if configured
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && userId) {
+        await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ tier: targetTier, updated_at: new Date().toISOString() }),
+        });
+      }
+
+      await DurableStore.recordAuditLog(
+        adminEmail,
+        'MANUAL_COMPLIMENTARY_ACTIVATED',
+        'WORKSPACE',
+        workspaceId,
+        { credits: grantCredits, tier: targetTier, reason }
+      );
+
+      return {
+        success: true,
+        activationType: 'COMPLIMENTARY',
+        balance: adjResult.newBalance,
+        tier: targetTier,
+        message: `Akses Awal Percuma (${grantCredits} kredit, pelan ${targetTier}) berjaya diaktifkan untuk ruang kerja ${workspaceId}.`,
+      };
+    }
+
+    if (activationType === 'MANUAL_PAID') {
+      const selectedPlanId = planId || 'starter';
+      const paidAmount = typeof amountPaidMyr === 'number' ? amountPaidMyr : 49;
+      const ref = paymentReference || `bank_transfer_${Date.now()}`;
+
+      // Resolve plan credits from AUTHORITATIVE_PLANS (defaulting to 100 for starter)
+      let planCredits = 100;
+      let targetTier = 'starter';
+      if (selectedPlanId.includes('agency')) {
+        planCredits = 500;
+        targetTier = 'agency';
+      } else if (selectedPlanId.includes('pro')) {
+        planCredits = 250;
+        targetTier = 'pro';
+      }
+
+      // Create manual order
+      const order = await DurableStore.createOrder({
+        workspaceId,
+        userId: userId || workspaceId,
+        planId: selectedPlanId,
+        paymentMethod: 'manual_bank_transfer',
+        amountMyr: paidAmount,
+        creditsGranted: planCredits,
+      });
+
+      // Settle the order atomically
+      const settlement = await DurableStore.settleOrder(order.id, ref, {
+        verifiedByAdmin: adminEmail,
+        verifiedAt: new Date().toISOString(),
+        paymentAmountMyr: paidAmount,
+        referenceNote: reason || 'Manual payment verified by owner',
+      });
+
+      await DurableStore.recordAuditLog(
+        adminEmail,
+        'MANUAL_PAID_ACTIVATED',
+        'ORDER',
+        order.id,
+        { workspaceId, planId: selectedPlanId, amountMyr: paidAmount, paymentReference: ref }
+      );
+
+      return {
+        success: true,
+        activationType: 'MANUAL_PAID',
+        orderId: order.id,
+        balance: settlement.balance,
+        tier: targetTier,
+        message: `Pelanggan berbayar manual (${selectedPlanId}, +${planCredits} kredit) berjaya disahkan dan diaktifkan.`,
+      };
+    }
+
+    throw new Error('Jenis pengaktifan tidak sah. Pilih COMPLIMENTARY atau MANUAL_PAID.');
+  }
+
+  /**
+   * Retrieve Soft Launch Dashboard Monitoring Metrics.
+   */
+  static async getSoftLaunchMetrics(): Promise<{
+    totalRegistrations: number;
+    welcomeCreditsGranted: number;
+    trialCreditsSpent: number;
+    completedVideos: number;
+    pendingJobs: number;
+    failedJobs: number;
+    publicCheckoutEnabled: boolean;
+    isGenerationPaused: boolean;
+    generationPauseReason: string;
+  }> {
+    const genSettings = await DurableStore.getSystemSettings('generation_status');
+    const isPublicCheckoutEnabled = process.env.PUBLIC_CHECKOUT_ENABLED === 'true';
+
+    let totalRegistrations = 0;
+    let welcomeCreditsGranted = 0;
+    let trialCreditsSpent = 0;
+    let completedVideos = 0;
+    let pendingJobs = 0;
+    let failedJobs = 0;
+
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const sHeaders = {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      };
+
+      // Count profiles
+      const profRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles?select=count`, {
+        headers: { ...sHeaders, Prefer: 'count=exact' },
+      });
+      if (profRes.ok) {
+        const countHeader = profRes.headers.get('content-range');
+        totalRegistrations = countHeader ? parseInt(countHeader.split('/')[1] || '0', 10) : 0;
+      }
+
+      // Count video jobs
+      const jobsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/video_jobs?select=status`, {
+        headers: sHeaders,
+      });
+      if (jobsRes.ok) {
+        const jobs = await jobsRes.json();
+        if (Array.isArray(jobs)) {
+          completedVideos = jobs.filter((j: any) => j.status === 'COMPLETED').length;
+          pendingJobs = jobs.filter((j: any) => j.status === 'SUBMITTING' || j.status === 'PROCESSING').length;
+          failedJobs = jobs.filter((j: any) => j.status === 'FAILED').length;
+        }
+      }
+
+      // Sum welcome grants and spent from credit wallets
+      const walletsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/credit_wallets?select=balance,lifetime_granted,lifetime_spent`, {
+        headers: sHeaders,
+      });
+      if (walletsRes.ok) {
+        const wallets = await walletsRes.json();
+        if (Array.isArray(wallets)) {
+          welcomeCreditsGranted = wallets.reduce((sum: number, w: any) => sum + (w.lifetime_granted || 0), 0);
+          trialCreditsSpent = wallets.reduce((sum: number, w: any) => sum + (w.lifetime_spent || 0), 0);
+        }
+      }
+    } else {
+      // Local fallback
+      totalRegistrations = Object.keys(localDb.wallets).length;
+      welcomeCreditsGranted = Object.values(localDb.wallets).reduce((s, w) => s + w.lifetimeGranted, 0);
+      trialCreditsSpent = Object.values(localDb.wallets).reduce((s, w) => s + w.lifetimeSpent, 0);
+      const jobs = Object.values(localDb.jobs);
+      completedVideos = jobs.filter((j) => j.status === 'COMPLETED').length;
+      pendingJobs = jobs.filter((j) => j.status === 'SUBMITTING' || j.status === 'PROCESSING').length;
+      failedJobs = jobs.filter((j) => j.status === 'FAILED').length;
+    }
+
+    return {
+      totalRegistrations,
+      welcomeCreditsGranted,
+      trialCreditsSpent,
+      completedVideos,
+      pendingJobs,
+      failedJobs,
+      publicCheckoutEnabled: isPublicCheckoutEnabled,
+      isGenerationPaused: Boolean(genSettings?.paused),
+      generationPauseReason: genSettings?.reason || '',
+    };
   }
 }

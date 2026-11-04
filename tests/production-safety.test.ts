@@ -99,12 +99,12 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
   // 2. Concurrency-Safe Durable Credit Accounting & Tenant Isolation
   // ---------------------------------------------------------------------------
   describe('Durable Transactional Credit Accounting', () => {
-    it('initializes new workspaces with 10 free credits by policy and NEVER grants 160 unbacked credits', async () => {
+    it('initializes new workspaces with 50 free credits by policy and NEVER grants 160 unbacked credits', async () => {
       const newWs = 'ws_brand_new_customer';
       const wallet = await DurableStore.getWallet(newWs);
-      expect(wallet.balance).toBe(10);
+      expect(wallet.balance).toBe(50);
       expect(wallet.reservedBalance).toBe(0);
-      expect(wallet.lifetimeGranted).toBe(10);
+      expect(wallet.lifetimeGranted).toBe(50);
     });
 
     it('prevents two concurrent generation requests from double-spending credits', async () => {

@@ -18,6 +18,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Authoritative Server-Controlled Public Checkout Feature Flag
+    const isPublicCheckoutEnabled = process.env.PUBLIC_CHECKOUT_ENABLED === 'true';
+    if (!isPublicCheckoutEnabled) {
+      return NextResponse.json(
+        {
+          error: 'PAYMENTS_COMING_SOON',
+          code: 'PAYMENTS_COMING_SOON',
+          message: 'Pelan berbayar belum dibuka untuk umum. Duit korang simpan dulu! Nikmati 50 kredit percuma anda sekarang untuk cuba jana video.',
+          status: 'COMING_SOON',
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { planId, paymentMethod, referralCode } = body;
 

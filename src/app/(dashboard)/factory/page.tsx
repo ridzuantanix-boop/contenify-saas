@@ -273,7 +273,11 @@ function VideoFactoryContent() {
 
     const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
     if (userBalance !== null && userBalance < requiredCredits) {
-      setSubmitError(`Baki kredit anda (${userBalance}) tidak mencukupi untuk gaya ini (${requiredCredits} kredit). Sila tambah kredit langganan.`);
+      if (userBalance < 10) {
+        setSubmitError('Alamak, kredit FREE dah habis! 😂 Harap korang dah sempat hasilkan video padu. Pelan berbayar akan dibuka tak lama lagi.');
+      } else {
+        setSubmitError(`Baki kredit anda (${userBalance} kredit) tidak mencukupi untuk gaya ${selectedStyle.name} (${requiredCredits} kredit). Anda masih boleh memilih gaya 10 kredit AffiMatik Voice.`);
+      }
       return;
     }
 
@@ -785,12 +789,33 @@ function VideoFactoryContent() {
           {/* GENERATE ACTION BUTTON */}
           <div className="space-y-2">
             {submitError && (
-              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <div className="font-bold">Penjanaan Tidak Dapat Diteruskan</div>
-                  <div className="mt-0.5">{submitError}</div>
+              <div className={`p-4 border rounded-xl text-xs space-y-2 ${
+                submitError.includes('kredit FREE dah habis')
+                  ? 'bg-amber-50 border-amber-300 text-amber-900'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className={`w-4 h-4 mt-0.5 shrink-0 ${
+                    submitError.includes('kredit FREE dah habis') ? 'text-amber-600' : 'text-rose-600'
+                  }`} />
+                  <div className="flex-1">
+                    <div className="font-bold">
+                      {submitError.includes('kredit FREE dah habis') ? 'Kredit Percuma Habis' : 'Penjanaan Tidak Dapat Diteruskan'}
+                    </div>
+                    <div className="mt-0.5 leading-relaxed">{submitError}</div>
+                  </div>
                 </div>
+                {submitError.includes('kredit FREE dah habis') && (
+                  <div className="pt-2 border-t border-amber-200 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] text-amber-800">Pelan berbayar akan dibuka tidak lama lagi.</span>
+                    <a
+                      href="mailto:support@affimatik.online?subject=Pertanyaan%20Akses%20Awal%20AffiMatik"
+                      className="text-[11px] font-bold text-amber-950 underline decoration-amber-500 hover:text-amber-800 transition"
+                    >
+                      Dah tak sabar nak upgrade? Hubungi team AffiMatik untuk akses awal.
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

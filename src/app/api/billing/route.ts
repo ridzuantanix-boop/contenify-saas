@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
     lifetimeSpent: wallet.lifetimeSpent,
     generationCosts: GENERATION_COSTS,
     authoritativePlans: AUTHORITATIVE_PLANS,
+    publicCheckoutEnabled: process.env.PUBLIC_CHECKOUT_ENABLED === 'true',
     ledger: ledgerHistory,
   });
 }

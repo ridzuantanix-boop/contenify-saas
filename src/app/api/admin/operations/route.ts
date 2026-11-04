@@ -27,7 +27,52 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
 
-    // 1. Manual Payment Verification
+    // 1. Manual Customer Activation (Complimentary Early Access or Manually Paid)
+    if (action === 'manual_activate_customer') {
+      const {
+        workspaceId,
+        userId,
+        activationType,
+        planId,
+        credits,
+        tier,
+        amountPaidMyr,
+        paymentReference,
+        reason,
+      } = body;
+
+      const result = await DurableStore.manualActivateCustomer({
+        workspaceId,
+        userId,
+        activationType,
+        planId,
+        credits,
+        tier,
+        amountPaidMyr,
+        paymentReference,
+        reason,
+        adminEmail,
+      });
+
+      return NextResponse.json(result);
+    }
+
+    // 2. Lookup Customer by Email
+    if (action === 'lookup_customer') {
+      const { email } = body;
+      if (!email) {
+        return NextResponse.json({ error: 'Emel diperlukan.' }, { status: 400 });
+      }
+
+      const customer = await DurableStore.findCustomerByEmail(email);
+      if (!customer) {
+        return NextResponse.json({ error: 'Pelanggan dengan emel ini tidak ditemui.' }, { status: 404 });
+      }
+
+      return NextResponse.json({ success: true, customer });
+    }
+
+    // 3. Manual Payment Verification
     if (action === 'manual_verify_payment') {
       const { orderId, referenceNote } = body;
       if (!orderId) {
@@ -153,6 +198,23 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const view = searchParams.get('view') || 'orders';
+
+  if (view === 'metrics') {
+    const metrics = await DurableStore.getSoftLaunchMetrics();
+    return NextResponse.json({ success: true, metrics });
+  }
+
+  if (view === 'lookup') {
+    const email = searchParams.get('email');
+    if (!email) {
+      return NextResponse.json({ error: 'Emel diperlukan untuk carian.' }, { status: 400 });
+    }
+    const customer = await DurableStore.findCustomerByEmail(email);
+    if (!customer) {
+      return NextResponse.json({ error: 'Pelanggan tidak ditemui.' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, customer });
+  }
 
   if (view === 'orders') {
     const orders = await DurableStore.listOrders(undefined, 100);
