@@ -48,6 +48,15 @@ export async function POST(req: NextRequest) {
     const workspaceId = session.workspaceId;
     const isSuperAdmin = session.role === 'superadmin';
 
+    // 3. Emergency Generation Pause / Circuit Breaker Check
+    const genSettings = await DurableStore.getSystemSettings('generation_status');
+    if (genSettings?.paused && !isSuperAdmin) {
+      return NextResponse.json(
+        { error: genSettings.reason || 'Penjanaan video dijeda sementara bagi tujuan penyelenggaraan teknikal.' },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const {
       clientRequestId,
@@ -354,16 +363,8 @@ export async function GET(req: NextRequest) {
     status: 'ONLINE',
     brand: 'AffiMatik by Pawarna',
     tagline: 'Affiliate Jadi Automatik',
-    version: '2.1.4',
-    buildCommit: '05478eb',
-    runtimeEnvironment: {
-      hasSupabaseUrl: Boolean(process.env.SUPABASE_URL),
-      hasSupabaseAnonKey: Boolean(process.env.SUPABASE_ANON_KEY),
-      hasSupabaseServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      hasSessionSecret: Boolean(process.env.SESSION_SECRET || process.env.ADMIN_ACCESS_KEY),
-      hasCronSecret: Boolean(process.env.CRON_SECRET),
-      nodeCompatProcessEnv: typeof process !== 'undefined' && typeof process.env === 'object',
-    },
+    version: '3.0.0',
+    buildCommit: process.env.CF_PAGES_COMMIT_SHA || 'ab4cdaf',
     catalogueSummary: {
       totalStyles: styles.length,
       qualityVerified: styles.filter((s) => s.qualityStatus === 'quality_verified').length,

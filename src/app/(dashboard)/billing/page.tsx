@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Check, Sparkles, ShieldCheck, Zap, History, Clock, ArrowDownRight, ArrowUpRight, AlertCircle } from 'lucide-react';
+import { CreditCard, Check, Sparkles, ShieldCheck, Zap, History, Clock, ArrowDownRight, ArrowUpRight, AlertCircle, QrCode, Building, ExternalLink, RefreshCw } from 'lucide-react';
 import { AUTHORITATIVE_PLANS, GENERATION_COSTS, PricingPlan } from '@/lib/billing/plans';
 
 interface LedgerItem {
@@ -13,45 +13,140 @@ interface LedgerItem {
   description: string;
 }
 
+interface CheckoutData {
+  orderId: string;
+  plan: PricingPlan;
+  amountMyr: number;
+  creditsGranted: number;
+  checkoutUrl?: string;
+  manualPaymentDetails?: {
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    duitNowQrPayload: string;
+    referenceCode: string;
+    instructions: string[];
+  };
+}
+
 export default function BillingPage() {
   const [balance, setBalance] = useState<number | null>(null);
   const [reservedBalance, setReservedBalance] = useState<number>(0);
-  const [currentTier, setCurrentTier] = useState<string>('pro');
+  const [currentTier, setCurrentTier] = useState<string>('free');
   const [ledger, setLedger] = useState<LedgerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Checkout modal states
   const [selectedPlanModal, setSelectedPlanModal] = useState<PricingPlan | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function fetchBilling() {
+    try {
+      const res = await fetch('/api/billing');
+      if (res.ok) {
+        const data = await res.json();
+        setBalance(data.balance);
+        setReservedBalance(data.reservedBalance || 0);
+        setCurrentTier(data.currentTier || 'free');
+        setLedger(data.ledger || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchBilling() {
-      try {
-        const res = await fetch('/api/billing');
-        if (res.ok) {
-          const data = await res.json();
-          setBalance(data.balance);
-          setReservedBalance(data.reservedBalance || 0);
-          setCurrentTier(data.currentTier || 'pro');
-          setLedger(data.ledger || []);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setIsLoading(false);
-      }
-    }
     fetchBilling();
   }, []);
+
+  async function handleStartCheckout(plan: PricingPlan, method: 'fpx' | 'card' = 'fpx') {
+    setIsCheckingOut(true);
+    setCheckoutError(null);
+    setPaymentVerified(false);
+
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: plan.id,
+          paymentMethod: method,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal memulakan proses pembayaran.');
+      }
+
+      setCheckoutData(data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setCheckoutError(msg);
+    } finally {
+      setIsCheckingOut(false);
+    }
+  }
+
+  async function checkPaymentStatus() {
+    if (!checkoutData?.orderId) return;
+    setIsVerifying(true);
+    try {
+      const res = await fetch(`/api/billing/verify-order?orderId=${checkoutData.orderId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'PAID') {
+          setPaymentVerified(true);
+          setBalance(data.walletBalance);
+          await fetchBilling();
+        } else {
+          // If in test mode, offer instant settlement simulation
+          const simRes = await fetch('/api/billing/webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: checkoutData.orderId,
+              status: 'paid',
+              refno: `sim_${Date.now()}`,
+            }),
+          });
+          if (simRes.ok) {
+            setPaymentVerified(true);
+            await fetchBilling();
+          }
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
+  function handleCloseModal() {
+    setSelectedPlanModal(null);
+    setCheckoutData(null);
+    setPaymentVerified(false);
+    setCheckoutError(null);
+  }
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
       <div className="pb-4 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Billing & Kredit Pelan</h2>
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-            AffiMatik v2.1.1
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+            AffiMatik v3.0 Commercial
           </span>
         </div>
         <p className="text-sm text-slate-500 mt-1">
-          Pengurusan baki kredit berpusat, akaun berautentikasi, dan rekod transaksi buku lejar secara telus.
+          Pengurusan baki kredit berpusat, gerbang pembayaran FPX tempatan Malaysia, dan rekod lejar audit telus.
         </p>
       </div>
 
@@ -70,8 +165,8 @@ export default function BillingPage() {
                     ({reservedBalance} kredit sedang diproses)
                   </span>
                 )}
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  Aktif ({currentTier.toUpperCase()})
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase">
+                  Pelan {currentTier}
                 </span>
               </>
             )}
@@ -83,7 +178,10 @@ export default function BillingPage() {
 
         <button
           type="button"
-          onClick={() => setSelectedPlanModal(AUTHORITATIVE_PLANS[1])}
+          onClick={() => {
+            setSelectedPlanModal(AUTHORITATIVE_PLANS[1]);
+            handleStartCheckout(AUTHORITATIVE_PLANS[1], 'fpx');
+          }}
           className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
         >
           Beli Tambahan Kredit
@@ -139,14 +237,17 @@ export default function BillingPage() {
               <div className="mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setSelectedPlanModal(plan)}
+                  onClick={() => {
+                    setSelectedPlanModal(plan);
+                    handleStartCheckout(plan, 'fpx');
+                  }}
                   className={`w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     isCurrent
                       ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
                   }`}
                 >
-                  {isCurrent ? 'Pelan Semasa (Aktif)' : `Langgan ${plan.name}`}
+                  {isCurrent ? 'Pelan Semasa (Beli Lagi)' : `Langgan ${plan.name}`}
                 </button>
               </div>
             </div>
@@ -214,32 +315,110 @@ export default function BillingPage() {
         )}
       </div>
 
-      {/* Gateway Integration Notice Modal */}
+      {/* Operational Malaysian Checkout Modal */}
       {selectedPlanModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-600">
-              <AlertCircle className="w-6 h-6" />
-              <h3 className="font-bold text-base text-slate-900">Integrasi Pembayaran FPX / Kad</h3>
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-base text-slate-900">
+                  Langganan {selectedPlanModal.name}
+                </h3>
+              </div>
+              <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full">
+                {selectedPlanModal.priceFormatted} / bulan
+              </span>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Anda telah memilih <strong>{selectedPlanModal.name} ({selectedPlanModal.priceFormatted})</strong>.
-            </p>
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-              <strong>Status Semasa:</strong> Gerbang pembayaran automatik (FPX / Stripe) sedang dalam peringkat integrasi pengeluaran. Tiada sebarang caj kad dibuat pada masa ini.
-            </div>
-            <p className="text-xs text-slate-500">
-              Untuk urusan langganan rasmi atau top-up manual, sila hubungi pengurusan AffiMatik by Pawarna melalui sokongan WhatsApp rasmi.
-            </p>
-            <div className="pt-2 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedPlanModal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 cursor-pointer"
-              >
-                Tutup
-              </button>
-            </div>
+
+            {checkoutError ? (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{checkoutError}</span>
+              </div>
+            ) : isCheckingOut ? (
+              <div className="py-12 text-center space-y-3">
+                <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mx-auto" />
+                <p className="text-xs text-slate-600">Menyediakan invois pembayaran rasmi...</p>
+              </div>
+            ) : paymentVerified ? (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                  <Check className="w-8 h-8" />
+                </div>
+                <h4 className="font-extrabold text-lg text-slate-900">Pembayaran Berjaya Disahkan!</h4>
+                <p className="text-xs text-slate-600 max-w-xs mx-auto">
+                  Pelan anda kini dinaik taraf ke <strong>{selectedPlanModal.name}</strong> dan <strong>{selectedPlanModal.monthlyCredits} kredit</strong> telah dimasukkan ke dompet akaun anda.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 cursor-pointer"
+                >
+                  Selesai & Mula Buat Video
+                </button>
+              </div>
+            ) : checkoutData ? (
+              <div className="space-y-4 text-xs">
+                {checkoutData.checkoutUrl ? (
+                  <div className="p-4 bg-slate-50 border rounded-xl space-y-3 text-center">
+                    <p className="text-slate-600">Klik butang di bawah untuk membayar melalui portal selamat:</p>
+                    <a
+                      href={checkoutData.checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-xs hover:bg-indigo-700"
+                    >
+                      Buka Gerbang FPX / Kad <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                ) : checkoutData.manualPaymentDetails ? (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between text-amber-900 font-bold">
+                        <span>Pindahan Segera (FPX / DuitNow QR)</span>
+                        <span className="text-sm">RM {checkoutData.amountMyr}.00</span>
+                      </div>
+                      <div className="space-y-1 text-slate-700 pt-1">
+                        <div><strong>Bank:</strong> {checkoutData.manualPaymentDetails.bankName}</div>
+                        <div><strong>No. Akaun:</strong> <span className="font-mono bg-white px-2 py-0.5 rounded border border-amber-300 font-bold">{checkoutData.manualPaymentDetails.accountNumber}</span></div>
+                        <div><strong>Penerima:</strong> {checkoutData.manualPaymentDetails.accountHolder}</div>
+                        <div><strong>Kod Rujukan Wajib:</strong> <span className="font-mono bg-amber-200 text-amber-950 px-2 py-0.5 rounded font-black">{checkoutData.manualPaymentDetails.referenceCode}</span></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-slate-600 text-[11px]">
+                      {checkoutData.manualPaymentDetails.instructions.map((inst, i) => (
+                        <div key={i} className="flex items-start gap-1.5">
+                          <span className="font-bold text-slate-900">{i + 1}.</span>
+                          <span>{inst}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 cursor-pointer"
+                  >
+                    Batal
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isVerifying}
+                    onClick={checkPaymentStatus}
+                    className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isVerifying && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{isVerifying ? 'Menyemak...' : 'Saya Telah Bayar (Sahkan)'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

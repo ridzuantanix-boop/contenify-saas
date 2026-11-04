@@ -85,4 +85,24 @@ export class R2StorageService {
 
     return `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${this.bucketName}/${objectKey}?token=mock_signed_r2_download`;
   }
+
+  static getRetentionDays(tier: string): number {
+    switch (tier.toLowerCase()) {
+      case 'agency':
+        return 365;
+      case 'pro':
+        return 60;
+      case 'starter':
+        return 14;
+      default:
+        return 7;
+    }
+  }
+
+  static isAssetExpired(createdAt: string, tier: string): boolean {
+    const days = R2StorageService.getRetentionDays(tier);
+    const createdMs = new Date(createdAt).getTime();
+    const ageDays = (Date.now() - createdMs) / (24 * 60 * 60 * 1000);
+    return ageDays > days;
+  }
 }

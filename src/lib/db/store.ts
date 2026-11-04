@@ -57,6 +57,51 @@ export interface VideoJobRecord {
   updatedAt: string;
 }
 
+export interface OrderRecord {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  planId: string;
+  amountMyr: number;
+  creditsGranted: number;
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
+  gatewayProvider: string;
+  gatewayReference?: string;
+  paymentMethod?: string;
+  referralCode?: string;
+  paidAt?: string;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SubscriptionRecord {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  planId: string;
+  tier: string;
+  status: 'active' | 'past_due' | 'cancelled' | 'expired';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AffiliateCommissionRecord {
+  id: string;
+  affiliateId: string;
+  orderId: string;
+  workspaceId: string;
+  amountMyr: number;
+  ratePercentage: number;
+  status: 'PENDING' | 'APPROVED' | 'PAYABLE' | 'PAID' | 'REVERSED';
+  createdAt: string;
+  approvedAt?: string;
+  paidAt?: string;
+  payoutReference?: string;
+}
+
 export interface JobAdmissionRequest {
   workspaceId: string;
   userId: string;
@@ -100,6 +145,12 @@ interface LocalDatabaseState {
   ledger: Record<string, CreditLedgerRecord>; // Keyed by idempotencyKey
   reservations: Record<string, CreditReservationRecord>; // Keyed by jobId
   jobs: Record<string, VideoJobRecord>; // Keyed by jobId
+  orders: Record<string, OrderRecord>; // Keyed by orderId
+  subscriptions: Record<string, SubscriptionRecord>; // Keyed by workspaceId
+  affiliates: Record<string, { id: string; userId: string; referralCode: string; rate: number; status: string }>;
+  commissions: Record<string, AffiliateCommissionRecord>; // Keyed by commissionId
+  auditLogs: Array<Record<string, unknown>>;
+  settings: Record<string, unknown>;
   forceDbDown?: boolean;
 }
 
@@ -108,6 +159,17 @@ const localDb: LocalDatabaseState = {
   ledger: {},
   reservations: {},
   jobs: {},
+  orders: {},
+  subscriptions: {},
+  affiliates: {},
+  commissions: {},
+  auditLogs: [],
+  settings: {
+    generation_status: { paused: false },
+    provider_concurrency_caps: { nexabot: 5, runninghub: 5 },
+    provider_unit_costs: { nexabot_10s_myr: 1.5, runninghub_15s_myr: 2.0 },
+    financial_safety: { minimum_safety_buffer_myr: 500, refund_reserve_percent: 10 },
+  },
   forceDbDown: false,
 };
 
@@ -145,6 +207,17 @@ export class DurableStore {
     localDb.ledger = {};
     localDb.reservations = {};
     localDb.jobs = {};
+    localDb.orders = {};
+    localDb.subscriptions = {};
+    localDb.affiliates = {};
+    localDb.commissions = {};
+    localDb.auditLogs = [];
+    localDb.settings = {
+      generation_status: { paused: false },
+      provider_concurrency_caps: { nexabot: 5, runninghub: 5 },
+      provider_unit_costs: { nexabot_10s_myr: 1.5, runninghub_15s_myr: 2.0 },
+      financial_safety: { minimum_safety_buffer_myr: 500, refund_reserve_percent: 10 },
+    };
     localDb.forceDbDown = false;
   }
 
@@ -1077,5 +1150,568 @@ export class DurableStore {
       .filter((entry) => entry.workspaceId === workspaceId)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, limit);
+  }
+
+  /**
+   * Create an Order for plan subscription / credits checkout
+   */
+  static async createOrder(orderData: {
+    id?: string;
+    workspaceId: string;
+    userId: string;
+    planId: string;
+    amountMyr: number;
+    creditsGranted: number;
+    gatewayProvider?: string;
+    gatewayReference?: string;
+    paymentMethod?: string;
+    referralCode?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<OrderRecord> {
+    this.checkFailClosed();
+
+    const orderId = orderData.id || crypto.randomUUID();
+    const newOrder: OrderRecord = {
+      id: orderId,
+      workspaceId: orderData.workspaceId,
+      userId: orderData.userId,
+      planId: orderData.planId,
+      amountMyr: orderData.amountMyr,
+      creditsGranted: orderData.creditsGranted,
+      status: 'PENDING',
+      gatewayProvider: orderData.gatewayProvider || 'manual_fpx',
+      gatewayReference: orderData.gatewayReference,
+      paymentMethod: orderData.paymentMethod || 'fpx',
+      referralCode: orderData.referralCode,
+      createdAt: new Date().toISOString(),
+      metadata: orderData.metadata || {},
+    };
+
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/orders`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({
+          id: newOrder.id,
+          workspace_id: newOrder.workspaceId,
+          user_id: newOrder.userId,
+          plan_id: newOrder.planId,
+          amount_myr: newOrder.amountMyr,
+          credits_granted: newOrder.creditsGranted,
+          status: newOrder.status,
+          gateway_provider: newOrder.gatewayProvider,
+          gateway_reference: newOrder.gatewayReference,
+          payment_method: newOrder.paymentMethod,
+          referral_code: newOrder.referralCode,
+          metadata: newOrder.metadata,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
+      }
+
+      const rows = await res.json();
+      const r = rows[0];
+      return {
+        id: r.id,
+        workspaceId: r.workspace_id,
+        userId: r.user_id,
+        planId: r.plan_id,
+        amountMyr: Number(r.amount_myr),
+        creditsGranted: r.credits_granted,
+        status: r.status,
+        gatewayProvider: r.gateway_provider,
+        gatewayReference: r.gateway_reference,
+        paymentMethod: r.payment_method,
+        referralCode: r.referral_code,
+        paidAt: r.paid_at,
+        createdAt: r.created_at,
+        metadata: r.metadata,
+      };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    localDb.orders[newOrder.id] = { ...newOrder };
+    return { ...newOrder };
+  }
+
+  /**
+   * Retrieve an Order by ID
+   */
+  static async getOrder(orderId: string): Promise<OrderRecord | null> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) return null;
+      const rows = await res.json();
+      if (!rows || rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        id: r.id,
+        workspaceId: r.workspace_id,
+        userId: r.user_id,
+        planId: r.plan_id,
+        amountMyr: Number(r.amount_myr),
+        creditsGranted: r.credits_granted,
+        status: r.status,
+        gatewayProvider: r.gateway_provider,
+        gatewayReference: r.gateway_reference,
+        paymentMethod: r.payment_method,
+        referralCode: r.referral_code,
+        paidAt: r.paid_at,
+        createdAt: r.created_at,
+        metadata: r.metadata,
+      };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    const order = localDb.orders[orderId];
+    return order ? { ...order } : null;
+  }
+
+  /**
+   * List Orders (all or filtered by workspace)
+   */
+  static async listOrders(workspaceId?: string, limit = 50): Promise<OrderRecord[]> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      let url = `${process.env.SUPABASE_URL}/rest/v1/orders?order=created_at.desc&limit=${limit}`;
+      if (workspaceId) {
+        url += `&workspace_id=eq.${encodeURIComponent(workspaceId)}`;
+      }
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) return [];
+      const rows = await res.json();
+      return rows.map((r: Record<string, any>) => ({
+        id: r.id,
+        workspaceId: r.workspace_id,
+        userId: r.user_id,
+        planId: r.plan_id,
+        amountMyr: Number(r.amount_myr),
+        creditsGranted: r.credits_granted,
+        status: r.status,
+        gatewayProvider: r.gateway_provider,
+        gatewayReference: r.gateway_reference,
+        paymentMethod: r.payment_method,
+        referralCode: r.referral_code,
+        paidAt: r.paid_at,
+        createdAt: r.created_at,
+        metadata: r.metadata,
+      }));
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    return Object.values(localDb.orders)
+      .filter((o) => !workspaceId || o.workspaceId === workspaceId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
+  }
+
+  /**
+   * Settle an order atomically: updates order to PAID, grants credits, updates subscription tier, records affiliate commission
+   */
+  static async settleOrder(
+    orderId: string,
+    gatewayReference?: string,
+    metadata?: Record<string, unknown>
+  ): Promise<{ success: boolean; orderId: string; status: string; balance: number; tier?: string; error?: string }> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/rpc/settle_order_payment_atomic`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_order_id: orderId,
+          p_gateway_reference: gatewayReference || null,
+          p_metadata: metadata || {},
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
+      }
+
+      return await res.json();
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    // Local in-memory settlement simulation
+    const order = localDb.orders[orderId];
+    if (!order) {
+      return { success: false, orderId, status: 'NOT_FOUND', balance: 0, error: 'Order not found' };
+    }
+
+    // Idempotent replay check
+    if (order.status === 'PAID') {
+      const currentWallet = localDb.wallets[order.workspaceId] || { balance: 0 };
+      return {
+        success: true,
+        orderId: order.id,
+        status: 'PAID',
+        balance: currentWallet.balance,
+      };
+    }
+
+    // Mark PAID
+    order.status = 'PAID';
+    order.paidAt = new Date().toISOString();
+    order.gatewayReference = gatewayReference || order.gatewayReference || `man_${crypto.randomUUID()}`;
+
+    // Resolve tier
+    let tier = 'starter';
+    if (order.planId.includes('agency')) tier = 'agency';
+    else if (order.planId.includes('pro')) tier = 'pro';
+
+    // Update subscription
+    localDb.subscriptions[order.workspaceId] = {
+      id: crypto.randomUUID(),
+      workspaceId: order.workspaceId,
+      userId: order.userId,
+      planId: order.planId,
+      tier,
+      status: 'active',
+      currentPeriodStart: new Date().toISOString(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      cancelAtPeriodEnd: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Grant credits
+    const wallet = localDb.wallets[order.workspaceId] || {
+      workspaceId: order.workspaceId,
+      balance: 10,
+      reservedBalance: 0,
+      lifetimeGranted: 10,
+      lifetimeSpent: 0,
+      updatedAt: new Date().toISOString(),
+    };
+
+    wallet.balance += order.creditsGranted;
+    wallet.lifetimeGranted += order.creditsGranted;
+    wallet.updatedAt = new Date().toISOString();
+    localDb.wallets[order.workspaceId] = wallet;
+
+    // Record ledger
+    const ledgerKey = `ord_pay_${order.id}`;
+    localDb.ledger[ledgerKey] = {
+      id: crypto.randomUUID(),
+      workspaceId: order.workspaceId,
+      amount: order.creditsGranted,
+      eventType: 'GRANT',
+      referenceType: 'SUBSCRIPTION',
+      referenceId: order.id,
+      idempotencyKey: ledgerKey,
+      timestamp: new Date().toISOString(),
+      description: `Plan Credit Purchase: ${order.planId} (+${order.creditsGranted} credits)`,
+    };
+
+    // Affiliate Commission attribution (20%)
+    if (order.referralCode) {
+      const commissionAmount = Math.round(order.amountMyr * 0.20 * 100) / 100;
+      const commId = crypto.randomUUID();
+      localDb.commissions[commId] = {
+        id: commId,
+        affiliateId: order.referralCode,
+        orderId: order.id,
+        workspaceId: order.workspaceId,
+        amountMyr: commissionAmount,
+        ratePercentage: 20.0,
+        status: 'PENDING',
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    return {
+      success: true,
+      orderId: order.id,
+      status: 'PAID',
+      balance: wallet.balance,
+      tier,
+    };
+  }
+
+  /**
+   * Retrieve Subscription record for workspace
+   */
+  static async getSubscription(workspaceId: string): Promise<SubscriptionRecord | null> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/subscriptions?workspace_id=eq.${encodeURIComponent(workspaceId)}`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) return null;
+      const rows = await res.json();
+      if (!rows || rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        id: r.id,
+        workspaceId: r.workspace_id,
+        userId: r.user_id,
+        planId: r.plan_id,
+        tier: r.tier,
+        status: r.status,
+        currentPeriodStart: r.current_period_start,
+        currentPeriodEnd: r.current_period_end,
+        cancelAtPeriodEnd: r.cancel_at_period_end,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    const sub = localDb.subscriptions[workspaceId];
+    return sub ? { ...sub } : null;
+  }
+
+  /**
+   * Affiliate and Commission operations
+   */
+  static async getAffiliatePartner(userIdOrCode: string): Promise<{ id: string; userId: string; referralCode: string; commissionRate: number; status: string } | null> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const isUuid = userIdOrCode.includes('-');
+      const filter = isUuid ? `user_id=eq.${encodeURIComponent(userIdOrCode)}` : `referral_code=eq.${encodeURIComponent(userIdOrCode)}`;
+      const url = `${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?${filter}`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) return null;
+      const rows = await res.json();
+      if (!rows || rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        id: r.id,
+        userId: r.user_id,
+        referralCode: r.referral_code,
+        commissionRate: Number(r.commission_rate),
+        status: r.status,
+      };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    const aff = Object.values(localDb.affiliates).find(
+      (a) => a.userId === userIdOrCode || a.referralCode === userIdOrCode
+    );
+    return aff ? { ...aff, commissionRate: aff.rate } : null;
+  }
+
+  static async createAffiliatePartner(userId: string, referralCode: string): Promise<{ id: string; referralCode: string }> {
+    this.checkFailClosed();
+
+    const id = crypto.randomUUID();
+    const cleanCode = referralCode.trim().toUpperCase();
+
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/affiliate_partners`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({
+          id,
+          user_id: userId,
+          referral_code: cleanCode,
+          commission_rate: 20.0,
+          status: 'active',
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
+      }
+
+      const rows = await res.json();
+      return { id: rows[0].id, referralCode: rows[0].referral_code };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    localDb.affiliates[id] = { id, userId, referralCode: cleanCode, rate: 20.0, status: 'active' };
+    return { id, referralCode: cleanCode };
+  }
+
+  static async listAffiliateCommissions(affiliateId?: string): Promise<AffiliateCommissionRecord[]> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      let url = `${process.env.SUPABASE_URL}/rest/v1/affiliate_commissions?order=created_at.desc`;
+      if (affiliateId) {
+        url += `&affiliate_id=eq.${encodeURIComponent(affiliateId)}`;
+      }
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) return [];
+      const rows = await res.json();
+      return rows.map((r: Record<string, any>) => ({
+        id: r.id,
+        affiliateId: r.affiliate_id,
+        orderId: r.order_id,
+        workspaceId: r.workspace_id,
+        amountMyr: Number(r.amount_myr),
+        ratePercentage: Number(r.rate_percentage),
+        status: r.status,
+        createdAt: r.created_at,
+        approvedAt: r.approved_at,
+        paidAt: r.paid_at,
+        payoutReference: r.payout_reference,
+      }));
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    return Object.values(localDb.commissions)
+      .filter((c) => !affiliateId || c.affiliateId === affiliateId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * System Settings (Emergency Pause, Unit Costs, Capacity)
+   */
+  static async getSystemSettings(key: string): Promise<any> {
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/system_settings?key=eq.${encodeURIComponent(key)}`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+      if (!res.ok) return null;
+      const rows = await res.json();
+      return rows?.[0]?.value || null;
+    }
+    return localDb.settings[key] || null;
+  }
+
+  static async setSystemSettings(key: string, value: any): Promise<void> {
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/system_settings`;
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
+      });
+      return;
+    }
+    localDb.settings[key] = value;
+  }
+
+  /**
+   * Record Immutable Administrative Audit Log
+   */
+  static async recordAuditLog(
+    adminEmail: string,
+    action: string,
+    targetType: string,
+    targetId: string,
+    details?: Record<string, unknown>
+  ): Promise<void> {
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/audit_logs`;
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          admin_email: adminEmail,
+          action,
+          target_type: targetType,
+          target_id: targetId,
+          details: details || {},
+        }),
+      });
+      return;
+    }
+    localDb.auditLogs.push({
+      id: crypto.randomUUID(),
+      adminEmail,
+      action,
+      targetType,
+      targetId,
+      details,
+      createdAt: new Date().toISOString(),
+    });
   }
 }
