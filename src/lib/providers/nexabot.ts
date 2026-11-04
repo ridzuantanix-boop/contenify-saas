@@ -54,12 +54,12 @@ export class NexabotAdapter implements IProviderAdapter {
 
   preparePayload(input: ProviderJobInput): Record<string, unknown> {
     const images: string[] = [];
-    if (input.mainImageKeyOrUrl && input.mainImageKeyOrUrl.startsWith('http')) {
+    if (input.mainImageKeyOrUrl && input.mainImageKeyOrUrl.startsWith('http') && !input.mainImageKeyOrUrl.includes('mock')) {
       images.push(input.mainImageKeyOrUrl);
     }
     if (input.referenceImageKeysOrUrls) {
       for (const img of input.referenceImageKeysOrUrls) {
-        if (img.startsWith('http') && images.length < 3) {
+        if (img.startsWith('http') && !img.includes('mock') && images.length < 3) {
           images.push(img);
         }
       }
@@ -196,7 +196,7 @@ export class NexabotAdapter implements IProviderAdapter {
 
     const data = await res.json() as Record<string, unknown>;
     const job = (data.job || data) as Record<string, unknown>;
-    const videoUrl = String(job.video_url || `${this.baseUrl}/api/v1/jobs/${providerTaskId}/download`);
+    const videoUrl = String(job.storage_url || job.video_url || `${this.baseUrl}/api/v1/jobs/${providerTaskId}/download`);
 
     return {
       providerTaskId,

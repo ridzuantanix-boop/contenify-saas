@@ -46,6 +46,9 @@ export default function VideoFactoryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [activeJobStatus, setActiveJobStatus] = useState<string | null>(null);
+  const [activeJobProgress, setActiveJobProgress] = useState<number>(0);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
 
   const selectedPreset = OFFICIAL_GEMS_PRESETS.find(p => p.id === selectedPresetId) || OFFICIAL_GEMS_PRESETS[0];
 
@@ -92,6 +95,9 @@ export default function VideoFactoryPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     setSubmitSuccess(null);
+    setActiveJobStatus('Memulakan penjanaan...');
+    setActiveJobProgress(10);
+    setGeneratedVideoUrl(null);
 
     try {
       const res = await fetch('/api/jobs', {
@@ -107,7 +113,7 @@ export default function VideoFactoryPage() {
           callToAction: ctaOption,
           isMuslimahModest,
           customPrompt: mode === 'advanced' ? customPrompt : undefined,
-          imageKeys: images.map((img) => img.name),
+          imageKeys: images.map((img) => img.dataUrl.startsWith('http') ? img.dataUrl : img.name),
         }),
       });
 
@@ -116,10 +122,45 @@ export default function VideoFactoryPage() {
         throw new Error(data.error || 'Gagal menghantar tugasan video');
       }
 
-      setSubmitSuccess(`Tugasan video berjaya dimulakan! ID Job: ${data.jobId} (Enjin: ${data.provider.toUpperCase()})`);
+      setSubmitSuccess(`Tugasan dihantar! ID Task: ${data.providerTaskId}`);
+      setActiveJobStatus('Sedang diproses oleh pelayan AI...');
+      setActiveJobProgress(30);
+
+      // Mulakan polling status
+      const providerTaskId = data.providerTaskId;
+      const providerName = data.provider || 'nexabot';
+      let pollCount = 0;
+      const pollInterval = setInterval(async () => {
+        pollCount++;
+        try {
+          const pollRes = await fetch(`/api/jobs?providerTaskId=${providerTaskId}&provider=${providerName}`);
+          const pollData = await pollRes.json();
+          if (pollData.status === 'COMPLETED' && pollData.output?.videoUrl) {
+            clearInterval(pollInterval);
+            setIsSubmitting(false);
+            setActiveJobStatus('Selesai!');
+            setActiveJobProgress(100);
+            setGeneratedVideoUrl(pollData.output.videoUrl);
+          } else if (pollData.status === 'FAILED') {
+            clearInterval(pollInterval);
+            setIsSubmitting(false);
+            setSubmitError(`Penjanaan video gagal: ${pollData.rawStatus || 'Ralat tidak diketahui'}`);
+          } else {
+            setActiveJobProgress((prev) => Math.min(prev + 5, 90));
+            setActiveJobStatus(`Sedang diproses (${pollData.rawStatus || 'rendering'})...`);
+          }
+        } catch {
+          // ignore transient poll error
+        }
+
+        if (pollCount > 60) {
+          clearInterval(pollInterval);
+          setIsSubmitting(false);
+        }
+      }, 4000);
+
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : String(err));
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -437,6 +478,54 @@ export default function VideoFactoryPage() {
             {submitError && (
               <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800">
                 {submitError}
+              </div>
+            )}
+
+            {activeJobStatus && isSubmitting && (
+              <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-indigo-900">
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                    {activeJobStatus}
+                  </span>
+                  <span>{activeJobProgress}%</span>
+                </div>
+                <div className="w-full bg-indigo-200/60 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${activeJobProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {generatedVideoUrl && (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Video Siap Dijana!
+                  </span>
+                </div>
+                <div className="rounded-lg overflow-hidden bg-black aspect-[9/16] max-h-[380px] mx-auto shadow-inner flex items-center justify-center">
+                  <video
+                    src={generatedVideoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <a
+                  href={generatedVideoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  download="contenify_video.mp4"
+                  className="w-full py-2 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  Muat Turun MP4 (HD)
+                </a>
               </div>
             )}
 

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     JobStateMachine.transition('QUEUED', 'SUBMITTING', { jobId });
 
     // 5. Submit to Provider Adapter
-    const mainImage = imageKeys[0] || 'https://storage.contenify.mock/samples/default_product.jpg';
+    const mainImage = imageKeys.length > 0 ? imageKeys[0] : undefined;
     const submitResult = await providerAdapter.submit({
       jobId,
       idempotencyKey,
@@ -91,7 +91,33 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const providerTaskId = searchParams.get('providerTaskId');
+  const provider = searchParams.get('provider') || 'nexabot';
+
+  if (providerTaskId) {
+    try {
+      const adapter = router.resolveProvider(10, provider as any);
+      const statusRes = await adapter.getStatus(providerTaskId);
+      let outputRes = null;
+      if (statusRes.normalizedStatus === 'COMPLETED') {
+        outputRes = await adapter.getOutputs(providerTaskId);
+      }
+      return NextResponse.json({
+        providerTaskId,
+        provider,
+        status: statusRes.normalizedStatus,
+        progress: statusRes.progressPercent,
+        rawStatus: statusRes.rawStatus,
+        output: outputRes,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({
     status: 'ONLINE',
     version: '0.1.0',
