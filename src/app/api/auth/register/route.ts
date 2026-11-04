@@ -47,6 +47,19 @@ export async function POST(req: NextRequest) {
     const displayName = (fullName && typeof fullName === 'string') ? fullName.trim() : cleanEmail.split('@')[0];
     const cleanReferral = (referralCode && typeof referralCode === 'string') ? referralCode.trim().toUpperCase() : null;
 
+    // 0. Production Fail-Closed Check: Never allow ephemeral registrations in live production
+    if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return NextResponse.json(
+          {
+            error: 'Perkhidmatan pendaftaran pangkalan data sedang diselenggara. Sila cuba sebentar lagi.',
+            serviceUnavailable: true,
+          },
+          { status: 503 }
+        );
+      }
+    }
+
     let userId: string;
     let workspaceId: string;
     let requiresEmailConfirmation = false;
@@ -236,11 +249,12 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({
       success: true,
       message: requiresEmailConfirmation
-        ? 'Pendaftaran berjaya! Sila semak emel anda untuk mengesahkan akaun.'
+        ? 'Pendaftaran berjaya! Sila semak emel anda untuk mengesahkan akaun sebelum log masuk.'
         : 'Pendaftaran berjaya! Anda kini boleh mula menjana video.',
       requiresEmailConfirmation,
-      user: sessionPayload,
-      wallet,
+      email: cleanEmail,
+      user: requiresEmailConfirmation ? null : sessionPayload,
+      wallet: requiresEmailConfirmation ? null : wallet,
     });
 
     if (!requiresEmailConfirmation) {

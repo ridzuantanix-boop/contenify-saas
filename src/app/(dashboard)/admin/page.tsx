@@ -30,6 +30,20 @@ interface Metrics {
   publicCheckoutEnabled: boolean;
   isGenerationPaused: boolean;
   generationPauseReason: string;
+  isAvailable?: boolean;
+  error?: string;
+}
+
+interface RegisteredUser {
+  id: string;
+  emailMasked: string;
+  fullName: string;
+  whatsapp: string;
+  tier: string;
+  workspaceId: string;
+  balance: number;
+  createdAt: string;
+  provisionStatus: 'provisioned' | 'pending';
 }
 
 interface Customer {
@@ -55,6 +69,20 @@ export default function AdminPage() {
   const [unlockLoading, setUnlockLoading] = useState<boolean>(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
 
+  // Tabs: overview, users, activation
+  const [adminTab, setAdminTab] = useState<'overview' | 'users' | 'activation'>('overview');
+
+  // Registered users state
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [usersTotal, setUsersTotal] = useState<number>(0);
+  const [isAuthoritativeData, setIsAuthoritativeData] = useState<boolean>(true);
+
+  // Reconcile state
+  const [isReconciling, setIsReconciling] = useState(false);
+  const [reconcileReport, setReconcileReport] = useState<any>(null);
+
   // Customer search & activation state
   const [searchEmail, setSearchEmail] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -75,12 +103,61 @@ export default function AdminPage() {
   const [isActivating, setIsActivating] = useState(false);
   const [activationFeedback, setActivationFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
+  // Honest system status without fabricated latency numbers
   const providers = [
-    { name: 'Nexabot Provider Adapter', type: '10s Spoken BM (AffiMatik Voice)', status: 'Operational', latency: '420ms' },
-    { name: 'RunningHub Provider Adapter', type: '15s WebApp #2103149871766220801 (AffiMatik Motion)', status: 'Operational', latency: '380ms' },
-    { name: 'Cloudflare R2 Private Bucket', type: 'S3-Compatible Storage', status: 'Healthy', latency: '65ms' },
-    { name: 'PostgreSQL Database & RLS', type: 'Supabase Engine', status: 'Connected', latency: '12ms' },
+    { name: 'Nexabot Provider Adapter', type: '10s Spoken BM (AffiMatik Voice)', status: 'Tersedia' },
+    { name: 'RunningHub Provider Adapter', type: '15s WebApp #2103149871766220801 (AffiMatik Motion)', status: 'Tersedia' },
+    { name: 'Cloudflare R2 Private Bucket', type: 'S3-Compatible Storage', status: 'Tersedia' },
+    {
+      name: 'PostgreSQL Database & Supabase Engine',
+      type: 'Pangkalan Data Pengeluaran & RLS',
+      status: metrics?.isAvailable === false ? 'Belum Disahkan / Terputus' : 'Tersambung (Aktif)',
+    },
   ];
+
+  async function loadUsers(query = '') {
+    setIsLoadingUsers(true);
+    try {
+      const url = query.trim()
+        ? `/api/admin/operations?view=users&search=${encodeURIComponent(query.trim())}`
+        : `/api/admin/operations?view=users`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.users) {
+          setRegisteredUsers(data.users);
+          setUsersTotal(data.total || data.users.length);
+          setIsAuthoritativeData(Boolean(data.isAuthoritative));
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }
+
+  async function handleReconcileAccounts() {
+    setIsReconciling(true);
+    setReconcileReport(null);
+    try {
+      const res = await fetch('/api/admin/operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reconcile_accounts' }),
+      });
+      const data = await res.json();
+      if (res.ok && data.report) {
+        setReconcileReport(data.report);
+        await loadMetrics();
+        await loadUsers(userSearchQuery);
+      }
+    } catch (err: unknown) {
+      // ignore
+    } finally {
+      setIsReconciling(false);
+    }
+  }
 
   async function loadMetrics() {
     setIsLoadingMetrics(true);
@@ -315,16 +392,82 @@ export default function AdminPage() {
           type="button"
           onClick={loadMetrics}
           disabled={isLoadingMetrics}
-          className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+          className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition min-h-[44px]"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoadingMetrics ? 'animate-spin' : ''}`} />
-          <span>Muat Semula Metrik</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${(isLoadingMetrics || isLoadingUsers) ? 'animate-spin' : ''}`} />
+          <span>Muat Semula</span>
         </button>
       </div>
 
-      {/* SECTION 1: SOFT LAUNCH METRICS & SPEND CONTROLS */}
-      <div className="space-y-4">
-        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+      {/* Database Connection Alert (Honest status instead of false zeroes) */}
+      {metrics?.isAvailable === false && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block font-bold">Pangkalan Data Pengeluaran Belum Disahkan / Terputus</strong>
+              <span className="text-[11px] text-amber-800 leading-relaxed">
+                {metrics.error || 'Sambungan ke pangkalan data Supabase pengeluaran belum dapat disahkan. Metrik langsung tidak dipalsukan sebagai sifar.'}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadMetrics}
+            className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition"
+          >
+            Uji Semula Sambungan
+          </button>
+        </div>
+      )}
+
+      {/* Admin Navigation Tabs */}
+      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setAdminTab('overview')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap min-h-[44px] ${
+            adminTab === 'overview'
+              ? 'border-indigo-600 text-indigo-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Ikhtisar & Perlindungan
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setAdminTab('users');
+            loadUsers(userSearchQuery);
+          }}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap min-h-[44px] flex items-center gap-1.5 ${
+            adminTab === 'users'
+              ? 'border-indigo-600 text-indigo-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <span>Pengguna Berdaftar</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
+            {usersTotal}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAdminTab('activation')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap min-h-[44px] ${
+            adminTab === 'activation'
+              ? 'border-indigo-600 text-indigo-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Pengaktifan Pelanggan Manual
+        </button>
+      </div>
+
+      {/* TAB 1: OVERVIEW & SPEND CONTROLS */}
+      {adminTab === 'overview' && (
+        <div className="space-y-6">
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Activity className="w-4 h-4 text-indigo-600" />
           <span>Pemantauan Soft Launch & Perlindungan Kos Provider</span>
         </h3>
@@ -413,7 +556,7 @@ export default function AdminPage() {
             type="button"
             onClick={handleTogglePause}
             disabled={pauseActionLoading}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap self-start sm:self-auto ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap self-start sm:self-auto min-h-[44px] ${
               metrics?.isGenerationPaused
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 : 'bg-rose-600 hover:bg-rose-700 text-white'
@@ -426,10 +569,172 @@ export default function AdminPage() {
               : 'Jeda Penjanaan Segera'}
           </button>
         </div>
-      </div>
 
-      {/* SECTION 2: OWNER-ONLY MANUAL ACTIVATION WORKSPACE */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
+        {/* SECTION: PROVIDERS TELEMETRY TABLE */}
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden mt-6">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-800">Status Komponen Enjin & Pangkalan Data</span>
+            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${
+              metrics?.isAvailable === false
+                ? 'text-amber-700 bg-amber-50 border-amber-200'
+                : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+            }`}>
+              {metrics?.isAvailable === false ? 'Perlu Sambungan Pangkalan Data' : 'Semua Sistem Normal'}
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {providers.map((p) => (
+              <div key={p.name} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div>
+                  <div className="font-bold text-slate-900">{p.name}</div>
+                  <div className="text-[11px] text-slate-500">{p.type}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`px-2.5 py-1 rounded-full font-semibold text-[11px] ${
+                    p.status.includes('Tersambung') || p.status.includes('Tersedia')
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {p.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* TAB 2: REGISTERED USERS LIST & RECONCILIATION */}
+      {adminTab === 'users' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-600" />
+                <span>Senarai Pengguna Berdaftar ({usersTotal})</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Pengguna yang mendaftar akaun dengan nombor WhatsApp dan kelayakan 50 kredit percuma.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleReconcileAccounts}
+              disabled={isReconciling}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 self-start sm:self-auto min-h-[44px]"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin' : ''}`} />
+              <span>{isReconciling ? 'Menyelaras Akaun...' : 'Selaras Akaun (Reconcile)'}</span>
+            </button>
+          </div>
+
+          {/* Reconcile Outcome Banner */}
+          {reconcileReport && (
+            <div className={`p-4 rounded-xl text-xs space-y-1.5 ${
+              reconcileReport.success
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+                : 'bg-rose-50 border border-rose-200 text-rose-900'
+            }`}>
+              <div className="font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Laporan Penyelarasan Pangkalan Data Selesai</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                <div>Pengguna Diimbas: <strong>{reconcileReport.totalAuthUsersScanned}</strong></div>
+                <div>Akaun Lengkap: <strong>{reconcileReport.completeAccounts}</strong></div>
+                <div>Akaun Dipulihkan: <strong>{reconcileReport.orphansRecovered}</strong></div>
+                <div>Dompet Diperuntukkan: <strong>{reconcileReport.walletsProvisioned}</strong></div>
+              </div>
+            </div>
+          )}
+
+          {/* Search bar */}
+          <div className="relative max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={userSearchQuery}
+              onChange={(e) => {
+                setUserSearchQuery(e.target.value);
+                loadUsers(e.target.value);
+              }}
+              placeholder="Cari mengikut nama, emel, atau WhatsApp..."
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white min-h-[44px]"
+            />
+          </div>
+
+          {/* Users Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-3 px-4">Nama Penuh</th>
+                    <th className="py-3 px-4">Emel (Dilindungi)</th>
+                    <th className="py-3 px-4">No. WhatsApp</th>
+                    <th className="py-3 px-4">Pelan (Tier)</th>
+                    <th className="py-3 px-4">Baki Kredit</th>
+                    <th className="py-3 px-4">Tarikh Daftar</th>
+                    <th className="py-3 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {isLoadingUsers ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        Memuatkan senarai pengguna...
+                      </td>
+                    </tr>
+                  ) : registeredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        Tiada rekod pengguna berdaftar ditemui.
+                      </td>
+                    </tr>
+                  ) : (
+                    registeredUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/60 transition">
+                        <td className="py-3 px-4 font-semibold text-slate-900">{u.fullName}</td>
+                        <td className="py-3 px-4 font-mono text-[11px] text-slate-600">{u.emailMasked}</td>
+                        <td className="py-3 px-4 font-medium text-slate-800">{u.whatsapp}</td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {u.tier}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-bold text-slate-900">{u.balance} kr</td>
+                        <td className="py-3 px-4 text-slate-500 text-[11px]">
+                          {new Date(u.createdAt).toLocaleDateString('ms-MY', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            u.provisionStatus === 'provisioned'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}>
+                            {u.provisionStatus === 'provisioned' ? 'Aktif' : 'Menunggu'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: OWNER MANUAL ACTIVATION */}
+      {adminTab === 'activation' && (
+      <div className="space-y-4">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Gift className="w-4 h-4 text-purple-600" />
@@ -594,14 +899,14 @@ export default function AdminPage() {
                         onChange={(e) => {
                           setPaidPlanId(e.target.value);
                           if (e.target.value === 'starter') setPaidAmountMyr(49);
-                          else if (e.target.value === 'pro') setPaidAmountMyr(99);
-                          else if (e.target.value === 'agency') setPaidAmountMyr(199);
+                          else if (e.target.value === 'pro') setPaidAmountMyr(129);
+                          else if (e.target.value === 'agency') setPaidAmountMyr(399);
                         }}
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                       >
-                        <option value="starter">Starter (RM49 • 100 Kredit)</option>
-                        <option value="pro">Pro (RM99 • 250 Kredit)</option>
-                        <option value="agency">Agency (RM199 • 500 Kredit)</option>
+                        <option value="starter">Starter Creator (RM 49 • 50 Kredit)</option>
+                        <option value="pro">Pro Affiliate (RM 129 • 160 Kredit)</option>
+                        <option value="agency">Agency Studio (RM 399 • 600 Kredit)</option>
                       </select>
                     </div>
                     <div>
@@ -678,33 +983,7 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-
-      {/* SECTION 3: PROVIDERS HEALTH TABLE */}
-      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-800">Status Kesihatan Komponen Enjin</span>
-          <span className="text-[10px] uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-            Semua Sistem Normal
-          </span>
-        </div>
-
-        <div className="divide-y divide-slate-100">
-          {providers.map((p) => (
-            <div key={p.name} className="px-6 py-4 flex items-center justify-between text-xs">
-              <div>
-                <div className="font-bold text-slate-900">{p.name}</div>
-                <div className="text-[11px] text-slate-500">{p.type}</div>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-slate-400 font-mono text-[11px]">{p.latency}</span>
-                <span className="px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 text-[10px]">
-                  {p.status}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -352,7 +352,7 @@ export class DynamicPromptCompiler {
     const feature = (product.confirmedFeatures && product.confirmedFeatures[0]) || product.coreFunction || 'kegunaan harian';
     const useCase = product.usageContext || 'kegunaan seharian';
     const buyerProblem = product.buyerProblem || 'mencari pilihan yang praktikal';
-    const qaQuestion = product.allowedQaQuestion || `Ada fungsi menarik pada ${product.spokenShortName}?`;
+    const qaQuestion = product.allowedQaQuestion || `Ada fungsi menarik pada ${product.spokenShortName || 'produk ni'}?`;
 
     if (stylePromptFn) {
       styleSpecificPrompt = stylePromptFn({

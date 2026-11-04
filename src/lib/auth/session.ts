@@ -17,10 +17,24 @@ export interface UserSession {
 
 const DEFAULT_SESSION_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
-// Secure server secret (falls back to deterministic node env or warning in development)
+// Ephemeral in-memory fallback secret strictly for local test isolation (never used in production)
+let runtimeDevSecret: string | null = null;
+
 function getSecretKey(): string {
-  const secret = process.env.SESSION_SECRET || process.env.ADMIN_ACCESS_KEY || 'affimatik_master_hmac_secret_2026_pawarna_secure';
-  return secret;
+  const secret = process.env.SESSION_SECRET || process.env.ADMIN_ACCESS_KEY;
+  if (secret && secret.trim().length > 0) {
+    return secret.trim();
+  }
+  
+  if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
+    throw new Error('SESSION_SECRET environment variable is missing in production: session creation and verification rejected.');
+  }
+
+  // Strictly ephemeral random secret for development / testing that changes per process
+  if (!runtimeDevSecret) {
+    runtimeDevSecret = `dev_${crypto.randomUUID()}_${Date.now()}`;
+  }
+  return runtimeDevSecret;
 }
 
 /**

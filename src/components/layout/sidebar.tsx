@@ -17,6 +17,7 @@ import {
   Sliders,
   Settings,
   Gift,
+  X,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -61,7 +62,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white flex flex-col h-screen sticky top-0 shrink-0">
+    <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white h-screen sticky top-0 shrink-0">
       {/* Brand Header */}
       <div className="h-18 flex items-center px-5 border-b border-slate-100 gap-3 py-3">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
@@ -174,5 +175,177 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+  );
+}
+
+export function MobileSidebarDrawer({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const pathname = usePathname();
+  const [balance, setBalance] = useState<number | null>(null);
+  const [workspaceName, setWorkspaceName] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            setIsAuthenticated(true);
+            setWorkspaceName(data.user.fullName ? `${data.user.fullName.split(' ')[0]}'s Workspace` : 'Workspace Utama');
+            if (data.wallet) {
+              setBalance(data.wallet.balance);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    if (isOpen) {
+      loadSession();
+    }
+  }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu Navigasi Mobile">
+      {/* Backdrop overlay */}
+      <div
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Slide-over panel */}
+      <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
+        {/* Header with Close Button */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
+              A
+            </div>
+            <div>
+              <span className="font-extrabold tracking-tight text-slate-900 text-sm">AffiMatik</span>
+              <span className="ml-1.5 text-[9px] font-semibold uppercase px-1 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                Pawarna
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2.5 -mr-1 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 min-h-[44px] min-w-[44px] flex items-center justify-center transition"
+            aria-label="Tutup Menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation links with touch targets >= 44px */}
+        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+          <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            Studio Utama
+          </div>
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href || (item.href !== '#' && pathname.startsWith(`${item.href}/`));
+            const Icon = item.icon;
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 min-h-[44px]"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 text-slate-400" />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold border border-amber-200">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition min-h-[44px] ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700 font-bold'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
+                  <span>{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    isActive ? 'bg-indigo-100 text-indigo-700 font-semibold' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Mobile Drawer Footer with Balance & Touch Affordance */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/80">
+          {isAuthenticated ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Ruang Kerja:</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[140px]">{workspaceName}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-600">Baki Kredit:</span>
+                <span className="font-bold text-indigo-700">{balance !== null ? `${balance} Kredit` : '...'}</span>
+              </div>
+              <Link
+                href="/billing"
+                onClick={onClose}
+                className="block w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold text-center transition min-h-[44px] flex items-center justify-center"
+              >
+                Urus Kredit & Langganan
+              </Link>
+            </div>
+          ) : (
+            <Link
+              href="/register"
+              onClick={onClose}
+              className="block w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold text-center transition min-h-[44px] flex items-center justify-center"
+            >
+              Daftar Percuma (50 Kredit)
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

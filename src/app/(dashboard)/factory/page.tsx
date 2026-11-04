@@ -100,6 +100,8 @@ function VideoFactoryContent() {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
 
+  const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
+
   // Structured Product Profile derived safely
   const productProfile = useMemo(() => {
     return AICreativeDirector.extractProductProfile({
@@ -233,11 +235,7 @@ function VideoFactoryContent() {
           dataUrl,
         },
       ]);
-      // If product name is empty, provide a clean default from filename
-      if (!productName) {
-        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-        setProductName(cleanName);
-      }
+      // Filename remains file metadata only; never fabricate product name from filename
       setSubmitError(null);
     };
     reader.readAsDataURL(file);
@@ -291,7 +289,7 @@ function VideoFactoryContent() {
         productName: productName.trim() || undefined,
         productCategory: productCategory.trim() || undefined,
         productFacts: confirmedFeature.trim() ? [confirmedFeature.trim()] : [],
-        customScript: customScript.trim() || undefined,
+        customScript: selectedStyle.engine === 'nexabot' ? (customScript.trim() || undefined) : undefined,
         creativeInstruction: creativeInstruction.trim() || undefined,
         callToAction: ctaOption,
         isMuslimahModest,
@@ -344,7 +342,7 @@ function VideoFactoryContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 pb-24 md:pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
@@ -525,6 +523,7 @@ function VideoFactoryContent() {
                 type="button"
                 onClick={() => {
                   setSelectedEngine('runninghub');
+                  setCustomScript(''); // Reset custom script so Motion 15s never inherits stale Voice script
                   if (selectedStyle.engine !== 'runninghub') setSelectedStyleId('RH01');
                 }}
                 className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
@@ -551,7 +550,7 @@ function VideoFactoryContent() {
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya tersedia</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
                   const isHovered = hoveredStyleId === style.id || mobilePlayingStyleId === style.id;
@@ -568,6 +567,9 @@ function VideoFactoryContent() {
                       }}
                       onClick={() => {
                         setSelectedStyleId(style.id);
+                        if (style.engine === 'runninghub') {
+                          setCustomScript(''); // Isolate custom script from Motion
+                        }
                         // For touch devices, tap toggles play state
                         setMobilePlayingStyleId(mobilePlayingStyleId === style.id ? null : style.id);
                       }}
@@ -1099,6 +1101,53 @@ function VideoFactoryContent() {
           </div>
         </div>
       )}
+
+      {/* PERSISTENT MOBILE BOTTOM ACTION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-lg pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-xs text-slate-900 truncate">{selectedStyle.name}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200 shrink-0">
+                {selectedStyle.durationSeconds}s
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+              <span>Kos: <strong className="text-slate-800">{requiredCredits} kr</strong></span>
+              <span>•</span>
+              <span>Baki: <strong className="text-indigo-600">{userBalance !== null ? userBalance : '...'}</strong></span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGenerateVideo}
+            disabled={Boolean(isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
+            className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 ${
+              isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
+                ? 'bg-slate-400 cursor-not-allowed'
+                : 'bg-primary hover:bg-primary/95 active:scale-95'
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Menjana...</span>
+              </>
+            ) : activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING') ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Jana Video</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

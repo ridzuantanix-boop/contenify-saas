@@ -16,7 +16,7 @@ export interface ProductVisualAttributes {
 
 export interface ProductProfile {
   name: string;
-  spokenShortName: string; // Natural spoken alias (e.g. "lampu meja ni", "serum ni", "sambal ni")
+  spokenShortName?: string; // Natural spoken alias (e.g. "lampu meja ni", "serum ni", "sambal ni")
   category: string;
   brand?: string;
   packagingFormat: 'bottle' | 'box' | 'pouch' | 'tube' | 'jar' | 'apparel' | 'gadget' | 'general';
@@ -28,8 +28,8 @@ export interface ProductProfile {
   coreFunction?: string; // Safe, honest literal category function (never fabricated)
   usageContext?: string; // e.g. "ruang belajar", "dapur", "rutin harian"
   allowedQaQuestion?: string; // Derived common question for NX07
-  confirmedFeatures: string[]; // User-confirmed product benefits/specs only
-  verifiedBenefits: string[]; // Verified buyer benefit propositions
+  confirmedFeatures?: string[]; // User-confirmed product benefits/specs only
+  verifiedBenefits?: string[]; // Verified buyer benefit propositions
   verifiedFacts?: string[]; // Backward compatibility alias
   inferredAttributes?: string[]; // Visually inferred attributes labeled clearly as inferences
   unknownFields?: string[]; // Explicitly unresolved/unknown fields (no hallucination)

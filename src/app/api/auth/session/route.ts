@@ -65,8 +65,13 @@ export async function POST(req: NextRequest) {
 
     // 0. Authoritative Master Admin Login Check
     const isMasterAdminEmail = cleanEmail === 'admin@affimatik.online' || cleanEmail === 'admin@pawarna.my';
-    const configuredAdminKey = process.env.ADMIN_ACCESS_KEY || 'AffiMatik@Master2026!';
-    const isMasterAdminPassword = password === 'AffiMatik@Master2026!' || (configuredAdminKey && password === configuredAdminKey);
+    const configuredAdminKey = process.env.ADMIN_ACCESS_KEY;
+    const isMasterAdminPassword = Boolean(
+      configuredAdminKey &&
+      configuredAdminKey.trim().length > 0 &&
+      password &&
+      password === configuredAdminKey.trim()
+    );
 
     if (isMasterAdminEmail && isMasterAdminPassword) {
       verifiedUserId = 'usr_admin_master';

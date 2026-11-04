@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
+import { reconcileOrphanAccounts } from '@/lib/db/reconcile';
 
 export const runtime = 'edge';
 
@@ -26,6 +27,19 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action } = body;
+
+    // Reconcile Orphan Accounts Idempotently
+    if (action === 'reconcile_accounts') {
+      const report = await reconcileOrphanAccounts();
+      await DurableStore.recordAuditLog(
+        adminEmail,
+        'ACCOUNTS_RECONCILED',
+        'SYSTEM',
+        'reconcile',
+        { report }
+      );
+      return NextResponse.json({ success: true, report });
+    }
 
     // 1. Manual Customer Activation (Complimentary Early Access or Manually Paid)
     if (action === 'manual_activate_customer') {
@@ -214,6 +228,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Pelanggan tidak ditemui.' }, { status: 404 });
     }
     return NextResponse.json({ success: true, customer });
+  }
+
+  if (view === 'users') {
+    const search = searchParams.get('search') || undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 50;
+    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!, 10) : 0;
+    const result = await DurableStore.listRegisteredUsers({ search, limit, offset });
+    return NextResponse.json({ success: true, ...result });
   }
 
   if (view === 'orders') {

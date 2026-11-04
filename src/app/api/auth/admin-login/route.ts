@@ -13,19 +13,79 @@ function constantTimeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
+// Rate limiting / brute-force throttle map (IP -> { count, lockedUntil })
+const failedAttemptsMap = new Map<string, { count: number; lockedUntil: number }>();
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfterSeconds?: number } {
+  const now = Date.now();
+  const record = failedAttemptsMap.get(ip);
+  if (!record) return { allowed: true };
+
+  if (record.lockedUntil > now) {
+    const retryAfter = Math.ceil((record.lockedUntil - now) / 1000);
+    return { allowed: false, retryAfterSeconds: retryAfter };
+  }
+
+  if (record.lockedUntil <= now && record.count >= 5) {
+    failedAttemptsMap.delete(ip);
+  }
+
+  return { allowed: true };
+}
+
+function recordFailedAttempt(ip: string): void {
+  const now = Date.now();
+  const record = failedAttemptsMap.get(ip) || { count: 0, lockedUntil: 0 };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.lockedUntil = now + 15 * 60 * 1000; // 15 minutes lockout
+  }
+  failedAttemptsMap.set(ip, record);
+}
+
+function recordSuccessfulAttempt(ip: string): void {
+  failedAttemptsMap.delete(ip);
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '127.0.0.1';
+    
+    // Brute-force check
+    const rateCheck = checkRateLimit(clientIp);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: `Terlalu banyak cubaan gagal. Sila cuba lagi dalam masa ${rateCheck.retryAfterSeconds} saat.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { accessKey } = body;
 
-    const configuredKey = process.env.ADMIN_ACCESS_KEY || 'AffiMatik@Master2026!';
+    const configuredKey = process.env.ADMIN_ACCESS_KEY;
 
-    if (!accessKey || !constantTimeEqual(accessKey.trim(), configuredKey.trim())) {
+    if (!configuredKey || configuredKey.trim().length === 0) {
+      if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
+        return NextResponse.json(
+          { error: 'Kunci akses pentadbir (ADMIN_ACCESS_KEY) belum dikonfigurasi pada persekitaran ini.' },
+          { status: 503 }
+        );
+      }
+    }
+
+    // In non-production testing with vitest where process.env.ADMIN_ACCESS_KEY might be dynamically assigned
+    const validKey = configuredKey || 'dev_admin_key_testing_only';
+
+    if (!accessKey || !constantTimeEqual(accessKey.trim(), validKey.trim())) {
+      recordFailedAttempt(clientIp);
       return NextResponse.json(
         { error: 'Kunci akses pentadbir tidak sah.' },
         { status: 401 }
       );
     }
+
+    recordSuccessfulAttempt(clientIp);
 
     // Generate cryptographic admin session token
     const adminSession = {

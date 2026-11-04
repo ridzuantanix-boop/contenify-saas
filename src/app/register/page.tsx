@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Gift, ArrowRight, AlertCircle, CheckCircle2, Lock } from 'lucide-react';
+import { Sparkles, Gift, ArrowRight, AlertCircle, CheckCircle2, Lock, Mail } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +15,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +40,13 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Pendaftaran gagal.');
+      }
+
+      if (data.requiresEmailConfirmation) {
+        setRequiresEmailVerification(true);
+        setRegisteredEmail(email.trim().toLowerCase());
+        setSuccessMsg(null);
+        return;
       }
 
       setSuccessMsg('Tahniah! Akaun anda berjaya dicipta dengan 50 Kredit Percuma. Sedang membawa anda ke Dashboard...');
@@ -70,30 +79,63 @@ export default function RegisterPage() {
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 sm:px-8 border border-slate-200 shadow-sm rounded-2xl space-y-5">
-          {/* 50 Credits Highlight Banner */}
-          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-900">
-            <Gift className="w-5 h-5 text-amber-600 shrink-0" />
-            <div>
-              <span className="font-bold">50 Kredit Percuma Terus Dimasukkan!</span>
-              <p className="text-[11px] text-amber-700 mt-0.5">Tiada kad bank diperlukan. Tiada caj tersembunyi.</p>
-            </div>
-          </div>
+          {requiresEmailVerification ? (
+            <div className="text-center space-y-4 py-4">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center mx-auto text-indigo-600 shadow-xs">
+                <Mail className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-slate-900">Sila Sahkan Emel Anda</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Pautan pengesahan keselamatan telah dihantar ke:
+                </p>
+                <div className="inline-block px-3 py-1 bg-slate-100 rounded-lg text-xs font-mono font-bold text-slate-800">
+                  {registeredEmail}
+                </div>
+                <p className="text-[11px] text-slate-500 pt-2 leading-relaxed">
+                  Sila buka peti masuk (inbox) emel anda dan klik pautan pengesahan untuk mengaktifkan akaun serta menuntut <strong>50 Kredit Percuma</strong>.
+                </p>
+              </div>
 
-          {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>{errorMsg}</span>
+              <div className="pt-4 border-t border-slate-100 space-y-2">
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition"
+                >
+                  <span>Pergi ke Halaman Log Masuk</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <p className="text-[10px] text-slate-400">
+                  Tidak menerima emel? Sila semak folder Spam atau Junk.
+                </p>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              {/* 50 Credits Highlight Banner */}
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-900">
+                <Gift className="w-5 h-5 text-amber-600 shrink-0" />
+                <div>
+                  <span className="font-bold">50 Kredit Percuma Terus Dimasukkan!</span>
+                  <p className="text-[11px] text-amber-700 mt-0.5">Tiada kad bank diperlukan. Tiada caj tersembunyi.</p>
+                </div>
+              </div>
 
-          {successMsg && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-          )}
+              {errorMsg && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
-          <form onSubmit={handleRegister} className="space-y-4">
+              {successMsg && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{successMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleRegister} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Nama Penuh
@@ -183,6 +225,8 @@ export default function RegisterPage() {
               Log masuk di sini
             </Link>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

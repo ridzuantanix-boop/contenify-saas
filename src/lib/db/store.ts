@@ -4,6 +4,8 @@
  * Atomic Job Admission: Coordinated admission, concurrency enforcement, idempotency, and credit reservation in single database transaction.
  */
 
+import { AUTHORITATIVE_PLANS } from '@/lib/billing/plans';
+
 export interface CreditWalletRecord {
   workspaceId: string;
   balance: number;
@@ -241,7 +243,9 @@ export class DurableStore {
   private static isSupabaseConfigured(): boolean {
     return Boolean(
       process.env.SUPABASE_URL &&
+      process.env.SUPABASE_URL !== 'undefined' &&
       process.env.SUPABASE_SERVICE_ROLE_KEY &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY !== 'undefined' &&
       !localDb.forceDbDown
     );
   }
@@ -255,11 +259,7 @@ export class DurableStore {
       throw new Error('Database connection unavailable: fail-closed.');
     }
     if (process.env.NODE_ENV === 'production' && !this.isSupabaseConfigured()) {
-      if (Boolean(process.env.VITEST)) {
-        throw new Error('Database configuration missing in production: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
-      }
-      // In live production before Supabase keys are configured in Cloudflare Pages dashboard,
-      // fallback smoothly to durable in-memory store so users can register and use 50 trial credits immediately!
+      throw new Error('Database configuration missing in production: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
     }
   }
 
@@ -2016,45 +2016,72 @@ export class DurableStore {
     }
 
     if (activationType === 'MANUAL_PAID') {
-      const selectedPlanId = planId || 'starter';
-      const paidAmount = typeof amountPaidMyr === 'number' ? amountPaidMyr : 49;
-      const ref = paymentReference || `bank_transfer_${Date.now()}`;
+      const selectedPlanId = (planId || 'starter').toLowerCase();
 
-      // Resolve plan credits from AUTHORITATIVE_PLANS (defaulting to 100 for starter)
-      let planCredits = 100;
-      let targetTier = 'starter';
-      if (selectedPlanId.includes('agency')) {
-        planCredits = 500;
-        targetTier = 'agency';
-      } else if (selectedPlanId.includes('pro')) {
-        planCredits = 250;
-        targetTier = 'pro';
+      // Resolve authoritative plan definition
+      let matchedPlan = AUTHORITATIVE_PLANS.find(p => p.id === selectedPlanId || p.id === `plan_${selectedPlanId}`);
+      if (!matchedPlan) {
+        if (selectedPlanId.includes('agency')) matchedPlan = AUTHORITATIVE_PLANS.find(p => p.id === 'plan_agency');
+        else if (selectedPlanId.includes('pro')) matchedPlan = AUTHORITATIVE_PLANS.find(p => p.id === 'plan_pro');
+        else matchedPlan = AUTHORITATIVE_PLANS.find(p => p.id === 'plan_starter');
       }
 
-      // Create manual order
+      if (!matchedPlan) {
+        throw new Error(`Pelan langganan tidak sah: "${planId}". Sila pilih antara starter, pro, atau agency.`);
+      }
+
+      const expectedAmount = matchedPlan.priceMyr;
+      const expectedCredits = matchedPlan.monthlyCredits;
+      const targetTier = matchedPlan.id.replace('plan_', '');
+
+      // Verify payment reference is valid, non-empty, and NOT a generated default placeholder
+      if (!paymentReference || typeof paymentReference !== 'string' || paymentReference.trim().length < 5 || paymentReference.startsWith('bank_transfer_')) {
+        throw new Error('Rujukan pembayaran bank yang sah dan disahkan (cth: nombor transaksi bank / resit) adalah wajib bagi pengaktifan akaun berbayar.');
+      }
+
+      // Verify amount paid strictly matches the authoritative plan
+      const paidAmount = typeof amountPaidMyr === 'number' ? amountPaidMyr : expectedAmount;
+      if (paidAmount !== expectedAmount) {
+        throw new Error(`Jumlah bayaran (RM ${paidAmount}) tidak sepadan dengan harga autoritatif pelan ${matchedPlan.name} (RM ${expectedAmount}).`);
+      }
+
+      // Create manual order with authoritative credits
       const order = await DurableStore.createOrder({
         workspaceId,
         userId: userId || workspaceId,
-        planId: selectedPlanId,
+        planId: matchedPlan.id,
         paymentMethod: 'manual_bank_transfer',
         amountMyr: paidAmount,
-        creditsGranted: planCredits,
+        creditsGranted: expectedCredits,
       });
 
       // Settle the order atomically
-      const settlement = await DurableStore.settleOrder(order.id, ref, {
+      const settlement = await DurableStore.settleOrder(order.id, paymentReference.trim(), {
         verifiedByAdmin: adminEmail,
         verifiedAt: new Date().toISOString(),
         paymentAmountMyr: paidAmount,
         referenceNote: reason || 'Manual payment verified by owner',
       });
 
+      // Update tier in Supabase if configured
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && userId) {
+        await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ tier: targetTier, updated_at: new Date().toISOString() }),
+        });
+      }
+
       await DurableStore.recordAuditLog(
         adminEmail,
         'MANUAL_PAID_ACTIVATED',
         'ORDER',
         order.id,
-        { workspaceId, planId: selectedPlanId, amountMyr: paidAmount, paymentReference: ref }
+        { workspaceId, planId: matchedPlan.id, amountMyr: paidAmount, paymentReference: paymentReference.trim(), creditsGranted: expectedCredits }
       );
 
       return {
@@ -2063,7 +2090,7 @@ export class DurableStore {
         orderId: order.id,
         balance: settlement.balance,
         tier: targetTier,
-        message: `Pelanggan berbayar manual (${selectedPlanId}, +${planCredits} kredit) berjaya disahkan dan diaktifkan.`,
+        message: `Pelanggan berbayar (${matchedPlan.name}, +${expectedCredits} kredit) berjaya disahkan dan diaktifkan dengan rujukan ${paymentReference.trim()}.`,
       };
     }
 
@@ -2083,9 +2110,30 @@ export class DurableStore {
     publicCheckoutEnabled: boolean;
     isGenerationPaused: boolean;
     generationPauseReason: string;
+    isAvailable: boolean;
+    error?: string;
   }> {
     const genSettings = await DurableStore.getSystemSettings('generation_status');
     const isPublicCheckoutEnabled = process.env.PUBLIC_CHECKOUT_ENABLED === 'true';
+
+    // In production, strictly reject false zeroes if Supabase database is unconfigured
+    if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
+      if (!this.isSupabaseConfigured()) {
+        return {
+          totalRegistrations: 0,
+          welcomeCreditsGranted: 0,
+          trialCreditsSpent: 0,
+          completedVideos: 0,
+          pendingJobs: 0,
+          failedJobs: 0,
+          publicCheckoutEnabled: isPublicCheckoutEnabled,
+          isGenerationPaused: Boolean(genSettings?.paused),
+          generationPauseReason: genSettings?.reason || '',
+          isAvailable: false,
+          error: 'Pangkalan data pengeluaran (Supabase) belum disambungkan ke Cloudflare Pages.',
+        };
+      }
+    }
 
     let totalRegistrations = 0;
     let welcomeCreditsGranted = 0;
@@ -2094,47 +2142,93 @@ export class DurableStore {
     let pendingJobs = 0;
     let failedJobs = 0;
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const sHeaders = {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      };
+    if (this.isSupabaseConfigured()) {
+      try {
+        const sHeaders = {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        };
 
-      // Count profiles
-      const profRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles?select=count`, {
-        headers: { ...sHeaders, Prefer: 'count=exact' },
-      });
-      if (profRes.ok) {
+        // Count profiles with Prefer: count=exact
+        const profRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles?select=count`, {
+          headers: { ...sHeaders, Prefer: 'count=exact' },
+        });
+
+        if (!profRes.ok) {
+          const errText = await profRes.text().catch(() => '');
+          return {
+            totalRegistrations: 0,
+            welcomeCreditsGranted: 0,
+            trialCreditsSpent: 0,
+            completedVideos: 0,
+            pendingJobs: 0,
+            failedJobs: 0,
+            publicCheckoutEnabled: isPublicCheckoutEnabled,
+            isGenerationPaused: Boolean(genSettings?.paused),
+            generationPauseReason: genSettings?.reason || '',
+            isAvailable: false,
+            error: `Gagal memuatkan metrik profil (HTTP ${profRes.status}): ${errText}`,
+          };
+        }
+
         const countHeader = profRes.headers.get('content-range');
         totalRegistrations = countHeader ? parseInt(countHeader.split('/')[1] || '0', 10) : 0;
-      }
 
-      // Count video jobs
-      const jobsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/video_jobs?select=status`, {
-        headers: sHeaders,
-      });
-      if (jobsRes.ok) {
-        const jobs = await jobsRes.json();
-        if (Array.isArray(jobs)) {
-          completedVideos = jobs.filter((j: any) => j.status === 'COMPLETED').length;
-          pendingJobs = jobs.filter((j: any) => j.status === 'SUBMITTING' || j.status === 'PROCESSING').length;
-          failedJobs = jobs.filter((j: any) => j.status === 'FAILED').length;
+        // Count video jobs
+        const jobsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/video_jobs?select=status`, {
+          headers: sHeaders,
+        });
+        if (jobsRes.ok) {
+          const jobs = await jobsRes.json();
+          if (Array.isArray(jobs)) {
+            completedVideos = jobs.filter((j: any) => j.status === 'COMPLETED').length;
+            pendingJobs = jobs.filter((j: any) => j.status === 'SUBMITTING' || j.status === 'PROCESSING').length;
+            failedJobs = jobs.filter((j: any) => j.status === 'FAILED').length;
+          }
         }
-      }
 
-      // Sum welcome grants and spent from credit wallets
-      const walletsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/credit_wallets?select=balance,lifetime_granted,lifetime_spent`, {
-        headers: sHeaders,
-      });
-      if (walletsRes.ok) {
-        const wallets = await walletsRes.json();
-        if (Array.isArray(wallets)) {
-          welcomeCreditsGranted = wallets.reduce((sum: number, w: any) => sum + (w.lifetime_granted || 0), 0);
-          trialCreditsSpent = wallets.reduce((sum: number, w: any) => sum + (w.lifetime_spent || 0), 0);
+        // Sum welcome grants and spent from credit wallets
+        const walletsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/credit_wallets?select=balance,lifetime_granted,lifetime_spent`, {
+          headers: sHeaders,
+        });
+        if (walletsRes.ok) {
+          const wallets = await walletsRes.json();
+          if (Array.isArray(wallets)) {
+            welcomeCreditsGranted = wallets.reduce((sum: number, w: any) => sum + (w.lifetime_granted || 0), 0);
+            trialCreditsSpent = wallets.reduce((sum: number, w: any) => sum + (w.lifetime_spent || 0), 0);
+          }
         }
+
+        return {
+          totalRegistrations,
+          welcomeCreditsGranted,
+          trialCreditsSpent,
+          completedVideos,
+          pendingJobs,
+          failedJobs,
+          publicCheckoutEnabled: isPublicCheckoutEnabled,
+          isGenerationPaused: Boolean(genSettings?.paused),
+          generationPauseReason: genSettings?.reason || '',
+          isAvailable: true,
+        };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          totalRegistrations: 0,
+          welcomeCreditsGranted: 0,
+          trialCreditsSpent: 0,
+          completedVideos: 0,
+          pendingJobs: 0,
+          failedJobs: 0,
+          publicCheckoutEnabled: isPublicCheckoutEnabled,
+          isGenerationPaused: Boolean(genSettings?.paused),
+          generationPauseReason: genSettings?.reason || '',
+          isAvailable: false,
+          error: `Ralat sambungan pangkalan data: ${msg}`,
+        };
       }
     } else {
-      // Local fallback
+      // Local testing fallback
       totalRegistrations = Object.keys(localDb.wallets).length;
       welcomeCreditsGranted = Object.values(localDb.wallets).reduce((s, w) => s + w.lifetimeGranted, 0);
       trialCreditsSpent = Object.values(localDb.wallets).reduce((s, w) => s + w.lifetimeSpent, 0);
@@ -2142,18 +2236,143 @@ export class DurableStore {
       completedVideos = jobs.filter((j) => j.status === 'COMPLETED').length;
       pendingJobs = jobs.filter((j) => j.status === 'SUBMITTING' || j.status === 'PROCESSING').length;
       failedJobs = jobs.filter((j) => j.status === 'FAILED').length;
+
+      return {
+        totalRegistrations,
+        welcomeCreditsGranted,
+        trialCreditsSpent,
+        completedVideos,
+        pendingJobs,
+        failedJobs,
+        publicCheckoutEnabled: isPublicCheckoutEnabled,
+        isGenerationPaused: Boolean(genSettings?.paused),
+        generationPauseReason: genSettings?.reason || '',
+        isAvailable: true,
+      };
+    }
+  }
+
+  /**
+   * Retrieves list of registered users for the owner admin dashboard.
+   * Authoritative: queries profiles joined with credit_wallets in Supabase,
+   * or returns stored users from localDb in development/testing.
+   */
+  static async listRegisteredUsers(options?: {
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    users: Array<{
+      id: string;
+      emailMasked: string;
+      fullName: string;
+      whatsapp: string;
+      tier: string;
+      workspaceId: string;
+      balance: number;
+      createdAt: string;
+      provisionStatus: 'provisioned' | 'pending';
+    }>;
+    total: number;
+    isAuthoritative: boolean;
+  }> {
+    const limit = options?.limit || 50;
+    const offset = options?.offset || 0;
+    const search = options?.search?.trim().toLowerCase();
+
+    function maskEmail(email: string): string {
+      const parts = email.split('@');
+      if (parts.length !== 2) return email;
+      const [name, domain] = parts;
+      if (name.length <= 2) return `${name[0] || '*'}***@${domain}`;
+      return `${name[0]}***${name[name.length - 1]}@${domain}`;
     }
 
-    return {
-      totalRegistrations,
-      welcomeCreditsGranted,
-      trialCreditsSpent,
-      completedVideos,
-      pendingJobs,
-      failedJobs,
-      publicCheckoutEnabled: isPublicCheckoutEnabled,
-      isGenerationPaused: Boolean(genSettings?.paused),
-      generationPauseReason: genSettings?.reason || '',
-    };
+    if (this.isSupabaseConfigured()) {
+      const sHeaders = {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      };
+
+      let url = `${process.env.SUPABASE_URL}/rest/v1/profiles?select=id,email,full_name,whatsapp,tier,default_workspace_id,created_at&order=created_at.desc&limit=${limit}&offset=${offset}`;
+      if (search) {
+        url += `&or=(email.ilike.*${encodeURIComponent(search)}*,full_name.ilike.*${encodeURIComponent(search)}*,whatsapp.ilike.*${encodeURIComponent(search)}*)`;
+      }
+
+      const res = await fetch(url, {
+        headers: { ...sHeaders, Prefer: 'count=exact' },
+      });
+
+      if (!res.ok) {
+        return { users: [], total: 0, isAuthoritative: false };
+      }
+
+      const countHeader = res.headers.get('content-range');
+      const total = countHeader ? parseInt(countHeader.split('/')[1] || '0', 10) : 0;
+      const rows = await res.json();
+
+      // Fetch wallet balances for these workspaces
+      const workspaceIds = rows.map((r: any) => r.default_workspace_id).filter(Boolean);
+      let walletMap: Record<string, number> = {};
+      if (workspaceIds.length > 0) {
+        const wUrl = `${process.env.SUPABASE_URL}/rest/v1/credit_wallets?workspace_id=in.(${workspaceIds.map(encodeURIComponent).join(',')})&select=workspace_id,balance`;
+        const wRes = await fetch(wUrl, { headers: sHeaders });
+        if (wRes.ok) {
+          const wRows = await wRes.json();
+          for (const w of wRows) {
+            walletMap[w.workspace_id] = w.balance;
+          }
+        }
+      }
+
+      const users = rows.map((r: any) => ({
+        id: r.id,
+        emailMasked: maskEmail(r.email || ''),
+        fullName: r.full_name || 'Pengguna',
+        whatsapp: r.whatsapp || '-',
+        tier: r.tier || 'free',
+        workspaceId: r.default_workspace_id || '-',
+        balance: walletMap[r.default_workspace_id] ?? 0,
+        createdAt: r.created_at || new Date().toISOString(),
+        provisionStatus: (r.default_workspace_id && walletMap[r.default_workspace_id] !== undefined) ? 'provisioned' as const : 'pending' as const,
+      }));
+
+      return { users, total, isAuthoritative: true };
+    }
+
+    // Local / Testing Fallback
+    const allUsers: any[] = [];
+    for (const [key, val] of Object.entries(localDb.settings)) {
+      if (key.startsWith('user_') && typeof val === 'object' && val !== null) {
+        const u = val as any;
+        allUsers.push(u);
+      }
+    }
+
+    let filtered = allUsers;
+    if (search) {
+      filtered = allUsers.filter(u => 
+        (u.email && u.email.toLowerCase().includes(search)) ||
+        (u.fullName && u.fullName.toLowerCase().includes(search)) ||
+        (u.whatsapp && u.whatsapp.includes(search))
+      );
+    }
+
+    const total = filtered.length;
+    const page = filtered.slice(offset, offset + limit);
+
+    const users = page.map(u => ({
+      id: u.userId || u.id || 'usr_local',
+      emailMasked: maskEmail(u.email || ''),
+      fullName: u.fullName || 'Pengguna',
+      whatsapp: u.whatsapp || '-',
+      tier: u.tier || 'free',
+      workspaceId: u.workspaceId || '-',
+      balance: localDb.wallets[u.workspaceId]?.balance ?? 50,
+      createdAt: u.registeredAt || new Date().toISOString(),
+      provisionStatus: 'provisioned' as const,
+    }));
+
+    return { users, total, isAuthoritative: false };
   }
 }
