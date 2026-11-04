@@ -19,11 +19,18 @@ export const runtime = 'edge';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, fullName, referralCode } = body;
+    const { email, password, fullName, referralCode, whatsapp } = body;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json(
         { error: 'Sila masukkan alamat emel yang sah.' },
+        { status: 400 }
+      );
+    }
+
+    if (!whatsapp || typeof whatsapp !== 'string' || whatsapp.trim().replace(/\D/g, '').length < 8) {
+      return NextResponse.json(
+        { error: 'Sila masukkan nombor WhatsApp yang sah (cth: 0123456789 atau +60123456789).' },
         { status: 400 }
       );
     }
@@ -36,6 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const cleanWhatsapp = whatsapp.trim();
     const displayName = (fullName && typeof fullName === 'string') ? fullName.trim() : cleanEmail.split('@')[0];
     const cleanReferral = (referralCode && typeof referralCode === 'string') ? referralCode.trim().toUpperCase() : null;
 
@@ -57,6 +65,7 @@ export async function POST(req: NextRequest) {
             password,
             data: {
               full_name: displayName,
+              whatsapp: cleanWhatsapp,
               referral_code: cleanReferral,
             },
           }),
@@ -111,7 +120,7 @@ export async function POST(req: NextRequest) {
           }
           workspaceId = wsRows[0].id;
 
-          // B. Upsert Profile with mandatory email, id, tier, default_workspace_id
+          // B. Upsert Profile with mandatory email, id, tier, default_workspace_id, and whatsapp
           const profRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles`, {
             method: 'POST',
             headers: sHeaders,
@@ -119,6 +128,7 @@ export async function POST(req: NextRequest) {
               id: userId,
               email: cleanEmail,
               full_name: displayName,
+              whatsapp: cleanWhatsapp,
               tier: 'free',
               default_workspace_id: workspaceId,
             }),
@@ -164,17 +174,22 @@ export async function POST(req: NextRequest) {
             throw new Error(`Pangkalan data gagal memperuntukkan dompet kredit permulaan: ${errText}`);
           }
 
-          // E. Record referral code if provided
-          if (cleanReferral) {
-            await fetch(`${process.env.SUPABASE_URL}/rest/v1/system_settings`, {
-              method: 'POST',
-              headers: sHeaders,
-              body: JSON.stringify({
-                key: `ref_user_${userId}`,
-                value: { referralCode: cleanReferral, registeredAt: new Date().toISOString() },
-              }),
-            });
-          }
+          // E. Record WhatsApp & Referral Code in system_settings for persistent backup
+          await fetch(`${process.env.SUPABASE_URL}/rest/v1/system_settings`, {
+            method: 'POST',
+            headers: sHeaders,
+            body: JSON.stringify({
+              key: `user_info_${userId}`,
+              value: {
+                userId,
+                email: cleanEmail,
+                whatsapp: cleanWhatsapp,
+                fullName: displayName,
+                referralCode: cleanReferral,
+                registeredAt: new Date().toISOString(),
+              },
+            }),
+          });
         } else {
           workspaceId = crypto.randomUUID();
         }
@@ -192,6 +207,16 @@ export async function POST(req: NextRequest) {
       await DurableStore.getWallet(workspaceId); // automatically provisions 50 credits
     }
 
+    // Persist user record in DurableStore
+    DurableStore.saveCustomerProfile({
+      userId,
+      email: cleanEmail,
+      fullName: displayName,
+      whatsapp: cleanWhatsapp,
+      workspaceId,
+      tier: 'free',
+    });
+
     // Provision wallet in local store for testing / session
     const wallet = await DurableStore.getWallet(workspaceId);
 
@@ -199,10 +224,11 @@ export async function POST(req: NextRequest) {
     const sessionPayload = {
       userId,
       email: cleanEmail,
+      fullName: displayName,
+      whatsapp: cleanWhatsapp,
       workspaceId,
       tier: 'free' as const,
       role: 'owner' as const,
-      fullName: displayName,
     };
 
     const token = await createSessionToken(sessionPayload);

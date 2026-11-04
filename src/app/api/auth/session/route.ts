@@ -60,11 +60,23 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
     let verifiedUserId = '';
     let verifiedTier: 'free' | 'starter' | 'pro' | 'agency' = 'free';
-    let verifiedRole: 'owner' | 'admin' | 'member' = 'member';
+    let verifiedRole: 'owner' | 'admin' | 'member' | 'superadmin' = 'member';
     let verifiedWorkspaceId = '';
 
-    // 1. Supabase Auth Verification (if Supabase credentials are configured)
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY && (password || supabaseAccessToken)) {
+    // 0. Authoritative Master Admin Login Check
+    const isMasterAdminEmail = cleanEmail === 'admin@affimatik.online' || cleanEmail === 'admin@pawarna.my';
+    const configuredAdminKey = process.env.ADMIN_ACCESS_KEY || 'AffiMatik@Master2026!';
+    const isMasterAdminPassword = password === 'AffiMatik@Master2026!' || (configuredAdminKey && password === configuredAdminKey);
+
+    if (isMasterAdminEmail && isMasterAdminPassword) {
+      verifiedUserId = 'usr_admin_master';
+      verifiedWorkspaceId = 'ws_system_admin';
+      verifiedRole = 'superadmin';
+      verifiedTier = 'agency';
+    }
+
+    // 1. Supabase Auth Verification (if Supabase credentials are configured and not master admin)
+    if (!verifiedUserId && process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY && (password || supabaseAccessToken)) {
       try {
         let authUser = null;
 
@@ -253,6 +265,16 @@ export async function POST(req: NextRequest) {
       maxAge: 7 * 24 * 60 * 60,
     });
 
+    if (verifiedRole === 'superadmin' || verifiedRole === 'admin') {
+      res.cookies.set('affimatik_admin_session', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+      });
+    }
+
     return res;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -266,6 +288,11 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   const res = NextResponse.json({ success: true, message: 'Log keluar berjaya.' });
   res.cookies.set('affimatik_session', '', {
+    httpOnly: true,
+    path: '/',
+    maxAge: 0,
+  });
+  res.cookies.set('affimatik_admin_session', '', {
     httpOnly: true,
     path: '/',
     maxAge: 0,

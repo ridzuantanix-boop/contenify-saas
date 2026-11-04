@@ -1832,10 +1832,26 @@ export class DurableStore {
   /**
    * Find customer profile and wallet by registered email for admin manual activation.
    */
+  static saveCustomerProfile(profile: {
+    userId: string;
+    email: string;
+    fullName?: string;
+    whatsapp?: string;
+    workspaceId: string;
+    tier: string;
+  }): void {
+    const cleanEmail = profile.email.trim().toLowerCase();
+    localDb.settings[`user_${cleanEmail}`] = {
+      ...profile,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   static async findCustomerByEmail(email: string): Promise<{
     userId: string;
     email: string;
     fullName?: string;
+    whatsapp?: string;
     tier: string;
     workspaceId: string;
     wallet: { balance: number; reservedBalance: number; lifetimeGranted: number };
@@ -1862,6 +1878,7 @@ export class DurableStore {
             userId: profile.id,
             email: profile.email,
             fullName: profile.full_name,
+            whatsapp: profile.whatsapp || profile.raw_user_meta_data?.whatsapp || '',
             tier: profile.tier || 'free',
             workspaceId,
             wallet: {
@@ -1875,12 +1892,31 @@ export class DurableStore {
     }
 
     // Local / Testing Fallback
+    const saved = localDb.settings[`user_${cleanEmail}`] as any;
+    if (saved) {
+      const wallet = await DurableStore.getWallet(saved.workspaceId);
+      return {
+        userId: saved.userId,
+        email: cleanEmail,
+        fullName: saved.fullName || 'Creator ' + cleanEmail.split('@')[0],
+        whatsapp: saved.whatsapp || '',
+        tier: saved.tier || 'free',
+        workspaceId: saved.workspaceId,
+        wallet: {
+          balance: wallet.balance,
+          reservedBalance: wallet.reservedBalance,
+          lifetimeGranted: wallet.lifetimeGranted,
+        },
+      };
+    }
+
     for (const [wsId, w] of Object.entries(localDb.wallets)) {
       if (wsId.toLowerCase().includes(cleanEmail.split('@')[0]) || wsId === cleanEmail) {
         return {
           userId: wsId,
           email: cleanEmail,
           fullName: 'Creator ' + cleanEmail.split('@')[0],
+          whatsapp: '',
           tier: 'free',
           workspaceId: wsId,
           wallet: {

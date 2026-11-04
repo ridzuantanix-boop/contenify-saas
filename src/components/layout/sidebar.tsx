@@ -30,6 +30,7 @@ const NAV_ITEMS = [
   { name: 'Posting Automation', href: '#', icon: Send, badge: 'Akan Datang', disabled: true },
   { name: 'Billing & Credits', href: '/billing', icon: CreditCard },
   { name: 'Style Testing Lab', href: '/admin/styles', icon: ShieldCheck, badge: 'Admin' },
+  { name: 'Admin Console', href: '/admin', icon: ShieldCheck, badge: 'Owner' },
 ];
 
 export function Sidebar() {

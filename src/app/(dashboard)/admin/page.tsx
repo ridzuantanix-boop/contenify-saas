@@ -36,6 +36,7 @@ interface Customer {
   userId: string;
   email: string;
   fullName?: string;
+  whatsapp?: string;
   tier: string;
   workspaceId: string;
   wallet: {
@@ -49,6 +50,10 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
   const [pauseActionLoading, setPauseActionLoading] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(true);
+  const [adminAccessKey, setAdminAccessKey] = useState<string>('');
+  const [unlockLoading, setUnlockLoading] = useState<boolean>(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
 
   // Customer search & activation state
   const [searchEmail, setSearchEmail] = useState('');
@@ -85,12 +90,39 @@ export default function AdminPage() {
         const data = await res.json();
         if (data.metrics) {
           setMetrics(data.metrics);
+          setIsAuthorized(true);
         }
+      } else if (res.status === 401 || res.status === 403) {
+        setIsAuthorized(false);
       }
     } catch {
       // ignore
     } finally {
       setIsLoadingMetrics(false);
+    }
+  }
+
+  async function handleUnlockAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!adminAccessKey.trim()) return;
+    setUnlockLoading(true);
+    setUnlockError(null);
+    try {
+      const res = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessKey: adminAccessKey.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Kunci akses pentadbir tidak sah.');
+      }
+      setIsAuthorized(true);
+      await loadMetrics();
+    } catch (err: unknown) {
+      setUnlockError(err instanceof Error ? err.message : 'Kunci akses tidak sah.');
+    } finally {
+      setUnlockLoading(false);
     }
   }
 
@@ -214,6 +246,54 @@ export default function AdminPage() {
     } finally {
       setIsActivating(false);
     }
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center space-y-6">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-bold text-slate-900">Akses Terhad SuperAdmin</h3>
+            <p className="text-xs text-slate-500">
+              Sila masukkan Kunci Akses Pentadbir untuk mengakses panel kawalan, pemantauan kos, dan kelulusan pelanggan.
+            </p>
+          </div>
+
+          {unlockError && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 text-left">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{unlockError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleUnlockAdmin} className="space-y-4 text-left">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Kunci Akses / Master Password
+              </label>
+              <input
+                type="password"
+                value={adminAccessKey}
+                onChange={(e) => setAdminAccessKey(e.target.value)}
+                placeholder="Masukkan kunci pentadbir..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={unlockLoading}
+              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm cursor-pointer"
+            >
+              {unlockLoading ? 'Mengesahkan...' : 'Buka Akses Pentadbir'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -399,6 +479,19 @@ export default function AdminPage() {
                 </span>
                 <h4 className="text-lg font-bold text-slate-900 mt-1">{foundCustomer.fullName || foundCustomer.email}</h4>
                 <div className="text-xs text-slate-500 font-mono">{foundCustomer.email}</div>
+                {foundCustomer.whatsapp && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-slate-700 font-medium">WhatsApp: <strong className="text-slate-900">{foundCustomer.whatsapp}</strong></span>
+                    <a
+                      href={`https://wa.me/${foundCustomer.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold hover:bg-emerald-100 transition"
+                    >
+                      <span>WhatsApp Pelanggan</span>
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-6 text-xs">
