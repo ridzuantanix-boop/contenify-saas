@@ -5,6 +5,8 @@ import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { CreditManager } from '@/lib/orchestration/credit-manager';
 
+export const runtime = 'edge';
+
 // In-memory runtime instances for Milestone 0 harness
 const creditManager = new CreditManager([{ workspaceId: 'ws_default', balance: 10, reservedBalance: 0 }]);
 const router = new ProviderRouter();
