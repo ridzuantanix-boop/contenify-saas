@@ -148,11 +148,21 @@ export class DynamicPromptCompiler {
       spokenScript = VoiceoverDirector.generateAuthenticScript(product, style, ctaMode);
     }
 
-    // CTA Formulation
+    // Comprehensive script validation on final spoken content
+    const scriptValidation = VoiceoverDirector.validateScript(spokenScript, product, 'nexabot');
+    if (!scriptValidation.isValid) {
+      preflight.isValid = false;
+      preflight.errors.push(...scriptValidation.errors);
+    }
+
+    // CTA Formulation (do not duplicate if already in spoken script)
     let ctaInstruction = '';
-    if (ctaMode === 'spoken_button') {
+    const scriptHasButtonCta = /tekan butang/i.test(spokenScript);
+    const scriptHasBioCta = /link di bio|pautan di bio/i.test(spokenScript);
+
+    if (ctaMode === 'spoken_button' && !scriptHasButtonCta && !scriptHasBioCta) {
       ctaInstruction = 'Closing spoken call-to-action: "Tekan butang di bawah untuk dapatkan sekarang." (Do NOT generate any onscreen yellow basket or UI button graphics).';
-    } else if (ctaMode === 'spoken_bio') {
+    } else if (ctaMode === 'spoken_bio' && !scriptHasBioCta && !scriptHasButtonCta) {
       ctaInstruction = 'Closing spoken call-to-action: "Boleh tengok link di bio untuk maklumat lanjut." (Do NOT generate any onscreen overlay graphics).';
     }
 

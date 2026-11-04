@@ -1,42 +1,70 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, ShieldCheck, Lock, Key, ArrowRight } from 'lucide-react';
-import { ADMIN_AUTH_CONFIG } from '@/lib/auth/admin-guard';
+import { ShieldAlert, ShieldCheck, Lock, Key, ArrowRight, LogOut } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [accessKey, setAccessKey] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Check local storage or session cookie for admin unlock state
-    const saved = localStorage.getItem('affimatik_admin_unlocked');
-    if (saved === 'true') {
-      setIsAuthenticated(true);
-    } else {
+  // Check server-side admin session status on mount
+  const checkStatus = async () => {
+    try {
+      const res = await fetch('/api/auth/admin-login');
+      const data = await res.json();
+      setIsAuthenticated(Boolean(data.isAuthorized));
+    } catch {
       setIsAuthenticated(false);
-    }
-  }, []);
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (accessKey.trim() === ADMIN_AUTH_CONFIG.DEFAULT_ADMIN_KEY || accessKey.trim() === 'pawarna2026') {
-      localStorage.setItem('affimatik_admin_unlocked', 'true');
-      setIsAuthenticated(true);
-      setErrorMsg('');
-    } else {
-      setErrorMsg('Kunci akses pentadbir tidak sah. Sila masukkan kunci yang betul.');
     }
   };
 
-  const handleLock = () => {
-    localStorage.removeItem('affimatik_admin_unlocked');
+  useEffect(() => {
+    checkStatus();
+  }, []);
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessKey }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Pengesahan gagal');
+      }
+
+      setIsAuthenticated(true);
+      setAccessKey('');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Kunci akses tidak sah.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLock = async () => {
+    try {
+      await fetch('/api/auth/admin-login', { method: 'DELETE' });
+    } catch {
+      // ignore
+    }
     setIsAuthenticated(false);
   };
 
   if (isAuthenticated === null) {
-    return <div className="p-8 text-center text-xs text-slate-400">Memeriksa kebenaran keselamatan...</div>;
+    return (
+      <div className="p-12 text-center text-xs text-slate-400">
+        Memeriksa kebenaran sesi pentadbir dengan pelayan selamat...
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -49,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div>
           <h3 className="text-lg font-bold text-slate-900">Zon Kawalan Pentadbir (Admin Only)</h3>
           <p className="text-xs text-slate-500 mt-1">
-            Modul ini mengandungi alat QA dalaman, data kompilasi prompt dan kawalan enjin AffiMatik. Sila sahkan kelayakan pentadbir anda.
+            Modul ini mengandungi alat QA dalaman, data kompilasi prompt dan kawalan enjin AffiMatik. Sila sahkan kelayakan pentadbir anda melalui sesi pelayan selamat.
           </p>
         </div>
 
@@ -66,6 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 onChange={(e) => setAccessKey(e.target.value)}
                 placeholder="Masukkan kunci keselamatan pentadbir..."
                 className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+                required
               />
             </div>
           </div>
@@ -79,15 +108,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <button
             type="submit"
-            className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+            disabled={isLoading}
+            className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 disabled:opacity-50 transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>Sahkan & Masuk</span>
+            <span>{isLoading ? 'Mengesahkan...' : 'Sahkan & Masuk'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <p className="text-[10px] text-slate-400 pt-2 border-t border-slate-100">
-          Semua cubaan akses tanpa kebenaran direkodkan dalam audit log keselamatan sistem Pawarna.
+          Disahkan secara kriptografi melalui HttpOnly secure session cookies. Tiada kelayakan disimpan dalam pelayar setempat (zero localStorage).
         </p>
       </div>
     );
@@ -95,19 +125,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="space-y-6">
-      <div className="bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl flex items-center justify-between text-xs text-amber-900">
+      <div className="bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs text-amber-900">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-amber-600" />
-          <span>Sesi Pentadbir Aktif (Admin Role: Superadmin)</span>
+          <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            <strong>Sesi Pentadbir Aktif:</strong> Anda mempunyai kebenaran penuh melihat audit enjin, Style Testing Lab, dan prompt compiler.
+          </span>
         </div>
         <button
-          type="button"
           onClick={handleLock}
-          className="text-[11px] text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1 bg-white border border-amber-300 rounded-lg text-amber-800 font-semibold hover:bg-amber-100 transition cursor-pointer text-xs"
         >
-          Kunci Semula Sesi
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Kunci Semula</span>
         </button>
       </div>
+
       {children}
     </div>
   );

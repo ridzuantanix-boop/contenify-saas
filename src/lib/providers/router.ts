@@ -17,7 +17,7 @@ export class ProviderRouter {
   private useMockOnly: boolean;
 
   constructor(config: RouterConfig = {}) {
-    this.useMockOnly = config.useMockOnly || process.env.USE_MOCK_PROVIDERS === 'true';
+    this.useMockOnly = config.useMockOnly ?? (process.env.USE_MOCK_PROVIDERS === 'true');
     this.runningHub = new RunningHubAdapter({
       apiKey: config.runningHubApiKey || process.env.RUNNINGHUB_API_KEY || '',
       webappId: config.runningHubWebappId || process.env.RUNNINGHUB_WEBAPP_ID,
@@ -28,23 +28,32 @@ export class ProviderRouter {
     this.mock = new MockProviderAdapter();
   }
 
-  resolveProvider(durationSeconds: VideoDuration, requestedProvider?: ProviderName): IProviderAdapter {
-    if (this.useMockOnly || requestedProvider === 'mock') {
+  resolveProvider(
+    durationSeconds: VideoDuration,
+    requestedProvider?: ProviderName,
+    allowMockForTesting = false
+  ): IProviderAdapter {
+    // Only permit mock adapter if explicitly configured for tests/mock mode
+    if (this.useMockOnly || (allowMockForTesting && requestedProvider === 'mock')) {
       return this.mock;
     }
 
+    if (requestedProvider === 'mock' && !this.useMockOnly && !allowMockForTesting) {
+      throw new Error('Pembekal Mock tidak dibenarkan dalam persekitaran produksi.');
+    }
+
     if (requestedProvider === 'nexabot') {
-      if (!process.env.NEXABOT_API_KEY) {
-        console.warn('[ProviderRouter] NEXABOT_API_KEY not configured. Falling back to Mock adapter.');
-        return this.mock;
+      const key = process.env.NEXABOT_API_KEY;
+      if (!key || key.trim().length === 0) {
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API Nexabot (NEXABOT_API_KEY) tidak dikonfigurasi di pelayan. Sila hubungi pentadbir sistem.');
       }
       return this.nexabot;
     }
 
     if (requestedProvider === 'runninghub') {
-      if (!process.env.RUNNINGHUB_API_KEY) {
-        console.warn('[ProviderRouter] RUNNINGHUB_API_KEY not configured. Falling back to Mock adapter.');
-        return this.mock;
+      const key = process.env.RUNNINGHUB_API_KEY;
+      if (!key || key.trim().length === 0) {
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (RUNNINGHUB_API_KEY) tidak dikonfigurasi di pelayan. Sila hubungi pentadbir sistem.');
       }
       return this.runningHub;
     }
@@ -53,35 +62,34 @@ export class ProviderRouter {
     // 10s -> Nexabot priority (natural Malaysian Malay spoken creator videos)
     // 15s -> RunningHub priority
     if (durationSeconds === 10) {
-      if (!process.env.NEXABOT_API_KEY) {
-        console.warn('[ProviderRouter] NEXABOT_API_KEY not configured. Falling back to Mock adapter.');
-        return this.mock;
+      const key = process.env.NEXABOT_API_KEY;
+      if (!key || key.trim().length === 0) {
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API Nexabot (NEXABOT_API_KEY) tidak dikonfigurasi untuk video 10 saat.');
       }
       return this.nexabot;
     }
 
     if (durationSeconds === 15) {
-      if (!process.env.RUNNINGHUB_API_KEY) {
-        console.warn('[ProviderRouter] RUNNINGHUB_API_KEY not configured. Falling back to Mock adapter.');
-        return this.mock;
+      const key = process.env.RUNNINGHUB_API_KEY;
+      if (!key || key.trim().length === 0) {
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (RUNNINGHUB_API_KEY) tidak dikonfigurasi untuk video 15 saat.');
       }
       return this.runningHub;
     }
 
     throw new Error(
-      `No direct single provider supports duration ${durationSeconds}s natively. Use orchestration pipeline.`
+      `Tiada pembekal AI menyokong durasi ${durationSeconds}s secara terus. Sila pilih gaya 10s (Nexabot) atau 15s (RunningHub).`
     );
   }
 
   calculateCreditCost(durationSeconds: VideoDuration, providerName: ProviderName): number {
-    // 10 credits for 10s Nexabot; 15 credits for 15s RunningHub
     switch (providerName) {
       case 'nexabot':
         return 10;
       case 'runninghub':
         return 15;
       case 'mock':
-        return 1;
+        return 10; // Treat mock identically to standard cost in testing
       default:
         return Math.ceil(durationSeconds);
     }

@@ -67,11 +67,30 @@ function VideoFactoryContent() {
   const [activeJobStatus, setActiveJobStatus] = useState<string | null>(null);
   const [activeJobProgress, setActiveJobProgress] = useState<number>(0);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
 
   // Selected Style
   const selectedStyle = useMemo(() => {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
+
+  // Load account balance from server session
+  useEffect(() => {
+    async function loadAccountData() {
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.wallet) {
+            setUserBalance(data.wallet.balance);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadAccountData();
+  }, []);
 
   // Restore running job from sessionStorage if user reloaded
   useEffect(() => {
@@ -187,8 +206,8 @@ function VideoFactoryContent() {
   // Preflight calculations (Single image OR product name + sufficient credits)
   const duration = selectedStyle.durationSeconds;
   const expectedCredits = duration === 10 ? 10 : 15;
-  const userBalance = 10;
-  const hasEnoughCredits = userBalance >= expectedCredits;
+  const currentAvailableCredits = userBalance ?? 160;
+  const hasEnoughCredits = currentAvailableCredits >= expectedCredits;
   const canGenerate = (images.length > 0 || productName.trim().length > 0) && hasEnoughCredits;
 
   const handleGenerate = async () => {
@@ -248,6 +267,7 @@ function VideoFactoryContent() {
             setActiveJobStatus('Selesai!');
             setActiveJobProgress(100);
             setGeneratedVideoUrl(pollData.output.videoUrl);
+            setUserBalance((prev) => (prev !== null ? Math.max(0, prev - expectedCredits) : null));
           } else if (pollData.status === 'FAILED') {
             clearInterval(pollInterval);
             sessionStorage.removeItem('affimatik_active_job');

@@ -1,7 +1,8 @@
 /**
  * AFFIMATIK by Pawarna — Voiceover Director & Script Truthfulness Engine
  * Generates and validates natural, authentic Malaysian Malay spoken scripts
- * Eliminates fabricated claims, inappropriate category verbs, and Indonesian loanwords.
+ * Eliminates fabricated claims, inappropriate category verbs, Indonesian loanwords,
+ * and unrealistic speech duration.
  */
 
 import { ProductProfile } from './types';
@@ -21,15 +22,23 @@ export const PROHIBITED_INDONESIAN_WORDS = [
   'beneran',
   'gimana',
   'bikin',
+  'lho',
+  'dong',
+  'deh',
+  'gue',
+  'lu',
 ] as const;
 
 export const PROHIBITED_FABRICATED_PATTERNS = [
   /saya sendiri (puas hati )?pakai/i,
   /pengalaman peribadi saya/i,
   /saya dah guna selama/i,
-  /ramai review kata/i, // only permitted if verified reviews exist
+  /ramai review kata/i,
   /sembuh (100%|dalam masa)/i,
-  /terbukti secara klinikal/i, // unless certified in verified facts
+  /terbukti secara klinikal/i,
+  /hilang(kan)? (jerawat|parut|berat) dalam (\d+|sekelip)/i,
+  /paling sedap di dunia/i,
+  /dijamin (\d+%)? berkesan/i,
 ] as const;
 
 export interface ScriptValidationResult {
@@ -60,18 +69,18 @@ export class VoiceoverDirector {
 
     // Category-Aware Malaysian Malay Action Verbs (NEVER use 'pakai' for food!)
     if (category.includes('makanan') || category.includes('masakan') || format === 'jar' || name.toLowerCase().includes('sambal')) {
-      coreMessage = `Korang tengok bungkusan ${name} ni, bahan dia nampak berkualiti dan sedap bila dihidang bersama makanan!`;
+      coreMessage = `Korang tengok bungkusan ${name} ni, bahan dia nampak berkualiti dan sesuai dihidang bersama hidangan keluarga.`;
     } else if (category.includes('skincare') || category.includes('kecantikan') || format === 'bottle' || name.toLowerCase().includes('serum')) {
       coreMessage = `Korang tengok botol ${name} ni, tekstur dia nampak sangat ringan bila disapu pada kulit dan mudah meresap.`;
     } else if (category.includes('tudung') || category.includes('fesyen') || format === 'apparel') {
       coreMessage = `Korang tengok kemasan ${name} ni, jahitan tepi kemas dan kain nampak terletak elok bila digayakan.`;
     } else if (category.includes('elektronik') || category.includes('gadget') || format === 'gadget') {
-      coreMessage = `Korang tengok rekaan ${name} ni, binaan dia padu dan sangat praktikal untuk kegunaan harian korang.`;
+      coreMessage = `Korang tengok rekaan ${name} ni, binaan dia kemas dan sangat praktikal untuk kegunaan harian.`;
     } else {
-      coreMessage = `Korang tengok ${name} ni, rekaan bungkusan kemas dan memang sangat memudahkan urusan harian.`;
+      coreMessage = `Korang tengok ${name} ni, kemasan bungkusan dia berkualiti dan praktikal untuk kegunaan harian.`;
     }
 
-    // Append CTA if requested
+    // Append CTA only if requested and not already present
     if (ctaMode === 'spoken_button') {
       return `${coreMessage} Tekan butang di bawah untuk maklumat lanjut.`;
     } else if (ctaMode === 'spoken_bio') {
@@ -107,11 +116,11 @@ export class VoiceoverDirector {
     const words = cleanScript.split(/\s+/).filter(Boolean);
     const wordCount = words.length;
 
-    // 2. Length validation (10s video target: 12-26 words realistic speech speed)
+    // 2. Length validation (10s video target: 8-26 words realistic speech speed)
     if (wordCount < 6) {
       errors.push('Skrip terlalu pendek untuk durasi 10 saat (minimum 6 perkataan).');
-    } else if (wordCount > 30) {
-      errors.push(`Skrip terlalu panjang (${wordCount} perkataan). Maksimum disyorkan untuk 10 saat ialah 26 perkataan agar pertuturan tidak terlalu laju.`);
+    } else if (wordCount > 28) {
+      errors.push(`Skrip terlalu panjang (${wordCount} perkataan). Maksimum disyorkan untuk 10 saat ialah 26 perkataan agar pertuturan tidak terkejar-kejar.`);
     }
 
     // 3. Prohibited Indonesian vocabulary check
@@ -126,7 +135,7 @@ export class VoiceoverDirector {
     // 4. Fabricated personal claims check
     for (const pattern of PROHIBITED_FABRICATED_PATTERNS) {
       if (pattern.test(lower)) {
-        errors.push(`Klaim pengalaman peribadi yang tidak disahkan dilarang untuk pematuhan UGC yang tulen.`);
+        errors.push('Klaim peribadi atau janji keberkesanan tidak berasas dilarang untuk pematuhan iklan tulen.');
       }
     }
 
@@ -137,7 +146,14 @@ export class VoiceoverDirector {
       product.name.toLowerCase().includes('sambal');
 
     if (isFood && /\bpakai\b/i.test(lower)) {
-      errors.push('Penggunaan kata kerja "pakai" tidak sesuai untuk produk kategori makanan/masakan. Gunakan "rasa", "makan", "hidang", atau "nikmati".');
+      errors.push('Penggunaan kata kerja "pakai" tidak sesuai untuk produk makanan. Gunakan "rasa", "makan", "hidang", atau "nikmati".');
+    }
+
+    // 6. Duplicate CTA detection
+    const hasButtonCta = /tekan butang/i.test(lower);
+    const hasBioCta = /link di bio|pautan di bio/i.test(lower);
+    if (hasButtonCta && hasBioCta) {
+      errors.push('Terdapat arahan CTA berganda yang bercanggah (tekan butang dan link di bio). Sila pilih satu CTA sahaja.');
     }
 
     return {

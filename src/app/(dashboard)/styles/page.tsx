@@ -40,6 +40,10 @@ export default function VideoStylesPage() {
     searchQuery: searchQuery.trim() || undefined,
   });
 
+  const totalStylesCount = VIDEO_STYLES_REGISTRY.length;
+  const verifiedCount = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'quality_verified').length;
+  const validatedCount = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'prompt_validated').length;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
       {/* Header */}
@@ -48,7 +52,7 @@ export default function VideoStylesPage() {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">Video Style Library</h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-              12 Gaya Rasmi
+              {totalStylesCount} Gaya Rasmi ({verifiedCount} Quality Verified, {validatedCount} Prompt Validated)
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -199,10 +203,17 @@ export default function VideoStylesPage() {
                     <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase tracking-wider">
                       {style.id}
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex items-center gap-1">
-                      <CheckCircle2 className="w-2.5 h-2.5" />
-                      Disahkan
-                    </span>
+                    {style.qualityStatus === 'quality_verified' ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex items-center gap-1">
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                        Quality Verified
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold border border-sky-200 flex items-center gap-1">
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                        Prompt Validated
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-bold text-slate-900 text-sm mt-1">{style.name}</h3>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
