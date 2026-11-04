@@ -4,14 +4,3 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
-# ==============================================================================
-# Cloudflare Environment Variables (Live Providers Active)
-# ==============================================================================
-[vars]
-NODE_ENV = "production"
-USE_MOCK_PROVIDERS = "false"
-NEXABOT_API_KEY = "nxb_30bf58bb317a9e7551aceff605e2f1f782f88b5021c8ad4a"
-NEXABOT_BASE_URL = "https://nexabot.id"
-RUNNINGHUB_API_KEY = "d3ae71496b084c0584ee1d7a33a7dea1"
-RUNNINGHUB_BASE_URL = "https://www.runninghub.ai"
-RUNNINGHUB_WEBAPP_ID = "2103149871766220801"
