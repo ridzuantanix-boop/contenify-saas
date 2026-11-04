@@ -28,10 +28,10 @@ interface UploadedFilePreview {
 export default function VideoFactoryPage() {
   const [mode, setMode] = useState<'quick' | 'advanced'>('quick');
 
-  // Step 1: Assets
-  const [productName, setProductName] = useState('Serum Muka Glow Puteri');
-  const [productCategory, setProductCategory] = useState('Skincare & Kecantikan');
-  const [productFacts, setProductFacts] = useState('Ekstrak Bunga Raya Asli, Vitamin C 10%, Melembap 24 Jam');
+  // Step 1: Assets (Optional Inputs, Auto-Research from Image)
+  const [productName, setProductName] = useState('');
+  const [productCategory, setProductCategory] = useState('');
+  const [productFacts, setProductFacts] = useState('');
   const [images, setImages] = useState<UploadedFilePreview[]>([]);
 
   // Step 2: Presets & Controls
@@ -84,18 +84,18 @@ export default function VideoFactoryPage() {
     setImages((prev) => prev.filter((img) => img.id !== id));
   };
 
-  // Preflight calculations
+  // Preflight calculations (User only needs at least 1 image OR product name)
   const resolvedProvider = duration === 10 ? 'nexabot' : 'runninghub';
   const expectedCredits = duration === 10 ? 10 : 15;
   const userBalance = 10;
   const hasEnoughCredits = userBalance >= expectedCredits;
-  const canGenerate = (images.length > 0 || productName.length > 0) && hasEnoughCredits;
+  const canGenerate = (images.length > 0 || productName.trim().length > 0) && hasEnoughCredits;
 
   const handleGenerate = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
     setSubmitSuccess(null);
-    setActiveJobStatus('Memulakan penjanaan...');
+    setActiveJobStatus('Memulakan penjanaan AffiMatik...');
     setActiveJobProgress(10);
     setGeneratedVideoUrl(null);
 
@@ -104,16 +104,16 @@ export default function VideoFactoryPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productName,
-          productCategory,
-          productFacts: productFacts.split(',').map((s) => s.trim()),
+          productName: productName.trim() || undefined,
+          productCategory: productCategory.trim() || undefined,
+          productFacts: productFacts ? productFacts.split(',').map((s) => s.trim()).filter(Boolean) : [],
           presetId: selectedPreset.id,
           durationSeconds: duration,
           provider: selectedProvider === 'auto' ? resolvedProvider : selectedProvider,
           callToAction: ctaOption,
           isMuslimahModest,
           customPrompt: mode === 'advanced' ? customPrompt : undefined,
-          imageKeys: images.map((img) => img.dataUrl.startsWith('http') ? img.dataUrl : img.name),
+          imageKeys: images.map((img) => img.dataUrl),
         }),
       });
 
@@ -170,9 +170,17 @@ export default function VideoFactoryPage() {
       {/* Header & Mode Switch */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Video Factory</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Cipta video affiliate berkualiti tinggi dengan enjin Official Gems dan adapter cloud.
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">AffiMatik Video Factory</h2>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+              by Pawarna
+            </span>
+          </div>
+          <p className="text-sm font-medium text-slate-700 mt-1">
+            Affiliate Jadi Automatik.
+          </p>
+          <p className="text-xs text-slate-500">
+            Dari Research Produk, Video AI Hingga Auto-Posting — Semua Dalam Satu Platform.
           </p>
         </div>
 
@@ -200,60 +208,33 @@ export default function VideoFactoryPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Form & Config (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* STEP 1: Product Assets */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center">
-                1
+          {/* STEP 1: Product Assets (Photo Upload First, Details Optional) */}
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center">
+                  1
+                </div>
+                <h3 className="font-semibold text-slate-900 text-sm">Foto Produk (AI Auto-Research)</h3>
               </div>
-              <h3 className="font-semibold text-slate-900 text-sm">Maklumat & Tangkap Layar Produk</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Nama Produk</label>
-                <input
-                  type="text"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Contoh: Sambal Hijau Tok Wan"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Kategori</label>
-                <input
-                  type="text"
-                  value={productCategory}
-                  onChange={(e) => setProductCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Contoh: Makanan & Minuman"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Fakta / Kelebihan Produk (Dipelihara oleh AI)
-              </label>
-              <textarea
-                rows={2}
-                value={productFacts}
-                onChange={(e) => setProductFacts(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Senaraikan kelebihan asli produk..."
-              />
+              <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Pengecaman AI Aktif
+              </span>
             </div>
 
             {/* Bulk Upload Area */}
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Muat Naik Tangkap Layar Produk (Drag & Drop)
-              </label>
-              <label className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-indigo-50/20 transition">
-                <Upload className="w-6 h-6 text-indigo-500 mb-2" />
-                <span className="text-xs font-semibold text-slate-700">Pilih atau seret gambar produk ke sini</span>
-                <span className="text-[11px] text-slate-400 mt-1">PNG, JPG sehingga 50MB per fail</span>
+              <label className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-2xl p-7 flex flex-col items-center justify-center cursor-pointer bg-indigo-50/20 hover:bg-indigo-50/40 transition">
+                <div className="w-12 h-12 rounded-xl bg-white shadow-xs flex items-center justify-center mb-3 text-indigo-600 border border-indigo-100">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <span className="text-sm font-bold text-slate-800">Muat Naik Foto Produk Anda</span>
+                <span className="text-xs text-slate-500 mt-1 text-center max-w-sm">
+                  Cukup sekadar muat naik foto produk. Nexabot & AI AffiMatik akan imbas bungkusan produk, teks label, dan jana video affiliate realistik secara automatik.
+                </span>
+                <span className="text-[11px] text-indigo-600 font-semibold mt-3 px-3 py-1 bg-white rounded-lg border border-indigo-100 shadow-2xs">
+                  Pilih Gambar (PNG, JPG, WEBP)
+                </span>
                 <input
                   type="file"
                   multiple
@@ -266,22 +247,80 @@ export default function VideoFactoryPage() {
 
             {/* Uploaded Previews */}
             {images.length > 0 && (
-              <div className="flex flex-wrap gap-3 pt-2">
-                {images.map((img) => (
-                  <div key={img.id} className="relative group w-20 h-20 rounded-lg overflow-hidden border border-slate-200 shadow-xs">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(img.id)}
-                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black transition"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Gambar Produk Dimuat Naik ({images.length} fail):</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {images.map((img) => (
+                    <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(img.id)}
+                        className="absolute top-1 right-1 p-1 bg-black/70 rounded-full text-white hover:bg-rose-600 transition"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Optional Details (Collapsible/Optional) */}
+            <div className="pt-2 border-t border-slate-100">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Maklumat Produk Tambahan (Pilihan / Optional)</h4>
+                  <p className="text-[11px] text-slate-500">
+                    Biarkan kosong jika mahu AI buat research dan kenalpasti produk terus daripada foto di atas.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                      Nama Produk <span className="text-slate-400 font-normal">(Pilihan)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Contoh: Sambal Hijau Tok Wan (Auto-detect jika kosong)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                      Kategori <span className="text-slate-400 font-normal">(Pilihan)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={productCategory}
+                      onChange={(e) => setProductCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Contoh: Makanan & Minuman / Skincare"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                    Fakta / Kelebihan Khas Produk <span className="text-slate-400 font-normal">(Pilihan)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={productFacts}
+                    onChange={(e) => setProductFacts(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Contoh: Rangup, Pedas Manja, Tanpa Pengawet"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* STEP 2: Official Gems Preset */}
@@ -520,7 +559,7 @@ export default function VideoFactoryPage() {
                   href={generatedVideoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  download="contenify_video.mp4"
+                  download="affimatik_video.mp4"
                   className="w-full py-2 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition"
                 >
                   <Video className="w-3.5 h-3.5" />

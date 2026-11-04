@@ -54,12 +54,15 @@ export class NexabotAdapter implements IProviderAdapter {
 
   preparePayload(input: ProviderJobInput): Record<string, unknown> {
     const images: string[] = [];
-    if (input.mainImageKeyOrUrl && input.mainImageKeyOrUrl.startsWith('http') && !input.mainImageKeyOrUrl.includes('mock')) {
-      images.push(input.mainImageKeyOrUrl);
+    const isValidImage = (src?: string) =>
+      src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:image/')) && !src.includes('mock');
+
+    if (isValidImage(input.mainImageKeyOrUrl)) {
+      images.push(input.mainImageKeyOrUrl!);
     }
     if (input.referenceImageKeysOrUrls) {
       for (const img of input.referenceImageKeysOrUrls) {
-        if (img.startsWith('http') && !img.includes('mock') && images.length < 3) {
+        if (isValidImage(img) && images.length < 3) {
           images.push(img);
         }
       }

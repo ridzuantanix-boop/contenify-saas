@@ -18,11 +18,19 @@ export default function DashboardPage() {
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            Selamat Datang ke CONTENIFY
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Enjin automasi video AI khusus untuk pasaran creator, affiliate TikTok & Shopee Malaysia.
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+              Selamat Datang ke AffiMatik
+            </h2>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+              by Pawarna
+            </span>
+          </div>
+          <p className="text-sm font-medium text-slate-700 mt-1">
+            Affiliate Jadi Automatik.
+          </p>
+          <p className="text-xs text-slate-500">
+            Dari Research Produk, Video AI Hingga Auto-Posting — Semua Dalam Satu Platform.
           </p>
         </div>
         <div className="flex items-center gap-3">

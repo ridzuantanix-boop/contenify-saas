@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
     // 3. Compile Universal Masterprompt
     const compiled = buildUniversalMasterprompt({
       preset,
-      productName: productName || 'Produk Kualiti Tinggi',
-      productCategory,
-      productFacts,
+      productName: productName && productName.trim().length > 0 ? productName.trim() : undefined,
+      productCategory: productCategory || 'General',
+      productFacts: Array.isArray(productFacts) ? productFacts.filter(Boolean) : [],
       callToAction,
       isMuslimahModest,
       scriptBody: customPrompt,

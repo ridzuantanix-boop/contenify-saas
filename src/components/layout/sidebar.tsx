@@ -34,14 +34,19 @@ export function Sidebar() {
   return (
     <aside className="w-64 border-r border-slate-200 bg-white flex flex-col h-screen sticky top-0 shrink-0">
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-100 gap-3">
-        <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          C
+      <div className="h-18 flex items-center px-5 border-b border-slate-100 gap-3 py-3">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
+          A
         </div>
-        <div>
-          <span className="font-bold tracking-tight text-slate-900 text-lg">CONTENIFY</span>
-          <span className="ml-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-            MY v0.1
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold tracking-tight text-slate-900 text-base">AffiMatik</span>
+            <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Pawarna
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-500 truncate font-medium">
+            Affiliate Jadi Automatik
           </span>
         </div>
       </div>
