@@ -34,7 +34,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     fifteenSecondVideoAllowance: 3, // 50 / 15 = 3 videos (remainder 5 credits)
     features: [
       '50 Kredit Sebulan',
-      'Hingga 5x Video 10s (Nexabot) atau 3x Video 15s (RunningHub)',
+      'Hingga 5x Video 10s (AffiMatik Voice) atau 3x Video 15s (AffiMatik Motion)',
       'Akses Penuh Video Style Library',
       'AI Creative Director & Smart Match',
       'Kualiti 720P / 1080P Menegak (9:16)',
@@ -54,9 +54,9 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     highlightBadge: 'Paling Popular',
     features: [
       '160 Kredit Sebulan',
-      'Hingga 16x Video 10s atau 10x Video 15s',
+      'Hingga 16x Video 10s (AffiMatik Voice) atau 10x Video 15s (AffiMatik Motion)',
       'Semua Ciri Starter',
-      'Akses Penuh RunningHub No-Voice Workflow',
+      'Akses Penuh Enjin AffiMatik Motion Visual Realistik',
       'Simpan Produk & Avatar Sendiri',
       'Simpanan Video 60 Hari',
       'Muat Turun Tanpa Had & Eksport Pukal',

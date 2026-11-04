@@ -44,7 +44,7 @@ export default function AvatarsPage() {
               <p className="text-xs text-slate-500 mt-0.5">{av.style}</p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
-              Sesuai untuk Nexabot & RunningHub
+              Sesuai untuk AffiMatik Voice & Motion
             </div>
           </div>
         ))}

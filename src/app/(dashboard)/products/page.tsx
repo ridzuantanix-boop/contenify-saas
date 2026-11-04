@@ -24,7 +24,7 @@ export default function ProductsPage() {
         </div>
         <h4 className="text-sm font-semibold text-slate-800">Tiada Produk Disimpan Lagi</h4>
         <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-          Daftarkan produk dan muat naik tangkap layar untuk membolehkan enjin Nexabot menjalankan penyelidikan produk automatik.
+          Daftarkan produk dan muat naik gambar untuk membolehkan enjin kecerdasan produk AffiMatik menjalankan analisis automatik.
         </p>
       </div>
     </div>

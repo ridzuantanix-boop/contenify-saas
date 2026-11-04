@@ -148,10 +148,10 @@ export async function POST(req: NextRequest) {
       resolvedCreativeInstruction = customPrompt.trim();
     }
 
-    // RunningHub hard rule: Never allow customScript as spoken dialogue
+    // AffiMatik Motion (15s) hard rule: Never allow customScript as spoken dialogue
     if (style.engine === 'runninghub' && resolvedCustomScript) {
       return NextResponse.json(
-        { error: 'Gaya 15 saat RunningHub adalah visual sepenuhnya dan tidak menerima sebarang skrip pertuturan.' },
+        { error: 'Gaya 15 saat AffiMatik Motion adalah visual pergerakan sepenuhnya dan tidak menerima sebarang skrip pertuturan.' },
         { status: 400 }
       );
     }

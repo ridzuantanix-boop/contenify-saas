@@ -160,14 +160,14 @@ export class VoiceoverDirector {
 
     if (engine === 'runninghub') {
       if (script && script.trim().length > 0) {
-        errors.push('Gaya RunningHub 15s adalah visual sepenuhnya dan tidak dibenarkan mengandungi sebarang skrip pertuturan.');
+        errors.push('Gaya 15s AffiMatik Motion adalah visual pergerakan sepenuhnya dan tidak dibenarkan mengandungi sebarang skrip pertuturan.');
       }
       return { isValid: errors.length === 0, errors, wordCount: 0 };
     }
 
     const trimmed = script.trim();
     if (!trimmed) {
-      errors.push('Skrip suara pertuturan Nexabot tidak boleh kosong.');
+      errors.push('Skrip suara pertuturan AffiMatik Voice (10s) tidak boleh kosong.');
       return { isValid: false, errors, wordCount: 0 };
     }
 

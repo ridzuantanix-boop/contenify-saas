@@ -93,8 +93,8 @@ export default function VideoStylesPage() {
               className="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white font-medium text-slate-700 focus:outline-none"
             >
               <option value="all">Semua Audio</option>
-              <option value="with_voice">Dengan Suara (Nexabot 10s)</option>
-              <option value="no_voice">Tanpa Suara (RunningHub 15s)</option>
+              <option value="with_voice">Dengan Suara (AffiMatik Voice 10s)</option>
+              <option value="no_voice">Visual Estetik (AffiMatik Motion 15s)</option>
             </select>
 
             {/* Duration filter */}

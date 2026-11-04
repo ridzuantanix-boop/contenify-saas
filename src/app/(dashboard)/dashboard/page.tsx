@@ -141,21 +141,21 @@ export default function DashboardPage() {
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
-                  <div className="font-medium text-slate-800">Nexabot Adapter</div>
+                  <div className="font-medium text-slate-800">AffiMatik Voice Engine</div>
                   <div className="text-[10px] text-slate-500">10s Malaysian Malay Spoken Video</div>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                  Ready (Mock/Live)
+                  Ready (Active)
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
-                  <div className="font-medium text-slate-800">RunningHub Adapter</div>
-                  <div className="text-[10px] text-slate-500">15s Visual Node App (#114/#136)</div>
+                  <div className="font-medium text-slate-800">AffiMatik Motion Engine</div>
+                  <div className="text-[10px] text-slate-500">15s Visual Realism & Ambience Engine</div>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                  Ready (Schema Mapped)
+                  Ready (Active)
                 </span>
               </div>
 

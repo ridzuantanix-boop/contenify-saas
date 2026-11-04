@@ -1,16 +1,33 @@
 /**
- * AFFIMATIK by Pawarna — Dynamic Prompt Engine Compiler (V3)
+ * AFFIMATIK by Pawarna — Dynamic Prompt Engine Compiler (Masterprompt Lock V4)
  * Translates Product Profile + Video Style + Scene Plan into Provider-Specific Payloads
  * 
  * Strict Priorities:
  * 1. Customer-customized approved script
  * 2. Product-specific dynamically generated script using confirmed facts
  * 3. Safe category-aware fallback script
+ * 4. Masterprompt Universal Locks (Identity, Zero UI, Human Realism, Shariah, Audio)
+ * 5. Full White-Label Customer Presentation (AffiMatik Voice 10s & AffiMatik Motion 15s)
  */
 
 import { ProductProfile, ScenePlan, CompiledGenerationPrompt } from './types';
 import { VideoStyle } from '../styles/types';
 import { VoiceoverDirector } from './voiceover-director';
+
+/**
+ * Internal Provider to AffiMatik White-Label Display Name Mapping
+ */
+export function getEngineDisplayName(engine: 'nexabot' | 'runninghub' | string): string {
+  if (engine === 'nexabot') return 'AffiMatik Voice (10s)';
+  if (engine === 'runninghub') return 'AffiMatik Motion (15s)';
+  return 'AffiMatik Engine';
+}
+
+export function getEngineDescription(engine: 'nexabot' | 'runninghub' | string): string {
+  if (engine === 'nexabot') return 'Video pertuturan Bahasa Melayu santai semula jadi (10 saat)';
+  if (engine === 'runninghub') return 'Video visual realistik, pergerakan lembut, ASMR / audio bersesuaian (15 saat)';
+  return 'Enjin penjanaan video AffiMatik';
+}
 
 export interface CompilerOptions {
   callToAction?: 'spoken_button' | 'spoken_bio' | 'none';
@@ -19,10 +36,12 @@ export interface CompilerOptions {
   creativeInstruction?: string;
   imageRole?: 'reference' | 'start_frame';
   variationIndex?: number;
+  productionProfile?: 'ugc_creator' | 'studio_commercial';
 }
 
 export interface PromptPreviewResult {
   provider: 'nexabot' | 'runninghub';
+  engineDisplayName: string;
   durationSeconds: number;
   creditCost: number;
   spokenScript: string | null;
@@ -36,7 +55,7 @@ export interface PromptPreviewResult {
 
 export class DynamicPromptCompiler {
   /**
-   * Deterministic preflight validation
+   * Deterministic preflight validation with sanitized white-label error messages
    */
   static validatePreflight(
     product: ProductProfile,
@@ -44,26 +63,27 @@ export class DynamicPromptCompiler {
     options?: CompilerOptions
   ): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
+    const engineName = getEngineDisplayName(style.engine);
 
     // Engine and duration validation
     if (style.engine === 'nexabot' && style.durationSeconds !== 10) {
-      errors.push(`Gaya Nexabot (${style.id}) mesti tepat 10 saat.`);
+      errors.push(`Gaya AffiMatik Voice (Nexabot ${style.id}) mesti tepat 10 saat.`);
     }
     if (style.engine === 'runninghub' && style.durationSeconds !== 15) {
-      errors.push(`Gaya RunningHub (${style.id}) mesti tepat 15 saat.`);
+      errors.push(`Gaya AffiMatik Motion (RunningHub ${style.id}) mesti tepat 15 saat.`);
     }
 
-    // Hard Rule: RunningHub styles must NOT have voiceover
+    // Hard Rule: Motion 15s styles must NOT have spoken voiceover
     if (style.engine === 'runninghub' && style.audioMode !== 'no_speech' && style.audioMode !== 'ambient') {
-      errors.push(`Gaya RunningHub (${style.id}) tidak menyokong suara percakapan.`);
+      errors.push(`Gaya AffiMatik Motion (RunningHub ${style.id}) tidak menyokong suara percakapan.`);
     }
 
-    // Check custom script submitted to RunningHub
+    // Check custom script submitted to Motion 15s
     if (style.engine === 'runninghub' && options?.customScript && options.customScript.trim().length > 0) {
-      errors.push(`Gaya 15 saat RunningHub adalah visual sepenuhnya dan tidak menerima sebarang skrip pertuturan.`);
+      errors.push(`Gaya 15 saat AffiMatik Motion (RunningHub) adalah visual pergerakan sepenuhnya dan tidak menerima sebarang skrip pertuturan.`);
     }
 
-    // Voiceover validation if custom script is provided for Nexabot
+    // Voiceover validation if custom script is provided for Voice 10s
     if (style.engine === 'nexabot' && options?.customScript && options.customScript.trim().length > 0) {
       const scriptValidation = VoiceoverDirector.validateScript(options.customScript, product, 'nexabot');
       if (!scriptValidation.isValid) {
@@ -78,7 +98,7 @@ export class DynamicPromptCompiler {
   }
 
   /**
-   * Resolves the spoken script adhering strictly to the V3 priority order:
+   * Resolves the spoken script adhering strictly to priority order:
    * 1. Approved customer custom script
    * 2. Product-specific dynamic script based on confirmed features
    * 3. Category-aware visual fallback
@@ -113,13 +133,14 @@ export class DynamicPromptCompiler {
   ): PromptPreviewResult {
     const isMuslimah = options.isMuslimahModest ?? style.modestyLock;
     const spokenScript = this.resolveSpokenScript(product, style, options);
+    const engineDisplayName = getEngineDisplayName(style.engine);
 
     let modestyRules = 'Pemakaian santai kontemporari sopan bersesuaian khalayak Malaysia.';
     if (isMuslimah) {
       if (style.category === 'hand_demo') {
-        modestyRules = 'Satu tangan sahaja dengan pergelangan tangan bertutup lengan baju, tiada cincin/pengilat kuku.';
+        modestyRules = 'Satu tangan sahaja dengan pergelangan tangan bertutup lengan baju, tiada cincin/gelang/pengilat kuku.';
       } else {
-        modestyRules = 'Bertudung sempurna menutup rambut, leher dan dada; pakaian longgar berlengan panjang.';
+        modestyRules = 'Tudung labuh menutup rambut, leher dan dada; pakaian longgar berlengan panjang hingga pergelangan.';
       }
     }
 
@@ -127,20 +148,23 @@ export class DynamicPromptCompiler {
 
     return {
       provider: style.engine,
+      engineDisplayName,
       durationSeconds: style.durationSeconds,
       creditCost: style.engine === 'nexabot' ? 10 : 15,
       spokenScript: style.engine === 'nexabot' ? spokenScript : null,
       visualSummary,
       sceneEnvironment: scenePlan.location,
-      cameraProfile: 'Kamera telefon pintar 9:16 menegak, 1x perspektif, micro-shake halus tanpa kesan putaran/zoom melampau.',
+      cameraProfile: 'Kamera telefon pintar 9:16 menegak, 1x perspektif tanpa sempadan telefon atau mockup bingkai.',
       modestyRules,
       productIdentityRules: `Mengekalkan identiti visual produk ${product.name} (bentuk botol/bungkusan, warna, logo dan label).`,
-      audioDirective: style.engine === 'nexabot' ? 'Suara bahasa Melayu santai bersahaja, tiada slanga luar.' : 'Tiada audio percakapan (visual tulen).',
+      audioDirective: style.engine === 'nexabot'
+        ? 'Suara bahasa Melayu santai bersahaja (14-23 perkataan), tiada slanga luar.'
+        : 'Tiada suara pertuturan (visual tulen, bunyi persekitaran / ASMR / audio bersesuaian).',
     };
   }
 
   /**
-   * Compiles the complete payload for the specified provider
+   * Compiles the complete payload for the specified provider with Masterprompt Lock V4
    */
   static compile(
     product: ProductProfile,
@@ -152,46 +176,99 @@ export class DynamicPromptCompiler {
     const isMuslimah = options.isMuslimahModest ?? style.modestyLock;
     const ctaMode = options.callToAction || 'spoken_button';
 
-    // 1. Universal Realism & Camera Directives
-    const realismDirectives = [
-      'Raw smartphone UGC video, shot on iPhone 15 Pro, vertical 9:16 aspect ratio.',
-      `Setting: ${scenePlan.location}.`,
-      `Lighting: ${scenePlan.lighting}. Natural clean daylight 5500K neutral white balance. Strictly NOT dark, NOT yellowish, NO sepia, NO heavy color grading.`,
-      'Camera Dynamics: One continuous take with subtle handheld micro-shake. Normal 1x perspective. Strictly NO dramatic zoom, NO camera spinning, NO cinematic lens flares.',
-      'Human Realism: Real human skin with natural pores, subtle micro-creases, authentic lifelike eye moisture. Strictly NO CGI, NO plastic skin, NO 3D animation, NO airbrushed smooth face filter.',
-      'Clean Framing: Strictly NO phone UI overlays, NO fake buttons, NO watermarks, NO icons, NO subtitles burned into video.',
-    ].join(' ');
+    // -------------------------------------------------------------------------
+    // MASTERPROMPT LOCK V4 — LAYER 1: UNIVERSAL MANDATORY LOCKS
+    // -------------------------------------------------------------------------
 
-    // 2. Product Identity Lock Directives (Scale ~20-30% of frame)
+    // 1. PRODUCT IDENTITY MAX LOCK (Section 2.1)
+    const productScaleGuideline = 'Keep product at realistic physical scale (approximately 20-30% of the frame). For fashion styles, use garment scale appropriate to worn outfit framing.';
+
     const identityLockDirectives = [
-      `Product Identity Continuity: The physical product ${product.name} is an identity reference.`,
-      'Preserve package shape, label typography, cap/closure, and authentic colors in every frame.',
-      'Keep product at realistic physical scale (approximately 20-30% of the frame).',
-      'Strictly NO product morphing, NO vanishing, and NO abrupt resizing.',
+      `[PRODUCT IDENTITY MAX LOCK]`,
+      `The uploaded product image is an authoritative identity reference for "${product.name}".`,
+      `Preserve exact brand, logo, product name, label design, typography, packaging colour, container shape, cap, closure, dispenser, material, texture, and physical proportions across all frames.`,
+      productScaleGuideline,
+      `Strictly NO product morphing, NO duplicate products, NO changing labels, NO changing packaging colours, NO missing caps, NO oversized bottles, NO floating objects, NO artificial product rotation, NO sudden disappearance, NO unexpected object replacement.`,
     ].join(' ');
 
-    // 3. Modesty / Shariah Lock
+    // 2. ZERO UI / PLATFORM / WATERMARK LOCK (Section 2.2)
+    // Strictly avoid phrases like "playing on a phone" which triggers device frames
+    const zeroUiLockDirectives = [
+      `[ZERO UI & WATERMARK LOCK]`,
+      `Full-frame vertical 9:16 aspect ratio footage naturally recorded in physical space, WITHOUT displaying any smartphone border, phone mockup frame, or screen bezel.`,
+      `Strictly NO TikTok logo, NO social media interface, NO watermark, NO phone frame, NO phone UI overlays, NO fake buttons, NO smartphone mockup, NO embedded video player, NO screen borders, NO playback controls, NO floating captions, NO UI overlay, NO picture-in-picture, NO yellow basket graphics, NO shopping app interface, NO username overlays, NO like/comment/share buttons.`,
+    ].join(' ');
+
+    // 3. HUMAN & PHYSICAL REALISM LOCK (Section 2.3)
+    const realismDirectives = [
+      `[HUMAN & PHYSICAL REALISM LOCK]`,
+      `Natural human anatomy, correct body proportions, correct hands and exactly 5 natural fingers per hand.`,
+      `Natural skin pores, subtle micro-creases, authentic lifelike eye moisture. Real fabric behaviour, realistic object weight, natural gravity, plausible movement.`,
+      `Natural facial expressions, subtle genuine eye movement, believable hand-object contact, realistic mouth movement during speech.`,
+      `Strictly NO plastic skin, NO waxy faces, NO synthetic lighting, NO deformed fingers, NO extra hands, NO airbrushed smooth face filter, NO robotic gestures, NO floating products, NO AI-style morphing, NO sudden camera jumps, NO artificial slow motion, NO excessive cinematic effects.`,
+    ].join(' ');
+
+    // 4. SHARIAH LOCK V4 (Section 4)
     let modestyDirectives = '';
     if (isMuslimah) {
       if (style.category === 'hand_demo') {
-        modestyDirectives = 'Modesty Guardrail: Single natural hand with wrist properly covered by long sleeve. No nail polish, no gaudy rings or bracelets.';
+        modestyDirectives = [
+          `[SHARIAH MODESTY LOCK V4 — HAND DEMO] Modesty Guardrail:`,
+          `Single natural hand if style specifies one hand. Wrist must be fully covered by long sleeve.`,
+          `Strictly NO rings, NO bracelets, NO nail polish, NO artificial nails. Exactly 5 correct fingers with realistic proportions.`,
+        ].join(' ');
       } else {
-        modestyDirectives = 'Modesty Guardrail: Model wears proper, elegant hijab securely covering hair, neck, and chest. Loose everyday attire with sleeves covering wrists. Natural pleasant facial expressions.';
+        modestyDirectives = [
+          `[SHARIAH MODESTY LOCK V4 — PRESENTER] Modesty Guardrail:`,
+          `Muslimah presenter: Hijab labuh fully covering hair, neck, and chest securely.`,
+          `Loose-fitting clothing, long sleeves covering wrists at all times including arm transitions.`,
+          `Strictly NO transparent fabric, NO tight outfits, NO jewellery (no rings, no bracelets, no necklaces), NO unintended hair or neck exposure during movements, NO inappropriate posing.`,
+        ].join(' ');
       }
     } else {
-      modestyDirectives = 'Model Styling: Modern casual everyday attire appropriate for general Malaysian audiences.';
+      modestyDirectives = `[MODESTY GUIDELINE] Modesty Guardrail: Model wears neat, modern casual everyday attire appropriate for general Malaysian audiences.`;
     }
 
-    // 4. Engine-Specific Construction
+    // -------------------------------------------------------------------------
+    // MASTERPROMPT LOCK V4 — LAYER 2: PRODUCTION PROFILE (UGC vs STUDIO)
+    // -------------------------------------------------------------------------
+    const profile = options.productionProfile || 'ugc_creator';
+    let profileDirectives = '';
+
+    if (profile === 'studio_commercial') {
+      profileDirectives = [
+        `[PROFILE B: PROFESSIONAL STUDIO / COMMERCIAL]`,
+        `Controlled professional studio lighting, clean background, deliberate polished camera composition, elegant natural reflections.`,
+      ].join(' ');
+    } else {
+      // Default: Profile A (Realistic UGC / Creator)
+      profileDirectives = [
+        `[PROFILE A: REALISTIC UGC / CREATOR]`,
+        `Everyday natural smartphone camera quality (high-end iPhone 15 Pro sensor), bright neutral daylight (5500K neutral white balance, strictly NOT dark, NOT yellowish, NO sepia, NO heavy grading).`,
+        `Normal 1x camera perspective, one continuous take, subtle handheld micro-shake, ordinary domestic Malaysian room/setting.`,
+        `Strictly NO studio-grade artificial lighting, NO dramatic zooming, NO cinematic camera spinning, NO excessive subject movement. Authentic casual creator footage.`,
+      ].join(' ');
+    }
+
+    // Combine universal masterprompt directives
+    const universalMasterPrompt = [
+      identityLockDirectives,
+      zeroUiLockDirectives,
+      realismDirectives,
+      modestyDirectives,
+      profileDirectives,
+    ].join(' ');
+
+    // -------------------------------------------------------------------------
+    // MASTERPROMPT LOCK V4 — LAYER 3: ENGINE-SPECIFIC COMPILATION
+    // -------------------------------------------------------------------------
     if (style.engine === 'runninghub') {
       return this.compileRunningHub(
         product,
         style,
         scenePlan,
         options,
-        realismDirectives,
-        identityLockDirectives,
-        modestyDirectives,
+        universalMasterPrompt,
         preflight
       );
     } else {
@@ -200,9 +277,7 @@ export class DynamicPromptCompiler {
         style,
         scenePlan,
         options,
-        realismDirectives,
-        identityLockDirectives,
-        modestyDirectives,
+        universalMasterPrompt,
         ctaMode,
         preflight
       );
@@ -210,20 +285,18 @@ export class DynamicPromptCompiler {
   }
 
   /**
-   * Nexabot Compiler (10s, Malaysian Malay Spoken Dialogue)
+   * Nexabot Compiler (AffiMatik Voice, 10s, Malaysian Malay Spoken Dialogue)
    */
   private static compileNexabot(
     product: ProductProfile,
     style: VideoStyle,
     scenePlan: ScenePlan,
     options: CompilerOptions,
-    realismDirectives: string,
-    identityLockDirectives: string,
-    modestyDirectives: string,
+    universalMasterPrompt: string,
     ctaMode: 'spoken_button' | 'spoken_bio' | 'none',
     preflight: { isValid: boolean; errors: string[] }
   ): CompiledGenerationPrompt {
-    // Spoken Script adhering to V3 priority
+    // Spoken Script adhering to priority
     const spokenScript = this.resolveSpokenScript(product, style, options);
 
     // Validate final spoken script
@@ -233,16 +306,15 @@ export class DynamicPromptCompiler {
       preflight.errors.push(...scriptValidation.errors);
     }
 
-    // Spoken audio instruction (Nexabot voice synthesis)
+    // Audio instruction: Natural spoken Bahasa Melayu Malaysia (14-23 words)
     const audioDirective = `Dialogue Language: Malaysian Malay (Bahasa Melayu Malaysia). Tone: Casual, relaxed conversational Malaysian creator tone. Natural native pronunciation for exactly 10 seconds. Script to speak aloud: "${spokenScript}"`;
 
-    // Visual Action description
+    // Visual Action description adhering to exact style action
     const visualPrompt = [
       `One single continuous 10-second shot.`,
+      `Setting: ${scenePlan.location}.`,
       `Action: ${scenePlan.primaryAction}. ${scenePlan.actionProgression}.`,
-      realismDirectives,
-      identityLockDirectives,
-      modestyDirectives,
+      universalMasterPrompt,
       options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
     ].filter(Boolean).join(' ');
 
@@ -256,11 +328,12 @@ export class DynamicPromptCompiler {
       continuityAnchor: product.name,
       audioDirective,
       safetyRules: [
+        'AffiMatik Voice (10s) native Malaysian Malay spoken audio',
         'No Indonesia loanwords or slang',
-        'No fake UI buttons or text overlays',
+        'Zero UI, no TikTok logo, no phone frame',
         'No unverified medical or cosmetic claims',
-        'No product morphing or sudden resizing',
-        'Proper modesty coverage enforced',
+        'Product Identity Max Lock enforced',
+        'Shariah Modesty Lock V4 enforced',
       ],
       preflightValid: preflight.isValid,
       validationErrors: preflight.errors,
@@ -268,38 +341,35 @@ export class DynamicPromptCompiler {
   }
 
   /**
-   * RunningHub Compiler (15s, Continuous Visual Scene, No Spoken Dialogue)
+   * RunningHub Compiler (AffiMatik Motion, 15s, Continuous Visual Scene, No Spoken Dialogue)
    */
   private static compileRunningHub(
     product: ProductProfile,
     style: VideoStyle,
     scenePlan: ScenePlan,
     options: CompilerOptions,
-    realismDirectives: string,
-    identityLockDirectives: string,
-    modestyDirectives: string,
+    universalMasterPrompt: string,
     preflight: { isValid: boolean; errors: string[] }
   ): CompiledGenerationPrompt {
     // 15-second creative timing progression:
     // 0-4s: Establish product in realistic domestic Malaysian setting
-    // 4-10s: One simple, authentic physical interaction (holding or gently tilting)
+    // 4-10s: One simple, authentic physical interaction matching official style
     // 10-15s: Hold naturally with steady focus and finish without sudden movement
     const timelineGuideline = [
       'Timing Structure: One continuous 15-second physical shot.',
       '0s to 4s: Establish the product naturally in the setting with clear label visibility.',
-      '4s to 10s: One simple authentic physical action (such as holding or slightly tilting the product).',
+      '4s to 10s: One simple authentic physical action matching the official style definition.',
       '10s to 15s: Hold naturally and conclude smoothly without abrupt cuts or sudden movements.',
     ].join(' ');
 
     const visualPrompt = [
-      `15-second silent visual showcase video.`,
+      `15-second visual showcase video.`,
+      `Setting: ${scenePlan.location}.`,
       `Action: ${scenePlan.primaryAction}.`,
       timelineGuideline,
-      realismDirectives,
-      identityLockDirectives,
-      modestyDirectives,
+      universalMasterPrompt,
       options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
-      'Audio: Purely silent visuals or ambient background sound only. Strictly NO spoken dialogue and NO lip-sync movement.',
+      'Audio: Purely silent visuals, natural room ambience, packaging sounds or gentle ASMR background sound only. Strictly NO spoken dialogue and NO lip-sync movement.',
     ].filter(Boolean).join(' ');
 
     return {
@@ -307,15 +377,18 @@ export class DynamicPromptCompiler {
       providerPrompt: visualPrompt,
       visualPrompt,
       continuityAnchor: `${product.name} (steady frame hold at 14.8s mark)`,
-      audioDirective: 'No spoken dialogue or lip-sync movements (Visual showcase only).',
+      audioDirective: 'No spoken dialogue or lip-sync movements (Visual showcase, ambient/ASMR sound only).',
       safetyRules: [
+        'AffiMatik Motion (15s) visual realism showcase',
         'No spoken voiceover or dialogue',
-        'No fake UI overlays or floating graphics',
+        'Zero UI, no TikTok logo, no phone frame',
         'Realistic physical movement without morphing',
-        'Respectful modesty compliance',
+        'Product Identity Max Lock enforced',
+        'Shariah Modesty Lock V4 enforced',
       ],
       preflightValid: preflight.isValid,
       validationErrors: preflight.errors,
     };
   }
 }
+

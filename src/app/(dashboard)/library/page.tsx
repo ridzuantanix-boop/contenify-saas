@@ -26,7 +26,7 @@ export default function LibraryPage() {
         </div>
         <h4 className="text-sm font-semibold text-slate-800">Pustaka Video Masih Kosong</h4>
         <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-          Video yang berjaya disahkan dan dimuat turun dari enjin Nexabot atau RunningHub akan dipaparkan di sini.
+          Video yang berjaya disahkan dan dimuat turun daripada enjin AffiMatik Voice atau Motion akan dipaparkan di sini.
         </p>
       </div>
     </div>

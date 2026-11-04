@@ -46,7 +46,7 @@ export class ProviderRouter {
     if (requestedProvider === 'nexabot') {
       const key = process.env.NEXABOT_API_KEY;
       if (!key || key.trim().length === 0) {
-        throw new Error('Ralat Konfigurasi Pelayan: Kunci API Nexabot (NEXABOT_API_KEY) tidak dikonfigurasi di pelayan. Sila hubungi pentadbir sistem.');
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API Nexabot (AffiMatik Voice / NEXABOT_API_KEY) tidak dikonfigurasi di pelayan. Sila hubungi pentadbir sistem.');
       }
       return this.nexabot;
     }
@@ -54,18 +54,18 @@ export class ProviderRouter {
     if (requestedProvider === 'runninghub') {
       const key = process.env.RUNNINGHUB_API_KEY;
       if (!key || key.trim().length === 0) {
-        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (RUNNINGHUB_API_KEY) tidak dikonfigurasi di pelayan. Sila hubungi pentadbir sistem.');
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (AffiMatik Motion / RUNNINGHUB_API_KEY) tidak dikonfigurasi di pelayan. Sila hubungi pentadbir sistem.');
       }
       return this.runningHub;
     }
 
     // Default intelligent routing as per Blueprint:
-    // 10s -> Nexabot priority (natural Malaysian Malay spoken creator videos)
-    // 15s -> RunningHub priority
+    // 10s -> AffiMatik Voice priority (natural Malaysian Malay spoken creator videos)
+    // 15s -> AffiMatik Motion priority (natural motion & ambient audio)
     if (durationSeconds === 10) {
       const key = process.env.NEXABOT_API_KEY;
       if (!key || key.trim().length === 0) {
-        throw new Error('Ralat Konfigurasi Pelayan: Kunci API Nexabot (NEXABOT_API_KEY) tidak dikonfigurasi untuk video 10 saat.');
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API Nexabot (AffiMatik Voice / NEXABOT_API_KEY) tidak dikonfigurasi untuk video 10 saat.');
       }
       return this.nexabot;
     }
@@ -73,13 +73,13 @@ export class ProviderRouter {
     if (durationSeconds === 15) {
       const key = process.env.RUNNINGHUB_API_KEY;
       if (!key || key.trim().length === 0) {
-        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (RUNNINGHUB_API_KEY) tidak dikonfigurasi untuk video 15 saat.');
+        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (AffiMatik Motion / RUNNINGHUB_API_KEY) tidak dikonfigurasi untuk video 15 saat.');
       }
       return this.runningHub;
     }
 
     throw new Error(
-      `Tiada pembekal AI menyokong durasi ${durationSeconds}s secara terus. Sila pilih gaya 10s (Nexabot) atau 15s (RunningHub).`
+      `Tiada enjin AI menyokong durasi ${durationSeconds}s secara terus. Sila pilih gaya 10s (AffiMatik Voice) atau 15s (AffiMatik Motion).`
     );
   }
 

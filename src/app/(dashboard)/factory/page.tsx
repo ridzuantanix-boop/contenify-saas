@@ -74,6 +74,8 @@ function VideoFactoryContent() {
   const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
   const [styleSearch, setStyleSearch] = useState('');
   const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
+  const [unmutedCardStyleId, setUnmutedCardStyleId] = useState<string | null>(null);
+  const [mobilePlayingStyleId, setMobilePlayingStyleId] = useState<string | null>(null);
   const [modalPreviewStyle, setModalPreviewStyle] = useState<VideoStyle | null>(null);
 
   // Step 3: Script & Advanced Studio Controls
@@ -491,7 +493,7 @@ function VideoFactoryContent() {
               </span>
             </div>
 
-            {/* Engine Tabs (Nexabot 10s vs RunningHub 15s) */}
+            {/* Engine Tabs (AffiMatik Voice 10s vs AffiMatik Motion 15s) */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -508,9 +510,9 @@ function VideoFactoryContent() {
                 <div>
                   <div className="flex items-center gap-1.5 font-bold text-xs">
                     <Volume2 className="w-3.5 h-3.5 text-primary" />
-                    <span>Nexabot Omni 10s</span>
+                    <span>AffiMatik Voice (10s)</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Percakapan BM Malaysia Asli (10 Kredit)</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Pertuturan BM Asli Malaysia (10 Kredit)</p>
                 </div>
                 {selectedStyle.engine === 'nexabot' && <Check className="w-4 h-4 text-primary" />}
               </button>
@@ -530,33 +532,41 @@ function VideoFactoryContent() {
                 <div>
                   <div className="flex items-center gap-1.5 font-bold text-xs">
                     <VolumeX className="w-3.5 h-3.5 text-slate-700" />
-                    <span>RunningHub 15s</span>
+                    <span>AffiMatik Motion (15s)</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Visual Senyap Estetik (15 Kredit)</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Visual Realistik & ASMR (15 Kredit)</p>
                 </div>
                 {selectedStyle.engine === 'runninghub' && <Check className="w-4 h-4 text-primary" />}
               </button>
             </div>
 
-            {/* Style Cards Grid (Hover-to-Play Video Gallery) */}
+            {/* Style Cards Grid (Hover-to-Play Video Gallery with Audio Control) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span>Pilih daripada 13 Gaya Video Rasmi (Gerakkan tetikus untuk lihat sampel):</span>
+                <span>Pilih daripada 13 Gaya Video Rasmi (Hover untuk main, klik pembesar suara untuk audio):</span>
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya tersedia</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                 {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
-                  const isHovered = hoveredStyleId === style.id;
+                  const isHovered = hoveredStyleId === style.id || mobilePlayingStyleId === style.id;
+                  const isUnmuted = unmutedCardStyleId === style.id;
                   const hasVerifiedSample = Boolean(style.previewVideoUrl);
 
                   return (
                     <div
                       key={style.id}
                       onMouseEnter={() => setHoveredStyleId(style.id)}
-                      onMouseLeave={() => setHoveredStyleId(null)}
-                      onClick={() => setSelectedStyleId(style.id)}
+                      onMouseLeave={() => {
+                        setHoveredStyleId(null);
+                        if (unmutedCardStyleId === style.id) setUnmutedCardStyleId(null);
+                      }}
+                      onClick={() => {
+                        setSelectedStyleId(style.id);
+                        // For touch devices, tap toggles play state
+                        setMobilePlayingStyleId(mobilePlayingStyleId === style.id ? null : style.id);
+                      }}
                       className={`p-3 rounded-xl border text-left transition-all relative group flex flex-col justify-between cursor-pointer ${
                         isSelected
                           ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
@@ -568,12 +578,13 @@ function VideoFactoryContent() {
                         <div className="relative w-full aspect-[9/16] max-h-36 rounded-lg overflow-hidden bg-slate-950 mb-2">
                           <video
                             src={style.previewVideoUrl || undefined}
-                            muted
+                            muted={!isUnmuted}
                             playsInline
                             loop
                             preload="none"
                             ref={(el) => {
                               if (el) {
+                                el.muted = !isUnmuted;
                                 if (isHovered) {
                                   el.play().catch(() => {});
                                 } else {
@@ -585,8 +596,27 @@ function VideoFactoryContent() {
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
-                            {style.durationSeconds}s
+                            {style.durationSeconds}s • {style.engine === 'nexabot' ? 'Voice' : 'Motion'}
                           </div>
+
+                          {/* Sound Unmute / Mute Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUnmutedCardStyleId(isUnmuted ? null : style.id);
+                            }}
+                            className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white transition-all z-10"
+                            title={isUnmuted ? 'Senyapkan suara' : 'Dengar suara sampel'}
+                          >
+                            {isUnmuted ? (
+                              <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <VolumeX className="w-3.5 h-3.5 text-white/80" />
+                            )}
+                          </button>
+
+                          {/* Center Play Button for Modal Expanded View */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -594,7 +624,7 @@ function VideoFactoryContent() {
                               setModalPreviewStyle(style);
                             }}
                             className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-                            title="Tonton pratonton penuh"
+                            title="Tonton pratonton penuh bersuara"
                           >
                             <div className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all">
                               <Play className="w-4 h-4 fill-white" />
@@ -642,7 +672,7 @@ function VideoFactoryContent() {
             </div>
           </div>
 
-          {/* STEP 3: SPOKEN SCRIPT REVIEW (For Nexabot 10s) */}
+          {/* STEP 3: SPOKEN SCRIPT REVIEW (For AffiMatik Voice 10s) */}
           {selectedStyle.engine === 'nexabot' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
               <div className="flex items-center justify-between">
@@ -871,7 +901,7 @@ function VideoFactoryContent() {
                         {activeJob.videoUrl && (
                           <a
                             href={activeJob.videoUrl}
-                            download={`affimatik_${activeJob.jobId.slice(0, 8)}.mp4`}
+                            download={`affimatik-${selectedStyle.slug}-${activeJob.jobId.slice(0, 8)}.mp4`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
@@ -931,8 +961,9 @@ function VideoFactoryContent() {
                       Spesifikasi Gaya: {selectedStyle.name}
                     </div>
                     <div>• Format: 9:16 Menegak (UGC Smartphone)</div>
+                    <div>• Enjin: {selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice (10s)' : 'AffiMatik Motion (15s)'}</div>
                     <div>• Durasi: {selectedStyle.durationSeconds} Saat ({selectedStyle.engine === 'nexabot' ? '10' : '15'} Kredit)</div>
-                    <div>• Audio: {selectedStyle.engine === 'nexabot' ? 'Pertuturan BM Malaysia Santai' : 'Visual Estetik Sahaja'}</div>
+                    <div>• Audio: {selectedStyle.engine === 'nexabot' ? 'Pertuturan BM Malaysia Santai' : 'Visual Realistik & Audio Persekitaran / ASMR'}</div>
                     <div>• Kesopanan: {isMuslimahModest ? 'Pematuhan Muslimah Aktif' : 'Moden Santai'}</div>
                   </div>
                 </div>
@@ -1024,9 +1055,9 @@ function VideoFactoryContent() {
 
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
               <div className="text-xs text-slate-600">
-                <span className="font-bold">{modalPreviewStyle.engine === 'nexabot' ? 'Nexabot Omni (10 Kredit)' : 'RunningHub (15 Kredit)'}</span>
+                <span className="font-bold">{modalPreviewStyle.engine === 'nexabot' ? 'AffiMatik Voice (10 Kredit)' : 'AffiMatik Motion (15 Kredit)'}</span>
                 <div className="text-[11px] text-slate-500">
-                  {modalPreviewStyle.engine === 'nexabot' ? 'Pertuturan Bahasa Melayu Malaysia' : 'Visual Estetik Tanpa Suara'}
+                  {modalPreviewStyle.engine === 'nexabot' ? 'Pertuturan Bahasa Melayu Malaysia (10s)' : 'Visual Realistik & Audio Persekitaran / ASMR (15s)'}
                 </div>
               </div>
               <button
