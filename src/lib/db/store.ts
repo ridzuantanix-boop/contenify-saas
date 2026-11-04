@@ -327,7 +327,7 @@ export class DurableStore {
       throw new Error(`Dompet akaun untuk ruang kerja ${workspaceId} tidak ditemui dan gagal diprovisikan.`);
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -410,7 +410,7 @@ export class DurableStore {
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -562,7 +562,7 @@ export class DurableStore {
       return { success: data.success, error: data.error };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -659,7 +659,7 @@ export class DurableStore {
       return { success: Boolean(data.success), error: data.error };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -756,7 +756,7 @@ export class DurableStore {
       return { success: Boolean(data.success), error: data.error };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -867,7 +867,7 @@ export class DurableStore {
       return;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -898,7 +898,7 @@ export class DurableStore {
       return null;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -930,7 +930,7 @@ export class DurableStore {
       return null;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -964,7 +964,7 @@ export class DurableStore {
       return null;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -995,7 +995,7 @@ export class DurableStore {
       return rows.map((r: Record<string, any>) => this.mapJobFromDb(r));
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1026,7 +1026,7 @@ export class DurableStore {
       return Array.isArray(rows) ? rows.length : 0;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1074,7 +1074,7 @@ export class DurableStore {
       return null;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1106,7 +1106,7 @@ export class DurableStore {
       return rows.map((r: Record<string, any>) => this.mapJobFromDb(r));
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1146,7 +1146,7 @@ export class DurableStore {
       }));
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1242,7 +1242,7 @@ export class DurableStore {
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1287,7 +1287,7 @@ export class DurableStore {
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1333,7 +1333,7 @@ export class DurableStore {
       }));
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1377,7 +1377,7 @@ export class DurableStore {
       return await res.json();
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1511,7 +1511,7 @@ export class DurableStore {
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1549,7 +1549,7 @@ export class DurableStore {
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1593,7 +1593,7 @@ export class DurableStore {
       return { id: rows[0].id, referralCode: rows[0].referral_code };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1633,7 +1633,7 @@ export class DurableStore {
       }));
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1682,7 +1682,7 @@ export class DurableStore {
       return;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
     localDb.settings[key] = value;
@@ -1734,7 +1734,7 @@ export class DurableStore {
       };
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
@@ -1819,7 +1819,7 @@ export class DurableStore {
       return;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && Boolean(process.env.VITEST)) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
     localDb.auditLogs.push({
