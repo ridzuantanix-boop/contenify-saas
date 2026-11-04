@@ -354,7 +354,16 @@ export async function GET(req: NextRequest) {
     status: 'ONLINE',
     brand: 'AffiMatik by Pawarna',
     tagline: 'Affiliate Jadi Automatik',
-    version: '2.1.3',
+    version: '2.1.4',
+    buildCommit: '05478eb',
+    runtimeEnvironment: {
+      hasSupabaseUrl: Boolean(process.env.SUPABASE_URL),
+      hasSupabaseAnonKey: Boolean(process.env.SUPABASE_ANON_KEY),
+      hasSupabaseServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      hasSessionSecret: Boolean(process.env.SESSION_SECRET || process.env.ADMIN_ACCESS_KEY),
+      hasCronSecret: Boolean(process.env.CRON_SECRET),
+      nodeCompatProcessEnv: typeof process !== 'undefined' && typeof process.env === 'object',
+    },
     catalogueSummary: {
       totalStyles: styles.length,
       qualityVerified: styles.filter((s) => s.qualityStatus === 'quality_verified').length,
