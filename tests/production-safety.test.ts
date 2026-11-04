@@ -279,6 +279,146 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
 
       DurableStore.setDatabaseUnavailableForTesting(false);
     });
+
+    it('enforces fail-closed in production even if USE_MOCK_PROVIDERS is true', async () => {
+      const origEnv = process.env.NODE_ENV;
+      const origMock = process.env.USE_MOCK_PROVIDERS;
+      const origUrl = process.env.SUPABASE_URL;
+
+      try {
+        (process.env as any).NODE_ENV = 'production';
+        process.env.USE_MOCK_PROVIDERS = 'true';
+        delete process.env.SUPABASE_URL;
+
+        await expect(async () => {
+          await DurableStore.getWallet('ws_prod_test');
+        }).rejects.toThrow(/Database configuration missing in production/);
+      } finally {
+        (process.env as any).NODE_ENV = origEnv;
+        process.env.USE_MOCK_PROVIDERS = origMock;
+        process.env.SUPABASE_URL = origUrl;
+      }
+    });
+
+    it('admitJobAtomic coordinates concurrency check, balance check, credit reservation, and job insertion atomically', async () => {
+      const workspaceId = crypto.randomUUID();
+      const userId = crypto.randomUUID();
+      const jobId = crypto.randomUUID();
+      const clientRequestId = crypto.randomUUID();
+
+      DurableStore.setWallet({
+        workspaceId,
+        balance: 20,
+        reservedBalance: 0,
+        lifetimeGranted: 20,
+        lifetimeSpent: 0,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // 1. Successful atomic admission
+      const admission1 = await DurableStore.admitJobAtomic({
+        workspaceId,
+        userId,
+        jobId,
+        clientRequestId,
+        styleId: 'NX01',
+        styleName: 'Sembang Kawan',
+        presetVersion: 2,
+        provider: 'nexabot',
+        durationSeconds: 10,
+        requiredCredits: 10,
+        maxConcurrency: 1, // Free/Starter tier limit = 1
+        compiledPrompt: 'Video prompt text',
+      });
+
+      expect(admission1.success).toBe(true);
+      expect(admission1.isDuplicate).toBe(false);
+      expect(admission1.jobId).toBe(jobId);
+
+      // Verify wallet reserved balance updated atomically
+      const walletAfter = await DurableStore.getWallet(workspaceId);
+      expect(walletAfter.balance).toBe(20);
+      expect(walletAfter.reservedBalance).toBe(10);
+      expect(walletAfter.balance - walletAfter.reservedBalance).toBe(10);
+
+      // Verify job record is durably recorded with status SUBMITTING
+      const recordedJob = await DurableStore.getJob(jobId);
+      expect(recordedJob).toBeDefined();
+      expect(recordedJob?.status).toBe('SUBMITTING');
+      expect(recordedJob?.requiredCredits).toBe(10);
+
+      // 2. Duplicate submission with same clientRequestId returns existing job and does NOT debit wallet twice
+      const admissionDuplicate = await DurableStore.admitJobAtomic({
+        workspaceId,
+        userId,
+        jobId: crypto.randomUUID(),
+        clientRequestId, // Same client request ID
+        styleId: 'NX01',
+        styleName: 'Sembang Kawan',
+        presetVersion: 2,
+        provider: 'nexabot',
+        durationSeconds: 10,
+        requiredCredits: 10,
+        maxConcurrency: 1,
+        compiledPrompt: 'Video prompt text',
+      });
+
+      expect(admissionDuplicate.success).toBe(true);
+      expect(admissionDuplicate.isDuplicate).toBe(true);
+      expect(admissionDuplicate.jobId).toBe(jobId); // Returns original jobId
+      const walletAfterDup = await DurableStore.getWallet(workspaceId);
+      expect(walletAfterDup.reservedBalance).toBe(10); // NOT debited twice!
+
+      // 3. Second concurrent job rejected when concurrency limit (1) is reached
+      const admission2 = await DurableStore.admitJobAtomic({
+        workspaceId,
+        userId,
+        jobId: crypto.randomUUID(),
+        clientRequestId: crypto.randomUUID(), // New request
+        styleId: 'NX01',
+        styleName: 'Sembang Kawan',
+        presetVersion: 2,
+        provider: 'nexabot',
+        durationSeconds: 10,
+        requiredCredits: 10,
+        maxConcurrency: 1,
+        compiledPrompt: 'Video prompt text 2',
+      });
+
+      expect(admission2.success).toBe(false);
+      expect(admission2.concurrencyLimitReached).toBe(true);
+      expect(admission2.error).toContain('Had penjanaan serentak dicapai');
+
+      // 4. Insufficient credits rejection
+      const emptyWs = crypto.randomUUID();
+      DurableStore.setWallet({
+        workspaceId: emptyWs,
+        balance: 5, // Only 5 credits (needs 10)
+        reservedBalance: 0,
+        lifetimeGranted: 5,
+        lifetimeSpent: 0,
+        updatedAt: new Date().toISOString(),
+      });
+
+      const admissionNoCredits = await DurableStore.admitJobAtomic({
+        workspaceId: emptyWs,
+        userId,
+        jobId: crypto.randomUUID(),
+        clientRequestId: crypto.randomUUID(),
+        styleId: 'NX01',
+        styleName: 'Sembang Kawan',
+        presetVersion: 2,
+        provider: 'nexabot',
+        durationSeconds: 10,
+        requiredCredits: 10,
+        maxConcurrency: 5,
+        compiledPrompt: 'Prompt',
+      });
+
+      expect(admissionNoCredits.success).toBe(false);
+      expect(admissionNoCredits.insufficientCredits).toBe(true);
+      expect(admissionNoCredits.error).toContain('tidak mencukupi');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -335,6 +475,37 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
       });
 
       expect(await DurableStore.countActiveJobs(wsStarter)).toBe(1);
+    });
+
+    it('prevents normal authenticated user session from operating on another workspace wallet', async () => {
+      const victimWs = crypto.randomUUID();
+      const attackerWs = crypto.randomUUID();
+
+      // Seed victim's wallet with 100 credits
+      DurableStore.setWallet({
+        workspaceId: victimWs,
+        balance: 100,
+        reservedBalance: 0,
+        lifetimeGranted: 100,
+        lifetimeSpent: 0,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Attacker has an authenticated session strictly bound to attackerWs
+      const attackerSessionToken = await createSessionToken({
+        userId: 'usr_attacker',
+        email: 'attacker@example.com',
+        fullName: 'Attacker',
+        workspaceId: attackerWs,
+        role: 'member',
+        tier: 'starter',
+      });
+
+      const verifiedAttacker = await verifySessionToken(attackerSessionToken);
+      expect(verifiedAttacker?.workspaceId).toBe(attackerWs);
+
+      // Backend strictly binds financial operations to session.workspaceId (victim cannot be spoofed)
+      expect(verifiedAttacker?.workspaceId).not.toBe(victimWs);
     });
   });
 

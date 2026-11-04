@@ -16,7 +16,12 @@ export async function POST(req: NextRequest) {
   // Only accessible via authorized admin or server cron secret
   const auth = await verifyAdminAccess(req);
   const cronSecret = req.headers.get('x-cron-secret');
-  const isCronAuthorized = process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET;
+  const authHeader = req.headers.get('authorization');
+  const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  const isCronAuthorized = Boolean(
+    process.env.CRON_SECRET && 
+    (cronSecret === process.env.CRON_SECRET || bearerSecret === process.env.CRON_SECRET)
+  );
 
   if (!auth.isAuthorized && !isCronAuthorized) {
     return NextResponse.json({ error: 'Akses Ditolak: Hanya pentadbir atau cron sistem dibenarkan.' }, { status: 403 });
@@ -66,22 +71,39 @@ export async function POST(req: NextRequest) {
             });
             results.settled++;
           }
-        } else if (statusRes.normalizedStatus === 'FAILED' || isExpired) {
+        } else if (statusRes.normalizedStatus === 'FAILED') {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_recon_${job.id}`);
           await DurableStore.updateJobStatus(job.id, {
             status: 'FAILED',
-            errorMessage: statusRes.rawStatus || 'Tugasan tamat tempoh.',
+            errorMessage: statusRes.rawStatus || 'Tugasan gagal di pembekal AI.',
+            rawStatus: statusRes.rawStatus,
+          });
+          results.released++;
+        } else if (statusRes.normalizedStatus === 'RUNNING' || statusRes.normalizedStatus === 'PENDING') {
+          // Provider actively generating or queued: NEVER prematurely release credits or mark failed
+          results.stillProcessing++;
+        } else if (isExpired) {
+          // Provider status terminal or unrecognized after expiry
+          await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_timeout_${job.id}`);
+          await DurableStore.updateJobStatus(job.id, {
+            status: 'FAILED',
+            errorMessage: statusRes.rawStatus || 'Masa menunggu penjanaan tamat tempoh.',
             rawStatus: statusRes.rawStatus,
           });
           results.released++;
         } else {
           results.stillProcessing++;
         }
-      } catch {
-        if (isExpired) {
+      } catch (pollErr: unknown) {
+        // If provider explicitly throws 404/not-found after timeout, release credits
+        const errMsg = pollErr instanceof Error ? pollErr.message : String(pollErr);
+        if (isExpired && (errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('tidak ditemui'))) {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_err_${job.id}`);
-          await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: 'Ralat penyelarasan status pembekal.' });
+          await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: 'Tugasan tidak ditemui di pembekal selepas tamat tempoh.' });
           results.released++;
+        } else {
+          // Transient network error while polling provider: keep processing
+          results.stillProcessing++;
         }
       }
     }

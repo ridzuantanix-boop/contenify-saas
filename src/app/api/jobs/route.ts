@@ -48,18 +48,6 @@ export async function POST(req: NextRequest) {
     const workspaceId = session.workspaceId;
     const isSuperAdmin = session.role === 'superadmin';
 
-    // 3. Plan-Specific Concurrency Limit Enforcement
-    const maxConcurrent = PLAN_CONCURRENCY_LIMITS[session.tier] || 1;
-    const activeJobsCount = await DurableStore.countActiveJobs(workspaceId);
-    if (activeJobsCount >= maxConcurrent && !isSuperAdmin) {
-      return NextResponse.json(
-        {
-          error: `Had penjanaan serentak dicapai (${activeJobsCount}/${maxConcurrent} tugasan aktif). Pelan ${session.tier.toUpperCase()} membenarkan ${maxConcurrent} video diproses serentak. Sila tunggu video semasa selesai.`,
-        },
-        { status: 429 }
-      );
-    }
-
     const body = await req.json();
     const {
       clientRequestId,
@@ -83,26 +71,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Stable Idempotency & Duplicate Request Protection
-    if (clientRequestId && typeof clientRequestId === 'string') {
-      const existingJob = await DurableStore.getJobByClientRequestId(workspaceId, clientRequestId);
-      if (existingJob) {
-        // Return existing acknowledged job without triggering a new chargeable task
-        return NextResponse.json({
-          success: true,
-          jobId: existingJob.id,
-          providerTaskId: existingJob.providerTaskId || null,
-          provider: existingJob.provider,
-          styleId: existingJob.styleId,
-          styleName: existingJob.styleName,
-          status: existingJob.status,
-          reservedCredits: existingJob.requiredCredits,
-          isDuplicateSubmission: true,
-        });
-      }
-    }
-
-    // 5. Video Style Verification
+    // 4. Video Style Verification
     const targetStyleId = styleId || presetId || 'NX01';
     const style = getVideoStyle(targetStyleId);
     if (!style) {
@@ -119,7 +88,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Provider Resolution & Explicit Configuration Check
+    // 5. Provider Resolution & Explicit Configuration Check
     const durationSeconds = style.durationSeconds;
     const providerName = (requestedProvider || style.engine) as any;
 
@@ -131,7 +100,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 503 });
     }
 
-    // 7. Product Profile & Prompt Compilation
+    // 6. Product Profile & Prompt Compilation
     const productProfile = AICreativeDirector.extractProductProfile({
       productName,
       productCategory,
@@ -155,41 +124,59 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 8. Atomic, Database-Enforced Credit Reservation (Strict RFC4122 UUID)
+    // 7. Atomic, Database-Enforced Admission & Credit Reservation (Single Coordinated Transaction)
     const jobId = crypto.randomUUID();
-    const idempotencyKey = `idem_${jobId}`;
     const requiredCredits = router.calculateCreditCost(durationSeconds as any, providerAdapter.name);
+    const maxConcurrent = isSuperAdmin ? 999 : (PLAN_CONCURRENCY_LIMITS[session.tier] || 1);
 
-    const reservation = await DurableStore.reserveCredits(
-      workspaceId,
-      jobId,
-      requiredCredits,
-      `res_${idempotencyKey}`
-    );
-
-    if (!reservation.success) {
-      return NextResponse.json({ error: reservation.error }, { status: 402 });
-    }
-
-    // 9. Persist Job Record to Database with SUBMITTING status BEFORE calling provider API
-    await DurableStore.saveJob({
-      id: jobId,
+    const admission = await DurableStore.admitJobAtomic({
       workspaceId,
       userId: session.userId,
+      jobId,
       clientRequestId,
       styleId: style.id,
       styleName: style.name,
+      presetVersion: 2,
       provider: providerAdapter.name,
       durationSeconds,
-      status: 'SUBMITTING',
+      requiredCredits,
+      maxConcurrency: maxConcurrent,
+      compiledPrompt: compiled.providerPrompt,
       productName: productProfile.name,
       productCategory: productProfile.category,
-      requiredCredits,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      inputOptions: {
+        callToAction,
+        isMuslimahModest,
+        imageKeysCount: imageKeys.length,
+      },
     });
 
-    // 10. Provider API Dispatch
+    if (admission.isDuplicate) {
+      return NextResponse.json({
+        success: true,
+        jobId: admission.jobId,
+        providerTaskId: admission.providerTaskId || null,
+        provider: providerAdapter.name,
+        styleId: style.id,
+        styleName: style.name,
+        status: admission.status || 'PROCESSING',
+        reservedCredits: admission.requiredCredits || requiredCredits,
+        isDuplicateSubmission: true,
+      });
+    }
+
+    if (!admission.success) {
+      if (admission.concurrencyLimitReached) {
+        return NextResponse.json({ error: admission.error }, { status: 429 });
+      }
+      if (admission.insufficientCredits) {
+        return NextResponse.json({ error: admission.error }, { status: 402 });
+      }
+      return NextResponse.json({ error: admission.error || 'Ralat pendaftaran tugasan video.' }, { status: 400 });
+    }
+
+    // 8. Provider API Dispatch (Job is already durably recorded with SUBMITTING status)
+    const idempotencyKey = `idem_${jobId}`;
     const mainImage = imageKeys.length > 0 ? imageKeys[0] : undefined;
     let submitResult;
     try {

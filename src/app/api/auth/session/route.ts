@@ -152,9 +152,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Verified Local Account Fallback (only permitted in development or test environment)
+    // 2. Verified Local Account Fallback (strictly prohibited in production environment)
     if (!verifiedUserId) {
-      if (process.env.NODE_ENV === 'production' && !process.env.USE_MOCK_PROVIDERS) {
+      if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
           { error: 'Akaun tidak disahkan. Sila gunakan log masuk rasmi Supabase Auth.' },
           { status: 401 }
@@ -175,12 +175,22 @@ export async function POST(req: NextRequest) {
       verifiedRole = 'owner';
     }
 
+    if (!verifiedWorkspaceId) {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'Pengguna tidak mempunyai rekod keahlian ruang kerja (workspace) yang sah dalam pangkalan data.' },
+          { status: 403 }
+        );
+      }
+      verifiedWorkspaceId = `ws_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    }
+
     // 3. Issue Cryptographically Signed Session Token
     const sessionPayload = {
       userId: verifiedUserId,
       email: cleanEmail,
       fullName: cleanEmail.split('@')[0],
-      workspaceId: verifiedWorkspaceId || `ws_${verifiedUserId}`,
+      workspaceId: verifiedWorkspaceId,
       role: verifiedRole,
       tier: verifiedTier,
     };

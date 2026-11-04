@@ -1,7 +1,7 @@
 /**
- * AFFIMATIK by Pawarna — Production Persistent Multi-Tenant Database Client & Store
- * High-concurrency PostgreSQL / Supabase Integration with Atomic RPC Stored Procedures
- * Fail-Closed Policy: Fails safely if database is unreachable; never silently falls back to unbacked state.
+ * AFFIMATIK by Pawarna — Production Persistent Multi-Tenant Database Client & Store (V2.1.4)
+ * Fail-Closed Policy: Fails safely on database outages; completely eliminates in-memory fallback in production.
+ * Atomic Job Admission: Coordinated admission, concurrency enforcement, idempotency, and credit reservation in single database transaction.
  */
 
 export interface CreditWalletRecord {
@@ -55,6 +55,36 @@ export interface VideoJobRecord {
   rawStatus?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface JobAdmissionRequest {
+  workspaceId: string;
+  userId: string;
+  jobId: string;
+  clientRequestId?: string;
+  styleId: string;
+  styleName: string;
+  presetVersion: number;
+  provider: 'nexabot' | 'runninghub' | 'mock';
+  durationSeconds: number;
+  requiredCredits: number;
+  maxConcurrency: number;
+  compiledPrompt: string;
+  productName?: string;
+  productCategory?: string;
+  inputOptions?: Record<string, unknown>;
+}
+
+export interface JobAdmissionResult {
+  success: boolean;
+  isDuplicate?: boolean;
+  jobId?: string;
+  providerTaskId?: string;
+  status?: string;
+  requiredCredits?: number;
+  concurrencyLimitReached?: boolean;
+  insufficientCredits?: boolean;
+  error?: string;
 }
 
 export const PLAN_CONCURRENCY_LIMITS: Record<string, number> = {
@@ -144,55 +174,89 @@ export class DurableStore {
   }
 
   /**
-   * Fail-closed check: Enforce database connectivity in production
+   * Fail-closed check: Strictly enforces database connectivity in production.
+   * USE_MOCK_PROVIDERS does NOT bypass this check.
    */
   private static checkFailClosed(): void {
     if (localDb.forceDbDown) {
       throw new Error('Database connection unavailable: fail-closed.');
     }
-    if (
-      process.env.NODE_ENV === 'production' &&
-      !this.isSupabaseConfigured() &&
-      process.env.USE_MOCK_PROVIDERS !== 'true'
-    ) {
+    if (process.env.NODE_ENV === 'production' && !this.isSupabaseConfigured()) {
       throw new Error('Database configuration missing in production: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
     }
   }
 
   /**
-   * Fetches tenant's wallet.
-   * If new workspace, initializes with 10 free credits (NOT 160 Pro credits).
+   * Fetches tenant's wallet with zero in-memory fallback in production.
    */
   static async getWallet(workspaceId: string): Promise<CreditWalletRecord> {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/credit_wallets?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          if (rows && rows.length > 0) {
-            const row = rows[0];
-            return {
-              workspaceId: row.workspace_id,
-              balance: row.balance,
-              reservedBalance: row.reserved_balance,
-              lifetimeGranted: row.lifetime_granted,
-              lifetimeSpent: row.lifetime_spent,
-              updatedAt: row.updated_at,
-            };
-          }
-        }
-      } catch (err: unknown) {
-        console.error('[DurableStore] Supabase fetch wallet failed:', err);
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/credit_wallets?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText || 'Failed to query credit wallet'}`);
       }
+
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        return {
+          workspaceId: row.workspace_id,
+          balance: row.balance,
+          reservedBalance: row.reserved_balance,
+          lifetimeGranted: row.lifetime_granted,
+          lifetimeSpent: row.lifetime_spent,
+          updatedAt: row.updated_at,
+        };
+      }
+
+      // Auto-provision initial wallet with 10 free credits in database if valid workspace
+      const createRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/credit_wallets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          balance: 10,
+          reserved_balance: 0,
+          lifetime_granted: 10,
+          lifetime_spent: 0,
+        }),
+      });
+
+      if (createRes.ok) {
+        const createdRows = await createRes.json();
+        if (createdRows && createdRows.length > 0) {
+          const row = createdRows[0];
+          return {
+            workspaceId: row.workspace_id,
+            balance: row.balance,
+            reservedBalance: row.reserved_balance,
+            lifetimeGranted: row.lifetime_granted,
+            lifetimeSpent: row.lifetime_spent,
+            updatedAt: row.updated_at,
+          };
+        }
+      }
+
+      throw new Error(`Dompet akaun untuk ruang kerja ${workspaceId} tidak ditemui dan gagal diprovisikan.`);
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     // Local / Testing Fallback
@@ -211,6 +275,172 @@ export class DurableStore {
   }
 
   /**
+   * Atomic Job Admission: Coordinated admission, concurrency enforcement, idempotency,
+   * and credit reservation in a single atomic database transaction.
+   */
+  static async admitJobAtomic(req: JobAdmissionRequest): Promise<JobAdmissionResult> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/admit_video_job_atomic`;
+      const res = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_workspace_id: req.workspaceId,
+          p_user_id: req.userId,
+          p_job_id: req.jobId,
+          p_client_request_id: req.clientRequestId || null,
+          p_preset_id: req.styleId,
+          p_preset_version: req.presetVersion,
+          p_provider: req.provider,
+          p_duration_seconds: req.durationSeconds,
+          p_required_credits: req.requiredCredits,
+          p_max_concurrency: req.maxConcurrency,
+          p_compiled_prompt: req.compiledPrompt,
+          p_input_options: req.inputOptions || {},
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database admission error HTTP ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+      return {
+        success: Boolean(data.success),
+        isDuplicate: Boolean(data.is_duplicate),
+        jobId: data.job_id || req.jobId,
+        providerTaskId: data.provider_task_id,
+        status: data.status,
+        requiredCredits: data.required_credits || req.requiredCredits,
+        concurrencyLimitReached: Boolean(data.concurrency_limit_reached),
+        insufficientCredits: Boolean(data.insufficient_credits),
+        error: data.error,
+      };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    // Local / Testing atomic admission implementation
+    const releaseLock = await acquireWorkspaceLock(req.workspaceId);
+    try {
+      // 1. Idempotency Check by clientRequestId
+      if (req.clientRequestId) {
+        const existing = Object.values(localDb.jobs).find(
+          (j) => j.workspaceId === req.workspaceId && j.clientRequestId === req.clientRequestId
+        );
+        if (existing) {
+          return {
+            success: true,
+            isDuplicate: true,
+            jobId: existing.id,
+            providerTaskId: existing.providerTaskId,
+            status: existing.status,
+            requiredCredits: existing.requiredCredits,
+          };
+        }
+      }
+
+      // 2. Concurrency check
+      const activeCount = Object.values(localDb.jobs).filter(
+        (j) => j.workspaceId === req.workspaceId && (j.status === 'QUEUED' || j.status === 'SUBMITTING' || j.status === 'PROCESSING')
+      ).length;
+
+      if (activeCount >= req.maxConcurrency) {
+        return {
+          success: false,
+          concurrencyLimitReached: true,
+          error: `Had penjanaan serentak dicapai (${activeCount}/${req.maxConcurrency} tugasan aktif). Sila tunggu video semasa selesai diproses.`,
+        };
+      }
+
+      // 3. Balance verification
+      const wallet = localDb.wallets[req.workspaceId] || {
+        workspaceId: req.workspaceId,
+        balance: 10,
+        reservedBalance: 0,
+        lifetimeGranted: 10,
+        lifetimeSpent: 0,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const available = wallet.balance - wallet.reservedBalance;
+      if (available < req.requiredCredits) {
+        return {
+          success: false,
+          insufficientCredits: true,
+          error: `Baki kredit tidak mencukupi. Diperlukan: ${req.requiredCredits} kredit, Baki tersedia: ${available} kredit.`,
+        };
+      }
+
+      // 4. Reserve credits atomically
+      wallet.reservedBalance += req.requiredCredits;
+      wallet.updatedAt = new Date().toISOString();
+      localDb.wallets[req.workspaceId] = wallet;
+
+      // 5. Insert job record with status SUBMITTING
+      const newJob: VideoJobRecord = {
+        id: req.jobId,
+        workspaceId: req.workspaceId,
+        userId: req.userId,
+        clientRequestId: req.clientRequestId,
+        styleId: req.styleId,
+        styleName: req.styleName,
+        provider: req.provider,
+        durationSeconds: req.durationSeconds,
+        status: 'SUBMITTING',
+        productName: req.productName,
+        productCategory: req.productCategory,
+        requiredCredits: req.requiredCredits,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      localDb.jobs[req.jobId] = newJob;
+
+      // 6. Insert credit reservation
+      localDb.reservations[req.jobId] = {
+        id: `res_${req.jobId}`,
+        workspaceId: req.workspaceId,
+        jobId: req.jobId,
+        amount: req.requiredCredits,
+        status: 'PENDING',
+        idempotencyKey: `job_idem_${req.jobId}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      // 7. Insert audit ledger entry
+      localDb.ledger[`job_idem_${req.jobId}`] = {
+        id: `ldg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        workspaceId: req.workspaceId,
+        amount: -req.requiredCredits,
+        eventType: 'RESERVE',
+        referenceType: 'VIDEO_JOB',
+        referenceId: req.jobId,
+        idempotencyKey: `job_idem_${req.jobId}`,
+        timestamp: new Date().toISOString(),
+        description: `Tempahan ${req.requiredCredits} kredit untuk tugasan ${req.jobId}`,
+      };
+
+      return {
+        success: true,
+        isDuplicate: false,
+        jobId: req.jobId,
+        requiredCredits: req.requiredCredits,
+      };
+    } finally {
+      releaseLock();
+    }
+  }
+
+  /**
    * Atomic Credit Reservation with Row-Level Lock & Idempotency Guarantee
    */
   static async reserveCredits(
@@ -221,46 +451,43 @@ export class DurableStore {
   ): Promise<{ success: boolean; error?: string }> {
     this.checkFailClosed();
 
-    // Production: Supabase PostgreSQL RPC with SELECT ... FOR UPDATE
     if (this.isSupabaseConfigured()) {
-      try {
-        const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/reserve_credits_atomic`;
-        const res = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-          body: JSON.stringify({
-            p_workspace_id: workspaceId,
-            p_job_id: jobId,
-            p_amount: amount,
-            p_idempotency_key: idempotencyKey,
-          }),
-        });
+      const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/reserve_credits_atomic`;
+      const res = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_workspace_id: workspaceId,
+          p_job_id: jobId,
+          p_amount: amount,
+          p_idempotency_key: idempotencyKey,
+        }),
+      });
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          return { success: false, error: errData.message || 'Ralat transaksi tempahan kredit.' };
-        }
-
-        const data = await res.json();
-        return { success: data.success, error: data.error };
-      } catch (err: unknown) {
-        throw new Error('Database connection unavailable: fail-closed.');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return { success: false, error: errData.message || 'Ralat transaksi tempahan kredit.' };
       }
+
+      const data = await res.json();
+      return { success: data.success, error: data.error };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     // Local / Testing Mutex Atomic Transaction
     const releaseLock = await acquireWorkspaceLock(workspaceId);
     try {
-      // 1. Idempotency Check
       if (localDb.ledger[idempotencyKey]) {
         return { success: true };
       }
 
-      // 2. Wallet Check
       const wallet = localDb.wallets[workspaceId] || {
         workspaceId,
         balance: 10,
@@ -278,13 +505,11 @@ export class DurableStore {
         };
       }
 
-      // 3. Atomically update wallet
       wallet.reservedBalance += amount;
       wallet.updatedAt = new Date().toISOString();
       localDb.wallets[workspaceId] = wallet;
 
-      // 4. Append Ledger Entry
-      const ledgerEntry: CreditLedgerRecord = {
+      localDb.ledger[idempotencyKey] = {
         id: `ldg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         workspaceId,
         amount: -amount,
@@ -295,9 +520,7 @@ export class DurableStore {
         timestamp: new Date().toISOString(),
         description: `Tempahan ${amount} kredit untuk tugasan ${jobId}`,
       };
-      localDb.ledger[idempotencyKey] = ledgerEntry;
 
-      // 5. Store Reservation
       localDb.reservations[jobId] = {
         id: `res_${jobId}`,
         workspaceId,
@@ -316,10 +539,6 @@ export class DurableStore {
 
   /**
    * Settle Credits upon Verified MP4 Video Generation
-   * Rules:
-   * - Cannot settle a reservation that was RELEASED
-   * - Cannot settle twice (idempotent if same key)
-   * - Settlement amount must equal reserved amount
    */
   static async settleCredits(
     workspaceId: string,
@@ -330,37 +549,41 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/settle_credits_atomic`;
-        const res = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-          body: JSON.stringify({
-            p_workspace_id: workspaceId,
-            p_job_id: jobId,
-            p_amount: amount,
-            p_idempotency_key: idempotencyKey,
-          }),
-        });
-        const data = await res.json();
-        return { success: Boolean(data.success), error: data.error };
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/settle_credits_atomic`;
+      const res = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_workspace_id: workspaceId,
+          p_job_id: jobId,
+          p_amount: amount,
+          p_idempotency_key: idempotencyKey,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const data = await res.json();
+      return { success: Boolean(data.success), error: data.error };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     const releaseLock = await acquireWorkspaceLock(workspaceId);
     try {
-      // 1. Idempotency Check
       if (localDb.ledger[idempotencyKey]) {
         return { success: true };
       }
 
-      // 2. Reservation Check
       const reservation = localDb.reservations[jobId];
       if (!reservation) {
         return { success: false, error: 'Tiada rekod tempahan kredit ditemui untuk tugasan ini.' };
@@ -371,7 +594,7 @@ export class DurableStore {
       }
 
       if (reservation.status === 'SETTLED') {
-        return { success: true }; // Already settled
+        return { success: true };
       }
 
       if (reservation.amount !== amount) {
@@ -381,7 +604,6 @@ export class DurableStore {
         };
       }
 
-      // 3. Wallet deduction
       const wallet = localDb.wallets[workspaceId];
       if (!wallet) {
         return { success: false, error: 'Dompet kredit tidak ditemui.' };
@@ -396,7 +618,7 @@ export class DurableStore {
       reservation.status = 'SETTLED';
       reservation.settledAt = new Date().toISOString();
 
-      const ledgerEntry: CreditLedgerRecord = {
+      localDb.ledger[idempotencyKey] = {
         id: `ldg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         workspaceId,
         amount: -amount,
@@ -407,7 +629,6 @@ export class DurableStore {
         timestamp: new Date().toISOString(),
         description: `Penyelesaian ${amount} kredit untuk tugasan selesai ${jobId}`,
       };
-      localDb.ledger[idempotencyKey] = ledgerEntry;
 
       return { success: true };
     } finally {
@@ -426,26 +647,32 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/release_credits_atomic`;
-        const res = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-          body: JSON.stringify({
-            p_workspace_id: workspaceId,
-            p_job_id: jobId,
-            p_idempotency_key: idempotencyKey,
-          }),
-        });
-        const data = await res.json();
-        return { success: Boolean(data.success), error: data.error };
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/release_credits_atomic`;
+      const res = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_workspace_id: workspaceId,
+          p_job_id: jobId,
+          p_idempotency_key: idempotencyKey,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const data = await res.json();
+      return { success: Boolean(data.success), error: data.error };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     const releaseLock = await acquireWorkspaceLock(workspaceId);
@@ -456,7 +683,7 @@ export class DurableStore {
 
       const reservation = localDb.reservations[jobId];
       if (!reservation || reservation.status !== 'PENDING') {
-        return { success: true }; // Already released or settled
+        return { success: true };
       }
 
       const wallet = localDb.wallets[workspaceId];
@@ -468,7 +695,7 @@ export class DurableStore {
 
       reservation.status = 'RELEASED';
 
-      const ledgerEntry: CreditLedgerRecord = {
+      localDb.ledger[idempotencyKey] = {
         id: `ldg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         workspaceId,
         amount: reservation.amount,
@@ -479,7 +706,6 @@ export class DurableStore {
         timestamp: new Date().toISOString(),
         description: `Pelepasan ${reservation.amount} kredit tempahan bagi tugasan gagal ${jobId}`,
       };
-      localDb.ledger[idempotencyKey] = ledgerEntry;
 
       return { success: true };
     } finally {
@@ -491,7 +717,7 @@ export class DurableStore {
   // PERSISTENT JOB OPERATIONS
   // =========================================================================
 
-  private static mapJobFromDb(row: any): VideoJobRecord {
+  private static mapJobFromDb(row: Record<string, any>): VideoJobRecord {
     return {
       id: row.id,
       workspaceId: row.workspace_id,
@@ -518,46 +744,46 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            Prefer: 'resolution=merge-duplicates',
-          },
-          body: JSON.stringify({
-            id: job.id,
-            workspace_id: job.workspaceId,
-            client_request_id: job.clientRequestId || null,
-            preset_id: job.styleId,
-            preset_version: 2,
-            provider: job.provider,
-            duration_seconds: job.durationSeconds,
-            aspect_ratio: '9:16',
-            voice_accent: 'ms-MY-standard',
-            status: job.status,
-            provider_task_id: job.providerTaskId || null,
-            idempotency_key: `job_idem_${job.id}`,
-            result_video_url: job.videoUrl || null,
-            error_message: job.errorMessage || null,
-            created_at: job.createdAt,
-            updated_at: job.updatedAt,
-          }),
-        });
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({
+          id: job.id,
+          workspace_id: job.workspaceId,
+          user_id: job.userId,
+          client_request_id: job.clientRequestId || null,
+          preset_id: job.styleId,
+          preset_version: 2,
+          provider: job.provider,
+          duration_seconds: job.durationSeconds,
+          required_credits: job.requiredCredits,
+          aspect_ratio: '9:16',
+          voice_accent: 'ms-MY-standard',
+          status: job.status,
+          provider_task_id: job.providerTaskId || null,
+          idempotency_key: `job_idem_${job.id}`,
+          result_video_url: job.videoUrl || null,
+          error_message: job.errorMessage || null,
+          created_at: job.createdAt,
+          updated_at: job.updatedAt,
+        }),
+      });
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          console.error('[DurableStore] Supabase saveJob failed:', err);
-          throw new Error('Gagal menyimpan rekod tugasan video ke pangkalan data.');
-        }
-        return;
-      } catch (err: unknown) {
-        console.error('[DurableStore] Supabase saveJob error:', err);
-        throw new Error('Database connection unavailable: fail-closed.');
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: Gagal menyimpan rekod tugasan video. ${errText}`);
       }
+      return;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     localDb.jobs[job.id] = { ...job, updatedAt: new Date().toISOString() };
@@ -567,24 +793,28 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          if (rows && rows.length > 0) {
-            return this.mapJobFromDb(rows[0]);
-          }
-          return null;
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        return this.mapJobFromDb(rows[0]);
+      }
+      return null;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     const job = localDb.jobs[jobId];
@@ -595,24 +825,28 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&client_request_id=eq.${encodeURIComponent(clientRequestId)}&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          if (rows && rows.length > 0) {
-            return this.mapJobFromDb(rows[0]);
-          }
-          return null;
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&client_request_id=eq.${encodeURIComponent(clientRequestId)}&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        return this.mapJobFromDb(rows[0]);
+      }
+      return null;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     const job = Object.values(localDb.jobs).find(
@@ -625,24 +859,28 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?provider_task_id=eq.${encodeURIComponent(providerTaskId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          if (rows && rows.length > 0) {
-            return this.mapJobFromDb(rows[0]);
-          }
-          return null;
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?provider_task_id=eq.${encodeURIComponent(providerTaskId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        return this.mapJobFromDb(rows[0]);
+      }
+      return null;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     const job = Object.values(localDb.jobs).find(
@@ -655,21 +893,25 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          return rows.map((r: any) => this.mapJobFromDb(r));
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      return rows.map((r: Record<string, any>) => this.mapJobFromDb(r));
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     return Object.values(localDb.jobs)
@@ -682,21 +924,25 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=in.(QUEUED,SUBMITTING,PROCESSING)&select=id`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          return Array.isArray(rows) ? rows.length : 0;
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=in.(QUEUED,SUBMITTING,PROCESSING)&select=id`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows.length : 0;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     return Object.values(localDb.jobs).filter(
@@ -711,36 +957,40 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const patchPayload: Record<string, any> = {
-          updated_at: new Date().toISOString(),
-        };
-        if (updates.status) patchPayload.status = updates.status;
-        if (updates.providerTaskId) patchPayload.provider_task_id = updates.providerTaskId;
-        if (updates.videoUrl) patchPayload.result_video_url = updates.videoUrl;
-        if (updates.errorMessage) patchPayload.error_message = updates.errorMessage;
+      const patchPayload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.status) patchPayload.status = updates.status;
+      if (updates.providerTaskId) patchPayload.provider_task_id = updates.providerTaskId;
+      if (updates.videoUrl) patchPayload.result_video_url = updates.videoUrl;
+      if (updates.errorMessage) patchPayload.error_message = updates.errorMessage;
 
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}`;
-        const res = await fetch(url, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            Prefer: 'return=representation',
-          },
-          body: JSON.stringify(patchPayload),
-        });
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}`;
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(patchPayload),
+      });
 
-        if (res.ok) {
-          const rows = await res.json();
-          if (rows && rows.length > 0) {
-            return this.mapJobFromDb(rows[0]);
-          }
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        return this.mapJobFromDb(rows[0]);
+      }
+      return null;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     const job = localDb.jobs[jobId];
@@ -754,21 +1004,25 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?status=in.(SUBMITTING,PROCESSING)&order=created_at.asc&limit=100&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          return rows.map((r: any) => this.mapJobFromDb(r));
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?status=in.(SUBMITTING,PROCESSING)&order=created_at.asc&limit=100&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      return rows.map((r: Record<string, any>) => this.mapJobFromDb(r));
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     return Object.values(localDb.jobs).filter(
@@ -780,31 +1034,35 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      try {
-        const url = `${process.env.SUPABASE_URL}/rest/v1/credit_ledger?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        });
-        if (res.ok) {
-          const rows = await res.json();
-          return rows.map((r: any) => ({
-            id: r.id,
-            workspaceId: r.workspace_id,
-            amount: r.amount,
-            eventType: r.event_type,
-            referenceType: r.reference_type,
-            referenceId: r.reference_id,
-            idempotencyKey: r.idempotency_key,
-            timestamp: r.created_at,
-            description: r.description,
-          }));
-        }
-      } catch {
-        throw new Error('Database connection unavailable: fail-closed.');
+      const url = `${process.env.SUPABASE_URL}/rest/v1/credit_ledger?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
       }
+
+      const rows = await res.json();
+      return rows.map((r: Record<string, any>) => ({
+        id: r.id,
+        workspaceId: r.workspace_id,
+        amount: r.amount,
+        eventType: r.event_type,
+        referenceType: r.reference_type,
+        referenceId: r.reference_id,
+        idempotencyKey: r.idempotency_key,
+        timestamp: r.created_at,
+        description: r.description,
+      }));
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
 
     return Object.values(localDb.ledger)
