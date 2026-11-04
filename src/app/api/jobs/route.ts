@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
     status: 'ONLINE',
     brand: 'AffiMatik by Pawarna',
     tagline: 'Affiliate Jadi Automatik',
-    version: '2.0.0',
+    version: '2.1.0',
     availableStyles: getAllVideoStyles().map((s) => ({
       id: s.id,
       name: s.name,

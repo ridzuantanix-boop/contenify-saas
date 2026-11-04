@@ -5,6 +5,7 @@
 
 import { ProductProfile, ScenePlan, CompiledGenerationPrompt } from './types';
 import { VideoStyle } from '../styles/types';
+import { VoiceoverDirector } from './voiceover-director';
 
 export interface CompilerOptions {
   callToAction?: 'spoken_button' | 'spoken_bio' | 'none';
@@ -40,6 +41,14 @@ export class DynamicPromptCompiler {
     // Check custom script submitted to RunningHub
     if (style.engine === 'runninghub' && options?.customScript && options.customScript.trim().length > 0) {
       errors.push(`Gaya 15 saat RunningHub tidak menerima sebarang skrip pertuturan.`);
+    }
+
+    // Voiceover validation if custom script is provided for Nexabot
+    if (style.engine === 'nexabot' && options?.customScript && options.customScript.trim().length > 0) {
+      const scriptValidation = VoiceoverDirector.validateScript(options.customScript, product, 'nexabot');
+      if (!scriptValidation.isValid) {
+        errors.push(...scriptValidation.errors);
+      }
     }
 
     return {
@@ -136,7 +145,7 @@ export class DynamicPromptCompiler {
     } else if (style.actionPlan.scriptTemplate) {
       spokenScript = style.actionPlan.scriptTemplate;
     } else {
-      spokenScript = `Korang tengok barang yang saya pegang ni, memang sangat berbaloi dan senang nak guna setiap hari. Kualiti memang terbaik!`;
+      spokenScript = VoiceoverDirector.generateAuthenticScript(product, style, ctaMode);
     }
 
     // CTA Formulation
@@ -158,7 +167,7 @@ export class DynamicPromptCompiler {
     ].join(' ');
 
     const visualPrompt = [
-      `[Format]: 10-second high-fidelity video, 9:16 vertical format, 24fps cinema grading.`,
+      `[Format]: 10-second authentic smartphone video, vertical 9:16 aspect ratio, natural 24fps handheld recording.`,
       `[Scene & Action]: ${scenePlan.mainSubject} performing ${scenePlan.primaryAction}. Starting from: ${scenePlan.startPose}. Action: ${scenePlan.actionProgression}. Ending with: ${scenePlan.endPose}.`,
       ctaInstruction ? `[Call to Action]: ${ctaInstruction}` : '',
       `[Visual Realism & Atmosphere]: ${realismDirectives}`,
@@ -204,7 +213,7 @@ export class DynamicPromptCompiler {
     const continuityAnchor = 'At 14.8s mark, character hand and product remain steady and centered in frame with continuous natural daylight.';
 
     const visualPrompt = [
-      `[Format]: 15-second high-fidelity video, 9:16 vertical format, 24fps.`,
+      `[Format]: 15-second authentic smartphone video, vertical 9:16 aspect ratio, natural 24fps handheld recording.`,
       `[Primary Physical Action]: ${scenePlan.mainSubject} performing ${scenePlan.primaryAction}.`,
       `[Scene Progression]: Starting at ${scenePlan.startPose}. Physical movement: ${scenePlan.actionProgression}. Ending at: ${scenePlan.endPose}.`,
       `[Visual Realism]: ${realismDirectives}`,

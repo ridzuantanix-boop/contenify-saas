@@ -24,7 +24,14 @@ export type AssetType =
   | 'avatar_reference'
   | 'lifestyle_reference';
 
-export type QualityStatus = 'untested' | 'testing' | 'verified' | 'published';
+export type QualityStatus =
+  | 'draft'
+  | 'prompt_validated'
+  | 'video_tested'
+  | 'quality_verified'
+  | 'published'
+  | 'disabled'
+  | 'archived';
 
 export type PublicationStatus = 'draft' | 'published' | 'disabled' | 'archived';
 

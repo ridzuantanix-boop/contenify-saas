@@ -73,6 +73,61 @@ function VideoFactoryContent() {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
 
+  // Restore running job from sessionStorage if user reloaded
+  useEffect(() => {
+    try {
+      const savedJob = sessionStorage.getItem('affimatik_active_job');
+      if (savedJob) {
+        const parsed = JSON.parse(savedJob);
+        if (Date.now() - parsed.startTime < 10 * 60 * 1000) {
+          setIsSubmitting(true);
+          setActiveJobStatus('Menyambung semula semakan status AI...');
+          setActiveJobProgress(50);
+          setSubmitSuccess(`Menyambung semakan tugasan: ${parsed.providerTaskId} (${parsed.styleName})`);
+          
+          let pollCount = 0;
+          const pollInterval = setInterval(async () => {
+            pollCount++;
+            try {
+              const pollRes = await fetch(`/api/jobs?providerTaskId=${parsed.providerTaskId}&provider=${parsed.providerName}`);
+              const pollData = await pollRes.json();
+              if (pollData.status === 'COMPLETED' && pollData.output?.videoUrl) {
+                clearInterval(pollInterval);
+                sessionStorage.removeItem('affimatik_active_job');
+                setIsSubmitting(false);
+                setActiveJobStatus('Selesai!');
+                setActiveJobProgress(100);
+                setGeneratedVideoUrl(pollData.output.videoUrl);
+              } else if (pollData.status === 'FAILED') {
+                clearInterval(pollInterval);
+                sessionStorage.removeItem('affimatik_active_job');
+                setIsSubmitting(false);
+                setSubmitError(`Penjanaan video gagal: ${pollData.rawStatus || 'Ralat tidak diketahui'}`);
+              } else {
+                setActiveJobProgress((prev) => Math.min(prev + 5, 90));
+                setActiveJobStatus(`Sedang diproses (${pollData.rawStatus || 'rendering'})...`);
+              }
+            } catch {
+              // ignore
+            }
+
+            if (pollCount > 60) {
+              clearInterval(pollInterval);
+              sessionStorage.removeItem('affimatik_active_job');
+              setIsSubmitting(false);
+            }
+          }, 4000);
+
+          return () => clearInterval(pollInterval);
+        } else {
+          sessionStorage.removeItem('affimatik_active_job');
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Product Profile & Smart Style Match
   const productProfile = useMemo(() => {
     return AICreativeDirector.extractProductProfile({
@@ -169,9 +224,17 @@ function VideoFactoryContent() {
       setActiveJobStatus('Sedang diproses oleh pelayan AI...');
       setActiveJobProgress(30);
 
-      // Mulakan polling status
+      // Save to sessionStorage for persistence across page reloads
       const providerTaskId = data.providerTaskId;
       const providerName = data.provider || selectedStyle.engine;
+      sessionStorage.setItem('affimatik_active_job', JSON.stringify({
+        providerTaskId,
+        providerName,
+        styleName: selectedStyle.name,
+        startTime: Date.now(),
+      }));
+
+      // Mulakan polling status
       let pollCount = 0;
       const pollInterval = setInterval(async () => {
         pollCount++;
@@ -180,12 +243,14 @@ function VideoFactoryContent() {
           const pollData = await pollRes.json();
           if (pollData.status === 'COMPLETED' && pollData.output?.videoUrl) {
             clearInterval(pollInterval);
+            sessionStorage.removeItem('affimatik_active_job');
             setIsSubmitting(false);
             setActiveJobStatus('Selesai!');
             setActiveJobProgress(100);
             setGeneratedVideoUrl(pollData.output.videoUrl);
           } else if (pollData.status === 'FAILED') {
             clearInterval(pollInterval);
+            sessionStorage.removeItem('affimatik_active_job');
             setIsSubmitting(false);
             setSubmitError(`Penjanaan video gagal: ${pollData.rawStatus || 'Ralat tidak diketahui'}`);
           } else {
@@ -198,6 +263,7 @@ function VideoFactoryContent() {
 
         if (pollCount > 60) {
           clearInterval(pollInterval);
+          sessionStorage.removeItem('affimatik_active_job');
           setIsSubmitting(false);
         }
       }, 4000);

@@ -84,7 +84,7 @@ export class SmartStyleMatcher {
       }
 
       // Prioritize tested & verified styles
-      if (style.qualityStatus === 'verified') {
+      if (style.qualityStatus === 'quality_verified' || style.qualityStatus === 'video_tested') {
         score += 5;
       }
 
