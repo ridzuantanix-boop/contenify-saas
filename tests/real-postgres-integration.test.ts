@@ -25,6 +25,8 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00003_secure_financial_rpc_and_job_admission.sql',
       '00004_fix_migration_compatibility_and_concurrency.sql',
       '00005_workspace_status_and_alignment.sql',
+      '00006_billing_affiliates_and_financial_safety.sql',
+      '00007_fix_admin_credit_adjustment_uuid.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -479,5 +481,88 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     );
     expect(suspendedJoin.rows.length).toBe(1);
     expect(suspendedJoin.rows[0].ws_status).toBe('suspended');
+  });
+
+  it('proves admin_adjust_credits_atomic works against real PostgreSQL without UUID syntax error and records wallet, ledger and audit log', async () => {
+    const wsId = 'd0000000-1111-2222-3333-444455556666';
+    const ownerId = 'e0000000-1111-2222-3333-444455556666';
+    const adminEmail = 'admin@affimatik.internal';
+
+    // 1. Setup workspace and initial wallet
+    await db.query(
+      `INSERT INTO workspaces (id, name, slug, owner_id, status) VALUES ($1, 'Admin Adjust WS', 'admin-adjust-ws', $2, 'active');`,
+      [wsId, ownerId]
+    );
+
+    await db.query(
+      `INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_granted, lifetime_spent, updated_at)
+       VALUES ($1, 10, 0, 10, 0, NOW());`,
+      [wsId]
+    );
+
+    // 2. Execute RPC admin_adjust_credits_atomic with string email and +50 credits
+    const rpcRes = await db.query<{ admin_adjust_credits_atomic: any }>(
+      `SELECT admin_adjust_credits_atomic($1, $2, $3, $4);`,
+      [wsId, 50, 'Pampasan teknikal atas gangguan pelayan', adminEmail]
+    );
+
+    expect(rpcRes.rows.length).toBe(1);
+    const result = rpcRes.rows[0].admin_adjust_credits_atomic;
+    expect(result.success).toBe(true);
+    expect(result.new_balance).toBe(60);
+    expect(result.adjusted_by).toBe(50);
+    expect(result.reference_id).toBeDefined();
+
+    // 3. Verify wallet table in PostgreSQL
+    const walletRes = await db.query<{ balance: number; lifetime_granted: number }>(
+      `SELECT balance, lifetime_granted FROM credit_wallets WHERE workspace_id = $1;`,
+      [wsId]
+    );
+    expect(walletRes.rows[0].balance).toBe(60);
+    expect(walletRes.rows[0].lifetime_granted).toBe(60);
+
+    // 4. Verify credit_ledger table in PostgreSQL
+    const ledgerRes = await db.query<{ amount: number; event_type: string; reference_type: string; reference_id: string; description: string }>(
+      `SELECT amount, event_type, reference_type, reference_id, description FROM credit_ledger WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 1;`,
+      [wsId]
+    );
+    expect(ledgerRes.rows.length).toBe(1);
+    expect(ledgerRes.rows[0].amount).toBe(50);
+    expect(ledgerRes.rows[0].event_type).toBe('MANUAL_ADJUSTMENT');
+    expect(ledgerRes.rows[0].reference_type).toBe('ADMIN_ADJUSTMENT');
+    // Ensure reference_id is genuine RFC4122 UUID format
+    expect(ledgerRes.rows[0].reference_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(ledgerRes.rows[0].description).toContain('Pampasan teknikal atas gangguan pelayan');
+    expect(ledgerRes.rows[0].description).toContain(adminEmail);
+
+    // 5. Verify audit_logs table in PostgreSQL
+    const auditRes = await db.query<{ admin_email: string; action: string; target_type: string; target_id: string; details: any }>(
+      `SELECT admin_email, action, target_type, target_id, details FROM audit_logs WHERE target_id = $1 ORDER BY created_at DESC LIMIT 1;`,
+      [wsId]
+    );
+    expect(auditRes.rows.length).toBe(1);
+    expect(auditRes.rows[0].admin_email).toBe(adminEmail);
+    expect(auditRes.rows[0].action).toBe('CREDIT_MANUAL_ADJUSTMENT');
+    expect(auditRes.rows[0].target_type).toBe('WALLET');
+    expect(auditRes.rows[0].details.new_balance).toBe(60);
+    expect(auditRes.rows[0].details.adjusted_by).toBe(50);
+
+    // 6. Test debit adjustment (-20 credits)
+    const debitRes = await db.query<{ admin_adjust_credits_atomic: any }>(
+      `SELECT admin_adjust_credits_atomic($1, $2, $3, $4);`,
+      [wsId, -20, 'Pelarasan bayaran balik', adminEmail]
+    );
+    const debitResult = debitRes.rows[0].admin_adjust_credits_atomic;
+    expect(debitResult.success).toBe(true);
+    expect(debitResult.new_balance).toBe(40);
+
+    // 7. Test over-debit protection (-100 credits when balance is 40)
+    const overDebitRes = await db.query<{ admin_adjust_credits_atomic: any }>(
+      `SELECT admin_adjust_credits_atomic($1, $2, $3, $4);`,
+      [wsId, -100, 'Tolak melebihi baki', adminEmail]
+    );
+    const overDebitResult = overDebitRes.rows[0].admin_adjust_credits_atomic;
+    expect(overDebitResult.success).toBe(false);
+    expect(overDebitResult.error).toContain('Insufficient credit balance for debit');
   });
 });

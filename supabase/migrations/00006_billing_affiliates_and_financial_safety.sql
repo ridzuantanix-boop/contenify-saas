@@ -86,14 +86,19 @@ CREATE INDEX IF NOT EXISTS idx_affiliate_commissions_status ON affiliate_commiss
 -- 5. Audit Logs Table (Administrative actions & financial adjustments)
 CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    admin_email VARCHAR(255) NOT NULL,
+    admin_email VARCHAR(255),
     action VARCHAR(100) NOT NULL,
-    target_type VARCHAR(100) NOT NULL,
-    target_id VARCHAR(255) NOT NULL,
+    target_type VARCHAR(100),
+    target_id VARCHAR(255),
     details JSONB DEFAULT '{}'::jsonb,
     ip_address VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS admin_email VARCHAR(255);
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS target_type VARCHAR(100);
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS target_id VARCHAR(255);
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS details JSONB DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
@@ -301,6 +306,7 @@ DECLARE
     v_wallet RECORD;
     v_new_balance INT;
     v_ledger_key VARCHAR(100);
+    v_reference_id UUID;
 BEGIN
     IF p_amount = 0 THEN
         RETURN jsonb_build_object('success', false, 'error', 'Adjustment amount cannot be zero');
@@ -340,7 +346,8 @@ BEGIN
     END IF;
 
     v_new_balance := v_wallet.balance;
-    v_ledger_key := 'adj_' || gen_random_uuid()::text;
+    v_reference_id := gen_random_uuid();
+    v_ledger_key := 'adj_' || v_reference_id::text;
 
     -- 2. Record in credit_ledger
     INSERT INTO credit_ledger (
@@ -358,9 +365,9 @@ BEGIN
         p_amount,
         'MANUAL_ADJUSTMENT',
         'ADMIN_ADJUSTMENT',
-        p_admin_email,
+        v_reference_id,
         v_ledger_key,
-        COALESCE(p_reason, 'Manual Administrative Adjustment')
+        COALESCE(p_reason, 'Manual Administrative Adjustment') || ' [Admin: ' || COALESCE(p_admin_email, 'system') || ']'
     );
 
     -- 3. Record in audit_logs

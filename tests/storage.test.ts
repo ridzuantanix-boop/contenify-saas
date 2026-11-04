@@ -39,10 +39,40 @@ describe('R2 Storage Service', () => {
     ).rejects.toThrow(/Content type .* is not permitted/);
   });
 
-  it('generates presigned download URL for stored outputs', async () => {
+  it('generates presigned download URL for stored outputs with caller workspace', async () => {
     const downloadUrl = await storage.createPresignedDownloadUrl(
-      'workspaces/ws_123/outputs/video_final.mp4'
+      'workspaces/ws_123/outputs/video_final.mp4',
+      'ws_123'
     );
     expect(downloadUrl).toContain('test-r2.contenify.internal');
+  });
+
+  it('enforces strict tenant isolation and prevents cross-workspace file access', async () => {
+    // Customer in ws_attacker tries to access ws_victim file
+    await expect(
+      storage.createPresignedDownloadUrl(
+        'workspaces/ws_victim/outputs/sensitive_campaign.mp4',
+        'ws_attacker'
+      )
+    ).rejects.toThrow(/Akses Ditolak: Anda tidak mempunyai kebenaran mengakses fail milik workspace ws_victim/);
+  });
+
+  it('generates genuine AWS SigV4 signed presigned URL when R2 credentials provided', async () => {
+    const liveStorage = new R2StorageService({
+      accountId: 'test_account_id',
+      accessKeyId: 'test_access_key',
+      secretAccessKey: 'test_secret_key_12345',
+      useLocalMock: false,
+    });
+
+    const downloadUrl = await liveStorage.createPresignedDownloadUrl(
+      'workspaces/ws_123/outputs/video_final.mp4',
+      'ws_123'
+    );
+
+    expect(downloadUrl).toContain('test_account_id.r2.cloudflarestorage.com');
+    expect(downloadUrl).toContain('X-Amz-Algorithm=AWS4-HMAC-SHA256');
+    expect(downloadUrl).toContain('X-Amz-Credential=test_access_key');
+    expect(downloadUrl).toContain('X-Amz-Signature=');
   });
 });

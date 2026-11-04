@@ -34,7 +34,8 @@ export class ProviderRouter {
     allowMockForTesting = false
   ): IProviderAdapter {
     // Only permit mock adapter if explicitly configured for tests/mock mode
-    if (this.useMockOnly || (allowMockForTesting && requestedProvider === 'mock')) {
+    const isMock = this.useMockOnly || (process.env.USE_MOCK_PROVIDERS === 'true');
+    if (isMock || (allowMockForTesting && requestedProvider === 'mock')) {
       return this.mock;
     }
 

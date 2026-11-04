@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { POST as registerHandler } from '../src/app/api/auth/register/route';
 import { POST as loginHandler, GET as sessionHandler } from '../src/app/api/auth/session/route';
-import { POST as jobsHandler } from '../src/app/api/jobs/route';
+import { POST as checkoutHandler } from '../src/app/api/billing/checkout/route';
+import { POST as adminOpsHandler } from '../src/app/api/admin/operations/route';
+import { POST as jobsHandler, GET as getJobsHandler } from '../src/app/api/jobs/route';
 import { POST as reconcileHandler } from '../src/app/api/jobs/reconcile/route';
 import { DurableStore } from '../src/lib/db/store';
 import { ProviderRouter } from '../src/lib/providers/router';
@@ -233,5 +236,169 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(adapter.name).toBe('mock');
     expect(adapter.getCapabilities().providerName).toBe('mock');
     expect(adapter.getCapabilities().supportsSpokenBM).toBe(true);
+  });
+
+  it('8. executes complete commercial lifecycle: register → login → create order → verify manual payment → grant credits once → generate mock job → retrieve result', async () => {
+    process.env.ADMIN_ACCESS_KEY = 'adm_key_live_test_789';
+    process.env.USE_MOCK_PROVIDERS = 'true';
+
+    // Step 1: Register new customer account
+    const regReq = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'commercial.creator@affimatik.io',
+        password: 'PasswordSuper123!',
+        fullName: 'Commercial Tester',
+      }),
+    });
+
+    const regRes = await registerHandler(regReq);
+    expect(regRes.status).toBe(200);
+    const regData = await regRes.json();
+    expect(regData.success).toBe(true);
+    expect(regData.user.email).toBe('commercial.creator@affimatik.io');
+    expect(regData.wallet.balance).toBe(10); // Initial 10 credits provisioned
+
+    // Step 2: Login to acquire valid session cookie
+    const loginReq = new NextRequest('http://localhost:3000/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'commercial.creator@affimatik.io',
+        password: 'PasswordSuper123!',
+      }),
+    });
+
+    const loginRes = await loginHandler(loginReq);
+    expect(loginRes.status).toBe(200);
+    const loginData = await loginRes.json();
+    const cookieHeader = loginRes.headers.get('set-cookie');
+    expect(cookieHeader).toBeDefined();
+    const sessionCookieMatch = cookieHeader!.match(/affimatik_session=([^;]+)/);
+    const sessionCookie = sessionCookieMatch ? sessionCookieMatch[1] : '';
+    expect(sessionCookie.length).toBeGreaterThan(10);
+    const activeWorkspaceId = loginData.user.workspaceId;
+
+    // Step 3: Create Order for Starter Plan (RM49, 100 credits) via manual bank transfer
+    const checkoutReq = new NextRequest('http://localhost:3000/api/billing/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: `affimatik_session=${sessionCookie}`,
+      },
+      body: JSON.stringify({
+        planId: 'plan_starter',
+        paymentMethod: 'manual_fpx',
+      }),
+    });
+
+    const checkoutRes = await checkoutHandler(checkoutReq);
+    expect(checkoutRes.status).toBe(200);
+    const orderData = await checkoutRes.json();
+    expect(orderData.success).toBe(true);
+    expect(orderData.orderId).toBeDefined();
+    expect(orderData.amountMyr).toBe(49);
+    expect(orderData.creditsGranted).toBe(50);
+    expect(orderData.manualPaymentDetails.referenceCode).toBeDefined();
+
+    // Verify order is initially PENDING in store
+    const initialOrder = await DurableStore.getOrder(orderData.orderId);
+    expect(initialOrder?.status).toBe('PENDING');
+
+    // Step 4: Verify manual payment by admin
+    const adminVerifyReq = new NextRequest('http://localhost:3000/api/admin/operations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': 'adm_key_live_test_789',
+      },
+      body: JSON.stringify({
+        action: 'manual_verify_payment',
+        orderId: orderData.orderId,
+        referenceNote: 'MBB_REF_881928301',
+      }),
+    });
+
+    const verifyRes = await adminOpsHandler(adminVerifyReq);
+    expect(verifyRes.status).toBe(200);
+    const verifyData = await verifyRes.json();
+    expect(verifyData.success).toBe(true);
+    expect(verifyData.settlement.status).toBe('PAID');
+    // Balance granted once: initial 10 + 50 = 60 credits
+    expect(verifyData.settlement.balance).toBe(60);
+
+    // Step 5: Verify double-credit protection (idempotent replay)
+    const duplicateAdminVerifyReq = new NextRequest('http://localhost:3000/api/admin/operations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': 'adm_key_live_test_789',
+      },
+      body: JSON.stringify({
+        action: 'manual_verify_payment',
+        orderId: orderData.orderId,
+        referenceNote: 'MBB_REF_881928301',
+      }),
+    });
+
+    const duplicateVerifyRes = await adminOpsHandler(duplicateAdminVerifyReq);
+    expect(duplicateVerifyRes.status).toBe(200);
+    const dupData = await duplicateVerifyRes.json();
+    expect(dupData.settlement.balance).toBe(60); // Still 60! NOT 110!
+
+    // Step 6: Generate mock video job using acquired customer session
+    const clientRequestId = `req_comm_${Date.now()}`;
+    const jobReq = new NextRequest('http://localhost:3000/api/jobs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: `affimatik_session=${sessionCookie}`,
+      },
+      body: JSON.stringify({
+        styleId: 'NX01',
+        clientRequestId,
+        prompt: 'Ulasan produk kosmetik organik Malaysia',
+      }),
+    });
+
+    const jobRes = await jobsHandler(jobReq);
+    expect(jobRes.status).toBe(200);
+    const jobData = await jobRes.json();
+    expect(jobData.success).toBe(true);
+    expect(jobData.jobId).toBeDefined();
+    expect(jobData.reservedCredits).toBe(10);
+
+    // Step 7: Retrieve result with realistic polling (RUNNING -> COMPLETED)
+    const getJobReq1 = new NextRequest(`http://localhost:3000/api/jobs?jobId=${jobData.jobId}`, {
+      method: 'GET',
+      headers: { cookie: `affimatik_session=${sessionCookie}` },
+    });
+    const poll1Res = await getJobsHandler(getJobReq1);
+    expect(poll1Res.status).toBe(200);
+    const poll1Data = await poll1Res.json();
+    expect(poll1Data.jobId).toBe(jobData.jobId);
+    expect(poll1Data.status).toBe('RUNNING');
+
+    // Second poll: provider completes output
+    const getJobReq2 = new NextRequest(`http://localhost:3000/api/jobs?jobId=${jobData.jobId}`, {
+      method: 'GET',
+      headers: { cookie: `affimatik_session=${sessionCookie}` },
+    });
+    const poll2Res = await getJobsHandler(getJobReq2);
+    expect(poll2Res.status).toBe(200);
+    const retrievedJob = await poll2Res.json();
+    expect(retrievedJob.jobId).toBe(jobData.jobId);
+    expect(retrievedJob.status).toBe('COMPLETED');
+    expect(retrievedJob.output?.videoUrl).toBeDefined();
+    expect(retrievedJob.output?.videoUrl).toContain('.mp4');
+
+    // Step 8: Verify final customer wallet after complete lifecycle
+    const finalWallet = await DurableStore.getWallet(activeWorkspaceId);
+    // 60 minus 10 settled = 50 remaining available credits
+    expect(finalWallet.balance).toBe(50);
+    expect(finalWallet.reservedBalance).toBe(0);
+    expect(finalWallet.lifetimeGranted).toBe(60);
+    expect(finalWallet.lifetimeSpent).toBe(10);
   });
 });
