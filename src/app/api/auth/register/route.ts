@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
         userId = signupData.user.id;
         requiresEmailConfirmation = !signupData.session; // If no session returned, email confirmation is active in Supabase
 
-        // 2. Server-side provisioning via Service Role
+        // 2. Server-side provisioning via Service Role with verified columns and foreign keys
         if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
           const sHeaders = {
             'Content-Type': 'application/json',
@@ -85,32 +85,53 @@ export async function POST(req: NextRequest) {
             Prefer: 'return=representation',
           };
 
-          // A. Create or ensure workspace exists
+          const uniqueSlug = `ws-${userId.slice(0, 8)}-${Date.now()}`;
+
+          // A. Create workspace with mandatory slug and owner_id
           const wsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/workspaces`, {
             method: 'POST',
             headers: sHeaders,
             body: JSON.stringify({
               name: `${displayName}'s Workspace`,
+              slug: uniqueSlug,
+              owner_id: userId,
               status: 'active',
             }),
           });
-          const wsRows = await wsRes.json();
-          workspaceId = wsRows?.[0]?.id || crypto.randomUUID();
 
-          // B. Upsert Profile
-          await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles`, {
+          if (!wsRes.ok) {
+            const errText = await wsRes.text().catch(() => '');
+            console.error('[Register API] Failed to create workspace:', errText);
+            throw new Error(`Pangkalan data gagal mencipta ruang kerja: ${errText}`);
+          }
+
+          const wsRows = await wsRes.json();
+          if (!wsRows || wsRows.length === 0 || !wsRows[0].id) {
+            throw new Error('Ruang kerja gagal dijana oleh pangkalan data.');
+          }
+          workspaceId = wsRows[0].id;
+
+          // B. Upsert Profile with mandatory email, id, tier, default_workspace_id
+          const profRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles`, {
             method: 'POST',
             headers: sHeaders,
             body: JSON.stringify({
               id: userId,
+              email: cleanEmail,
               full_name: displayName,
               tier: 'free',
               default_workspace_id: workspaceId,
             }),
           });
 
+          if (!profRes.ok) {
+            const errText = await profRes.text().catch(() => '');
+            console.error('[Register API] Failed to create profile:', errText);
+            throw new Error(`Pangkalan data gagal mencipta profil pengguna: ${errText}`);
+          }
+
           // C. Upsert Workspace Member
-          await fetch(`${process.env.SUPABASE_URL}/rest/v1/workspace_members`, {
+          const memRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/workspace_members`, {
             method: 'POST',
             headers: sHeaders,
             body: JSON.stringify({
@@ -120,15 +141,28 @@ export async function POST(req: NextRequest) {
             }),
           });
 
-          // D. Atomically provision credit wallet (10 free credits + GRANT ledger)
-          await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
+          if (!memRes.ok) {
+            const errText = await memRes.text().catch(() => '');
+            console.error('[Register API] Failed to create workspace member:', errText);
+            throw new Error(`Pangkalan data gagal menetapkan keahlian ruang kerja: ${errText}`);
+          }
+
+          // D. Atomically provision credit wallet (10 free credits + GRANT ledger entry)
+          // Uses exact signature p_workspace_id and p_initial_balance
+          const provRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
             method: 'POST',
             headers: sHeaders,
             body: JSON.stringify({
               p_workspace_id: workspaceId,
-              p_initial_grant: 10,
+              p_initial_balance: 10,
             }),
           });
+
+          if (!provRes.ok) {
+            const errText = await provRes.text().catch(() => '');
+            console.error('[Register API] Failed to provision initial wallet:', errText);
+            throw new Error(`Pangkalan data gagal memperuntukkan dompet kredit permulaan: ${errText}`);
+          }
 
           // E. Record referral code if provided
           if (cleanReferral) {

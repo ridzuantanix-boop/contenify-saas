@@ -44,6 +44,8 @@ export default function BillingPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
+
   async function fetchBilling() {
     try {
       const res = await fetch('/api/billing');
@@ -97,6 +99,7 @@ export default function BillingPage() {
   async function checkPaymentStatus() {
     if (!checkoutData?.orderId) return;
     setIsVerifying(true);
+    setPendingNotice(null);
     try {
       const res = await fetch(`/api/billing/verify-order?orderId=${checkoutData.orderId}`);
       if (res.ok) {
@@ -106,24 +109,11 @@ export default function BillingPage() {
           setBalance(data.walletBalance);
           await fetchBilling();
         } else {
-          // If in test mode, offer instant settlement simulation
-          const simRes = await fetch('/api/billing/webhook', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId: checkoutData.orderId,
-              status: 'paid',
-              refno: `sim_${Date.now()}`,
-            }),
-          });
-          if (simRes.ok) {
-            setPaymentVerified(true);
-            await fetchBilling();
-          }
+          setPendingNotice('Pesanan anda berstatus PENDING. Kredit akan diperuntukkan serta-merta selepas pentadbir mengesahkan resit transaksi bank anda.');
         }
       }
     } catch {
-      // ignore
+      setPendingNotice('Ralat menyemak status pesanan. Sila cuba sebentar lagi.');
     } finally {
       setIsVerifying(false);
     }
@@ -134,6 +124,7 @@ export default function BillingPage() {
     setCheckoutData(null);
     setPaymentVerified(false);
     setCheckoutError(null);
+    setPendingNotice(null);
   }
 
   return (
@@ -397,6 +388,13 @@ export default function BillingPage() {
                     </div>
                   </div>
                 ) : null}
+
+                {pendingNotice && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-start gap-2">
+                    <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                    <span>{pendingNotice}</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between pt-3 border-t">
                   <button

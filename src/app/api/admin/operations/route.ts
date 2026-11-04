@@ -54,30 +54,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Adjust Customer Credits
+    // 2. Adjust Customer Credits (Durable, Transactional & Audited)
     if (action === 'adjust_customer_credits') {
       const { workspaceId, amount, reason } = body;
       if (!workspaceId || typeof amount !== 'number') {
         return NextResponse.json({ error: 'workspaceId dan amount nombor diperlukan.' }, { status: 400 });
       }
 
-      const wallet = await DurableStore.getWallet(workspaceId);
-      wallet.balance += amount;
-      wallet.updatedAt = new Date().toISOString();
-      DurableStore.setWallet(wallet);
-
-      await DurableStore.recordAuditLog(
-        adminEmail,
-        'CREDIT_MANUAL_ADJUSTMENT',
-        'WALLET',
-        workspaceId,
-        { previousBalance: wallet.balance - amount, adjustedBy: amount, newBalance: wallet.balance, reason }
-      );
+      const result = await DurableStore.adjustCredits(workspaceId, amount, reason, adminEmail);
 
       return NextResponse.json({
         success: true,
-        message: `Kredit berjaya diselaraskan (${amount > 0 ? `+${amount}` : amount}). Baki baharu: ${wallet.balance}`,
-        balance: wallet.balance,
+        message: `Kredit berjaya diselaraskan (${amount > 0 ? `+${amount}` : amount}). Baki baharu: ${result.newBalance}`,
+        balance: result.newBalance,
+        adjustedBy: result.adjustedBy,
       });
     }
 

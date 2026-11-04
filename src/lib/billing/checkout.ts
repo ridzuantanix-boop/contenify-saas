@@ -22,7 +22,6 @@ export interface CheckoutResult {
     bankName: string;
     accountNumber: string;
     accountHolder: string;
-    duitNowQrPayload: string;
     referenceCode: string;
     instructions: string[];
   };
@@ -31,6 +30,7 @@ export interface CheckoutResult {
 
 /**
  * Creates an order and initiates checkout flow across automated or Malaysian manual payment rails.
+ * Does not emit fabricated gateway URLs or unverified hardcoded bank accounts.
  */
 export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResult> {
   const plan = AUTHORITATIVE_PLANS.find((p) => p.id === req.planId);
@@ -41,23 +41,12 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
   const orderId = crypto.randomUUID();
   const paymentMethod = req.paymentMethod || 'manual_fpx';
 
-  // 1. Check if an automated gateway is configured (ToyyibPay / Billplz / Stripe)
+  // 1. Check if a genuine automated gateway is configured
   let checkoutUrl: string | undefined;
-  const toyyibKey = process.env.TOYYIBPAY_SECRET_KEY;
-  const billplzKey = process.env.BILLPLZ_API_KEY;
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  // If an active gateway is integrated with real credentials, create real gateway session here.
+  // Otherwise, fallback honestly to manual bank-transfer payments verified by administrator.
 
-  if (toyyibKey && req.paymentMethod === 'fpx') {
-    // Generate ToyyibPay Bill
-    checkoutUrl = `https://toyyibpay.com/${orderId}`;
-  } else if (billplzKey && req.paymentMethod === 'fpx') {
-    // Generate Billplz Bill
-    checkoutUrl = `https://www.billplz.com/bills/${orderId}`;
-  } else if (stripeKey && req.paymentMethod === 'card') {
-    checkoutUrl = `https://checkout.stripe.com/c/pay/${orderId}`;
-  }
-
-  // 2. Generate Reference Code for Instant Malaysian FPX / DuitNow QR
+  // 2. Generate a stable, verifiable reference code for this order
   const referenceCode = `AFM-${orderId.substring(0, 8).toUpperCase()}`;
 
   // 3. Persist order record in database
@@ -80,7 +69,12 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     },
   });
 
-  // 4. Return checkout result
+  // 4. Resolve bank details from environment or system settings (never hardcoded unverified accounts)
+  const bankSettings = (await DurableStore.getSystemSettings('bank_transfer_details')) || {};
+  const bankName = process.env.MANUAL_PAYMENT_BANK_NAME || bankSettings.bankName || 'Akaun Rasmi Pawarna / AffiMatik';
+  const accountNumber = process.env.MANUAL_PAYMENT_ACCOUNT_NUMBER || bankSettings.accountNumber || 'Sila rujuk pentadbir akaun';
+  const accountHolder = process.env.MANUAL_PAYMENT_ACCOUNT_HOLDER || bankSettings.accountHolder || 'Pengurusan Pawarna Media Resources';
+
   return {
     success: true,
     orderId: order.id,
@@ -90,15 +84,15 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     paymentMethod,
     checkoutUrl,
     manualPaymentDetails: {
-      bankName: 'Maybank Malaysia Berhad (Pawarna Technologies)',
-      accountNumber: '5621 0678 9012',
-      accountHolder: 'Pawarna Media Resources Sdn Bhd',
-      duitNowQrPayload: `00020101021226460012my.duitnowqr01189360052300000000000215562106789012520458125303458540${plan.priceMyr}.005802MY5924PAWARNA MEDIA RESOURCES6007KUALALU62160112${referenceCode}6304ABCD`,
+      bankName,
+      accountNumber,
+      accountHolder,
       referenceCode,
       instructions: [
-        `Lakukan pemindahan dalam talian FPX atau imbas DuitNow QR berjumlah RM ${plan.priceMyr}.00`,
-        `WAJIB masukkan Kod Rujukan "${referenceCode}" di ruangan Penerangan Transaksi / Recipient Reference.`,
-        'Kredit akan diaktifkan secara serta-merta selepas pembayaran anda disahkan oleh sistem.',
+        `Lakukan pemindahan perbankan dalam talian / FPX berjumlah RM ${plan.priceMyr}.00`,
+        `WAJIB masukkan Kod Rujukan "${referenceCode}" di ruangan Catatan / Recipient Reference.`,
+        'Selepas pembayaran dibuat, kemukakan rujukan pesanan anda kepada pentadbir untuk pengesahan.',
+        'Kredit akan dimasukkan serta-merta selepas bayaran disahkan diterima dalam akaun.',
       ],
     },
   };

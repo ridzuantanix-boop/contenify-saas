@@ -43,6 +43,6 @@ describe('R2 Storage Service', () => {
     const downloadUrl = await storage.createPresignedDownloadUrl(
       'workspaces/ws_123/outputs/video_final.mp4'
     );
-    expect(downloadUrl).toContain('mock-r2.contenify.internal');
+    expect(downloadUrl).toContain('test-r2.contenify.internal');
   });
 });

@@ -127,6 +127,7 @@ SET search_path = public
 AS $$
 DECLARE
     v_order RECORD;
+    v_wallet RECORD;
     v_new_balance INT;
     v_tier VARCHAR(50);
     v_affiliate RECORD;
@@ -210,32 +211,35 @@ BEGIN
     v_ledger_key := 'ord_pay_' || p_order_id::text;
 
     -- Lock wallet
-    SELECT balance INTO v_new_balance
+    SELECT * INTO v_wallet
     FROM credit_wallets
     WHERE workspace_id = v_order.workspace_id
     FOR UPDATE;
 
     IF NOT FOUND THEN
         -- If wallet missing, initialize with initial 10 + purchased credits
-        INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_spent, updated_at)
-        VALUES (v_order.workspace_id, 10 + v_order.credits_granted, 0, 0, NOW())
-        RETURNING balance INTO v_new_balance;
+        INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_granted, lifetime_spent, updated_at)
+        VALUES (v_order.workspace_id, 10 + v_order.credits_granted, 0, 10 + v_order.credits_granted, 0, NOW())
+        RETURNING * INTO v_wallet;
 
-        INSERT INTO credit_ledger (workspace_id, amount, event_type, reference_id, idempotency_key, description)
+        INSERT INTO credit_ledger (workspace_id, wallet_id, amount, event_type, reference_type, reference_id, idempotency_key, description)
         VALUES 
-            (v_order.workspace_id, 10, 'GRANT', v_order.workspace_id::text, 'init_' || v_order.workspace_id::text, 'Initial Free Trial Credits'),
-            (v_order.workspace_id, v_order.credits_granted, 'PURCHASE', p_order_id::text, v_ledger_key, 'Plan Credit Top-up: ' || v_order.plan_id);
+            (v_order.workspace_id, v_wallet.id, 10, 'GRANT', 'SUBSCRIPTION', v_order.workspace_id::text, 'init_' || v_order.workspace_id::text, 'Initial Free Trial Credits'),
+            (v_order.workspace_id, v_wallet.id, v_order.credits_granted, 'GRANT', 'SUBSCRIPTION', p_order_id::text, v_ledger_key, 'Plan Credit Top-up: ' || v_order.plan_id);
     ELSE
         UPDATE credit_wallets
         SET balance = balance + v_order.credits_granted,
+            lifetime_granted = lifetime_granted + v_order.credits_granted,
             updated_at = NOW()
         WHERE workspace_id = v_order.workspace_id
-        RETURNING balance INTO v_new_balance;
+        RETURNING * INTO v_wallet;
 
-        INSERT INTO credit_ledger (workspace_id, amount, event_type, reference_id, idempotency_key, description)
-        VALUES (v_order.workspace_id, v_order.credits_granted, 'PURCHASE', p_order_id::text, v_ledger_key, 'Plan Credit Top-up: ' || v_order.plan_id)
+        INSERT INTO credit_ledger (workspace_id, wallet_id, amount, event_type, reference_type, reference_id, idempotency_key, description)
+        VALUES (v_order.workspace_id, v_wallet.id, v_order.credits_granted, 'GRANT', 'SUBSCRIPTION', p_order_id::text, v_ledger_key, 'Plan Credit Top-up: ' || v_order.plan_id)
         ON CONFLICT (idempotency_key) DO NOTHING;
     END IF;
+
+    v_new_balance := v_wallet.balance;
 
     -- 5. Affiliate Commission Attribution (20%)
     IF v_order.referral_code IS NOT NULL AND TRIM(v_order.referral_code) <> '' THEN
@@ -280,3 +284,115 @@ $$;
 REVOKE EXECUTE ON FUNCTION settle_order_payment_atomic(UUID, VARCHAR, JSONB) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION settle_order_payment_atomic(UUID, VARCHAR, JSONB) FROM authenticated;
 GRANT EXECUTE ON FUNCTION settle_order_payment_atomic(UUID, VARCHAR, JSONB) TO service_role;
+
+-- 8. Atomic Administrative Credit Adjustment RPC Function
+CREATE OR REPLACE FUNCTION admin_adjust_credits_atomic(
+    p_workspace_id UUID,
+    p_amount INT,
+    p_reason TEXT,
+    p_admin_email VARCHAR(255)
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_wallet RECORD;
+    v_new_balance INT;
+    v_ledger_key VARCHAR(100);
+BEGIN
+    IF p_amount = 0 THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Adjustment amount cannot be zero');
+    END IF;
+
+    -- 1. Lock wallet
+    SELECT * INTO v_wallet
+    FROM credit_wallets
+    WHERE workspace_id = p_workspace_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        -- If wallet missing and positive adjustment, create it
+        IF p_amount > 0 THEN
+            INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_granted, lifetime_spent, updated_at)
+            VALUES (p_workspace_id, p_amount, 0, p_amount, 0, NOW())
+            RETURNING * INTO v_wallet;
+        ELSE
+            RETURN jsonb_build_object('success', false, 'error', 'Wallet not found for debit adjustment');
+        END IF;
+    ELSE
+        -- Prevent negative resulting balance
+        IF (v_wallet.balance + p_amount) < 0 THEN
+            RETURN jsonb_build_object(
+                'success', false, 
+                'error', format('Insufficient credit balance for debit. Current: %s, Requested: %s', v_wallet.balance, p_amount)
+            );
+        END IF;
+
+        UPDATE credit_wallets
+        SET balance = balance + p_amount,
+            lifetime_granted = CASE WHEN p_amount > 0 THEN lifetime_granted + p_amount ELSE lifetime_granted END,
+            lifetime_spent = CASE WHEN p_amount < 0 THEN lifetime_spent + ABS(p_amount) ELSE lifetime_spent END,
+            updated_at = NOW()
+        WHERE workspace_id = p_workspace_id
+        RETURNING * INTO v_wallet;
+    END IF;
+
+    v_new_balance := v_wallet.balance;
+    v_ledger_key := 'adj_' || gen_random_uuid()::text;
+
+    -- 2. Record in credit_ledger
+    INSERT INTO credit_ledger (
+        workspace_id,
+        wallet_id,
+        amount,
+        event_type,
+        reference_type,
+        reference_id,
+        idempotency_key,
+        description
+    ) VALUES (
+        p_workspace_id,
+        v_wallet.id,
+        p_amount,
+        'MANUAL_ADJUSTMENT',
+        'ADMIN_ADJUSTMENT',
+        p_admin_email,
+        v_ledger_key,
+        COALESCE(p_reason, 'Manual Administrative Adjustment')
+    );
+
+    -- 3. Record in audit_logs
+    INSERT INTO audit_logs (
+        admin_email,
+        action,
+        target_type,
+        target_id,
+        details
+    ) VALUES (
+        p_admin_email,
+        'CREDIT_MANUAL_ADJUSTMENT',
+        'WALLET',
+        p_workspace_id::text,
+        jsonb_build_object(
+            'adjusted_by', p_amount,
+            'new_balance', v_new_balance,
+            'reason', p_reason
+        )
+    );
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'workspace_id', p_workspace_id,
+        'adjusted_by', p_amount,
+        'new_balance', v_new_balance
+    );
+END;
+$$;
+
+-- Restrict execution to trusted service role
+REVOKE EXECUTE ON FUNCTION admin_adjust_credits_atomic(UUID, INT, TEXT, VARCHAR) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION admin_adjust_credits_atomic(UUID, INT, TEXT, VARCHAR) FROM authenticated;
+GRANT EXECUTE ON FUNCTION admin_adjust_credits_atomic(UUID, INT, TEXT, VARCHAR) TO service_role;
+

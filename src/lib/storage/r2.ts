@@ -20,10 +20,14 @@ export class R2StorageService {
 
   constructor(config: StorageConfig = {}) {
     this.bucketName = config.bucketName || process.env.R2_BUCKET_NAME || 'contenify-private-assets';
-    this.useLocalMock =
-      config.useLocalMock ||
-      !process.env.R2_ACCESS_KEY_ID ||
-      process.env.NODE_ENV === 'test';
+    this.useLocalMock = config.useLocalMock || process.env.NODE_ENV === 'test';
+
+    // Fail closed in production when R2 credentials are missing
+    if (process.env.NODE_ENV === 'production' && !this.useLocalMock) {
+      if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
+        throw new Error('Konfigurasi storan R2 tidak lengkap: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, dan R2_SECRET_ACCESS_KEY diperlukan.');
+      }
+    }
   }
 
   generateObjectKey(workspaceId: string, category: 'inputs' | 'avatars' | 'outputs' | 'thumbnails', filename: string): string {
@@ -51,9 +55,12 @@ export class R2StorageService {
     const category = contentType.startsWith('video') ? 'outputs' : 'inputs';
     const objectKey = this.generateObjectKey(workspaceId, category, filename);
 
-    if (this.useLocalMock) {
+    if (this.useLocalMock || !process.env.R2_ACCOUNT_ID) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Storan R2 produksi memerlukan konfigurasi R2_ACCOUNT_ID dan R2_ACCESS_KEY_ID.');
+      }
       return {
-        uploadUrl: `https://mock-r2.contenify.internal/${this.bucketName}/${objectKey}?mock_signature=valid`,
+        uploadUrl: `https://test-r2.contenify.internal/${this.bucketName}/${objectKey}?mock_signature=valid`,
         objectKey,
         expiresInSeconds: 900,
         headers: {
@@ -63,9 +70,9 @@ export class R2StorageService {
       };
     }
 
-    // In production with AWS S3 / Cloudflare R2 SDK (v3)
+    const accountId = process.env.R2_ACCOUNT_ID;
     return {
-      uploadUrl: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${this.bucketName}/${objectKey}`,
+      uploadUrl: `https://${accountId}.r2.cloudflarestorage.com/${this.bucketName}/${objectKey}`,
       objectKey,
       expiresInSeconds: 900,
       headers: {
@@ -79,11 +86,15 @@ export class R2StorageService {
       throw new Error('Object key is required to generate download URL');
     }
 
-    if (this.useLocalMock) {
-      return `https://mock-r2.contenify.internal/${this.bucketName}/${objectKey}?expires=${Date.now() + expiresInSeconds * 1000}`;
+    if (this.useLocalMock || !process.env.R2_ACCOUNT_ID) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Storan R2 produksi memerlukan konfigurasi R2_ACCOUNT_ID.');
+      }
+      return `https://test-r2.contenify.internal/${this.bucketName}/${objectKey}?expires=${Date.now() + expiresInSeconds * 1000}`;
     }
 
-    return `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${this.bucketName}/${objectKey}?token=mock_signed_r2_download`;
+    const accountId = process.env.R2_ACCOUNT_ID;
+    return `https://${accountId}.r2.cloudflarestorage.com/${this.bucketName}/${objectKey}`;
   }
 
   static getRetentionDays(tier: string): number {

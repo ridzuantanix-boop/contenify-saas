@@ -1658,9 +1658,10 @@ export class DurableStore {
   }
 
   static async setSystemSettings(key: string, value: any): Promise<void> {
+    this.checkFailClosed();
     if (this.isSupabaseConfigured()) {
       const url = `${process.env.SUPABASE_URL}/rest/v1/system_settings`;
-      await fetch(url, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1670,9 +1671,113 @@ export class DurableStore {
         },
         body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
       });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error saving system settings HTTP ${res.status}: ${errText}`);
+      }
       return;
     }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
     localDb.settings[key] = value;
+  }
+
+  /**
+   * Administratively adjust customer credits atomically & persistently
+   */
+  static async adjustCredits(
+    workspaceId: string,
+    amount: number,
+    reason: string,
+    adminEmail: string
+  ): Promise<{ success: boolean; workspaceId: string; adjustedBy: number; newBalance: number }> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const url = `${process.env.SUPABASE_URL}/rest/v1/rpc/admin_adjust_credits_atomic`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_workspace_id: workspaceId,
+          p_amount: amount,
+          p_reason: reason || 'Manual Admin Adjustment',
+          p_admin_email: adminEmail,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error HTTP ${res.status}: ${errText}`);
+      }
+
+      const result = await res.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to adjust customer credits');
+      }
+
+      return {
+        success: true,
+        workspaceId,
+        adjustedBy: result.adjusted_by ?? amount,
+        newBalance: result.new_balance,
+      };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
+    }
+
+    const wallet = localDb.wallets[workspaceId] || {
+      workspaceId,
+      balance: 10,
+      reservedBalance: 0,
+      lifetimeGranted: 10,
+      lifetimeSpent: 0,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (wallet.balance + amount < 0) {
+      throw new Error(`Insufficient credit balance for debit. Current: ${wallet.balance}, Requested: ${amount}`);
+    }
+
+    wallet.balance += amount;
+    if (amount > 0) wallet.lifetimeGranted += amount;
+    else wallet.lifetimeSpent += Math.abs(amount);
+    wallet.updatedAt = new Date().toISOString();
+    localDb.wallets[workspaceId] = wallet;
+
+    const ledgerKey = `adj_${crypto.randomUUID()}`;
+    localDb.ledger[ledgerKey] = {
+      id: crypto.randomUUID(),
+      workspaceId,
+      amount,
+      eventType: 'GRANT',
+      referenceType: 'MANUAL',
+      referenceId: adminEmail,
+      idempotencyKey: ledgerKey,
+      timestamp: new Date().toISOString(),
+      description: reason || 'Manual Administrative Adjustment',
+    };
+
+    await this.recordAuditLog(adminEmail, 'CREDIT_MANUAL_ADJUSTMENT', 'WALLET', workspaceId, {
+      adjustedBy: amount,
+      newBalance: wallet.balance,
+      reason,
+    });
+
+    return {
+      success: true,
+      workspaceId,
+      adjustedBy: amount,
+      newBalance: wallet.balance,
+    };
   }
 
   /**
@@ -1685,9 +1790,10 @@ export class DurableStore {
     targetId: string,
     details?: Record<string, unknown>
   ): Promise<void> {
+    this.checkFailClosed();
     if (this.isSupabaseConfigured()) {
       const url = `${process.env.SUPABASE_URL}/rest/v1/audit_logs`;
-      await fetch(url, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1702,7 +1808,15 @@ export class DurableStore {
           details: details || {},
         }),
       });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Database error recording audit log HTTP ${res.status}: ${errText}`);
+      }
       return;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database connection unavailable: fail-closed.');
     }
     localDb.auditLogs.push({
       id: crypto.randomUUID(),
