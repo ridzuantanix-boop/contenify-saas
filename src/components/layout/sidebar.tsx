@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,6 +16,7 @@ import {
   Send,
   Sliders,
   Settings,
+  Gift,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -33,6 +34,30 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [balance, setBalance] = useState<number | null>(null);
+  const [workspaceName, setWorkspaceName] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function loadSidebarSession() {
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            setIsAuthenticated(true);
+            setWorkspaceName(data.user.fullName ? `${data.user.fullName.split(' ')[0]}'s Workspace` : 'Workspace Utama');
+            if (data.wallet) {
+              setBalance(data.wallet.balance);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadSidebarSession();
+  }, []);
 
   return (
     <aside className="w-64 border-r border-slate-200 bg-white flex flex-col h-screen sticky top-0 shrink-0">
@@ -110,19 +135,42 @@ export function Sidebar() {
 
       {/* Workspace & Footer */}
       <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-        <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-          <span>Ruang Kerja:</span>
-          <span className="font-medium text-slate-700">Workspace Utama</span>
-        </div>
-        <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-          <div className="h-full bg-indigo-600 rounded-full w-2/5" />
-        </div>
-        <div className="flex justify-between items-center mt-1.5 text-[11px] text-slate-500">
-          <span>Kredit: 10 / 25</span>
-          <Link href="/billing" className="text-indigo-600 hover:underline font-medium">
-            Top-up
-          </Link>
-        </div>
+        {isAuthenticated ? (
+          <>
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+              <span>Ruang Kerja:</span>
+              <span className="font-semibold text-slate-700 truncate max-w-[120px]">{workspaceName}</span>
+            </div>
+            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-indigo-600 rounded-full transition-all"
+                style={{ width: `${Math.min(100, Math.max(10, ((balance || 0) / 50) * 100))}%` }}
+              />
+            </div>
+            <div className="flex justify-between items-center mt-1.5 text-[11px] text-slate-500">
+              <span>Baki: <strong className="text-slate-800">{balance !== null ? `${balance} Kredit` : '...'}</strong></span>
+              <Link href="/billing" className="text-indigo-600 hover:underline font-semibold">
+                Kredit
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-2 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-700">
+              <Gift className="w-3.5 h-3.5 text-amber-500" />
+              <span>50 Kredit Percuma</span>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              Daftar akaun sekarang untuk mula jana video secara automatik.
+            </p>
+            <Link
+              href="/register"
+              className="block w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold text-center transition shadow-2xs"
+            >
+              Daftar Percuma
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   );
