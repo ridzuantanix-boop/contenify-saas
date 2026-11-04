@@ -24,9 +24,12 @@ export async function GET(req: NextRequest) {
 
   const commissions = await DurableStore.listAffiliateCommissions(partner?.id || partner?.referralCode);
 
+  const host = req.headers.get('host');
+  const baseUrl = host ? `https://${host}` : 'https://affimatik.online';
+
   const stats = {
     referralCode: partner?.referralCode || '',
-    referralUrl: `https://contenify-saas.pages.dev/?ref=${partner?.referralCode}`,
+    referralUrl: `${baseUrl}/?ref=${partner?.referralCode}`,
     commissionRate: 20.0,
     totalReferrals: commissions.length,
     pendingCommissionsMyr: commissions
