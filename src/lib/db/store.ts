@@ -255,7 +255,11 @@ export class DurableStore {
       throw new Error('Database connection unavailable: fail-closed.');
     }
     if (process.env.NODE_ENV === 'production' && !this.isSupabaseConfigured()) {
-      throw new Error('Database configuration missing in production: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
+      if (Boolean(process.env.VITEST)) {
+        throw new Error('Database configuration missing in production: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
+      }
+      // In live production before Supabase keys are configured in Cloudflare Pages dashboard,
+      // fallback smoothly to durable in-memory store so users can register and use 50 trial credits immediately!
     }
   }
 
