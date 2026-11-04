@@ -219,35 +219,30 @@ export class DurableStore {
         };
       }
 
-      // Auto-provision initial wallet with 10 free credits in database if valid workspace
-      const createRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/credit_wallets`, {
+      // Auto-provision initial wallet with 10 free credits atomically (wallet + GRANT ledger entry in single transaction)
+      const rpcRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
           Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: 'return=representation',
         },
         body: JSON.stringify({
-          workspace_id: workspaceId,
-          balance: 10,
-          reserved_balance: 0,
-          lifetime_granted: 10,
-          lifetime_spent: 0,
+          p_workspace_id: workspaceId,
+          p_initial_balance: 10,
         }),
       });
 
-      if (createRes.ok) {
-        const createdRows = await createRes.json();
-        if (createdRows && createdRows.length > 0) {
-          const row = createdRows[0];
+      if (rpcRes.ok) {
+        const provData = await rpcRes.json();
+        if (provData && provData.success) {
           return {
-            workspaceId: row.workspace_id,
-            balance: row.balance,
-            reservedBalance: row.reserved_balance,
-            lifetimeGranted: row.lifetime_granted,
-            lifetimeSpent: row.lifetime_spent,
-            updatedAt: row.updated_at,
+            workspaceId: provData.workspace_id,
+            balance: provData.balance,
+            reservedBalance: provData.reserved_balance,
+            lifetimeGranted: provData.lifetime_granted,
+            lifetimeSpent: provData.lifetime_spent,
+            updatedAt: provData.updated_at,
           };
         }
       }
@@ -268,6 +263,19 @@ export class DurableStore {
         lifetimeGranted: 10,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
+      };
+      // Atomically back initial wallet with GRANT ledger record
+      const grantKey = `grant_initial_${workspaceId}`;
+      localDb.ledger[grantKey] = {
+        id: grantKey,
+        workspaceId,
+        amount: 10,
+        eventType: 'GRANT',
+        referenceType: 'SUBSCRIPTION',
+        referenceId: workspaceId,
+        idempotencyKey: grantKey,
+        description: 'Pemberian baki permulaan akaun AffiMatik (10 kredit percuma)',
+        timestamp: new Date().toISOString(),
       };
     }
 

@@ -118,3 +118,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
+

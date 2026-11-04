@@ -1,0 +1,9 @@
+name = "affimatik-cron-reconciler"
+main = "index.ts"
+compatibility_date = "2024-04-01"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+APP_BASE_URL = "https://contenify-saas.pages.dev"

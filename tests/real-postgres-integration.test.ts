@@ -10,7 +10,14 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     // 1. Initialize isolated real PostgreSQL 16 engine instance
     db = new PGlite();
 
-    // 2. Read and apply all 4 forward migrations in strict sequential order
+    // 2. Load test-only Supabase stubs (roles, fallback uuid, auth.uid mock)
+    const stubsPath = path.resolve(process.cwd(), 'tests/helpers/supabase-stubs.sql');
+    if (fs.existsSync(stubsPath)) {
+      const stubsSql = fs.readFileSync(stubsPath, 'utf-8');
+      await db.exec(stubsSql);
+    }
+
+    // 3. Read and apply all 4 forward migrations in strict sequential order
     const migrationsDir = path.resolve(process.cwd(), 'supabase/migrations');
     const migrationFiles = [
       '00001_initial_schema.sql',
@@ -21,7 +28,9 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
 
     for (const file of migrationFiles) {
       const filePath = path.join(migrationsDir, file);
-      const sqlContent = fs.readFileSync(filePath, 'utf-8');
+      let sqlContent = fs.readFileSync(filePath, 'utf-8');
+      // PGlite WASM does not bundle uuid-ossp shared library, but native gen_random_uuid() is provided in test harness stubs
+      sqlContent = sqlContent.replace('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', '-- PGlite WASM bypass');
       await db.exec(sqlContent);
     }
   });
@@ -316,5 +325,97 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
 
     // Reset role to postgres superuser
     await db.query(`RESET ROLE;`);
+  });
+
+  it('proves that provision_wallet_atomic creates wallet and initial credit ledger GRANT entry idempotently', async () => {
+    const freshWorkspaceId = 'f0000000-0000-4000-8000-000000000001';
+    const ownerId = 'f0000000-0000-4000-8000-000000000002';
+
+    // Insert workspace
+    await db.query(`INSERT INTO workspaces (id, name, slug, owner_id) VALUES ($1, 'Provision Test WS', 'prov-test', $2);`, [freshWorkspaceId, ownerId]);
+
+    // 1. Initial provisioning call
+    const res1 = await db.query<{ provision_wallet_atomic: any }>(
+      `SELECT provision_wallet_atomic($1, 10);`,
+      [freshWorkspaceId]
+    );
+    const result1 = res1.rows[0].provision_wallet_atomic;
+
+    expect(result1.success).toBe(true);
+    expect(result1.is_new).toBe(true);
+    expect(result1.balance).toBe(10);
+    expect(result1.reserved_balance).toBe(0);
+    expect(result1.lifetime_granted).toBe(10);
+
+    // Verify ledger has exactly 1 initial GRANT entry
+    const ledgerRows = await db.query<{ amount: number; event_type: string; reference_type: string; idempotency_key: string }>(
+      `SELECT amount, event_type, reference_type, idempotency_key FROM credit_ledger WHERE workspace_id = $1;`,
+      [freshWorkspaceId]
+    );
+    expect(ledgerRows.rows.length).toBe(1);
+    expect(ledgerRows.rows[0].amount).toBe(10);
+    expect(ledgerRows.rows[0].event_type).toBe('GRANT');
+    expect(ledgerRows.rows[0].reference_type).toBe('SUBSCRIPTION');
+    expect(ledgerRows.rows[0].idempotency_key).toBe(`grant_initial_${freshWorkspaceId}`);
+
+    // 2. Second provisioning call (must be strictly idempotent)
+    const res2 = await db.query<{ provision_wallet_atomic: any }>(
+      `SELECT provision_wallet_atomic($1, 10);`,
+      [freshWorkspaceId]
+    );
+    const result2 = res2.rows[0].provision_wallet_atomic;
+    expect(result2.success).toBe(true);
+    expect(result2.is_new).toBe(false);
+    expect(result2.balance).toBe(10);
+
+    // Verify ledger count is STILL exactly 1 (no duplicate credit grant)
+    const ledgerRowsAfter = await db.query<{ count: number }>(
+      `SELECT COUNT(*)::int as count FROM credit_ledger WHERE workspace_id = $1;`,
+      [freshWorkspaceId]
+    );
+    expect(ledgerRowsAfter.rows[0].count).toBe(1);
+
+    // Verify mathematical balance reconciliation: wallet.balance === sum(ledger.amount)
+    const sumRes = await db.query<{ total: number }>(
+      `SELECT SUM(amount)::int as total FROM credit_ledger WHERE workspace_id = $1;`,
+      [freshWorkspaceId]
+    );
+    expect(sumRes.rows[0].total).toBe(10);
+  });
+
+  it('proves concurrent wallet provisioning creates exactly 1 wallet and 1 ledger entry without duplicate key errors', async () => {
+    const concurrentWsId = 'f1111111-1111-4111-8111-111111111111';
+    const ownerId = 'f1111111-1111-4111-8111-111111111112';
+
+    await db.query(`INSERT INTO workspaces (id, name, slug, owner_id) VALUES ($1, 'Concurrent Prov WS', 'concurrent-prov', $2);`, [concurrentWsId, ownerId]);
+
+    // Fire 2 concurrent provisioning calls simultaneously
+    const [call1, call2] = await Promise.all([
+      db.query<{ provision_wallet_atomic: any }>(`SELECT provision_wallet_atomic($1, 10);`, [concurrentWsId]),
+      db.query<{ provision_wallet_atomic: any }>(`SELECT provision_wallet_atomic($1, 10);`, [concurrentWsId]),
+    ]);
+
+    const res1 = call1.rows[0].provision_wallet_atomic;
+    const res2 = call2.rows[0].provision_wallet_atomic;
+
+    expect(res1.success).toBe(true);
+    expect(res2.success).toBe(true);
+
+    // Exactly one wallet in table
+    const walletCheck = await db.query<{ count: number; balance: number }>(
+      `SELECT COUNT(*)::int as count, balance FROM credit_wallets WHERE workspace_id = $1 GROUP BY balance;`,
+      [concurrentWsId]
+    );
+    expect(walletCheck.rows.length).toBe(1);
+    expect(walletCheck.rows[0].count).toBe(1);
+    expect(walletCheck.rows[0].balance).toBe(10);
+
+    // Exactly one ledger GRANT entry
+    const ledgerCheck = await db.query<{ count: number; total: number }>(
+      `SELECT COUNT(*)::int as count, SUM(amount)::int as total FROM credit_ledger WHERE workspace_id = $1;`,
+      [concurrentWsId]
+    );
+    expect(ledgerCheck.rows[0].count).toBe(1);
+    expect(ledgerCheck.rows[0].total).toBe(10);
   });
 });

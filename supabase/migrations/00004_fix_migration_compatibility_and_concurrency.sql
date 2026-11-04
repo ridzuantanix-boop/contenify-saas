@@ -17,7 +17,109 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Updated Atomic Admission Procedure with Double-Checked Locking
+-- 2. Fully Transactional Idempotent Wallet Provisioning Procedure
+CREATE OR REPLACE FUNCTION provision_wallet_atomic(
+    p_workspace_id UUID,
+    p_initial_balance INT DEFAULT 10
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_wallet RECORD;
+BEGIN
+    IF p_workspace_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'workspace_id is required');
+    END IF;
+
+    -- Fast check with lock
+    SELECT * INTO v_wallet
+    FROM credit_wallets
+    WHERE workspace_id = p_workspace_id
+    FOR UPDATE;
+
+    IF FOUND THEN
+        RETURN jsonb_build_object(
+            'success', true,
+            'workspace_id', v_wallet.workspace_id,
+            'wallet_id', v_wallet.id,
+            'balance', v_wallet.balance,
+            'reserved_balance', v_wallet.reserved_balance,
+            'lifetime_granted', v_wallet.lifetime_granted,
+            'lifetime_spent', v_wallet.lifetime_spent,
+            'updated_at', v_wallet.updated_at,
+            'is_new', false
+        );
+    END IF;
+
+    -- Provision wallet atomically
+    INSERT INTO credit_wallets (
+        workspace_id,
+        balance,
+        reserved_balance,
+        lifetime_granted,
+        lifetime_spent,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        p_workspace_id,
+        p_initial_balance,
+        0,
+        p_initial_balance,
+        0,
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (workspace_id) DO UPDATE SET updated_at = NOW()
+    RETURNING * INTO v_wallet;
+
+    -- Atomically insert initial GRANT ledger entry
+    INSERT INTO credit_ledger (
+        workspace_id,
+        wallet_id,
+        amount,
+        event_type,
+        reference_type,
+        reference_id,
+        idempotency_key,
+        description,
+        created_at
+    )
+    VALUES (
+        p_workspace_id,
+        v_wallet.id,
+        p_initial_balance,
+        'GRANT',
+        'SUBSCRIPTION',
+        v_wallet.id,
+        'grant_initial_' || p_workspace_id::TEXT,
+        'Pemberian baki permulaan akaun AffiMatik (10 kredit percuma)',
+        NOW()
+    )
+    ON CONFLICT (idempotency_key) DO NOTHING;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'workspace_id', v_wallet.workspace_id,
+        'wallet_id', v_wallet.id,
+        'balance', v_wallet.balance,
+        'reserved_balance', v_wallet.reserved_balance,
+        'lifetime_granted', v_wallet.lifetime_granted,
+        'lifetime_spent', v_wallet.lifetime_spent,
+        'updated_at', v_wallet.updated_at,
+        'is_new', true
+    );
+END;
+$$;
+
+-- Restrict provision_wallet_atomic ONLY to service_role
+REVOKE ALL ON FUNCTION provision_wallet_atomic(UUID, INT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION provision_wallet_atomic(UUID, INT) TO service_role;
+
+-- 3. Updated Atomic Admission Procedure with Double-Checked Locking
 CREATE OR REPLACE FUNCTION admit_video_job_atomic(
     p_workspace_id UUID,
     p_user_id UUID,
@@ -75,36 +177,13 @@ BEGIN
     FOR UPDATE;
 
     IF NOT FOUND THEN
-        -- Auto-provision initial wallet with 10 free credits for valid workspace
-        INSERT INTO credit_wallets (workspace_id, balance, reserved_balance, lifetime_granted, lifetime_spent, updated_at)
-        VALUES (p_workspace_id, 10, 0, 10, 0, NOW())
-        ON CONFLICT (workspace_id) DO UPDATE SET updated_at = NOW()
-        RETURNING * INTO v_wallet;
+        -- Auto-provision initial wallet with 10 free credits atomically
+        PERFORM provision_wallet_atomic(p_workspace_id, 10);
 
-        -- Record initial grant in ledger idempotently
-        INSERT INTO credit_ledger (
-            workspace_id,
-            wallet_id,
-            amount,
-            event_type,
-            reference_type,
-            reference_id,
-            idempotency_key,
-            description,
-            created_at
-        )
-        VALUES (
-            p_workspace_id,
-            v_wallet.id,
-            10,
-            'GRANT',
-            'SUBSCRIPTION',
-            v_wallet.id,
-            'grant_initial_' || p_workspace_id::TEXT,
-            'Pemberian 10 kredit percuma awal akaun',
-            NOW()
-        )
-        ON CONFLICT (idempotency_key) DO NOTHING;
+        SELECT * INTO v_wallet 
+        FROM credit_wallets 
+        WHERE workspace_id = p_workspace_id 
+        FOR UPDATE;
     END IF;
 
     -- Step C: CRITICAL DOUBLE-CHECKED LOCKING
