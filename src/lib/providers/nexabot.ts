@@ -19,8 +19,8 @@ export class NexabotAdapter implements IProviderAdapter {
   private baseUrl: string;
 
   constructor(config: NexabotConfig) {
-    this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || process.env.NEXABOT_BASE_URL || 'https://api.nexabot.ai/v1';
+    this.apiKey = config.apiKey || process.env.NEXABOT_API_KEY || '';
+    this.baseUrl = config.baseUrl || process.env.NEXABOT_BASE_URL || 'https://nexabot.id';
   }
 
   getCapabilities(): ProviderCapabilities {
@@ -28,11 +28,11 @@ export class NexabotAdapter implements IProviderAdapter {
       providerName: 'nexabot',
       supportedDurations: [10],
       supportsSpokenBM: true, // Priority for native Malaysian Malay
-      supportsProductResearch: true, // Vendor does internal product research
-      maxReferenceImages: 5,
-      creditCostPerSecond: 1.2,
-      supportsDirectCancellation: true,
-      supportsWebhooks: true,
+      supportsProductResearch: true, // Internal product research
+      maxReferenceImages: 3, // i2v supports 1-3 images
+      creditCostPerSecond: 1.0,
+      supportsDirectCancellation: false,
+      supportsWebhooks: false,
     };
   }
 
@@ -46,37 +46,47 @@ export class NexabotAdapter implements IProviderAdapter {
         error: `Nexabot adapter is prioritized for 10s duration. Received: ${input.durationSeconds}s`,
       };
     }
-    if (!input.mainImageKeyOrUrl) {
-      return { isValid: false, error: 'Product image reference is required for Nexabot product research' };
-    }
     if (!input.prompt || input.prompt.trim().length === 0) {
-      return { isValid: false, error: 'Universal prompt snapshot is required for Nexabot' };
+      return { isValid: false, error: 'Prompt snapshot is required for Nexabot' };
     }
     return { isValid: true };
   }
 
   preparePayload(input: ProviderJobInput): Record<string, unknown> {
-    const images = [input.mainImageKeyOrUrl];
-    if (input.referenceImageKeysOrUrls) {
-      images.push(...input.referenceImageKeysOrUrls);
+    const images: string[] = [];
+    if (input.mainImageKeyOrUrl && input.mainImageKeyOrUrl.startsWith('http')) {
+      images.push(input.mainImageKeyOrUrl);
     }
-    if (input.avatarImageKeyOrUrl) {
-      images.push(input.avatarImageKeyOrUrl);
+    if (input.referenceImageKeysOrUrls) {
+      for (const img of input.referenceImageKeysOrUrls) {
+        if (img.startsWith('http') && images.length < 3) {
+          images.push(img);
+        }
+      }
     }
 
+    // Determine mode according to Nexabot spec:
+    // "t2v" = Text to Video (no image)
+    // "sfv" = Start Frame to Video (1 image)
+    // "i2v" = Ingredient Img to Video (1-3 images)
+    let mode = 't2v';
+    if (images.length === 1) {
+      mode = 'sfv';
+    } else if (images.length > 1) {
+      mode = 'i2v';
+    }
+
+    // ratio: 1 = landscape, 2 = portrait (9:16)
+    const ratio = input.aspectRatio === '9:16' ? 2 : 1;
+
     return {
+      mode,
       prompt: input.prompt,
-      duration: 10,
-      aspect_ratio: input.aspectRatio,
-      language: 'ms-MY',
-      dialect: 'standard_malaysian_malay',
-      reference_images: images,
-      idempotency_key: input.idempotencyKey,
-      metadata: {
-        workspace_id: input.workspaceId,
-        job_id: input.jobId,
-        voice_style: input.voiceStyle || 'standard',
-      },
+      telegram_id: 'web',
+      media: images,
+      ratio,
+      resolution: '720',
+      use_unlimited: false,
     };
   }
 
@@ -87,14 +97,14 @@ export class NexabotAdapter implements IProviderAdapter {
     }
 
     const payload = this.preparePayload(input);
-    const endpoint = `${this.baseUrl}/videos/generate`;
+    const endpoint = `${this.baseUrl}/api/v1/generate`;
 
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
-        'X-Idempotency-Key': input.idempotencyKey,
+        'X-API-Key': this.apiKey,
       },
       body: JSON.stringify(payload),
     });
@@ -105,26 +115,30 @@ export class NexabotAdapter implements IProviderAdapter {
     }
 
     const data = await res.json() as Record<string, unknown>;
-    const taskId = String(data.id || data.task_id || data.job_id || '');
+    if (!data.ok && data.error) {
+      throw new Error(`Nexabot API error: ${data.error}`);
+    }
 
+    const taskId = String(data.job_id || data.id || data.task_id || '');
     if (!taskId) {
-      throw new Error(`Nexabot response missing task id: ${JSON.stringify(data)}`);
+      throw new Error(`Nexabot response missing job id: ${JSON.stringify(data)}`);
     }
 
     return {
       providerTaskId: taskId,
       rawStatus: String(data.status || 'queued'),
-      estimatedWaitSeconds: Number(data.estimated_duration || 45),
+      estimatedWaitSeconds: 60,
       metadata: data,
     };
   }
 
   async getStatus(providerTaskId: string): Promise<ProviderStatusResult> {
-    const endpoint = `${this.baseUrl}/videos/${providerTaskId}`;
+    const endpoint = `${this.baseUrl}/api/v1/jobs/${providerTaskId}`;
     const res = await fetch(endpoint, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
+        'X-API-Key': this.apiKey,
       },
     });
 
@@ -134,9 +148,10 @@ export class NexabotAdapter implements IProviderAdapter {
     }
 
     const data = await res.json() as Record<string, unknown>;
-    const rawStatus = String(data.status || 'unknown').toLowerCase();
+    const job = (data.job || data) as Record<string, unknown>;
+    const rawStatus = String(job.status || data.status || 'unknown').toLowerCase();
 
-    if (rawStatus === 'succeeded' || rawStatus === 'completed' || rawStatus === 'done') {
+    if (rawStatus === 'done' || rawStatus === 'completed' || rawStatus === 'succeeded') {
       return {
         providerTaskId,
         normalizedStatus: 'COMPLETED',
@@ -145,21 +160,21 @@ export class NexabotAdapter implements IProviderAdapter {
       };
     }
 
-    if (rawStatus === 'failed' || rawStatus === 'error' || rawStatus === 'failed_moderation') {
-      const errorMsg = String(data.error || data.message || 'Generation failed on Nexabot');
+    if (rawStatus === 'failed' || rawStatus === 'error') {
+      const errorMsg = String(job.error || data.error || data.message || 'Generation failed on Nexabot');
       return {
         providerTaskId,
         normalizedStatus: 'FAILED',
         rawStatus,
         errorMessage: errorMsg,
-        isRetryable: rawStatus !== 'failed_moderation' && !errorMsg.includes('moderation'),
+        isRetryable: !errorMsg.includes('insufficient'),
       };
     }
 
     return {
       providerTaskId,
       normalizedStatus: rawStatus === 'processing' ? 'RUNNING' : 'PENDING',
-      progressPercent: Number(data.progress || (rawStatus === 'processing' ? 60 : 15)),
+      progressPercent: rawStatus === 'processing' ? 60 : 15,
       rawStatus,
     };
   }
@@ -170,62 +185,45 @@ export class NexabotAdapter implements IProviderAdapter {
       throw new Error(`Nexabot task ${providerTaskId} is not ready (status: ${statusRes.normalizedStatus})`);
     }
 
-    const endpoint = `${this.baseUrl}/videos/${providerTaskId}`;
+    const endpoint = `${this.baseUrl}/api/v1/jobs/${providerTaskId}`;
     const res = await fetch(endpoint, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
+        'X-API-Key': this.apiKey,
       },
     });
 
     const data = await res.json() as Record<string, unknown>;
-    const videoUrl = String(data.video_url || data.output_url || (data.result as Record<string, unknown>)?.video_url || '');
-
-    if (!videoUrl || !videoUrl.startsWith('http')) {
-      throw new Error(`Nexabot task ${providerTaskId} returned no valid video URL: ${JSON.stringify(data)}`);
-    }
+    const job = (data.job || data) as Record<string, unknown>;
+    const videoUrl = String(job.video_url || `${this.baseUrl}/api/v1/jobs/${providerTaskId}/download`);
 
     return {
       providerTaskId,
       videoUrl,
-      thumbnailUrl: String(data.thumbnail_url || ''),
+      thumbnailUrl: String(job.thumbnail_url || ''),
       durationSeconds: 10,
-      metadata: data,
+      metadata: job,
     };
-  }
-
-  async cancel(providerTaskId: string): Promise<{ success: boolean; message?: string }> {
-    const endpoint = `${this.baseUrl}/videos/${providerTaskId}/cancel`;
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-    });
-
-    if (!res.ok) {
-      return { success: false, message: `Cancel failed with HTTP ${res.status}` };
-    }
-    return { success: true };
   }
 
   normalizeError(error: unknown): NormalizedError {
     const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes('401') || msg.includes('Unauthorized')) {
+    if (msg.includes('401') || msg.includes('Unauthorized') || msg.includes('Invalid API key')) {
       return {
         isRetryable: false,
         category: 'AUTH',
         code: 'NEXABOT_AUTH_INVALID',
-        message: 'Nexabot API key invalid',
+        message: 'Nexabot API key invalid or expired',
         wasBilled: false,
       };
     }
-    if (msg.includes('429') || msg.includes('rate limit')) {
+    if (msg.includes('credit') || msg.includes('insufficient')) {
       return {
-        isRetryable: true,
+        isRetryable: false,
         category: 'RATE_LIMIT',
-        code: 'NEXABOT_RATE_LIMIT',
-        message: 'Nexabot upstream concurrency rate limit exceeded',
+        code: 'NEXABOT_CREDITS_EXHAUSTED',
+        message: 'Nexabot credit balance exhausted',
         wasBilled: false,
       };
     }
