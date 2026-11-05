@@ -98,14 +98,15 @@ export class NexabotAdapter implements IProviderAdapter {
     }
 
     const payload = this.preparePayload(input);
-    const endpoint = `${this.baseUrl}/api/v1/generate`;
+    const endpoint = `${this.baseUrl}/api/v1/api`;
 
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
-        'X-API-Key': this.apiKey,
+        'x-api-key': this.apiKey,
+        'X-Idempotency-Key': input.idempotencyKey,
       },
       body: JSON.stringify(payload),
     });
@@ -120,7 +121,7 @@ export class NexabotAdapter implements IProviderAdapter {
       throw new Error(`Nexabot API error: ${data.error}`);
     }
 
-    const taskId = String(data.job_id || data.id || data.task_id || '');
+    const taskId = String(data.id || data.job_id || data.task_id || '');
     if (!taskId) {
       throw new Error(`Nexabot response missing job id: ${JSON.stringify(data)}`);
     }
@@ -139,7 +140,6 @@ export class NexabotAdapter implements IProviderAdapter {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
-        'X-API-Key': this.apiKey,
       },
     });
 
