@@ -84,9 +84,40 @@ export async function POST(req: NextRequest) {
           }),
         });
 
-        const signupData = await signupRes.json();
+        let signupData = await signupRes.json();
 
-        if (!signupRes.ok) {
+        // Supabase's hosted email provider has a deliberately low send limit.
+        // When that limit is reached, use the trusted admin endpoint to create
+        // the account with email_confirm=true instead of making registration
+        // fail even though the rest of provisioning is server-side. This keeps
+        // signup functional until a custom SMTP provider is configured.
+        if (!signupRes.ok && signupRes.status === 429 && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const adminSignupRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              email: cleanEmail,
+              password,
+              email_confirm: true,
+              user_metadata: {
+                full_name: displayName,
+                whatsapp: cleanWhatsapp,
+                referral_code: cleanReferral,
+              },
+            }),
+          });
+          const adminSignupData = await adminSignupRes.json().catch(() => ({}));
+          if (adminSignupRes.ok && adminSignupData?.id) {
+            signupData = { user: adminSignupData, session: null };
+          } else {
+            const errMsg = adminSignupData.msg || adminSignupData.error_description || adminSignupData.message || 'Pendaftaran gagal.';
+            return NextResponse.json({ error: errMsg }, { status: adminSignupRes.status || signupRes.status });
+          }
+        } else if (!signupRes.ok) {
           const errMsg = signupData.msg || signupData.error_description || signupData.message || 'Pendaftaran gagal.';
           return NextResponse.json({ error: errMsg }, { status: signupRes.status });
         }
