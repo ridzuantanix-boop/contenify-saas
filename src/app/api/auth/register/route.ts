@@ -91,11 +91,32 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: errMsg }, { status: signupRes.status });
         }
 
-        if (!signupData.user?.id) {
-          return NextResponse.json({ error: 'Ralat mencipta akaun pendaftaran.' }, { status: 500 });
+        // Supabase may return the created user under `user` or `data.user`.
+        // Some email-confirmation responses can omit the nested object even
+        // though the Auth user was created, so recover it through the trusted
+        // admin endpoint before treating registration as failed.
+        let signupUser = signupData.user || signupData.data?.user;
+        if (!signupUser?.id && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const adminUsersRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
+            headers: {
+              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+          });
+          if (adminUsersRes.ok) {
+            const adminUsersData = await adminUsersRes.json();
+            signupUser = adminUsersData.users?.find((candidate: { email?: string }) => candidate.email?.toLowerCase() === cleanEmail);
+          }
         }
 
-        userId = signupData.user.id;
+        if (!signupUser?.id) {
+          return NextResponse.json(
+            { error: 'Supabase Auth mencipta respons tidak lengkap. Sila cuba semula selepas beberapa saat.' },
+            { status: 502 }
+          );
+        }
+
+        userId = signupUser.id;
         requiresEmailConfirmation = !signupData.session; // If no session returned, email confirmation is active in Supabase
 
         // 2. Server-side provisioning via Service Role with verified columns and foreign keys
