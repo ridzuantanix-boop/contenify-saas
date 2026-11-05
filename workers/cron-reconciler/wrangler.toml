@@ -6,4 +6,4 @@ compatibility_date = "2024-04-01"
 crons = ["*/5 * * * *"]
 
 [vars]
-APP_BASE_URL = "https://contenify-saas.pages.dev"
+APP_BASE_URL = "https://affimatik.online"

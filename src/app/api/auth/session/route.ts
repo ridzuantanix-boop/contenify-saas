@@ -4,6 +4,15 @@ import { DurableStore } from '@/lib/db/store';
 
 export const runtime = 'edge';
 
+function missingProductionLoginConfiguration(): string[] {
+  if (process.env.NODE_ENV !== 'production' || Boolean(process.env.VITEST)) {
+    return [];
+  }
+
+  return ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'SESSION_SECRET']
+    .filter((name) => !process.env[name] || process.env[name]?.trim() === '');
+}
+
 /**
  * GET: Retrieve currently authenticated user session.
  * STRICT: Returns authenticated: false for anonymous visitors.
@@ -47,6 +56,17 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const missingConfiguration = missingProductionLoginConfiguration();
+    if (missingConfiguration.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Perkhidmatan log masuk sedang diselenggara. Sila cuba semula sebentar lagi.',
+          serviceUnavailable: true,
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const { email, password, supabaseAccessToken } = body;
 

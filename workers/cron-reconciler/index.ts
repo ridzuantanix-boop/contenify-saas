@@ -20,7 +20,7 @@ export interface ExecutionContext {
  */
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    const baseUrl = env.APP_BASE_URL || 'https://contenify-saas.pages.dev';
+    const baseUrl = env.APP_BASE_URL || 'https://affimatik.online';
     const reconcileUrl = `${baseUrl.replace(/\/$/, '')}/api/jobs/reconcile`;
     const timestamp = new Date(event.scheduledTime).toISOString();
 
@@ -60,7 +60,7 @@ export default {
       });
     }
 
-    const baseUrl = env.APP_BASE_URL || 'https://contenify-saas.pages.dev';
+    const baseUrl = env.APP_BASE_URL || 'https://affimatik.online';
     const reconcileUrl = `${baseUrl.replace(/\/$/, '')}/api/jobs/reconcile`;
 
     const res = await fetch(reconcileUrl, {

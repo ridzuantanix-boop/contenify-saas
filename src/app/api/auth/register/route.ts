@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     // 0. Production Fail-Closed Check: Never allow ephemeral registrations in live production
     if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
-      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SESSION_SECRET) {
         return NextResponse.json(
           {
             error: 'Perkhidmatan pendaftaran pangkalan data sedang diselenggara. Sila cuba sebentar lagi.',
