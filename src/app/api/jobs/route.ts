@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVideoStyle, getAllVideoStyles } from '@/lib/styles/registry';
-import { AICreativeDirector } from '@/lib/engine/creative-director';
 import { DynamicPromptCompiler } from '@/lib/engine/compiler';
+import { ProductProfile, ScenePlan } from '@/lib/engine/types';
 import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { getSessionFromRequest } from '@/lib/auth/session';
@@ -61,14 +61,12 @@ export async function POST(req: NextRequest) {
     const {
       clientRequestId,
       productName,
-      productCategory = 'General',
+      productCategory,
       productFacts = [],
       styleId,
       presetId,
       provider: requestedProvider,
-      callToAction = 'spoken_button',
       isMuslimahModest = true,
-      customScript,
       creativeInstruction,
       customPrompt,
       imageKeys = [],
@@ -78,6 +76,13 @@ export async function POST(req: NextRequest) {
     if (!clientRequestId || typeof clientRequestId !== 'string' || clientRequestId.trim().length === 0) {
       return NextResponse.json(
         { error: 'Permintaan tidak sah: clientRequestId (UUID unik) wajib disertakan untuk setiap penjanaan video.' },
+        { status: 400 }
+      );
+    }
+
+    if (!Array.isArray(imageKeys) || imageKeys.length === 0 || typeof imageKeys[0] !== 'string' || imageKeys[0].trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Sila muat naik sekurang-kurangnya satu imej rujukan produk sebelum menjana video.' },
         { status: 400 }
       );
     }
@@ -119,27 +124,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 503 });
     }
 
-    // 6. Product Profile & Prompt Compilation
-    const productProfile = AICreativeDirector.extractProductProfile({
-      productName,
-      productCategory,
-      productFacts: Array.isArray(productFacts) ? productFacts.filter(Boolean) : [],
-    });
+    // 6. Image-first profile and prompt compilation. No Gemini/Vision call,
+    // internal product research or generated script is used here. Optional
+    // user notes are forwarded as context only; the provider interprets the
+    // actual product and creates dialogue/scene details.
+    const userFacts = Array.isArray(productFacts)
+      ? productFacts.filter((fact): fact is string => typeof fact === 'string' && fact.trim().length > 0).map((fact) => fact.trim())
+      : [];
+    const productProfile: ProductProfile = {
+      name: typeof productName === 'string' && productName.trim() ? productName.trim() : 'the uploaded product image',
+      category: typeof productCategory === 'string' && productCategory.trim() ? productCategory.trim() : 'the product shown in the reference image',
+      packagingFormat: 'general',
+      spokenShortName: 'produk ini',
+      coreFunction: 'the actual purpose supported by the uploaded image and optional user notes only',
+      usageContext: 'a cautious, ordinary context inferred from the uploaded image',
+      buyerProblem: 'a relevant buyer problem grounded in the product image; if unclear, use cautious wording',
+      allowedQaQuestion: 'what this product is actually for, only when supported by visible evidence',
+      confirmedFeatures: userFacts,
+      verifiedBenefits: userFacts,
+      verifiedFacts: userFacts,
+      unknownFields: ['ingredients', 'certifications', 'medical outcomes', 'personal-use results', 'prices', 'testimonials'],
+      prohibitedClaims: ['invented ingredients', 'unverified certifications', 'medical outcomes', 'personal-use claims', 'prices', 'testimonials'],
+      sourceConfidence: userFacts.length > 0 ? 'verified_user' : 'manual_fallback',
+      provenance: 'manual_user_entry',
+      isVisionSupported: false,
+    };
 
-    const scenePlan = AICreativeDirector.createScenePlan(productProfile, style, {
-      modestyLock: isMuslimahModest,
-    });
-
-    // Resolve Canonical API Contract:
-    // customScript: Approved spoken dialogue, Nexabot only
-    // creativeInstruction: User-specified visual direction, both providers
-    // customPrompt: Backward compatibility fallback
-    let resolvedCustomScript: string | undefined = undefined;
-    if (typeof customScript === 'string' && customScript.trim().length > 0) {
-      resolvedCustomScript = customScript.trim();
-    } else if (style.engine === 'nexabot' && typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
-      resolvedCustomScript = customPrompt.trim();
-    }
+    const scenePlan: ScenePlan = {
+      mainSubject: productProfile.name,
+      location: 'an ordinary, bright Malaysian setting chosen by the provider from the reference image',
+      lighting: style.actionPlan.lightingSpec,
+      cameraDistance: style.cameraProfile,
+      cameraMovement: style.actionPlan.cameraMovement,
+      startPose: style.actionPlan.startPose,
+      actionProgression: style.actionPlan.actionProgression,
+      endPose: style.actionPlan.endPose,
+      primaryAction: style.actionPlan.primaryAction,
+      audioPolicy: style.audioMode,
+      targetDurationSeconds: style.durationSeconds,
+    };
 
     let resolvedCreativeInstruction: string | undefined = undefined;
     if (typeof creativeInstruction === 'string' && creativeInstruction.trim().length > 0) {
@@ -148,19 +171,10 @@ export async function POST(req: NextRequest) {
       resolvedCreativeInstruction = customPrompt.trim();
     }
 
-    // AffiMatik Motion (15s) hard rule: Never allow customScript as spoken dialogue
-    if (style.engine === 'runninghub' && resolvedCustomScript) {
-      return NextResponse.json(
-        { error: 'Gaya 15 saat AffiMatik Motion adalah visual pergerakan sepenuhnya dan tidak menerima sebarang skrip pertuturan.' },
-        { status: 400 }
-      );
-    }
-
     const compiled = DynamicPromptCompiler.compile(productProfile, style, scenePlan, {
-      callToAction,
       isMuslimahModest,
-      customScript: resolvedCustomScript,
       creativeInstruction: resolvedCreativeInstruction,
+      providerCreatesDialogue: true,
     });
 
     if (!compiled.preflightValid) {
@@ -191,7 +205,6 @@ export async function POST(req: NextRequest) {
       productName: productProfile.name,
       productCategory: productProfile.category,
       inputOptions: {
-        callToAction,
         isMuslimahModest,
         imageKeysCount: imageKeys.length,
       },
@@ -223,7 +236,7 @@ export async function POST(req: NextRequest) {
 
     // 8. Provider API Dispatch (Job is already durably recorded with SUBMITTING status)
     const idempotencyKey = `idem_${jobId}`;
-    const mainImage = imageKeys.length > 0 ? imageKeys[0] : undefined;
+    const mainImage = String(imageKeys[0]);
     let submitResult;
     try {
       submitResult = await providerAdapter.submit({

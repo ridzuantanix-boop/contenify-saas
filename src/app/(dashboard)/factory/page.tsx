@@ -23,15 +23,10 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  FileText,
-  Eye,
   Info,
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
-import { AICreativeDirector } from '@/lib/engine/creative-director';
-import { DynamicPromptCompiler } from '@/lib/engine/compiler';
-import { VoiceoverDirector } from '@/lib/engine/voiceover-director';
 
 interface UploadedFilePreview {
   id: string;
@@ -61,12 +56,9 @@ function VideoFactoryContent() {
   // Mode: Quick (default for affiliate creators) vs Advanced
   const [mode, setMode] = useState<'quick' | 'advanced'>('quick');
 
-  // Step 1: Product Assets & Intelligence
+  // Step 1: Product reference asset (the provider owns interpretation)
   const [productName, setProductName] = useState('');
-  const [productCategory, setProductCategory] = useState('');
-  const [confirmedFeature, setConfirmedFeature] = useState('');
   const [images, setImages] = useState<UploadedFilePreview[]>([]);
-  const [isVisionSupported, setIsVisionSupported] = useState(false);
 
   // Step 2: Engine Selector & Selected Video Style
   const [selectedEngine, setSelectedEngine] = useState<'all' | 'nexabot' | 'runninghub'>('all');
@@ -78,11 +70,7 @@ function VideoFactoryContent() {
   const [mobilePlayingStyleId, setMobilePlayingStyleId] = useState<string | null>(null);
   const [modalPreviewStyle, setModalPreviewStyle] = useState<VideoStyle | null>(null);
 
-  // Step 3: Script & Advanced Studio Controls
-  const [customScript, setCustomScript] = useState('');
-  const [scriptVariationIndex, setScriptVariationIndex] = useState(0);
-  const [isEditingScript, setIsEditingScript] = useState(false);
-  const [ctaOption, setCtaOption] = useState<'spoken_button' | 'spoken_bio' | 'none'>('spoken_button');
+  // Step 3: Optional provider direction & safety controls
   const [isMuslimahModest, setIsMuslimahModest] = useState(true);
   const [creativeInstruction, setCreativeInstruction] = useState('');
 
@@ -101,26 +89,6 @@ function VideoFactoryContent() {
   }, [selectedStyleId]);
 
   const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
-
-  // Structured Product Profile derived safely
-  const productProfile = useMemo(() => {
-    return AICreativeDirector.extractProductProfile({
-      productName: productName.trim() || undefined,
-      productCategory: productCategory.trim() || undefined,
-      productFacts: confirmedFeature.trim() ? [confirmedFeature.trim()] : [],
-      imageKeyOrUrl: images[0]?.dataUrl,
-    });
-  }, [productName, productCategory, confirmedFeature, images]);
-
-  // Spoken script preview according to V3 priority
-  const generatedScriptPreview = useMemo(() => {
-    if (selectedStyle.engine === 'runninghub') return '';
-    if (customScript.trim()) return customScript.trim();
-    return DynamicPromptCompiler.resolveSpokenScript(productProfile, selectedStyle, {
-      callToAction: ctaOption,
-      variationIndex: scriptVariationIndex,
-    });
-  }, [productProfile, selectedStyle, customScript, ctaOption, scriptVariationIndex]);
 
   // Load account balance from server session
   const refreshAccountBalance = useCallback(async () => {
@@ -241,15 +209,6 @@ function VideoFactoryContent() {
     reader.readAsDataURL(file);
   };
 
-  // Regeneration of spoken script (Free of charge - variations)
-  const handleRegenerateScript = () => {
-    const nextIdx = scriptVariationIndex + 1;
-    setScriptVariationIndex(nextIdx);
-    const freshScript = VoiceoverDirector.generateAuthenticScript(productProfile, selectedStyle, ctaOption, nextIdx);
-    setCustomScript(freshScript);
-    setIsEditingScript(false);
-  };
-
   // Filtered styles catalogue
   const displayedStyles = useMemo(() => {
     return filterVideoStyles({
@@ -287,11 +246,7 @@ function VideoFactoryContent() {
         clientRequestId,
         styleId: selectedStyle.id,
         productName: productName.trim() || undefined,
-        productCategory: productCategory.trim() || undefined,
-        productFacts: confirmedFeature.trim() ? [confirmedFeature.trim()] : [],
-        customScript: selectedStyle.engine === 'nexabot' ? (customScript.trim() || undefined) : undefined,
         creativeInstruction: creativeInstruction.trim() || undefined,
-        callToAction: ctaOption,
         isMuslimahModest,
         imageKeys: [images[0].dataUrl],
       };
@@ -426,7 +381,7 @@ function VideoFactoryContent() {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-slate-900 truncate">{productName || images[0].name}</div>
                   <div className="text-[11px] text-slate-500">
-                    Kategori: {productProfile.category} • Format: {productProfile.packagingFormat}
+                    Nama fail aset: {images[0].name}
                   </div>
                   <div className="text-[10px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
@@ -444,8 +399,8 @@ function VideoFactoryContent() {
               </div>
             )}
 
-            {/* Product Meta Input (Simple in Quick, Expandable in Advanced) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {/* Optional context only; the uploaded image remains authoritative. */}
+            <div className="grid grid-cols-1 gap-3 pt-1">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
                   Nama Produk <span className="text-slate-400 font-normal">(Pilihan)</span>
@@ -459,24 +414,12 @@ function VideoFactoryContent() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  1 Kelebihan Utama Sahih <span className="text-slate-400 font-normal">(Pilihan)</span>
-                </label>
-                <input
-                  type="text"
-                  value={confirmedFeature}
-                  onChange={(e) => setConfirmedFeature(e.target.value)}
-                  placeholder="Contoh: Melembapkan kulit secara semulajadi"
-                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-              </div>
             </div>
 
             {mode === 'advanced' && (
               <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-                <span>Sumber Profil: {productProfile.provenance === 'manual_user_entry' ? 'Input Manual Telus' : 'Vision Grounded'}</span>
-                <span>Medan Tidak Diketahui: {productProfile.unknownFields?.length || 0} dielakkan daripada rekaan palsu</span>
+                <span>Interpretasi produk, dialog dan babak dibuat oleh AI video provider berdasarkan imej rujukan.</span>
+                <span>Tiada Gemini Vision atau skrip dalaman dipanggil.</span>
               </div>
             )}
           </div>
@@ -523,7 +466,6 @@ function VideoFactoryContent() {
                 type="button"
                 onClick={() => {
                   setSelectedEngine('runninghub');
-                  setCustomScript(''); // Reset custom script so Motion 15s never inherits stale Voice script
                   if (selectedStyle.engine !== 'runninghub') setSelectedStyleId('RH01');
                 }}
                 className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
@@ -567,9 +509,6 @@ function VideoFactoryContent() {
                       }}
                       onClick={() => {
                         setSelectedStyleId(style.id);
-                        if (style.engine === 'runninghub') {
-                          setCustomScript(''); // Isolate custom script from Motion
-                        }
                         // For touch devices, tap toggles play state
                         setMobilePlayingStyleId(mobilePlayingStyleId === style.id ? null : style.id);
                       }}
@@ -678,65 +617,6 @@ function VideoFactoryContent() {
             </div>
           </div>
 
-          {/* STEP 3: SPOKEN SCRIPT REVIEW (For AffiMatik Voice 10s) */}
-          {selectedStyle.engine === 'nexabot' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                    3
-                  </span>
-                  <h3 className="text-sm font-bold text-slate-900">Skrip Percakapan BM (10 Saat)</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleRegenerateScript}
-                    className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Jana Semula</span>
-                  </button>
-                  <span className="text-slate-300">•</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingScript(!isEditingScript)}
-                    className="text-xs text-slate-600 font-semibold hover:text-slate-900"
-                  >
-                    {isEditingScript ? 'Selesai Edit' : 'Edit Skrip'}
-                  </button>
-                </div>
-              </div>
-
-              {isEditingScript ? (
-                <div className="space-y-2">
-                  <textarea
-                    rows={3}
-                    value={customScript || generatedScriptPreview}
-                    onChange={(e) => setCustomScript(e.target.value)}
-                    className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary leading-relaxed"
-                    placeholder="Tulis skrip BM santai (14-23 patah perkataan)..."
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    Petua: Elakkan slanga Indonesia atau dakwaan perubatan/overclaim tanpa bukti makmal.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl relative">
-                  <p className="text-xs font-medium text-slate-800 italic leading-relaxed">
-                    "{generatedScriptPreview || 'Skrip akan dijana mengikut fakta produk...'}"
-                  </p>
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-500">
-                    <span className="font-semibold text-slate-700">
-                      {generatedScriptPreview.split(/\s+/).filter(Boolean).length} perkataan
-                    </span>
-                    <span>• Sesuai untuk tempoh 10 saat tanpa laju atau terpotong</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* ADVANCED STUDIO CONTROLS (Only visible in Advanced Mode) */}
           {mode === 'advanced' && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
@@ -746,20 +626,7 @@ function VideoFactoryContent() {
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Pilihan Call-to-Action (CTA)</label>
-                  <select
-                    value={ctaOption}
-                    onChange={(e) => setCtaOption(e.target.value as any)}
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
-                  >
-                    <option value="spoken_button">Suara: Tekan butang di bawah (Disyorkan)</option>
-                    <option value="spoken_bio">Suara: Tengok pautan di bio</option>
-                    <option value="none">Tiada CTA lisan</option>
-                  </select>
-                </div>
-
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">Kawalan Kesopanan Shariah</label>
                   <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-2">
                     <input

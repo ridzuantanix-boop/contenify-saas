@@ -22,7 +22,6 @@ import { DynamicPromptCompiler } from '@/lib/engine/compiler';
 export default function StyleTestingLabPage() {
   const [selectedStyleId, setSelectedStyleId] = useState('NX01');
   const [testProductType, setTestProductType] = useState<'sambal' | 'serum' | 'tudung' | 'gadget'>('sambal');
-  const [customPromptInjection, setCustomPromptInjection] = useState('');
   const [isMuslimah, setIsMuslimah] = useState(true);
 
   const selectedStyle = getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
@@ -56,7 +55,7 @@ export default function StyleTestingLabPage() {
   const scenePlan = AICreativeDirector.createScenePlan(profile, selectedStyle, { modestyLock: isMuslimah });
   const compiled = DynamicPromptCompiler.compile(profile, selectedStyle, scenePlan, {
     isMuslimahModest: isMuslimah,
-    customScript: customPromptInjection || undefined,
+    providerCreatesDialogue: true,
   });
 
   return (
@@ -233,11 +232,9 @@ export default function StyleTestingLabPage() {
               />
             </div>
 
-            {compiled.spokenScript && (
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
-                <strong>Skrip Pertuturan BM ({selectedStyle.engine}):</strong> &ldquo;{compiled.spokenScript}&rdquo;
-              </div>
-            )}
+            <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+              <strong>Dialog:</strong> Dicipta terus oleh provider video daripada imej rujukan; AffiMatik tidak menjana atau mempratonton skrip.
+            </div>
           </div>
         </div>
       </div>

@@ -28,7 +28,7 @@ export class NexabotAdapter implements IProviderAdapter {
       providerName: 'nexabot',
       supportedDurations: [10],
       supportsSpokenBM: true, // Priority for native Malaysian Malay
-      supportsProductResearch: true, // Internal product research
+      supportsProductResearch: true, // Provider interprets the uploaded reference image
       maxReferenceImages: 3, // i2v supports 1-3 images
       creditCostPerSecond: 1.0,
       supportsDirectCancellation: false,
