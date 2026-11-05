@@ -148,7 +148,26 @@ export async function POST(req: NextRequest) {
         }
 
         userId = signupUser.id;
-        requiresEmailConfirmation = !signupData.session; // If no session returned, email confirmation is active in Supabase
+        requiresEmailConfirmation = !signupData.session;
+
+        // The hosted Supabase email sender is not reliable without custom SMTP
+        // (and is frequently rate-limited). Confirm the newly-created account
+        // through the trusted service-role endpoint so registration does not
+        // leave users stranded waiting for an email that may never arrive.
+        if (requiresEmailConfirmation && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const confirmRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({ email_confirm: true }),
+          });
+          if (confirmRes.ok) {
+            requiresEmailConfirmation = false;
+          }
+        }
 
         // 2. Server-side provisioning via Service Role with verified columns and foreign keys
         if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
