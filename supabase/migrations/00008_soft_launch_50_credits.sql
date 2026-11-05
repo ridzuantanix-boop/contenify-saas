@@ -61,6 +61,7 @@ BEGIN
     -- Record initial GRANT in credit ledger atomically
     INSERT INTO credit_ledger (
         workspace_id,
+        wallet_id,
         amount,
         event_type,
         reference_type,
@@ -71,9 +72,10 @@ BEGIN
     )
     VALUES (
         p_workspace_id,
+        v_wallet.id,
         p_initial_balance,
         'GRANT',
-        'PROMOTIONAL_WELCOME',
+        'SUBSCRIPTION',
         p_workspace_id,
         'grant_welcome_' || p_workspace_id,
         'Pemberian baki permulaan akaun AffiMatik (50 kredit percuma)',
