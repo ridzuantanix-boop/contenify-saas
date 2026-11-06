@@ -15,6 +15,7 @@ logfile
 out/
 build/
 dist/
+output/provider-qa/
 
 # Misc
 .DS_Store

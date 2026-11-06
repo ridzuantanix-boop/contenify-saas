@@ -13,9 +13,9 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 
 | Keperluan | Status dan bukti ringkas |
 |---|---|
-| 13 masterprompt V5, direct-to-provider | Kod siap; ujian prompt semua gaya lulus. Tiada skrip dalaman dalam laluan automatik. Tiada generasi pembekal baharu dalam V2 yang membuktikan hasil visual/dialog. |
-| Nexabot Voice, durasi, CTA | Adapter dan metadata MP4 disemak; 7 preview sedia ada mempunyai video/audio sekitar 10 saat. CTA tidak boleh diperakui tanpa generasi Voice baharu dan audit audio. Jangan ubah caj 10 kredit. |
-| RunningHub Motion | Adapter, allowlist output dan ingestion disediakan; 6 preview sedia ada sekitar 15 saat. Generasi sebenar V2 belum diuji. Jangan ubah caj 15 kredit. |
+| 13 masterprompt V5, direct-to-provider | Kod siap; ujian prompt semua gaya lulus. Tiada skrip dalaman dalam laluan automatik. Dua prompt penuh berbeza dihantar bersama imej produk sebenar kepada Nexabot dan menghasilkan video; hasil dialog masih mempunyai pelanggaran yang dinyatakan di bawah. |
+| Nexabot Voice, durasi, CTA | Adapter menghantar `duration: 10`; dua video baharu H.264/AAC masing-masing 10.027s. CTA terhasil tetapi arahan klaim/BM tidak dipatuhi sepenuhnya oleh provider. Caj pelanggan kekal 10 kredit. |
+| RunningHub Motion | Adapter kini memuat naik imej sebenar ke `/task/openapi/upload` dan menggunakan `fileName` pada nod imej. Permintaan RH01 dengan prompt penuh ditolak provider kod 605 kerana baki tidak cukup, sebelum tugas dicipta. Caj pelanggan kekal 15 kredit. |
 | Factory dan Jana Video | Imej wajib, nama/arahan pilihan, gaya dan caj dipaparkan; butang Jana Video tersedia. Upload menyimpan aset produk. Laluan Provider→Job memelihara reservasi/settlement. Ujian setempat lulus; journey login produksi belum diuji. |
 | Product Library | CRUD metadata, carian, pemilihan semula, deduplikasi atomik dan storan per-workspace berkod; ujian PostgreSQL dan storan tiruan lulus. Aset sebenar rentas peranti belum dibuktikan. |
 | Video Library dan MP4 iPhone | Senarai, carian, stream per-workspace, Range 206/416, `Content-Disposition`, metadata sebenar dan muat turun disediakan. Struktur 13 MP4 preview diperiksa. Safari pada iPhone fizikal belum diuji. |
@@ -38,11 +38,14 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 
 ## Bukti ujian
 
-- `npm test`: **123/123 lulus**, 18 fail ujian. Termasuk PGlite migrasi 00001–00017, refund/hutang kredit, affiliate hold/payout, auth provisioning, tenant dan PostgreSQL dua sambungan.
+- `npm test`: **126/126 lulus**, 19 fail ujian. Termasuk PGlite migrasi 00001–00017, refund/hutang kredit, affiliate hold/payout, auth provisioning, tenant, PostgreSQL dua sambungan, eksport prompt, adapter upload imej dan ralat RunningHub 605.
 - `npm run lint`: lulus. `npm run build`: lulus pada Next.js 16.4.5. `npm run worker:build`: lulus pada OpenNext Cloudflare 1.20.16, dengan amaran keserasian Windows daripada OpenNext.
 - `npm audit --omit=dev`: **0 vulnerability** dalam production dependencies. Dev dependency audit masih mempunyai temuan; semak semula sebelum rantaian CI/release.
 - Worker tempatan `127.0.0.1:8788`: homepage/login/factory/register 200, sesi tanpa login dan laluan terlindung diuji. Frontend terlindung mengalih ke login. Tiada rahsia Supabase disuntik dalam Worker tempatan.
-- 13 fail MP4 preview sedia ada diperiksa secara struktur untuk trek video dan durasi (Voice ~10s, Motion ~15s). Ini **bukan** bukti generasi baru, CTA atau identiti produk.
+- 13 fail MP4 preview sedia ada diperiksa secara struktur untuk trek video dan durasi (Voice ~10s, Motion ~15s).
+- Nexabot live QA: `4c158356c9ef8e94` (LUMA DISH SOAP, NX01) dan `c1dcfd367c88631d` (NOVA LAMP, NX05) kedua-duanya `done`, 10.027s, 720×1280, H.264/AAC. Muat turun disimpan setempat dalam `output/provider-qa/` (diabaikan Git). Payload menghantar imej PNG sebenar sebagai media data URI dan prompt penuh; perbezaan prompt disahkan.
+- Pemeriksaan bingkai: lampu NOVA muncul dalam adegan hidup dengan bentuk/label konsisten. LUMA pertama bermula dengan imej produk pegun sebelum presenter. Prompt diperketat dan ulangan `9d3e930e4396c53e` (10.027s) kini bermula dengan adegan hidup dan botol/label konsisten. Transkripsi automatik model `faster-whisper-base` (anggaran, bukan audit telinga manusia) menunjukkan dialog LUMA tentang kotoran pinggan, NOVA tentang lampu/gelap dan CTA berbeza; NOVA menyebut kemungkinan klaim sakit mata hilang, LUMA pertama mungkin klaim segera bersih dan bentuk Indonesia `karena`/`cobalah`. Ulangan LUMA masih menyebut dakwaan minyak degil hilang dan pinggan terus licin tanpa bukti imej. Ini kegagalan kualiti provider yang belum selesai.
+- RunningHub live QA: `accountStatus` berjaya, `remainCoins=39548`, `remainMoney=USD 0.0620`; upload imej NOVA berjaya dan mengembalikan `api/...png`. Dua endpoint submit menolak RH01 dengan `605 / NOT_ENOUGH_BALANCE`. Tiada task/video RunningHub dihasilkan. Adapter memetakan 605 kepada ralat tidak boleh dicuba semula dan tidak dibil pelanggan; diuji secara automatik.
 
 ## Pemeriksaan produksi baca sahaja
 
@@ -56,7 +59,7 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 1. Konfigurasi SMTP yang pemilik kawal, domain sender/DNS dan ujian emel ke inbox sebenar.
 2. Snapshot/backup Supabase Auth, database dan Storage serta latihan restore pada projek terasing sebelum migrasi 00012–00017. Hanya migration 00011 telah dipasang sebelum tugasan ini. Fail `scripts/v2-production-preflight.sql` ialah query manifest baca sahaja.
 3. Rahsia dan routing Worker OpenNext untuk Supabase, Nexabot, RunningHub, SESSION_SECRET, ADMIN_ACCESS_KEY dan cron; peralihan Cloudflare Pages→Worker/DNS mesti melalui proses release sah.
-4. Dua generasi provider sebenar dengan imej produk berlainan, pemeriksaan prompt+imej payload, kos bil pembekal, durasi, audio CTA dan identiti visual. Kunci yang dikongsi sebelum ini tidak membuktikan baki/akses semasa.
+4. Tambah baki RunningHub yang mencukupi dan jalankan satu generasi Motion sebenar. Nexabot key semasa sah dan dua generasi sebenar selesai, tetapi kualiti dialog/identiti perlu lulus QA manual dan ulangan selepas pembetulan prompt. Kos Nexabot setiap ujian semasa 0.15 provider credit, bukan kredit pelanggan.
 5. Ujian iPhone Safari dan Android Chrome fizikal bagi signup→video→Files→login semula; transaksi rujukan affiliate/payout/refund bank sebenar hanya selepas pembayaran dibenarkan.
 6. Pemulihan 8 URL MP4 sejarah selepas snapshot dan import satu job yang disahkan; laporkan mana-mana URL yang sudah luput.
 

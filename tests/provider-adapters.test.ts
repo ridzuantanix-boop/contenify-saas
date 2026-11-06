@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { RunningHubAdapter } from '../src/lib/providers/runninghub';
 import { NexabotAdapter } from '../src/lib/providers/nexabot';
 import { MockProviderAdapter } from '../src/lib/providers/mock';
@@ -47,6 +47,39 @@ describe('RunningHub Adapter', () => {
     const node135 = payload.nodeInfoList.find(n => n.nodeId === '135');
     expect(node135?.fieldValue).toBe('15');
   });
+
+  it('uploads the actual image once and gives RunningHub LoadImage nodes its returned fileName', async () => {
+    const image = 'data:image/png;base64,iVBORw0KGgo=';
+    const request = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ code: 0, data: { fileName: 'api/verified.png' } }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ taskId: 'rh-task-1' }), { status: 200 }));
+    vi.stubGlobal('fetch', request);
+    try {
+      const result = await adapter.submit({ ...valid15sInput, mainImageKeyOrUrl: image, referenceImageKeysOrUrls: [] });
+      expect(result.providerTaskId).toBe('rh-task-1');
+      expect(request).toHaveBeenCalledTimes(2);
+      const upload = request.mock.calls[0][1];
+      expect(String(request.mock.calls[0][0])).toContain('/task/openapi/upload');
+      expect(upload.body).toBeInstanceOf(FormData);
+      expect(upload.body.get('file')).toBeInstanceOf(Blob);
+      const sent = JSON.parse(request.mock.calls[1][1].body);
+      expect(sent.nodeInfoList.filter((node: { fieldName: string }) => node.fieldName === 'image').every((node: { fieldValue: string }) => node.fieldValue === 'api/verified.png')).toBe(true);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it('classifies a live-style 605 balance rejection without charging the customer', async () => {
+    const image = 'data:image/png;base64,iVBORw0KGgo=';
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ code: 0, data: { fileName: 'api/verified.png' } }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ errorCode: '605', errorMessage: 'Your balance is insufficient' }), { status: 200 })));
+    try {
+      let thrown: unknown;
+      try { await adapter.submit({ ...valid15sInput, mainImageKeyOrUrl: image, referenceImageKeysOrUrls: [] }); }
+      catch (error) { thrown = error; }
+      expect(thrown).toBeInstanceOf(Error);
+      expect(adapter.normalizeError(thrown)).toMatchObject({ code: 'RUNNINGHUB_BALANCE_EXHAUSTED', isRetryable: false, wasBilled: false });
+    } finally { vi.unstubAllGlobals(); }
+  });
 });
 
 describe('Nexabot Adapter', () => {
@@ -71,6 +104,8 @@ describe('Nexabot Adapter', () => {
     const caps = adapter.getCapabilities();
     expect(caps.supportsSpokenBM).toBe(true);
     expect(caps.supportsProductResearch).toBe(true);
+    const payload = adapter.preparePayload({ ...valid10sInput, mainImageKeyOrUrl: 'data:image/png;base64,iVBORw0KGgo=' });
+    expect(payload).toMatchObject({ mode: 'i2v', duration: 10, resolution: 720 });
   });
 
   it('rejects unpermitted durations', () => {

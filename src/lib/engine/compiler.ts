@@ -267,6 +267,7 @@ export class DynamicPromptCompiler {
     const realismDirectives = [
       `[REALISTIC UGC PROFILE]`,
       `Natural 1x smartphone camera (iPhone 15 Pro natural optics), authentic neutral daylight 5500K (5000-5600K neutral white balance), single continuous 10-second or 15-second handheld take, subtle micro-shake, realistic human skin with natural pores and textures, lifelike eye gaze, natural gravity and believable physical object contact.`,
+      `Begin immediately in the live physical scene. Treat the uploaded image solely as a product identity reference; never paste it in as a still introductory frame or automatically use it as the first video frame.`,
       `Strictly NO jump cuts, NO push-in zoom, NO camera spin, NO crash pan, NO first-frame flash, NO synthetic colour grading, NO excessive cinematic effects, NO plastic skin, NO AI-generated look.`,
     ].join(' ');
 
@@ -372,7 +373,9 @@ export class DynamicPromptCompiler {
       'The external video-generation AI must independently inspect the uploaded product reference image and create the natural Malaysian Malay dialogue, scene interpretation and lip-sync. AffiMatik supplies no generated script.',
       'Dialogue must discuss the product\'s actual purpose, a relevant buyer problem, grounded visible or user-supplied features and practical benefits. Do not narrate generic packaging or label descriptions.',
       'If the image and optional user notes do not establish a fact, use cautious wording such as "berdasarkan apa yang kelihatan" or omit the claim. Never invent ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
+      'A buyer problem does not prove that this product resolves it. State only a visible or user-confirmed function and avoid guaranteed performance, health relief or instant transformation.',
       'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. End with a natural concise CTA only when supported by the style.',
+      'Before rendering, check the spoken words against these rules: no Indonesian forms such as "karena" or "cobalah", no unsupported result claims, and a complete uncut final CTA. Rewrite internally if needed; AffiMatik does not provide a script.',
     ].join(' ');
     const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;
 

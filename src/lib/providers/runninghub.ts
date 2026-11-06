@@ -87,6 +87,43 @@ export class RunningHubAdapter implements IProviderAdapter {
     };
   }
 
+  private async uploadReferenceImage(source: string): Promise<string> {
+    let bytes: Uint8Array;
+    let contentType: string;
+    if (source.startsWith('data:image/')) {
+      const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(source);
+      if (!match) throw new Error('RunningHub reference image data URI is invalid');
+      contentType = match[1];
+      bytes = Uint8Array.from(atob(match[2]), (char) => char.charCodeAt(0));
+    } else {
+      const url = new URL(source);
+      const configured = process.env.SUPABASE_URL;
+      if (!configured || url.origin !== new URL(configured).origin || !url.pathname.startsWith('/storage/v1/object/sign/affimatik-assets/')) {
+        throw new Error('RunningHub reference image must be a verified private asset');
+      }
+      const response = await fetch(url, { redirect: 'manual' });
+      if (!response.ok) throw new Error(`RunningHub reference image unavailable (HTTP ${response.status})`);
+      contentType = (response.headers.get('content-type') || '').split(';')[0];
+      bytes = new Uint8Array(await response.arrayBuffer());
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(contentType) || !bytes.length || bytes.length > 15 * 1024 * 1024) {
+      throw new Error('RunningHub reference image type or size is invalid');
+    }
+    const extension = contentType === 'image/jpeg' ? 'jpg' : contentType.split('/')[1];
+    const form = new FormData();
+    form.append('apiKey', this.apiKey);
+    form.append('fileType', 'input');
+    form.append('file', new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], { type: contentType }), `affimatik-reference.${extension}`);
+    const response = await fetch(`${this.baseUrl}/task/openapi/upload`, {
+      method: 'POST', headers: { Authorization: `Bearer ${this.apiKey}` }, body: form,
+    });
+    const result = await response.json().catch(() => ({})) as { code?: number; msg?: string; data?: { fileName?: string } };
+    if (!response.ok || result.code !== 0 || !result.data?.fileName?.startsWith('api/')) {
+      throw new Error(`RunningHub image upload failed (HTTP ${response.status}): ${result.msg || 'invalid response'}`);
+    }
+    return result.data.fileName;
+  }
+
   async submit(input: ProviderJobInput): Promise<ProviderSubmitResult> {
     const validation = this.validateInput(input);
     if (!validation.isValid) {
@@ -94,6 +131,12 @@ export class RunningHubAdapter implements IProviderAdapter {
     }
 
     const payload = this.preparePayload(input);
+    const imageFiles = new Map<string, string>();
+    const nodes = payload.nodeInfoList as Array<{ nodeId: string; fieldName: string; fieldValue: string }>;
+    for (const node of nodes.filter((item) => item.fieldName === 'image')) {
+      if (!imageFiles.has(node.fieldValue)) imageFiles.set(node.fieldValue, await this.uploadReferenceImage(node.fieldValue));
+      node.fieldValue = imageFiles.get(node.fieldValue)!;
+    }
     const endpoint = `${this.baseUrl}/openapi/v2/run/ai-app/${this.webappId}`;
 
     const res = await fetch(endpoint, {
@@ -111,6 +154,11 @@ export class RunningHubAdapter implements IProviderAdapter {
     }
 
     const data = await res.json() as Record<string, unknown>;
+    const providerError = String(data.errorMessage || data.msg || data.message || '');
+    const providerCode = String(data.errorCode || data.code || '');
+    if (providerCode === '605' || /NOT_ENOUGH_BALANCE|balance is insufficient/i.test(providerError)) {
+      throw new Error(`RunningHub insufficient balance (${providerCode}): ${providerError}`);
+    }
     const taskId = (data.taskId || (data.data as Record<string, unknown>)?.taskId) as string;
 
     if (!taskId) {
@@ -227,7 +275,7 @@ export class RunningHubAdapter implements IProviderAdapter {
         wasBilled: false,
       };
     }
-    if (msg.includes('insufficient balance') || msg.includes('credits')) {
+    if (/insufficient balance|balance is insufficient|NOT_ENOUGH_BALANCE|credits/i.test(msg)) {
       return {
         isRetryable: false,
         category: 'RATE_LIMIT',

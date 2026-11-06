@@ -86,7 +86,8 @@ export class NexabotAdapter implements IProviderAdapter {
       telegram_id: 'web',
       media: images,
       ratio,
-      resolution: '720',
+      resolution: 720,
+      duration: input.durationSeconds,
       use_unlimited: false,
     };
   }
