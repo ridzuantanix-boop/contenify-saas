@@ -9,7 +9,6 @@ import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
 import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 
-export const runtime = 'edge';
 
 const router = new ProviderRouter();
 

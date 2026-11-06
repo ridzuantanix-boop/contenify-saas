@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -18,6 +18,13 @@ import {
 import { AUTHORITATIVE_PLANS, GENERATION_COSTS } from '@/lib/billing/plans';
 
 export default function LandingPage() {
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('ref');
+    const campaign = new URLSearchParams(window.location.search).get('campaign');
+    if (code && /^[A-Za-z0-9_-]{4,50}$/.test(code)) {
+      fetch(`/api/affiliate/visit?code=${encodeURIComponent(code)}${campaign ? `&campaign=${encodeURIComponent(campaign.slice(0, 64))}` : ''}`, { cache: 'no-store' }).catch(() => {});
+    }
+  }, []);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
       {/* Top Navigation */}
@@ -179,7 +186,7 @@ export default function LandingPage() {
               </div>
               <h4 className="font-bold text-slate-900 text-sm">Upload Gambar Produk</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Muat naik gambar produk anda. AI Creative Director akan mengekstrak butiran dan ciri unik produk secara automatik.
+                Muat naik gambar produk sebagai rujukan identiti. Enjin video akan mentafsir imej dan mengolah adegan mengikut gaya pilihan.
               </p>
             </div>
 
@@ -187,7 +194,7 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-extrabold text-sm flex items-center justify-center mx-auto">
                 2
               </div>
-              <h4 className="font-bold text-slate-900 text-sm">Pilih Gaya & Skrip</h4>
+              <h4 className="font-bold text-slate-900 text-sm">Pilih Gaya Video</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Pilih daripada 13 Gaya Video Rasmi (Voice 10s atau Motion 15s). Anda boleh pratonton video contoh dengan audio sebenar.
               </p>
@@ -293,7 +300,7 @@ export default function LandingPage() {
           AffiMatik by Pawarna Studio &copy; 2026. Hak Cipta Terpelihara.
         </p>
         <p className="text-[11px] text-slate-400">
-          Platform penjanaan video AI berorientasikan affiliate pasaran Malaysia. Sifar tanda air, aurat terpelihara, dialog Bahasa Melayu asli.
+          Platform penjanaan video AI berorientasikan affiliate pasaran Malaysia. Gaya Voice menggunakan dialog Bahasa Melayu Malaysia; hasil tertakluk kepada semakan kualiti pembekal.
         </p>
       </footer>
     </div>

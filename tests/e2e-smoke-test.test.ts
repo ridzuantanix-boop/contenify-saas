@@ -308,6 +308,19 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const initialOrder = await DurableStore.getOrder(orderData.orderId);
     expect(initialOrder?.status).toBe('PENDING');
 
+    const missingReference = await adminOpsHandler(new NextRequest('http://localhost:3000/api/admin/operations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'adm_key_live_test_789' },
+      body: JSON.stringify({ action: 'manual_verify_payment', orderId: orderData.orderId }),
+    }));
+    expect(missingReference.status).toBe(400);
+    expect((await DurableStore.getOrder(orderData.orderId))?.status).toBe('PENDING');
+
+    const directCommissionPatch = await adminOpsHandler(new NextRequest('http://localhost:3000/api/admin/operations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'adm_key_live_test_789' },
+      body: JSON.stringify({ action: 'manage_affiliate_commission', commissionId: crypto.randomUUID(), newStatus: 'PAID' }),
+    }));
+    expect(directCommissionPatch.status).toBe(400);
+
     // Step 4: Verify manual payment by admin
     const adminVerifyReq = new NextRequest('http://localhost:3000/api/admin/operations', {
       method: 'POST',

@@ -211,7 +211,7 @@ export class RunningHubAdapter implements IProviderAdapter {
     return {
       providerTaskId,
       videoUrl,
-      durationSeconds: 15,
+      durationSeconds: typeof data.durationSeconds === 'number' ? data.durationSeconds : undefined,
       metadata: { resultsCount: results.length },
     };
   }

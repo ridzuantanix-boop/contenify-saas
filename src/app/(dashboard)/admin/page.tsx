@@ -105,13 +105,13 @@ export default function AdminPage() {
 
   // Honest system status without fabricated latency numbers
   const providers = [
-    { name: 'Nexabot Provider Adapter', type: '10s Spoken BM (AffiMatik Voice)', status: 'Tersedia' },
-    { name: 'RunningHub Provider Adapter', type: '15s WebApp #2103149871766220801 (AffiMatik Motion)', status: 'Tersedia' },
-    { name: 'Cloudflare R2 Private Bucket', type: 'S3-Compatible Storage', status: 'Tersedia' },
+    { name: 'Nexabot Provider Adapter', type: 'AffiMatik Voice; status sebenar memerlukan ujian API', status: 'BELUM DISAHKAN' },
+    { name: 'RunningHub Provider Adapter', type: 'AffiMatik Motion; status sebenar memerlukan ujian API', status: 'BELUM DISAHKAN' },
+    { name: 'Supabase Storage', type: 'Storan imej dan video persendirian', status: 'BELUM DISAHKAN' },
     {
       name: 'PostgreSQL Database & Supabase Engine',
       type: 'Pangkalan Data Pengeluaran & RLS',
-      status: metrics?.isAvailable === false ? 'Belum Disahkan / Terputus' : 'Tersambung (Aktif)',
+      status: metrics?.isAvailable === true ? 'Tersambung (Aktif)' : 'BELUM DISAHKAN',
     },
   ];
 

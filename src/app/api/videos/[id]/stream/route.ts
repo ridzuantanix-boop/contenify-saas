@@ -3,17 +3,23 @@ import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 import { privateAssetResponse } from '@/lib/storage/supabase-assets';
 
-export const runtime = 'edge';
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = await getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Sila log masuk.' }, { status: 401 });
-  const job = await DurableStore.getJob(context.params.id);
+  const { id } = await context.params;
+  const job = await DurableStore.getJob(id);
   if (!job || job.workspaceId !== session.workspaceId || !job.videoObjectKey || job.status !== 'COMPLETED') {
     return NextResponse.json({ error: 'Video tidak ditemui.' }, { status: 404 });
   }
   try {
     const upstream = await privateAssetResponse(job.videoObjectKey, req.headers.get('range') || undefined);
+    if (upstream.status === 416) {
+      const headers = new Headers({ 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, no-store' });
+      const contentRange = upstream.headers.get('content-range');
+      if (contentRange) headers.set('Content-Range', contentRange);
+      return new Response(null, { status: 416, headers });
+    }
     if (!upstream.ok || !upstream.body) throw new Error('Video unavailable');
     const download = new URL(req.url).searchParams.get('download') === '1';
     const headers = new Headers({

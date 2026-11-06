@@ -31,6 +31,12 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00009_add_whatsapp_to_profiles.sql',
       '00010_fix_welcome_credit_ledger.sql',
       '00011_affiliate_application_policy.sql',
+      '00012_affiliate_ledger_and_assets.sql',
+      '00013_verified_account_provisioning.sql',
+      '00014_close_public_data_access.sql',
+      '00015_customer_dashboard_metrics.sql',
+      '00016_verified_video_metadata.sql',
+      '00017_refund_credit_integrity.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -42,7 +48,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     }
   });
 
-  it('proves that all 4 migrations apply successfully without schema syntax errors', async () => {
+  it('proves that all forward migrations apply without schema syntax errors', async () => {
     // Verify core tables exist in PostgreSQL information_schema
     const res = await db.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;`
@@ -64,6 +70,31 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(cols).toContain('required_credits');
     expect(cols).toContain('client_request_id');
     expect(cols).toContain('result_video_url');
+  });
+
+  it('enables row security on all sensitive payment and affiliate tables', async () => {
+    const result = await db.query<{ relname: string; relrowsecurity: boolean }>(
+      `SELECT relname,relrowsecurity FROM pg_class WHERE relname IN ('profiles','orders','subscriptions','affiliate_partners','affiliate_commissions','affiliate_referral_events','affiliate_payout_requests','affiliate_clawbacks','audit_logs','system_settings','credit_reservations')`);
+    expect(result.rows).toHaveLength(11);
+    expect(result.rows.every((row) => row.relrowsecurity)).toBe(true);
+  });
+
+  it('provisions only confirmed identities once and preserves the 20-credit welcome grant', async () => {
+    const userId = 'b2222222-2222-4222-8222-222222222222';
+    await db.query(`INSERT INTO auth.users(id,email) VALUES($1,'verified@example.test')`, [userId]);
+    const invoke = () => db.query<{ result: { success: boolean; workspace_id?: string } }>(
+      `SELECT provision_verified_account_atomic($1,'verified@example.test','Verified User','0123456789',NULL) AS result`, [userId]);
+    expect((await invoke()).rows[0].result.success).toBe(false);
+    expect((await db.query(`SELECT id FROM profiles WHERE id=$1`, [userId])).rows).toHaveLength(0);
+    await db.query(`UPDATE auth.users SET email_confirmed_at=now() WHERE id=$1`, [userId]);
+    const first = (await invoke()).rows[0].result;
+    const second = (await invoke()).rows[0].result;
+    expect(first.success).toBe(true);
+    expect(second.workspace_id).toBe(first.workspace_id);
+    const wallet = await db.query<{ balance: number }>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`, [first.workspace_id]);
+    expect(wallet.rows[0].balance).toBe(20);
+    const grants = await db.query(`SELECT id FROM credit_ledger WHERE workspace_id=$1 AND event_type='GRANT'`, [first.workspace_id]);
+    expect(grants.rows).toHaveLength(1);
   });
 
   it('verifies new account provisioning and initial 10-credit ledger grant idempotently', async () => {
@@ -107,6 +138,75 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       [workspaceId]
     );
     expect(Number(sumRes.rows[0].total)).toBe(10);
+  });
+
+  it('enforces affiliate 14-day hold, RM50 minimum, one payout, and refund reversal', async () => {
+    const affiliateUser = 'b3333333-3333-4333-8333-333333333333';
+    const affiliateWorkspace = 'a3333333-3333-4333-8333-333333333333';
+    const affiliateId = 'c3333333-3333-4333-8333-333333333333';
+    const buyerUser = 'b4444444-4444-4444-8444-444444444444';
+    const buyerWorkspace = 'a4444444-4444-4444-8444-444444444444';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Affiliate','affiliate-test',$2,'active'),($3,'Buyer','buyer-test',$4,'active')`, [affiliateWorkspace,affiliateUser,buyerWorkspace,buyerUser]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'partner@example.test','free',$2),($3,'buyer@example.test','free',$4)`, [affiliateUser,affiliateWorkspace,buyerUser,buyerWorkspace]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,3000,0,3000,0)`,[buyerWorkspace]);
+    await db.query(`INSERT INTO affiliate_partners(id,user_id,referral_code,commission_rate,status,payout_bank,payout_account_number,payout_account_holder) VALUES($1,$2,'AFFTEST',10,'APPROVED','Bank Test','123456789','Partner')`, [affiliateId,affiliateUser]);
+    const orderIds = ['d3333333-3333-4333-8333-333333333331','d3333333-3333-4333-8333-333333333332','d3333333-3333-4333-8333-333333333333'];
+    for (const id of orderIds) {
+      await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status) VALUES($1,$2,$3,'agency',300,1000,'PAID')`, [id,buyerWorkspace,buyerUser]);
+      await db.query(`INSERT INTO affiliate_commissions(affiliate_id,order_id,workspace_id,amount_myr,rate_percentage,status) VALUES($1,$2,$3,30,10,'PENDING')`, [affiliateId,id,buyerWorkspace]);
+    }
+    const request = () => db.query<{ result: { success: boolean; request_id?: string; amount_myr?: number } }>(`SELECT request_affiliate_payout_atomic($1) AS result`, [affiliateId]);
+    expect((await request()).rows[0].result.success).toBe(false);
+    await db.query(`UPDATE affiliate_commissions SET available_at=now()-INTERVAL '1 day' WHERE order_id IN ($1,$2)`, [orderIds[0],orderIds[1]]);
+    const first = (await request()).rows[0].result;
+    expect(first.success).toBe(true);
+    expect(Number(first.amount_myr)).toBe(60);
+    expect((await request()).rows[0].result.success).toBe(false);
+    const approved = await db.query<{ result: { success: boolean } }>(`SELECT review_affiliate_payout_atomic($1,'APPROVED','admin',NULL) AS result`, [first.request_id]);
+    expect(approved.rows[0].result.success).toBe(true);
+    const paid = await db.query<{ result: { success: boolean } }>(`SELECT review_affiliate_payout_atomic($1,'PAID','admin','BANK-001') AS result`, [first.request_id]);
+    expect(paid.rows[0].result.success).toBe(true);
+    expect((await db.query(`SELECT id FROM affiliate_commissions WHERE payout_request_id=$1 AND status='PAID'`, [first.request_id])).rows).toHaveLength(2);
+    const paidRefund = await db.query<{ result: { success: boolean } }>(`SELECT reverse_affiliate_commission_atomic($1,'admin','Customer refund','REF-001') AS result`, [orderIds[0]]);
+    expect(paidRefund.rows[0].result.success).toBe(true);
+    expect((await db.query(`SELECT id FROM affiliate_clawbacks WHERE order_id=$1 AND status='OPEN'`, [orderIds[0]])).rows).toHaveLength(1);
+    const unpaidRefund = await db.query<{ result: { success: boolean } }>(`SELECT reverse_affiliate_commission_atomic($1,'admin','Customer refund','REF-002') AS result`, [orderIds[2]]);
+    expect(unpaidRefund.rows[0].result.success).toBe(true);
+    expect((await db.query<{ status: string }>(`SELECT status FROM affiliate_commissions WHERE order_id=$1`, [orderIds[2]])).rows[0].status).toBe('REVERSED');
+  });
+
+  it('revokes purchased credits on refund, records debt for spent credits and blocks repeat settlement', async () => {
+    const ws = 'a7777777-7777-4777-8777-777777777777';
+    const user = 'b7777777-7777-4777-8777-777777777777';
+    const order = 'd7777777-7777-4777-8777-777777777777';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Refund','refund-test',$2,'active')`,[ws,user]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'refund@example.test','free',$2)`,[user,ws]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,35,5,100,65)`,[ws]);
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status) VALUES($1,$2,$3,'starter',50,40,'PAID')`,[order,ws,user]);
+    const first=(await db.query<{result:{success:boolean;credits_revoked:number;credit_debt:number}}>(`SELECT reverse_affiliate_commission_atomic($1,'admin','Verified bank refund','BANK-REF-77') AS result`,[order])).rows[0].result;
+    expect(first).toMatchObject({success:true,credits_revoked:30,credit_debt:10});
+    expect((await db.query<{balance:number;reserved_balance:number}>(`SELECT balance,reserved_balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0]).toMatchObject({balance:5,reserved_balance:5});
+    expect((await db.query<{result:{success:boolean;idempotent_replay?:boolean}}>(`SELECT reverse_affiliate_commission_atomic($1,'admin','Verified bank refund','BANK-REF-77') AS result`,[order])).rows[0].result.idempotent_replay).toBe(true);
+    expect((await db.query<{result:{success:boolean}}>(`SELECT settle_order_payment_atomic($1,NULL,'{}'::jsonb) AS result`,[order])).rows[0].result.success).toBe(false);
+    const denied=(await db.query<{result:{success:boolean;error?:string}}>(`SELECT admit_video_job_atomic($1,$2,$3,'refund-debt-job','NX01',2,'nexabot',1,10,5,'prompt') AS result`,[ws,user,'c7777777-7777-4777-8777-777777777777'])).rows[0].result;
+    expect(denied.error).toMatch(/Refund credit debt/);
+    await db.query(`UPDATE credit_wallets SET balance=20 WHERE workspace_id=$1`,[ws]);
+    expect((await db.query<{result:{success:boolean;credits_recovered:number}}>(`SELECT recover_credit_refund_debt_atomic($1,'admin','BANK-REC-77') AS result`,[order])).rows[0].result).toMatchObject({success:true,credits_recovered:10});
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0].balance).toBe(10);
+  });
+
+  it('registers one product image atomically across retries', async () => {
+    const workspace = 'a4444444-4444-4444-8444-444444444444';
+    const first = await db.query<{ result: { asset_id: string; product_id: string; reused: boolean } }>(
+      `SELECT register_product_image_atomic($1,$2,$3,'Sabun','Penjagaan diri','Nota','workspaces/test/input.png','input.png','image/png',123,'checksum-a') AS result`,
+      [workspace,'e4444444-4444-4444-8444-444444444444','f4444444-4444-4444-8444-444444444444']);
+    expect(first.rows[0].result.reused).toBe(false);
+    const retry = await db.query<{ result: { asset_id: string; reused: boolean } }>(
+      `SELECT register_product_image_atomic($1,$2,$3,'Lain','Lain',NULL,'workspaces/test/retry.png','retry.png','image/png',123,'checksum-a') AS result`,
+      [workspace,'e5555555-5555-4555-8555-555555555555','f5555555-5555-4555-8555-555555555555']);
+    expect(retry.rows[0].result.reused).toBe(true);
+    expect(retry.rows[0].result.asset_id).toBe(first.rows[0].result.asset_id);
+    expect((await db.query(`SELECT id FROM product_images WHERE workspace_id=$1 AND sha256_checksum='checksum-a'`, [workspace])).rows).toHaveLength(1);
   });
 
   it('executes admit_video_job_atomic with durable reservation and SUBMITTING status', async () => {

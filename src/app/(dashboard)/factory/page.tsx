@@ -159,6 +159,7 @@ function VideoFactoryContent() {
     }, 1000);
 
     const pollInterval = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return;
       try {
         const res = await fetch(`/api/jobs?jobId=${activeJobId}`);
         if (!res.ok) return;
@@ -188,7 +189,7 @@ function VideoFactoryContent() {
       } catch {
         // Keep job alive; network glitch does not fail the job
       }
-    }, 4000);
+    }, 10000);
 
     return () => {
       clearInterval(timerInterval);

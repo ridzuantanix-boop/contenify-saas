@@ -7,7 +7,6 @@ import { getAllVideoStyles, filterVideoStyles, getVideoStyle } from '@/lib/style
 import { SmartStyleMatcher } from '@/lib/engine/smart-match';
 import { AICreativeDirector } from '@/lib/engine/creative-director';
 
-export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

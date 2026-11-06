@@ -2,280 +2,49 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 
-export const runtime = 'edge';
 
-/**
- * POST /api/auth/register
- * Complete Customer Self-Service Registration & Automated Provisioning
- * 
- * Automatically creates and associates:
- * 1. Authentication identity (email verification required when configured)
- * 2. User profile (tier = 'free')
- * 3. Workspace (status = 'active')
- * 4. Workspace membership (role = 'owner')
- * 5. Credit wallet with initial 20 free trial credits and GRANT ledger entry
- * 6. Affiliate referral attribution (if referral code supplied)
- */
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { email, password, fullName, referralCode, whatsapp } = body;
-
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return NextResponse.json(
-        { error: 'Sila masukkan alamat emel yang sah.' },
-        { status: 400 }
-      );
-    }
-
-    if (!whatsapp || typeof whatsapp !== 'string' || whatsapp.trim().replace(/\D/g, '').length < 8) {
-      return NextResponse.json(
-        { error: 'Sila masukkan nombor WhatsApp yang sah (cth: 0123456789 atau +60123456789).' },
-        { status: 400 }
-      );
-    }
-
-    if (!password || typeof password !== 'string' || password.length < 6) {
-      return NextResponse.json(
-        { error: 'Kata laluan mesti mengandungi sekurang-kurangnya 6 aksara.' },
-        { status: 400 }
-      );
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanWhatsapp = whatsapp.trim();
-    const displayName = (fullName && typeof fullName === 'string') ? fullName.trim() : cleanEmail.split('@')[0];
-    const cleanReferral = (referralCode && typeof referralCode === 'string') ? referralCode.trim().toUpperCase() : null;
-
-    // 0. Production Fail-Closed Check: Never allow ephemeral registrations in live production
-    if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
-      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SESSION_SECRET) {
-        return NextResponse.json(
-          {
-            error: 'Perkhidmatan pendaftaran pangkalan data sedang diselenggara. Sila cuba sebentar lagi.',
-            serviceUnavailable: true,
-          },
-          { status: 503 }
-        );
-      }
-    }
-
-    let userId: string;
-    let workspaceId: string;
-    let requiresEmailConfirmation = false;
-
-    // 1. Supabase Auth Registration (when configured)
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-      try {
-        const signupRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/signup`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            email: cleanEmail,
-            password,
-            data: {
-              full_name: displayName,
-              whatsapp: cleanWhatsapp,
-              referral_code: cleanReferral,
-            },
-          }),
-        });
-
-        const signupData = await signupRes.json();
-
-        if (!signupRes.ok) {
-          const errMsg = signupData.msg || signupData.error_description || signupData.message || 'Pendaftaran gagal.';
-          return NextResponse.json({ error: errMsg }, { status: signupRes.status });
-        }
-
-        // Never recover an identity by looking up an arbitrary email with the admin API.
-        const signupUser = signupData.user || signupData.data?.user;
-
-        if (!signupUser?.id) {
-          return NextResponse.json(
-            { error: 'Supabase Auth mencipta respons tidak lengkap. Sila cuba semula selepas beberapa saat.' },
-            { status: 502 }
-          );
-        }
-
-        userId = signupUser.id;
-        requiresEmailConfirmation = !signupData.session;
-
-        // 2. Server-side provisioning via Service Role with verified columns and foreign keys
-        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          const sHeaders = {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            Prefer: 'return=representation',
-          };
-
-          const uniqueSlug = `ws-${userId.slice(0, 8)}-${Date.now()}`;
-
-          // A. Create workspace with mandatory slug and owner_id
-          const wsRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/workspaces`, {
-            method: 'POST',
-            headers: sHeaders,
-            body: JSON.stringify({
-              name: `${displayName}'s Workspace`,
-              slug: uniqueSlug,
-              owner_id: userId,
-              status: 'active',
-            }),
-          });
-
-          if (!wsRes.ok) {
-            const errText = await wsRes.text().catch(() => '');
-            console.error('[Register API] Failed to create workspace:', errText);
-            throw new Error(`Pangkalan data gagal mencipta ruang kerja: ${errText}`);
-          }
-
-          const wsRows = await wsRes.json();
-          if (!wsRows || wsRows.length === 0 || !wsRows[0].id) {
-            throw new Error('Ruang kerja gagal dijana oleh pangkalan data.');
-          }
-          workspaceId = wsRows[0].id;
-
-          // B. Upsert Profile with mandatory email, id, tier, default_workspace_id, and whatsapp
-          const profRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles`, {
-            method: 'POST',
-            headers: sHeaders,
-            body: JSON.stringify({
-              id: userId,
-              email: cleanEmail,
-              full_name: displayName,
-              whatsapp: cleanWhatsapp,
-              tier: 'free',
-              default_workspace_id: workspaceId,
-            }),
-          });
-
-          if (!profRes.ok) {
-            const errText = await profRes.text().catch(() => '');
-            console.error('[Register API] Failed to create profile:', errText);
-            throw new Error(`Pangkalan data gagal mencipta profil pengguna: ${errText}`);
-          }
-
-          // C. Upsert Workspace Member
-          const memRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/workspace_members`, {
-            method: 'POST',
-            headers: sHeaders,
-            body: JSON.stringify({
-              workspace_id: workspaceId,
-              user_id: userId,
-              role: 'owner',
-            }),
-          });
-
-          if (!memRes.ok) {
-            const errText = await memRes.text().catch(() => '');
-            console.error('[Register API] Failed to create workspace member:', errText);
-            throw new Error(`Pangkalan data gagal menetapkan keahlian ruang kerja: ${errText}`);
-          }
-
-          // D. Atomically provision credit wallet (20 free trial credits + GRANT ledger entry)
-          // Uses exact signature p_workspace_id and p_initial_balance
-          const provRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
-            method: 'POST',
-            headers: sHeaders,
-            body: JSON.stringify({
-              p_workspace_id: workspaceId,
-              p_initial_balance: 20,
-            }),
-          });
-
-          if (!provRes.ok) {
-            const errText = await provRes.text().catch(() => '');
-            console.error('[Register API] Failed to provision initial wallet:', errText);
-            throw new Error(`Pangkalan data gagal memperuntukkan dompet kredit permulaan: ${errText}`);
-          }
-
-          // E. Record WhatsApp & Referral Code in system_settings for persistent backup
-          await fetch(`${process.env.SUPABASE_URL}/rest/v1/system_settings`, {
-            method: 'POST',
-            headers: sHeaders,
-            body: JSON.stringify({
-              key: `user_info_${userId}`,
-              value: {
-                userId,
-                email: cleanEmail,
-                whatsapp: cleanWhatsapp,
-                fullName: displayName,
-                referralCode: cleanReferral,
-                registeredAt: new Date().toISOString(),
-              },
-            }),
-          });
-        } else {
-          workspaceId = crypto.randomUUID();
-        }
-      } catch (err: unknown) {
-        console.error('[Register API] Supabase error:', err);
-        return NextResponse.json(
-          { error: 'Pangkalan data tidak dapat diakses buat masa ini. Sila cuba sebentar lagi.' },
-          { status: 503 }
-        );
-      }
-    } else {
-      // Standalone / DurableStore registration fallback when Supabase is not configured in the active environment
-      userId = crypto.randomUUID();
-      workspaceId = crypto.randomUUID();
-      await DurableStore.getWallet(workspaceId); // automatically provisions 20 credits
-    }
-
-    // Persist user record in DurableStore
-    DurableStore.saveCustomerProfile({
-      userId,
-      email: cleanEmail,
-      fullName: displayName,
-      whatsapp: cleanWhatsapp,
-      workspaceId,
-      tier: 'free',
-    });
-
-    // Provision wallet in local store for testing / session
-    const wallet = await DurableStore.getWallet(workspaceId);
-
-    // Create session token
-    const sessionPayload = {
-      userId,
-      email: cleanEmail,
-      fullName: displayName,
-      whatsapp: cleanWhatsapp,
-      workspaceId,
-      tier: 'free' as const,
-      role: 'owner' as const,
-    };
-
-    const token = await createSessionToken(sessionPayload);
-
-    const res = NextResponse.json({
-      success: true,
-      message: requiresEmailConfirmation
-        ? 'Pendaftaran berjaya! Sila semak emel anda untuk mengesahkan akaun sebelum log masuk.'
-        : 'Pendaftaran berjaya! Anda kini boleh mula menjana video.',
-      requiresEmailConfirmation,
-      email: cleanEmail,
-      user: requiresEmailConfirmation ? null : sessionPayload,
-      wallet: requiresEmailConfirmation ? null : wallet,
-    });
-
-    if (!requiresEmailConfirmation) {
-      res.cookies.set('affimatik_session', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 7 * 24 * 60 * 60,
-      });
-    }
-
-    return res;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  const body = await req.json().catch(() => ({}));
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const password = typeof body.password === 'string' ? body.password : '';
+  const whatsapp = typeof body.whatsapp === 'string' ? body.whatsapp.trim() : '';
+  const fullName = typeof body.fullName === 'string' ? body.fullName.trim().slice(0, 255) : '';
+  const referralCode = typeof body.referralCode === 'string' ? body.referralCode.trim().toUpperCase() : (req.cookies.get('affimatik_ref')?.value || '');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || password.length < 8 || password.length > 128 || whatsapp.replace(/\D/g, '').length < 8 || !/^[A-Z0-9_-]{0,50}$/.test(referralCode)) {
+    return NextResponse.json({ error: 'Semak alamat emel, kata laluan (8–128 aksara), WhatsApp dan kod rujukan.' }, { status: 400 });
   }
+
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (process.env.NODE_ENV === 'production' && (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SESSION_SECRET)) {
+      return NextResponse.json({ error: 'Pendaftaran sedang diselenggara.' }, { status: 503 });
+    }
+    try {
+      const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email, password, data: { full_name: fullName || email.split('@')[0], whatsapp, referral_code: referralCode || null } }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return NextResponse.json({ error: result.msg || result.error_description || result.message || 'Pendaftaran gagal.' }, { status: response.status });
+      if (!result.user?.id) return NextResponse.json({ error: 'Respons pendaftaran tidak lengkap.' }, { status: 502 });
+      // A confirmed Supabase identity is provisioned atomically at first login.
+      // No workspace or welcome credit is created for an unverified mailbox.
+      if (result.session) {
+        return NextResponse.json({ error: 'Pengesahan emel mesti diaktifkan pada Supabase Auth sebelum pendaftaran boleh digunakan.' }, { status: 503 });
+      }
+      return NextResponse.json({ success: true, requiresEmailConfirmation: true, email,
+        message: 'Pendaftaran diterima. Sila sahkan alamat emel anda sebelum log masuk.' });
+    } catch { return NextResponse.json({ error: 'Perkhidmatan pendaftaran tidak dapat diakses.' }, { status: 503 }); }
+  }
+
+  if (process.env.NODE_ENV === 'production' && !process.env.VITEST) return NextResponse.json({ error: 'Pangkalan data pendaftaran belum dikonfigurasi.' }, { status: 503 });
+  // Local-only test mode. Production never issues a session without Supabase Auth.
+  const userId = crypto.randomUUID();
+  const workspaceId = crypto.randomUUID();
+  DurableStore.saveCustomerProfile({ userId, email, fullName: fullName || email.split('@')[0], whatsapp, workspaceId, tier: 'free' });
+  const wallet = await DurableStore.getWallet(workspaceId);
+  const user = { userId, email, fullName: fullName || email.split('@')[0], whatsapp, workspaceId, tier: 'free' as const, role: 'owner' as const };
+  const token = await createSessionToken(user);
+  const response = NextResponse.json({ success: true, requiresEmailConfirmation: false, email, user, wallet });
+  response.cookies.set('affimatik_session', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 });
+  return response;
 }

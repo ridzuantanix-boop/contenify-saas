@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 
-export const runtime = 'edge';
 
 /**
  * GET /api/billing/verify-order?orderId=...

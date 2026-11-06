@@ -4,7 +4,6 @@ import { DurableStore } from '@/lib/db/store';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { ProviderRouter } from '@/lib/providers/router';
 
-export const runtime = 'edge';
 
 const router = new ProviderRouter();
 

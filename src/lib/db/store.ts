@@ -48,6 +48,9 @@ export interface VideoJobRecord {
   provider: 'nexabot' | 'runninghub' | 'mock';
   providerTaskId?: string;
   durationSeconds: number;
+  actualDurationSeconds?: number;
+  outputHasAudio?: boolean;
+  outputSizeBytes?: number;
   status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   productName?: string;
   productCategory?: string;
@@ -814,6 +817,9 @@ export class DurableStore {
       provider: row.provider || 'nexabot',
       providerTaskId: row.provider_task_id || undefined,
       durationSeconds: row.duration_seconds || 10,
+      actualDurationSeconds: row.actual_duration_seconds ? Number(row.actual_duration_seconds) : undefined,
+      outputHasAudio: row.output_has_audio ?? undefined,
+      outputSizeBytes: row.output_size_bytes ? Number(row.output_size_bytes) : undefined,
       status: row.status || 'QUEUED',
       productName: row.product_name || undefined,
       productCategory: row.product_category || undefined,
@@ -1039,7 +1045,7 @@ export class DurableStore {
 
   static async updateJobStatus(
     jobId: string,
-    updates: Partial<Pick<VideoJobRecord, 'status' | 'videoUrl' | 'videoObjectKey' | 'errorMessage' | 'rawStatus' | 'providerTaskId'>>
+    updates: Partial<Pick<VideoJobRecord, 'status' | 'videoUrl' | 'videoObjectKey' | 'actualDurationSeconds' | 'outputHasAudio' | 'outputSizeBytes' | 'errorMessage' | 'rawStatus' | 'providerTaskId'>>
   ): Promise<VideoJobRecord | null> {
     this.checkFailClosed();
 
@@ -1051,6 +1057,9 @@ export class DurableStore {
       if (updates.providerTaskId) patchPayload.provider_task_id = updates.providerTaskId;
       if (updates.videoUrl) patchPayload.result_video_url = updates.videoUrl;
       if (updates.videoObjectKey) patchPayload.result_video_r2_key = updates.videoObjectKey;
+      if (updates.actualDurationSeconds !== undefined) patchPayload.actual_duration_seconds = updates.actualDurationSeconds;
+      if (updates.outputHasAudio !== undefined) patchPayload.output_has_audio = updates.outputHasAudio;
+      if (updates.outputSizeBytes !== undefined) patchPayload.output_size_bytes = updates.outputSizeBytes;
       if (updates.errorMessage) patchPayload.error_message = updates.errorMessage;
 
       const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}`;
@@ -1399,6 +1408,12 @@ export class DurableStore {
         status: 'PAID',
         balance: currentWallet.balance,
       };
+    }
+    if (order.status !== 'PENDING') {
+      return { success: false, orderId: order.id, status: order.status, balance: localDb.wallets[order.workspaceId]?.balance || 0, error: 'Order is not pending' };
+    }
+    if (gatewayReference && Object.values(localDb.orders).some((candidate) => candidate.id !== order.id && candidate.status === 'PAID' && candidate.gatewayReference === gatewayReference)) {
+      return { success: false, orderId: order.id, status: order.status, balance: localDb.wallets[order.workspaceId]?.balance || 0, error: 'Payment reference already used' };
     }
 
     // Mark PAID
@@ -2091,6 +2106,22 @@ export class DurableStore {
       const paidAmount = typeof amountPaidMyr === 'number' ? amountPaidMyr : expectedAmount;
       if (paidAmount !== expectedAmount) {
         throw new Error(`Jumlah bayaran (RM ${paidAmount}) tidak sepadan dengan harga autoritatif pelan ${matchedPlan.name} (RM ${expectedAmount}).`);
+      }
+
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const existingResponse = await fetch(`${process.env.SUPABASE_URL}/rest/v1/orders?gateway_reference=eq.${encodeURIComponent(paymentReference.trim())}&status=eq.PAID&select=id,workspace_id,plan_id,amount_myr&limit=1`, {
+          headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        });
+        if (!existingResponse.ok) throw new Error('Rujukan bayaran tidak dapat diperiksa. Pengaktifan dihentikan.');
+        const existing = await existingResponse.json() as Array<{ id: string; workspace_id: string; plan_id: string; amount_myr: number }>;
+        if (existing.length) {
+          if (existing[0].workspace_id !== workspaceId || existing[0].plan_id !== matchedPlan.id || Number(existing[0].amount_myr) !== paidAmount) {
+            throw new Error('Rujukan bayaran sudah digunakan untuk pesanan lain.');
+          }
+          const wallet = await DurableStore.getWallet(workspaceId);
+          return { success: true, activationType: 'MANUAL_PAID', orderId: existing[0].id, balance: wallet.balance,
+            tier: targetTier, message: 'Bayaran ini sudah diaktifkan. Tiada kredit tambahan diberikan.' };
+        }
       }
 
       // Create manual order with authoritative credits

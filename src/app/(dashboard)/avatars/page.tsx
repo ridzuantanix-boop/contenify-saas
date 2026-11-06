@@ -1,54 +1,67 @@
-import React from 'react';
-import { Users, Plus, ShieldCheck, CheckCircle2 } from 'lucide-react';
+'use client';
+
+import { useEffect, useState } from 'react';
+
+type Avatar = { id: string; name: string; description: string | null; gender: string; imageUrl: string; createdAt: string };
 
 export default function AvatarsPage() {
-  const officialAvatars = [
-    { id: 'av_1', name: 'Aisyah (Muslimah Creator)', style: 'Tudung Bawal & Kasual', tag: 'Official Gem' },
-    { id: 'av_2', name: 'Farah (UGC Reviewer)', style: 'Shawl Moden & Sopan', tag: 'Official Gem' },
-    { id: 'av_3', name: 'Hafiz (Affiliate Male)', style: 'Kemeja Kasual Kemas', tag: 'Official Gem' },
-  ];
+  const [avatars, setAvatars] = useState<Avatar[]>([]);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [gender, setGender] = useState('faceless');
+  const [consent, setConsent] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Avatar Library</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Identiti watak pencipta rasmi & peribadi berpandukan garis panduan kesopanan dan keizinan.
-          </p>
-        </div>
+  async function refresh() {
+    const response = await fetch('/api/avatars', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Pustaka avatar tidak dapat dibuka.');
+    setAvatars((await response.json()).avatars);
+    setLoaded(true);
+  }
+  useEffect(() => { refresh().catch((err) => setError(err.message)); }, []);
 
-        <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium text-xs hover:bg-indigo-700 transition">
-          <Plus className="w-4 h-4" />
-          <span>Muat Naik Avatar Sendiri</span>
-        </button>
-      </div>
+  async function upload(event: React.FormEvent) {
+    event.preventDefault();
+    if (!file || !consent) return;
+    setBusy(true); setError('');
+    try {
+      const body = new FormData();
+      body.set('image', file); body.set('name', name); body.set('description', description);
+      body.set('gender', gender); body.set('consent', 'true');
+      const response = await fetch('/api/avatars', { method: 'POST', body });
+      if (!response.ok) throw new Error((await response.json()).error || 'Muat naik gagal.');
+      setName(''); setDescription(''); setFile(null); setConsent(false);
+      await refresh();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Muat naik gagal.'); }
+    finally { setBusy(false); }
+  }
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {officialAvatars.map((av) => (
-          <div key={av.id} className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  {av.tag}
-                </span>
-                <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>Keizinan Sah</span>
-                </span>
-              </div>
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 mb-3 text-lg border border-slate-200">
-                {av.name.charAt(0)}
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">{av.name}</h4>
-              <p className="text-xs text-slate-500 mt-0.5">{av.style}</p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
-              Sesuai untuk AffiMatik Voice & Motion
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  async function remove(id: string) {
+    if (!window.confirm('Padam avatar ini daripada pustaka?')) return;
+    setBusy(true); setError('');
+    try {
+      const response = await fetch(`/api/avatars?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error((await response.json()).error || 'Padam gagal.');
+      await refresh();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Padam gagal.'); }
+    finally { setBusy(false); }
+  }
+
+  return <div className="space-y-6 max-w-5xl">
+    <div><h1 className="text-2xl font-bold">Pustaka Avatar</h1><p className="text-sm text-slate-600 mt-1">Simpan imej avatar peribadi dengan keizinan. Penggunaan avatar sebagai rujukan penjana video belum disahkan oleh API pembekal dan tidak diaktifkan.</p></div>
+    {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
+    <form onSubmit={upload} className="bg-white border rounded-xl p-5 grid gap-3 sm:grid-cols-2">
+      <label className="text-sm">Nama avatar<input required maxLength={100} value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded border p-2" /></label>
+      <label className="text-sm">Jenis<select value={gender} onChange={(event) => setGender(event.target.value)} className="mt-1 w-full rounded border p-2"><option value="faceless">Tanpa wajah</option><option value="female">Wanita</option><option value="male">Lelaki</option></select></label>
+      <label className="text-sm sm:col-span-2">Penerangan (pilihan)<input maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} className="mt-1 w-full rounded border p-2" /></label>
+      <label className="text-sm sm:col-span-2">Imej JPEG, PNG atau WebP (maksimum 10 MB)<input required type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] || null)} className="mt-1 block w-full" /></label>
+      <label className="text-sm sm:col-span-2 flex gap-2"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />Saya memiliki hak atau keizinan untuk menyimpan imej ini.</label>
+      <button disabled={busy || !consent || !file} className="rounded-lg bg-indigo-600 text-white px-4 py-3 disabled:opacity-50">{busy ? 'Menyimpan…' : 'Simpan Avatar'}</button>
+    </form>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{avatars.map((avatar) => <article key={avatar.id} className="border rounded-xl bg-white overflow-hidden"><div className="h-56 bg-slate-100" style={{ backgroundImage: `url(${avatar.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} role="img" aria-label={avatar.name} /><div className="p-4"><h2 className="font-semibold">{avatar.name}</h2><p className="text-sm text-slate-600">{avatar.description || avatar.gender}</p><p className="text-xs text-slate-400 mt-1">{new Date(avatar.createdAt).toLocaleDateString('ms-MY')}</p><button disabled={busy} onClick={() => remove(avatar.id)} className="text-red-700 text-sm mt-3">Padam</button></div></article>)}</div>
+    {loaded && avatars.length === 0 && <p className="text-sm text-slate-500">Belum ada avatar tersimpan.</p>}
+  </div>;
 }

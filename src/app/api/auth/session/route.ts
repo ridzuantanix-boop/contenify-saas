@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest, createSessionToken } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 
-export const runtime = 'edge';
 
 function missingProductionLoginConfiguration(): string[] {
   if (process.env.NODE_ENV !== 'production' || Boolean(process.env.VITEST)) {
@@ -140,6 +139,23 @@ export async function POST(req: NextRequest) {
         }
 
         verifiedUserId = authUser.id;
+
+        // Supabase Auth has verified this identity. Provisioning is transactional
+        // and idempotent; existing workspaces and historical wallets are retained.
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const meta = authUser.user_metadata || {};
+          const provision = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_verified_account_atomic`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+            body: JSON.stringify({ p_user_id: verifiedUserId, p_email: authUser.email || cleanEmail,
+              p_full_name: meta.full_name || authUser.email?.split('@')[0] || '', p_whatsapp: meta.whatsapp || '',
+              p_referral_code: meta.referral_code || null }),
+          });
+          if (!provision.ok || !(await provision.json()).success) {
+            return NextResponse.json({ error: 'Akaun disahkan tetapi ruang kerja belum dapat disediakan. Sila cuba log masuk semula.' }, { status: 503 });
+          }
+        }
 
         // Fetch user profile from Supabase Database
         if (process.env.SUPABASE_SERVICE_ROLE_KEY) {

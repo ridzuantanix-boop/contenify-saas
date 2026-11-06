@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { createCheckout } from '@/lib/billing/checkout';
+import { DurableStore } from '@/lib/db/store';
 
-export const runtime = 'edge';
 
 /**
  * POST /api/billing/checkout
@@ -41,7 +41,31 @@ export async function POST(req: NextRequest) {
 
     // Check referral cookie if not supplied in body
     const cookieRef = req.cookies.get('affimatik_ref')?.value;
-    const finalReferral = referralCode || cookieRef;
+    let finalReferral = typeof referralCode === 'string' ? referralCode.trim().toUpperCase() : cookieRef;
+    // Registration attribution survives browser changes and expired cookies.
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const profile = await fetch(`${process.env.SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(session.userId)}&select=referred_by_affiliate_id&limit=1`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+      });
+      if (!profile.ok) throw new Error('Atribusi rujukan tidak dapat disemak.');
+      const rows = await profile.json() as Array<{ referred_by_affiliate_id: string | null }>;
+      if (rows[0]?.referred_by_affiliate_id) {
+        const partner = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?id=eq.${encodeURIComponent(rows[0].referred_by_affiliate_id)}&select=referral_code,status&limit=1`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        });
+        if (!partner.ok) throw new Error('Affiliate rujukan tidak dapat disemak.');
+        const partners = await partner.json() as Array<{ referral_code: string; status: string }>;
+        if (partners[0]?.status === 'APPROVED') finalReferral = partners[0].referral_code;
+      }
+    }
+    if (finalReferral) {
+      if (!/^[A-Z0-9_-]{4,50}$/.test(finalReferral)) return NextResponse.json({ error: 'Kod rujukan tidak sah.' }, { status: 400 });
+      const partner = await DurableStore.getAffiliatePartner(finalReferral);
+      if (!partner || partner.status !== 'APPROVED' || partner.userId === session.userId) {
+        return NextResponse.json({ error: 'Kod rujukan tidak layak.' }, { status: 400 });
+      }
+    }
 
     const result = await createCheckout({
       workspaceId: session.workspaceId,

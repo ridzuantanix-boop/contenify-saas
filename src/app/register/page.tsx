@@ -17,6 +17,18 @@ export default function RegisterPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendBusy, setResendBusy] = useState(false);
+
+  async function resendConfirmation() {
+    setResendBusy(true); setErrorMsg(null);
+    try {
+      const response = await fetch('/api/auth/resend-confirmation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: registeredEmail }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Permintaan gagal.');
+      setSuccessMsg(result.message);
+    } catch (err) { setErrorMsg(err instanceof Error ? err.message : 'Permintaan gagal.'); }
+    finally { setResendBusy(false); }
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -87,7 +99,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5">
                 <h3 className="text-lg font-bold text-slate-900">Sila Sahkan Emel Anda</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Pautan pengesahan keselamatan telah dihantar ke:
+                  Permintaan emel pengesahan diterima untuk:
                 </p>
                 <div className="inline-block px-3 py-1 bg-slate-100 rounded-lg text-xs font-mono font-bold text-slate-800">
                   {registeredEmail}
@@ -98,6 +110,9 @@ export default function RegisterPage() {
               </div>
 
               <div className="pt-4 border-t border-slate-100 space-y-2">
+                {errorMsg && <p role="alert" className="text-xs text-red-700">{errorMsg}</p>}
+                {successMsg && <p role="status" className="text-xs text-emerald-700">{successMsg}</p>}
+                <button type="button" disabled={resendBusy} onClick={resendConfirmation} className="w-full rounded-xl border px-4 py-2.5 text-xs font-semibold disabled:opacity-50">{resendBusy ? 'Menghantar…' : 'Hantar semula emel pengesahan'}</button>
                 <Link
                   href="/login"
                   className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition"
@@ -112,7 +127,7 @@ export default function RegisterPage() {
             </div>
           ) : (
             <>
-              {/* 50 Credits Highlight Banner */}
+              {/* New-account trial allowance */}
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-900">
                 <Gift className="w-5 h-5 text-amber-600 shrink-0" />
                 <div>
@@ -183,7 +198,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Kata Laluan (Sekurang-kurangnya 6 aksara)
+                Kata Laluan (Sekurang-kurangnya 8 aksara)
               </label>
               <input
                 type="password"
@@ -191,7 +206,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
-                minLength={6}
+                minLength={8}
                 required
               />
             </div>

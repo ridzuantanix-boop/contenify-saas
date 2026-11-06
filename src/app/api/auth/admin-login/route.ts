@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/auth/session';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
-export const runtime = 'edge';
 
 function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -123,7 +122,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const check = await verifyAdminAccess(req);
   return NextResponse.json({
-    isAuthorized: check.isAuthorized,
+    isAuthorized: check.isAuthorized && check.role === 'superadmin',
     role: check.role || null,
   });
 }

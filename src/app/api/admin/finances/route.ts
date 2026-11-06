@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { calculateFinancialSafety } from '@/lib/admin/finance-calculator';
 
-export const runtime = 'edge';
 
 /**
  * GET /api/admin/finances
@@ -10,7 +9,7 @@ export const runtime = 'edge';
  */
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAccess(req);
-  if (!auth.isAuthorized) {
+  if (!auth.isAuthorized || auth.role !== 'superadmin') {
     return NextResponse.json(
       { error: 'Akses Ditolak: Hanya pentadbir sah dibenarkan melihat metrik kewangan.' },
       { status: 403 }

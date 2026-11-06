@@ -32,8 +32,11 @@ const NAV_ITEMS = [
   { name: 'Production Queue', href: '/queue', icon: ListOrdered },
   { name: 'Posting Automation', href: '#', icon: Send, badge: 'Akan Datang', disabled: true },
   { name: 'Billing & Credits', href: '/billing', icon: CreditCard },
+  { name: 'Tetapan Akaun', href: '/settings', icon: Settings },
   { name: 'Style Testing Lab', href: '/admin/styles', icon: ShieldCheck, badge: 'Admin' },
   { name: 'Kelulusan Affiliate', href: '/admin/affiliates', icon: ShieldCheck, badge: 'Owner' },
+  { name: 'Pulih MP4 Lama', href: '/admin/recovery', icon: Film, badge: 'Owner' },
+  { name: 'Refund & Clawback', href: '/admin/finance-ops', icon: CreditCard, badge: 'Owner' },
   { name: 'Admin Console', href: '/admin', icon: ShieldCheck, badge: 'Owner' },
 ];
 

@@ -3,7 +3,6 @@ import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 import { AUTHORITATIVE_PLANS, GENERATION_COSTS } from '@/lib/billing/plans';
 
-export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req);

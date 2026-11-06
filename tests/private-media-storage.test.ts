@@ -1,5 +1,29 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ingestProviderMp4, privateImageDataUri, signPrivateAsset } from '../src/lib/storage/supabase-assets';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ingestProviderMp4, inspectMp4, privateImageDataUri, signPrivateAsset } from '../src/lib/storage/supabase-assets';
+
+function mp4Fixture(): Uint8Array {
+  const box = (type: string, payload: Uint8Array) => {
+    const bytes = new Uint8Array(payload.length + 8);
+    new DataView(bytes.buffer).setUint32(0, bytes.length);
+    bytes.set(new TextEncoder().encode(type), 4);
+    bytes.set(payload, 8);
+    return bytes;
+  };
+  const concat = (...parts: Uint8Array[]) => {
+    const result = new Uint8Array(parts.reduce((sum, item) => sum + item.length, 0));
+    let offset = 0;
+    for (const part of parts) { result.set(part, offset); offset += part.length; }
+    return result;
+  };
+  const mvhd = new Uint8Array(24);
+  new DataView(mvhd.buffer).setUint32(12, 1000);
+  new DataView(mvhd.buffer).setUint32(16, 10000);
+  const hdlr = new Uint8Array(12);
+  hdlr.set(new TextEncoder().encode('vide'), 8);
+  return concat(box('ftyp', new Uint8Array(8)), box('moov', concat(box('mvhd', mvhd), box('trak', box('mdia', box('hdlr', hdlr))))));
+}
 
 describe('Private provider media ingestion', () => {
   const previousUrl = process.env.SUPABASE_URL;
@@ -26,17 +50,43 @@ describe('Private provider media ingestion', () => {
     expect(request).toHaveBeenCalledTimes(1);
   });
 
+  it('blocks a provider redirect to an untrusted host', async () => {
+    const request = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: 'https://127.0.0.1/video.mp4' } }));
+    vi.stubGlobal('fetch', request);
+    await expect(ingestProviderMp4('runninghub', 'https://www.runninghub.cn/view?video.mp4', 'ws-1', 'job-1')).rejects.toThrow(/tidak dibenarkan/);
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
   it('uploads a valid MP4 into a workspace-scoped private path', async () => {
     process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
-    const mp4 = new Uint8Array(64);
-    mp4.set([0, 0, 0, 64, 102, 116, 121, 112], 0);
-    const request = vi.fn().mockResolvedValueOnce(new Response(mp4, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const mp4 = mp4Fixture();
+    const request = vi.fn().mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', request);
     const result = await ingestProviderMp4('nexabot', 'https://nexabot.id/video.mp4', 'ws-1', 'job-1');
     expect(result.objectKey).toBe('workspaces/ws-1/outputs/job-1.mp4');
-    expect(result.sizeBytes).toBe(64);
+    expect(result.sizeBytes).toBe(mp4.length);
+    expect(result.durationSeconds).toBe(10);
+    expect(result.hasAudio).toBe(false);
     expect(String(request.mock.calls[1][0])).toContain('/storage/v1/object/affimatik-assets/workspaces/ws-1/outputs/job-1.mp4');
+  });
+
+  it('rejects an MP4 with a valid signature but no playable video track', () => {
+    const fake = new Uint8Array(64);
+    fake.set(new TextEncoder().encode('ftyp'), 4);
+    expect(() => inspectMp4(fake.buffer)).toThrow(/trek video/);
+  });
+
+  it('reads real bundled style preview MP4 durations and video tracks', () => {
+    for (const style of ['NX01','NX02','NX03','NX05','NX07','NX09','NX10','RH01','RH02','RH03','RH04','RH17','RH19']) {
+      const file = readFileSync(resolve(process.cwd(), 'public', 'style-previews', style, 'sample-v1.mp4'));
+      const bytes = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
+      const result = inspectMp4(bytes);
+      expect(result.hasVideo).toBe(true);
+      expect(result.durationSeconds).toBeGreaterThan(style.startsWith('NX') ? 9 : 14);
+      expect(result.durationSeconds).toBeLessThan(style.startsWith('NX') ? 11 : 16);
+      if (style.startsWith('NX')) expect(result.hasAudio).toBe(true);
+    }
   });
 
   it('normalizes the private signed URL returned by Supabase Storage', async () => {

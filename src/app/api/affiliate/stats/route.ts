@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
+import { affiliateDb } from '@/lib/db/affiliate-ledger';
 
-export const runtime = 'edge';
 
 /**
  * GET /api/affiliate/stats
@@ -18,15 +18,46 @@ export async function GET(req: NextRequest) {
 
   const commissions = partner ? await DurableStore.listAffiliateCommissions(partner.id) : [];
 
-  const host = req.headers.get('host');
-  const baseUrl = host ? `https://${host}` : 'https://affimatik.online';
+  const baseUrl = 'https://affimatik.online';
+
+  let clicks = 0;
+  let registrations = 0;
+  let qualifiedCustomers = 0;
+  let availableCommissionsMyr = 0;
+  let outstandingClawbackMyr = 0;
+  const campaigns: Record<string, number> = {};
+  if (partner?.status === 'APPROVED' && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const { base, headers } = affiliateDb();
+      const [eventsResponse, commissionResponse, clawbackResponse] = await Promise.all([
+        fetch(`${base}/rest/v1/affiliate_referral_events?affiliate_id=eq.${encodeURIComponent(partner.id)}&select=event_type,referred_user_id,campaign&limit=10000`, { headers }),
+        fetch(`${base}/rest/v1/affiliate_commissions?affiliate_id=eq.${encodeURIComponent(partner.id)}&select=workspace_id,amount_myr,status,available_at,payout_request_id&limit=10000`, { headers }),
+        fetch(`${base}/rest/v1/affiliate_clawbacks?affiliate_id=eq.${encodeURIComponent(partner.id)}&status=eq.OPEN&select=amount_myr&limit=10000`, { headers }),
+      ]);
+      if (!eventsResponse.ok || !commissionResponse.ok || !clawbackResponse.ok) throw new Error('DB read failed');
+      const events = await eventsResponse.json() as Array<{ event_type: string; referred_user_id: string | null; campaign: string | null }>;
+      const ledger = await commissionResponse.json() as Array<{ workspace_id: string; amount_myr: number; status: string; available_at: string; payout_request_id: string | null }>;
+      const clawbacks = await clawbackResponse.json() as Array<{ amount_myr: number }>;
+      outstandingClawbackMyr = clawbacks.reduce((sum, row) => sum + Number(row.amount_myr), 0);
+      clicks = events.filter((event) => event.event_type === 'CLICK').length;
+      for (const event of events) if (event.event_type === 'CLICK') campaigns[event.campaign || 'Tanpa kempen'] = (campaigns[event.campaign || 'Tanpa kempen'] || 0) + 1;
+      registrations = events.filter((event) => event.event_type === 'REGISTRATION').length;
+      qualifiedCustomers = new Set(ledger.filter((entry) => entry.status !== 'REVERSED').map((entry) => entry.workspace_id)).size;
+      availableCommissionsMyr = ledger.filter((entry) => ['PENDING', 'APPROVED', 'PAYABLE'].includes(entry.status) && !entry.payout_request_id && Date.parse(entry.available_at) <= Date.now()).reduce((sum, entry) => sum + Number(entry.amount_myr), 0);
+    } catch { return NextResponse.json({ error: 'Statistik affiliate tidak tersedia.' }, { status: 503 }); }
+  }
 
   const stats = {
     status: partner?.status || 'NOT_APPLIED',
     referralCode: partner?.status === 'APPROVED' ? partner.referralCode : '',
     referralUrl: partner?.status === 'APPROVED' ? `${baseUrl}/?ref=${partner.referralCode}` : '',
     commissionRate: partner?.status === 'APPROVED' ? 10.0 : 0,
-    totalReferrals: null, // Click and registration events are not yet persisted.
+    clicks,
+    registrations,
+    qualifiedCustomers,
+    availableCommissionsMyr,
+    outstandingClawbackMyr,
+    campaigns,
     pendingCommissionsMyr: commissions
       .filter((c) => c.status === 'PENDING')
       .reduce((sum, c) => sum + c.amountMyr, 0),

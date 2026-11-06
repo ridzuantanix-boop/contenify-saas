@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
 
-export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAccess(req);

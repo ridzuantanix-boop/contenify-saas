@@ -24,7 +24,7 @@ export default function QueuePage() {
     refresh();
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') refresh();
-    }, 30000);
+    }, 60000);
     return () => window.clearInterval(timer);
   }, []);
 

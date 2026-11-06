@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
-import { signPrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
+import { deletePrivateAsset, signPrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
 
-export const runtime = 'edge';
 
 function dbHeaders() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -74,12 +73,37 @@ export async function POST(req: NextRequest) {
     const path = `workspaces/${session.workspaceId}/inputs/${assetId}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`;
     await uploadPrivateAsset(path, bytes, file.type);
 
-    const productRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/products`, { method: 'POST', headers, body: JSON.stringify({ id: productId, workspace_id: session.workspaceId, name, category, description: notes }) });
-    if (!productRes.ok) throw new Error(`Produk tidak dapat disimpan (HTTP ${productRes.status}).`);
-    const imageRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/product_images`, { method: 'POST', headers, body: JSON.stringify({ id: assetId, workspace_id: session.workspaceId, product_id: productId, r2_key: path, original_filename: file.name.slice(0, 255), mime_type: file.type, size_bytes: file.size, sha256_checksum: checksum, is_primary: true }) });
-    if (!imageRes.ok) throw new Error(`Rekod imej tidak dapat disimpan (HTTP ${imageRes.status}).`);
-    return NextResponse.json({ assetId, productId, imageUrl: await signPrivateAsset(path), reused: false }, { status: 201 });
+    const registered = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/register_product_image_atomic`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ p_workspace_id: session.workspaceId, p_product_id: productId, p_image_id: assetId,
+        p_name: name, p_category: category, p_notes: notes, p_object_key: path,
+        p_filename: file.name.slice(0, 255), p_mime_type: file.type, p_size: file.size, p_checksum: checksum }),
+    });
+    if (!registered.ok) { await deletePrivateAsset(path); throw new Error(`Rekod imej tidak dapat disimpan (HTTP ${registered.status}).`); }
+    const asset = await registered.json() as { asset_id: string; product_id: string; object_key: string; reused: boolean };
+    if (asset.reused) await deletePrivateAsset(path);
+    return NextResponse.json({ assetId: asset.asset_id, productId: asset.product_id, imageUrl: await signPrivateAsset(asset.object_key), reused: asset.reused }, { status: asset.reused ? 200 : 201 });
   } catch {
     return NextResponse.json({ error: 'Imej tidak dapat disimpan. Sila cuba semula.' }, { status: 503 });
   }
+}
+
+export async function PATCH(req: NextRequest) {
+  const session = await getSessionFromRequest(req);
+  if (!session) return NextResponse.json({ error: 'Sila log masuk.' }, { status: 401 });
+  const body = await req.json().catch(() => ({}));
+  if (typeof body.productId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.productId) || typeof body.name !== 'string' || !body.name.trim() || body.name.length > 255 ||
+      typeof body.category !== 'string' || body.category.length > 100 || typeof body.notes !== 'string' || body.notes.length > 2000) {
+    return NextResponse.json({ error: 'Maklumat produk tidak sah.' }, { status: 400 });
+  }
+  try {
+    const result = await fetch(`${process.env.SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(body.productId)}&workspace_id=eq.${encodeURIComponent(session.workspaceId)}`, {
+      method: 'PATCH', headers: { ...dbHeaders(), Prefer: 'return=representation' },
+      body: JSON.stringify({ name: body.name.trim(), category: body.category.trim() || null, description: body.notes.trim() || null, updated_at: new Date().toISOString() }),
+    });
+    if (!result.ok) throw new Error('DB update failed');
+    const rows = await result.json() as unknown[];
+    if (!rows.length) return NextResponse.json({ error: 'Produk tidak ditemui.' }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch { return NextResponse.json({ error: 'Produk tidak dapat dikemas kini.' }, { status: 503 }); }
 }

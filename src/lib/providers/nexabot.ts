@@ -203,7 +203,7 @@ export class NexabotAdapter implements IProviderAdapter {
       providerTaskId,
       videoUrl,
       thumbnailUrl: String(job.thumbnail_url || ''),
-      durationSeconds: 10,
+      durationSeconds: typeof job.duration_seconds === 'number' ? job.duration_seconds : undefined,
       metadata: job,
     };
   }

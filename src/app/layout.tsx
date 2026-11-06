@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'AffiMatik by Pawarna — Affiliate Jadi Automatik',
-  description: 'Dari Research Produk, Video AI Hingga Auto-Posting — Semua Dalam Satu Platform.',
+  description: 'Jana video produk dengan 13 gaya AffiMatik Voice dan Motion. Muat naik imej, pilih gaya dan simpan MP4 dalam pustaka anda.',
 };
 
 export default function RootLayout({

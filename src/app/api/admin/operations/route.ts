@@ -3,7 +3,6 @@ import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
 import { reconcileOrphanAccounts } from '@/lib/db/reconcile';
 
-export const runtime = 'edge';
 
 /**
  * POST /api/admin/operations
@@ -11,11 +10,10 @@ export const runtime = 'edge';
  * - manual_verify_payment: Audited manual verification of bank transfer / FPX orders
  * - adjust_customer_credits: Audited credit adjustments
  * - toggle_generation_pause: Emergency circuit breaker / generation freeze
- * - manage_affiliate_commission: Approve, pay, or reverse commissions
  */
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAccess(req);
-  if (!auth.isAuthorized) {
+  if (!auth.isAuthorized || auth.role !== 'superadmin') {
     return NextResponse.json(
       { error: 'Akses Ditolak: Hanya pentadbir sah dibenarkan melakukan operasi ini.' },
       { status: 403 }
@@ -89,14 +87,17 @@ export async function POST(req: NextRequest) {
     // 3. Manual Payment Verification
     if (action === 'manual_verify_payment') {
       const { orderId, referenceNote } = body;
-      if (!orderId) {
-        return NextResponse.json({ error: 'orderId diperlukan.' }, { status: 400 });
+      if (typeof orderId !== 'string' || !/^[0-9a-f-]{36}$/i.test(orderId) || typeof referenceNote !== 'string' || !referenceNote.trim() || referenceNote.length > 200) {
+        return NextResponse.json({ error: 'ID pesanan dan rujukan bayaran bank/gateway yang disahkan diperlukan.' }, { status: 400 });
       }
 
-      const settlement = await DurableStore.settleOrder(orderId, referenceNote || `manual_admin_${Date.now()}`, {
+      const settlement = await DurableStore.settleOrder(orderId, referenceNote.trim(), {
         verifiedByAdmin: adminEmail,
         verifiedAt: new Date().toISOString(),
       });
+      if (!settlement.success) {
+        return NextResponse.json({ error: settlement.error || 'Bayaran tidak dapat disahkan.', settlement }, { status: 409 });
+      }
 
       await DurableStore.recordAuditLog(
         adminEmail,
@@ -155,44 +156,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. Manage Affiliate Commission (Approve / Pay / Reverse)
-    if (action === 'manage_affiliate_commission') {
-      const { commissionId, newStatus, payoutReference } = body;
-      if (!commissionId || !newStatus) {
-        return NextResponse.json({ error: 'commissionId dan newStatus diperlukan.' }, { status: 400 });
-      }
-
-      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_commissions?id=eq.${encodeURIComponent(commissionId)}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-          body: JSON.stringify({
-            status: newStatus,
-            payout_reference: payoutReference,
-            approved_at: newStatus === 'APPROVED' ? new Date().toISOString() : undefined,
-            paid_at: newStatus === 'PAID' ? new Date().toISOString() : undefined,
-          }),
-        });
-      }
-
-      await DurableStore.recordAuditLog(
-        adminEmail,
-        `AFFILIATE_COMMISSION_${newStatus}`,
-        'COMMISSION',
-        commissionId,
-        { newStatus, payoutReference }
-      );
-
-      return NextResponse.json({
-        success: true,
-        message: `Status komisen affiliate dikemas kini kepada ${newStatus}.`,
-      });
-    }
-
     return NextResponse.json({ error: 'Tindakan tidak sah.' }, { status: 400 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -206,7 +169,7 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAccess(req);
-  if (!auth.isAuthorized) {
+  if (!auth.isAuthorized || auth.role !== 'superadmin') {
     return NextResponse.json({ error: 'Akses Ditolak.' }, { status: 403 });
   }
 
