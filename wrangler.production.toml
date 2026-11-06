@@ -1,0 +1,21 @@
+# Prepared release target only. Do not deploy or add a route before the
+# production-derived restore, migration rehearsal and customer smoke gates pass.
+name = "affimatik-production-v2"
+main = ".open-next/worker.js"
+compatibility_date = "2026-10-14"
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env", "global_fetch_strictly_public"]
+workers_dev = false
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[vars]
+AFFIMATIK_VOICE_PUBLIC_ENABLED = "false"
+AFFIMATIK_MOTION_PUBLIC_ENABLED = "false"
+PUBLIC_CHECKOUT_ENABLED = "false"
+USE_MOCK_PROVIDERS = "false"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "affimatik-production-v2"
