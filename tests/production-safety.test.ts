@@ -682,15 +682,14 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
     it('verifies that only styles with documented test video evidence are marked quality_verified', () => {
       const verifiedStyles = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'quality_verified');
 
-      // Historical previews do not certify the newly requested 15s Voice output
-      // or the currently disabled RunningHub Motion output.
+      // Real 15s Voice samples were generated; no Motion sample is published.
       expect(verifiedStyles.length).toBe(0);
-      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'prompt_validated')).toHaveLength(7);
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'video_tested')).toHaveLength(7);
       expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub' && s.qualityStatus === 'disabled')).toHaveLength(6);
-      for (const s of VIDEO_STYLES_REGISTRY) {
-        expect(s.previewVideoUrl).toBeTruthy();
-        expect(s.previewVideoUrl).toContain('.mp4');
+      for (const s of VIDEO_STYLES_REGISTRY.filter((item) => item.engine === 'nexabot')) {
+        expect(s.previewVideoUrl).toBe(`/api/style-samples/${s.id}`);
       }
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub').every((s) => s.previewVideoUrl === null)).toBe(true);
     });
   });
 });

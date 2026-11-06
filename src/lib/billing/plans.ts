@@ -33,7 +33,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     voiceVideoAllowance: 10,
     features: [
       '100 Kredit Sebulan',
-      'Hingga 10 video Voice 15 saat apabila penjanaan dibuka',
+      'Hingga 10 video Voice 15 saat',
       'Akses Penuh Video Style Library',
       '7 gaya Voice; 6 gaya Motion belum tersedia',
       'Video menegak 9:16',
@@ -51,7 +51,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     highlightBadge: 'Paling Popular',
     features: [
       '300 Kredit Sebulan',
-      'Hingga 30 video Voice 15 saat apabila penjanaan dibuka',
+      'Hingga 30 video Voice 15 saat',
       'Semua Ciri Starter',
       'Motion tidak tersedia semasa pelancaran Nexabot',
       '7 gaya Voice; 6 gaya Motion belum tersedia',
@@ -67,7 +67,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     voiceVideoAllowance: 100,
     features: [
       '1,000 Kredit Sebulan',
-      'Hingga 100 video Voice 15 saat apabila penjanaan dibuka',
+      'Hingga 100 video Voice 15 saat',
       '7 gaya Voice; 6 gaya Motion belum tersedia',
     ],
   },

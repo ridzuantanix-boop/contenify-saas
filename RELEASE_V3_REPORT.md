@@ -1,5 +1,7 @@
 # AffiMatik V3 — release evidence, 6 November 2026
 
+Historical report. The owner's 7 November Launch-Lite directive supersedes mandatory video QA; see `LAUNCH_LITE_RELEASE.md` for the current release state.
+
 Branch: `codex/launch-v2-audit`. Public Voice, public Motion and paid checkout remain **OFF**. No production deployment or database migration was performed. This report records the candidate implementation and the external gates still needed.
 
 ## Provider capability and direct QA

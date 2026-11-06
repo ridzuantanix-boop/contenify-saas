@@ -60,11 +60,11 @@ describe('Private provider media ingestion', () => {
   it('accepts the exact RunningHub output host observed in live generation', async () => {
     process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
-    const request = vi.fn().mockResolvedValueOnce(new Response(mp4Fixture().buffer as ArrayBuffer, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const request = vi.fn().mockResolvedValueOnce(new Response(mp4Fixture().buffer as ArrayBuffer, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 })).mockResolvedValueOnce(new Response(mp4Fixture().buffer as ArrayBuffer, { status: 200 }));
     vi.stubGlobal('fetch', request);
     const result = await ingestProviderMp4('runninghub', 'https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/job/video.mp4', 'ws-1', 'job-1');
     expect(result.durationSeconds).toBe(10);
-    expect(request).toHaveBeenCalledTimes(2);
+    expect(request).toHaveBeenCalledTimes(3);
   });
 
   it('rejects a lookalike RunningHub output host', async () => {
@@ -78,7 +78,7 @@ describe('Private provider media ingestion', () => {
     process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
     const mp4 = mp4Fixture();
-    const request = vi.fn().mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const request = vi.fn().mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 })).mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }));
     vi.stubGlobal('fetch', request);
     const result = await ingestProviderMp4('nexabot', 'https://nexabot.id/video.mp4', 'ws-1', 'job-1');
     expect(result.objectKey).toBe('workspaces/ws-1/outputs/job-1.mp4');
@@ -86,6 +86,20 @@ describe('Private provider media ingestion', () => {
     expect(result.durationSeconds).toBe(10);
     expect(result.hasAudio).toBe(false);
     expect(String(request.mock.calls[1][0])).toContain('/storage/v1/object/affimatik-assets/workspaces/ws-1/outputs/job-1.mp4');
+    expect(String(request.mock.calls[2][0])).toContain('/storage/v1/object/authenticated/affimatik-assets/workspaces/ws-1/outputs/job-1.mp4');
+  });
+
+  it('does not accept an upload whose private readback differs', async () => {
+    process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
+    const mp4 = mp4Fixture();
+    const altered = mp4.slice();
+    altered[altered.length - 1] ^= 1;
+    const request = vi.fn().mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockResolvedValueOnce(new Response(altered.buffer as ArrayBuffer, { status: 200 }));
+    vi.stubGlobal('fetch', request);
+    await expect(ingestProviderMp4('nexabot', 'https://nexabot.id/video.mp4', 'ws-1', 'job-1')).rejects.toThrow(/tidak sepadan/);
   });
 
   it('rejects an MP4 with a valid signature but no playable video track', () => {
@@ -103,6 +117,18 @@ describe('Private provider media ingestion', () => {
       expect(result.durationSeconds).toBeGreaterThan(style.startsWith('NX') ? 9 : 14);
       expect(result.durationSeconds).toBeLessThan(style.startsWith('NX') ? 11 : 16);
       if (style.startsWith('NX')) expect(result.hasAudio).toBe(true);
+    }
+  });
+
+  it('serves genuine 15-second Voice samples for all active styles', () => {
+    for (const style of ['NX01','NX02','NX03','NX05','NX07','NX09','NX10']) {
+      const file = readFileSync(resolve(process.cwd(), 'public', 'style-previews', style, 'sample-v2.mp4'));
+      const bytes = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
+      const result = inspectMp4(bytes);
+      expect(result.hasVideo).toBe(true);
+      expect(result.hasAudio).toBe(true);
+      expect(result.durationSeconds).toBeGreaterThan(14.5);
+      expect(result.durationSeconds).toBeLessThan(15.5);
     }
   });
 

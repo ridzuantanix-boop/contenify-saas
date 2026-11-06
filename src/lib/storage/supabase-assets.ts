@@ -147,5 +147,26 @@ export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mo
   const inspected = inspectMp4(bytes);
   const objectKey = `workspaces/${workspaceId}/outputs/${jobId}.mp4`;
   await uploadPrivateAsset(objectKey, bytes, 'video/mp4', true);
+  // A successful upload response alone does not prove that the private object
+  // can be served. Read it back and compare every byte before settling credits.
+  const stored = await privateAssetResponse(objectKey);
+  if (!stored.ok || !stored.body) throw new Error('Video tersimpan tidak dapat dibaca semula.');
+  const reader = stored.body.getReader();
+  const original = new Uint8Array(bytes);
+  let readOffset = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (readOffset + value.length > original.length) throw new Error('Saiz video tersimpan tidak sepadan.');
+      for (let i = 0; i < value.length; i++) {
+        if (value[i] !== original[readOffset + i]) throw new Error('Kandungan video tersimpan tidak sepadan.');
+      }
+      readOffset += value.length;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (readOffset !== original.length) throw new Error('Video tersimpan tidak lengkap.');
   return { objectKey, sizeBytes: bytes.byteLength, durationSeconds: inspected.durationSeconds, hasAudio: inspected.hasAudio };
 }

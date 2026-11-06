@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
 
     if (process.env.NODE_ENV === 'production' && !isSuperAdmin && !publicProviderAvailability()[style.engine]) {
       return NextResponse.json(
-        { error: `${style.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia untuk pelanggan sementara semakan kualiti dan pembekal diselesaikan. Tiada kredit ditolak.` },
+        { error: `${style.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum diaktifkan untuk pelanggan. Tiada kredit ditolak.` },
         { status: 503 }
       );
     }
@@ -392,8 +392,16 @@ export async function GET(req: NextRequest) {
 
         if (outputRes?.videoUrl && (job.status !== 'COMPLETED' || !job.videoObjectKey)) {
           const persisted = await persistCompletedVideo(job, outputRes.videoUrl, statusRes.rawStatus);
-          if (!persisted) throw new Error('Penyelesaian kredit belum berjaya. Tugasan akan dicuba semula.');
-          if (job.provider !== 'mock' && process.env.NODE_ENV === 'production' && !process.env.VITEST) outputRes = null;
+          if (!persisted) {
+            const latest = await DurableStore.getJob(job.id);
+            if (latest?.status === 'FAILED') {
+              return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'FAILED', error: latest.errorMessage });
+            }
+            throw new Error('Penyelesaian kredit belum berjaya. Tugasan akan dicuba semula.');
+          }
+          if (job.provider !== 'mock' && process.env.NODE_ENV === 'production' && !process.env.VITEST) {
+            outputRes = { ...outputRes, videoUrl: `/api/videos/${job.id}/stream` };
+          }
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
         await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_${job.id}`);
@@ -408,7 +416,7 @@ export async function GET(req: NextRequest) {
         jobId: job.id,
         providerTaskId: activeTaskId,
         provider: job.provider,
-        status: statusRes.normalizedStatus === 'COMPLETED' && process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider !== 'mock' ? 'QA_PENDING' : statusRes.normalizedStatus,
+        status: statusRes.normalizedStatus,
         progress: statusRes.progressPercent,
         rawStatus: statusRes.rawStatus,
         output: outputRes,
@@ -437,6 +445,7 @@ export async function GET(req: NextRequest) {
       totalStyles: styles.length,
       qualityVerified: styles.filter((s) => s.qualityStatus === 'quality_verified').length,
       promptValidated: styles.filter((s) => s.qualityStatus === 'prompt_validated').length,
+      videoTested: styles.filter((s) => s.qualityStatus === 'video_tested').length,
     },
     availableStyles: styles.map((s) => ({
       id: s.id,

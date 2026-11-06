@@ -50,6 +50,10 @@ describe('real-provider QA prompt export', () => {
       const directory = resolve(process.cwd(), 'output', 'provider-qa');
       mkdirSync(directory, { recursive: true });
       writeFileSync(resolve(directory, 'prompts.json'), JSON.stringify(prompts, null, 2));
+      const styleSamples = Object.fromEntries(
+        ['NX01', 'NX02', 'NX03', 'NX05', 'NX07', 'NX09', 'NX10'].map((id) => [id, compileFor('NOVA LAMP', id)])
+      );
+      writeFileSync(resolve(directory, 'style-sample-prompts.json'), JSON.stringify(styleSamples, null, 2));
     }
   });
 });

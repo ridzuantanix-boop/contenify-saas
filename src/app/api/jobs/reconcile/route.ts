@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
       settled: 0,
       released: 0,
       stillProcessing: 0,
-      expiredQa: 0,
     };
 
     const now = Date.now();
@@ -57,11 +56,13 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
+      let providerCompleted = false;
       try {
         const adapter = router.resolveProvider(job.durationSeconds as 10 | 15, job.provider, true);
         const statusRes = await adapter.getStatus(job.providerTaskId);
 
         if (statusRes.normalizedStatus === 'COMPLETED') {
+          providerCompleted = true;
           const outputs = await adapter.getOutputs(job.providerTaskId);
           if (outputs?.videoUrl) {
             if (await persistCompletedVideo(job, outputs.videoUrl, statusRes.rawStatus)) {
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       } catch (pollErr: unknown) {
         // If provider explicitly throws 404/not-found after timeout, release credits
         const errMsg = pollErr instanceof Error ? pollErr.message : String(pollErr);
-        if (isExpired && (errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('tidak ditemui'))) {
+        if (isExpired && (providerCompleted || errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('tidak ditemui'))) {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_err_${job.id}`);
           await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: 'Tugasan tidak ditemui di pembekal selepas tamat tempoh.' });
           results.released++;
@@ -104,15 +105,6 @@ export async function POST(req: NextRequest) {
           results.stillProcessing++;
         }
       }
-    }
-
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const expiry = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/expire_video_qa_atomic`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` }, body: '{}',
-      });
-      if (!expiry.ok) throw new Error('Semakan tempoh QA gagal.');
-      results.expiredQa = Number((await expiry.json()).expired || 0);
     }
 
     return NextResponse.json({

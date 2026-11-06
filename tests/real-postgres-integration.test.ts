@@ -37,7 +37,6 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00015_customer_dashboard_metrics.sql',
       '00016_verified_video_metadata.sql',
       '00017_refund_credit_integrity.sql',
-      '00018_manual_video_qa.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -47,6 +46,9 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       sqlContent = sqlContent.replace('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', '-- PGlite WASM bypass');
       await db.exec(sqlContent);
     }
+    // Retained optional admin QA is tested separately but excluded from the
+    // launch migration path. Ordinary video delivery does not depend on it.
+    await db.exec(fs.readFileSync(path.resolve(process.cwd(), 'supabase/optional/00018_manual_video_qa.sql'), 'utf-8'));
   });
 
   it('proves that all forward migrations apply without schema syntax errors', async () => {

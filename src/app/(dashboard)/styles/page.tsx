@@ -23,7 +23,7 @@ export default function VideoStylesPage() {
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'with_voice' | 'no_voice'>('all');
   const [durationFilter, setDurationFilter] = useState<'all' | '10' | '15'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [favorites, setFavorites] = useState<string[]>(['NX01', 'RH01']);
+  const [favorites, setFavorites] = useState<string[]>(['NX01']);
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -41,8 +41,7 @@ export default function VideoStylesPage() {
   });
 
   const totalStylesCount = VIDEO_STYLES_REGISTRY.length;
-  const verifiedCount = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'quality_verified').length;
-  const validatedCount = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'prompt_validated').length;
+  const testedCount = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'video_tested').length;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
@@ -52,11 +51,11 @@ export default function VideoStylesPage() {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">Video Style Library</h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-              {totalStylesCount} Gaya Rasmi ({verifiedCount} Quality Verified, {validatedCount} Prompt Validated)
+              {testedCount} gaya Voice dengan sampel video · {totalStylesCount - testedCount} gaya Coming Soon
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Koleksi gaya video AI yang terbukti berkesan untuk affiliate TikTok & Shopee Malaysia. Tanpa perlu prompt manual.
+            Pilih gaya video dan tonton sampel sebenar sebelum menjana video produk anda.
           </p>
         </div>
 
@@ -152,10 +151,9 @@ export default function VideoStylesPage() {
                     src={style.previewVideoUrl}
                     className="w-full h-full object-cover"
                     muted
-                    loop
                     playsInline
-                    onMouseEnter={(e) => e.currentTarget.play().catch(() => {})}
-                    onMouseLeave={(e) => e.currentTarget.pause()}
+                    controls
+                    preload="metadata"
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400">
@@ -163,7 +161,7 @@ export default function VideoStylesPage() {
                       <Sparkles className="w-6 h-6" />
                     </div>
                     <span className="text-xs font-semibold text-slate-300">{style.name}</span>
-                    <span className="text-[10px] text-slate-500 mt-1">Ujian QA Disahkan</span>
+                    <span className="text-[10px] text-slate-500 mt-1">Coming Soon</span>
                   </div>
                 )}
 
@@ -192,7 +190,7 @@ export default function VideoStylesPage() {
                 </button>
 
                 <div className="absolute bottom-2 left-2 right-2 px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-md text-[10px] text-slate-200 truncate">
-                  Enjin: <strong className="text-white uppercase">{style.engine}</strong> • {style.actionType.replace(/_/g, ' ')}
+                  <strong className="text-white">{hasVoice ? 'AffiMatik Voice' : 'AffiMatik Motion'}</strong> • {style.actionType.replace(/_/g, ' ')}
                 </div>
               </div>
 
@@ -203,17 +201,17 @@ export default function VideoStylesPage() {
                     <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase tracking-wider">
                       {style.id}
                     </span>
-                    {style.qualityStatus === 'quality_verified' ? (
+                    {style.qualityStatus === 'video_tested' ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />
-                        Quality Verified
+                        Sampel 15s Sebenar
                       </span>
                     ) : style.qualityStatus === 'disabled' ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200">Tidak tersedia</span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold border border-sky-200 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />
-                        Prompt Validated
+                        Prompt Disediakan
                       </span>
                     )}
                   </div>
@@ -225,15 +223,15 @@ export default function VideoStylesPage() {
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-[11px] text-slate-400">
-                    {style.durationSeconds === 10 ? '10 Kredit' : '15 Kredit'}
+                    {hasVoice ? '10 Kredit' : 'Coming Soon'}
                   </span>
-                  <Link
-                    href={`/factory?styleId=${style.id}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white text-xs font-semibold transition"
-                  >
-                    <span>Guna Gaya Ini</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  {hasVoice && <Link
+                      href={`/factory?styleId=${style.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white text-xs font-semibold transition"
+                    >
+                      <span>Guna Gaya Ini</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>}
                 </div>
               </div>
             </div>

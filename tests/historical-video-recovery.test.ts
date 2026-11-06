@@ -40,6 +40,9 @@ describe('isolated historical MP4 recovery', () => {
         return new Response(JSON.stringify(candidateReads === 1 ? [candidate] : []), { status: 200 });
       }
       if (url === candidate.result_video_url) return new Response(mp4, { status: 200, headers: { 'content-type': 'video/mp4' } });
+      if (url.includes('/storage/v1/object/authenticated/affimatik-assets/workspaces/historical-workspace-1/outputs/historical-job-1.mp4')) {
+        return new Response(mp4, { status: 200, headers: { 'content-type': 'video/mp4' } });
+      }
       if (url.includes('/storage/v1/object/affimatik-assets/workspaces/historical-workspace-1/outputs/historical-job-1.mp4')) {
         expect(init?.method).toBe('POST');
         return new Response('{}', { status: 200 });
@@ -59,7 +62,7 @@ describe('isolated historical MP4 recovery', () => {
     expect(second.status).toBe(200);
     expect(await second.json()).toEqual({ results: [] });
     expect(mocks.updateJobStatus).toHaveBeenCalledTimes(1);
-    expect(request).toHaveBeenCalledTimes(4); // two candidate reads, one media download, one private upload
+    expect(request).toHaveBeenCalledTimes(5); // two candidate reads, media download, private upload and readback
     expect(mocks.recordAuditLog).toHaveBeenCalledTimes(2);
   });
 });

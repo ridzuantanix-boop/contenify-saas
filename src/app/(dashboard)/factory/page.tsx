@@ -258,7 +258,7 @@ function VideoFactoryContent() {
     setSubmitSuccess(null);
 
     if (!selectedAvailable) {
-      setSubmitError(`${selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia sementara semakan kualiti dan pembekal diselesaikan. Tiada kredit ditolak.`);
+      setSubmitError(`${selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum diaktifkan untuk pelanggan. Tiada kredit ditolak.`);
       return;
     }
 
@@ -1000,7 +1000,7 @@ function VideoFactoryContent() {
               <div className="text-xs text-slate-600">
                 <span className="font-bold">{modalPreviewStyle.engine === 'nexabot' ? 'AffiMatik Voice (10 Kredit)' : 'AffiMatik Motion (15 Kredit)'}</span>
                 <div className="text-[11px] text-slate-500">
-                  {modalPreviewStyle.engine === 'nexabot' ? 'Pratonton gaya lama 10s; penjanaan baharu 15s' : 'Pratonton Motion lama; penjanaan baharu tidak tersedia'}
+                  {modalPreviewStyle.engine === 'nexabot' ? 'Sampel 15s sebenar untuk gaya ini' : 'Gaya Motion belum tersedia'}
                 </div>
               </div>
               <button

@@ -4,7 +4,7 @@
  * 
  * Engines:
  * - NX: AffiMatik Voice (15s, Malaysian Malay Spoken Dialogue, Nexabot internal)
- * - RH: AffiMatik Motion (15s, Visual Realism, Ambient/ASMR, RunningHub internal)
+ * - RH: AffiMatik Motion (15s, legacy definitions; public generation inactive)
  */
 
 import { VideoStyle, StyleFilterOptions } from './types';
@@ -32,9 +32,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX01/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX01',
     tags: ['ugc', 'spoken_bm', 'casual', 'creator', '15s'],
     actionPlan: {
       primaryAction: 'Casual friendly talking while holding product at chest level',
@@ -64,9 +64,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX02/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX02',
     tags: ['review', 'spoken_bm', 'product_explainer', '15s'],
     legacyAliasId: 'gem_real_affiliate',
     actionPlan: {
@@ -97,9 +97,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX03/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX03',
     tags: ['first_impression', 'spoken_bm', 'spontaneous', 'reaction', '15s'],
     actionPlan: {
       primaryAction: 'Curious and authentic first-look creator reaction to product utility',
@@ -129,9 +129,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX05/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX05',
     tags: ['problem_solution', 'spoken_bm', 'empathy', 'solution', '15s'],
     legacyAliasId: 'gem_realistic_ugc',
     actionPlan: {
@@ -162,9 +162,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX07/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX07',
     tags: ['qa', 'spoken_bm', 'answers', 'factual', '15s'],
     actionPlan: {
       primaryAction: 'Spoken Q&A creator answering a common buyer question with grounded facts',
@@ -194,9 +194,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX09/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX09',
     tags: ['hand_only', 'spoken_bm', 'gentle_motion', 'voiceover', '15s'],
     actionPlan: {
       primaryAction: 'Single covered hand holding product with natural slight micro-tilt and off-camera VO',
@@ -226,9 +226,9 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     realismLock: true,
     modestyLock: true,
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'prompt_validated',
+    qualityStatus: 'video_tested',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/NX10/sample-v1.mp4',
+    previewVideoUrl: '/api/style-samples/NX10',
     tags: ['label', 'facts', 'voiceover', 'product_focus', '15s'],
     actionPlan: {
       primaryAction: 'Hand demo showing physical specification evidence with factual utility narration',
@@ -264,7 +264,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
     qualityStatus: 'disabled',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/RH01/sample-v1.mp4',
+    previewVideoUrl: null,
     tags: ['hand_demo', 'no_speech', 'realistic', '15s', 'runninghub'],
     legacyAliasId: 'gem_product_hand_demo',
     actionPlan: {
@@ -297,7 +297,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
     qualityStatus: 'disabled',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/RH02/sample-v1.mp4',
+    previewVideoUrl: null,
     tags: ['tilt', 'no_speech', 'tabletop', 'physical_form', '15s'],
     actionPlan: {
       primaryAction: 'Gentle 10-12 degree product tilt on real surface showing authentic physical form',
@@ -329,7 +329,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
     qualityStatus: 'disabled',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/RH03/sample-v1.mp4',
+    previewVideoUrl: null,
     tags: ['pickup', 'putdown', 'no_speech', 'handling', '15s'],
     actionPlan: {
       primaryAction: 'Authentic pick up and put down interaction on real surface',
@@ -361,7 +361,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
     qualityStatus: 'disabled',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/RH04/sample-v1.mp4',
+    previewVideoUrl: null,
     tags: ['shelf', 'no_speech', 'lifestyle', 'store_context', '15s'],
     actionPlan: {
       primaryAction: 'Casual shelf interaction lifting product naturally from storage shelf',
@@ -393,7 +393,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
     qualityStatus: 'disabled',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/RH17/sample-v1.mp4',
+    previewVideoUrl: null,
     tags: ['desk', 'setup', 'workplace', 'no_speech', '15s'],
     actionPlan: {
       primaryAction: 'Authentic desk setup arrangement with subtle hand adjustment',
@@ -425,7 +425,7 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
     promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
     qualityStatus: 'disabled',
     publicationStatus: 'published',
-    previewVideoUrl: '/style-previews/RH19/sample-v1.mp4',
+    previewVideoUrl: null,
     tags: ['window', 'daylight', 'natural_lighting', 'no_speech', '15s'],
     actionPlan: {
       primaryAction: 'Clear natural window daylight showcase with subtle hand adjustment',

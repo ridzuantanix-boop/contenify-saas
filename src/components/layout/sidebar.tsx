@@ -34,7 +34,6 @@ const NAV_ITEMS = [
   { name: 'Billing & Credits', href: '/billing', icon: CreditCard },
   { name: 'Tetapan Akaun', href: '/settings', icon: Settings },
   { name: 'Style Testing Lab', href: '/admin/styles', icon: ShieldCheck, badge: 'Admin' },
-  { name: 'Semakan Video', href: '/admin/video-qa', icon: Video, badge: 'Owner' },
   { name: 'Kelulusan Affiliate', href: '/admin/affiliates', icon: ShieldCheck, badge: 'Owner' },
   { name: 'Pulih MP4 Lama', href: '/admin/recovery', icon: Film, badge: 'Owner' },
   { name: 'Refund & Clawback', href: '/admin/finance-ops', icon: CreditCard, badge: 'Owner' },
