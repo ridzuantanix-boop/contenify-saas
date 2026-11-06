@@ -102,9 +102,9 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
     it('initializes new workspaces with 50 free credits by policy and NEVER grants 160 unbacked credits', async () => {
       const newWs = 'ws_brand_new_customer';
       const wallet = await DurableStore.getWallet(newWs);
-      expect(wallet.balance).toBe(50);
+      expect(wallet.balance).toBe(20);
       expect(wallet.reservedBalance).toBe(0);
-      expect(wallet.lifetimeGranted).toBe(50);
+      expect(wallet.lifetimeGranted).toBe(20);
     });
 
     it('prevents two concurrent generation requests from double-spending credits', async () => {
@@ -671,7 +671,7 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
         callToAction: 'spoken_button',
       });
       expect(compiledGood.preflightValid).toBe(true);
-      expect(compiledGood.providerPrompt).toContain('Tekan butang di bawah');
+      expect(compiledGood.providerPrompt).toContain('provider creates');
     });
   });
 

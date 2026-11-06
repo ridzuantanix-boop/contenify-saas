@@ -9,11 +9,11 @@ export const runtime = 'edge';
  * Complete Customer Self-Service Registration & Automated Provisioning
  * 
  * Automatically creates and associates:
- * 1. Verified authentication identity (Supabase Auth / Local store)
+ * 1. Authentication identity (email verification required when configured)
  * 2. User profile (tier = 'free')
  * 3. Workspace (status = 'active')
  * 4. Workspace membership (role = 'owner')
- * 5. Credit wallet with initial 10 free trial credits and GRANT ledger entry
+ * 5. Credit wallet with initial 20 free trial credits and GRANT ledger entry
  * 6. Affiliate referral attribution (if referral code supplied)
  */
 export async function POST(req: NextRequest) {
@@ -84,61 +84,15 @@ export async function POST(req: NextRequest) {
           }),
         });
 
-        let signupData = await signupRes.json();
+        const signupData = await signupRes.json();
 
-        // Supabase's hosted email provider has a deliberately low send limit.
-        // When that limit is reached, use the trusted admin endpoint to create
-        // the account with email_confirm=true instead of making registration
-        // fail even though the rest of provisioning is server-side. This keeps
-        // signup functional until a custom SMTP provider is configured.
-        if (!signupRes.ok && signupRes.status === 429 && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          const adminSignupRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-            body: JSON.stringify({
-              email: cleanEmail,
-              password,
-              email_confirm: true,
-              user_metadata: {
-                full_name: displayName,
-                whatsapp: cleanWhatsapp,
-                referral_code: cleanReferral,
-              },
-            }),
-          });
-          const adminSignupData = await adminSignupRes.json().catch(() => ({}));
-          if (adminSignupRes.ok && adminSignupData?.id) {
-            signupData = { user: adminSignupData, session: null };
-          } else {
-            const errMsg = adminSignupData.msg || adminSignupData.error_description || adminSignupData.message || 'Pendaftaran gagal.';
-            return NextResponse.json({ error: errMsg }, { status: adminSignupRes.status || signupRes.status });
-          }
-        } else if (!signupRes.ok) {
+        if (!signupRes.ok) {
           const errMsg = signupData.msg || signupData.error_description || signupData.message || 'Pendaftaran gagal.';
           return NextResponse.json({ error: errMsg }, { status: signupRes.status });
         }
 
-        // Supabase may return the created user under `user` or `data.user`.
-        // Some email-confirmation responses can omit the nested object even
-        // though the Auth user was created, so recover it through the trusted
-        // admin endpoint before treating registration as failed.
-        let signupUser = signupData.user || signupData.data?.user;
-        if (!signupUser?.id && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          const adminUsersRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
-            headers: {
-              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-          });
-          if (adminUsersRes.ok) {
-            const adminUsersData = await adminUsersRes.json();
-            signupUser = adminUsersData.users?.find((candidate: { email?: string }) => candidate.email?.toLowerCase() === cleanEmail);
-          }
-        }
+        // Never recover an identity by looking up an arbitrary email with the admin API.
+        const signupUser = signupData.user || signupData.data?.user;
 
         if (!signupUser?.id) {
           return NextResponse.json(
@@ -149,25 +103,6 @@ export async function POST(req: NextRequest) {
 
         userId = signupUser.id;
         requiresEmailConfirmation = !signupData.session;
-
-        // The hosted Supabase email sender is not reliable without custom SMTP
-        // (and is frequently rate-limited). Confirm the newly-created account
-        // through the trusted service-role endpoint so registration does not
-        // leave users stranded waiting for an email that may never arrive.
-        if (requiresEmailConfirmation && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          const confirmRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-            body: JSON.stringify({ email_confirm: true }),
-          });
-          if (confirmRes.ok) {
-            requiresEmailConfirmation = false;
-          }
-        }
 
         // 2. Server-side provisioning via Service Role with verified columns and foreign keys
         if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -241,14 +176,14 @@ export async function POST(req: NextRequest) {
             throw new Error(`Pangkalan data gagal menetapkan keahlian ruang kerja: ${errText}`);
           }
 
-          // D. Atomically provision credit wallet (50 free trial credits + GRANT ledger entry)
+          // D. Atomically provision credit wallet (20 free trial credits + GRANT ledger entry)
           // Uses exact signature p_workspace_id and p_initial_balance
           const provRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
             method: 'POST',
             headers: sHeaders,
             body: JSON.stringify({
               p_workspace_id: workspaceId,
-              p_initial_balance: 50,
+              p_initial_balance: 20,
             }),
           });
 
@@ -288,7 +223,7 @@ export async function POST(req: NextRequest) {
       // Standalone / DurableStore registration fallback when Supabase is not configured in the active environment
       userId = crypto.randomUUID();
       workspaceId = crypto.randomUUID();
-      await DurableStore.getWallet(workspaceId); // automatically provisions 50 credits
+      await DurableStore.getWallet(workspaceId); // automatically provisions 20 credits
     }
 
     // Persist user record in DurableStore

@@ -49,7 +49,7 @@ export default function RegisterPage() {
         return;
       }
 
-      setSuccessMsg('Tahniah! Akaun anda berjaya dicipta dengan 50 Kredit Percuma. Sedang membawa anda ke Dashboard...');
+      setSuccessMsg('Tahniah! Akaun anda berjaya dicipta dengan 20 Kredit Percuma. Sedang membawa anda ke Dashboard...');
       setTimeout(() => {
         router.push('/dashboard');
       }, 1200);
@@ -73,7 +73,7 @@ export default function RegisterPage() {
           Daftar Akaun Percuma
         </h2>
         <p className="text-xs text-slate-500">
-          Mulakan penjanaan video affiliate AI anda sekarang dengan 50 kredit percuma.
+          Mulakan penjanaan video affiliate AI anda sekarang dengan 20 kredit percuma.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function RegisterPage() {
                   {registeredEmail}
                 </div>
                 <p className="text-[11px] text-slate-500 pt-2 leading-relaxed">
-                  Sila buka peti masuk (inbox) emel anda dan klik pautan pengesahan untuk mengaktifkan akaun serta menuntut <strong>50 Kredit Percuma</strong>.
+                  Sila buka peti masuk (inbox) emel anda dan klik pautan pengesahan untuk mengaktifkan akaun serta menuntut <strong>20 Kredit Percuma</strong>.
                 </p>
               </div>
 
@@ -116,7 +116,7 @@ export default function RegisterPage() {
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-900">
                 <Gift className="w-5 h-5 text-amber-600 shrink-0" />
                 <div>
-                  <span className="font-bold">50 Kredit Percuma Terus Dimasukkan!</span>
+                  <span className="font-bold">20 Kredit Percuma Terus Dimasukkan!</span>
                   <p className="text-[11px] text-amber-700 mt-0.5">Tiada kad bank diperlukan. Tiada caj tersembunyi.</p>
                 </div>
               </div>
@@ -215,7 +215,7 @@ export default function RegisterPage() {
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>{isLoading ? 'Mendaftar Akaun...' : 'Daftar & Tebus 50 Kredit'}</span>
+              <span>{isLoading ? 'Mendaftar Akaun...' : 'Daftar & Tebus 20 Kredit'}</span>
             </button>
           </form>
 

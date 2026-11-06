@@ -16,6 +16,7 @@ import {
 
 export default function DashboardPage() {
   const [balance, setBalance] = useState<number | null>(null);
+  const [jobs, setJobs] = useState<Array<{ status: string }> | null>(null);
 
   useEffect(() => {
     async function fetchSession() {
@@ -32,11 +33,12 @@ export default function DashboardPage() {
       }
     }
     fetchSession();
+    fetch('/api/jobs?list=1', { cache: 'no-store' }).then((response) => response.ok ? response.json() : null).then((data) => { if (data?.jobs) setJobs(data.jobs); }).catch(() => {});
   }, []);
 
   return (
     <div className="space-y-8">
-      {/* Soft Launch Notice: 50 Free Credits */}
+      {/* New-account welcome allowance. Existing balances are retained. */}
       <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-amber-50 border border-indigo-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -45,7 +47,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                50 Kredit FREE Untuk Korang! 🎁
+                20 Kredit Percuma Untuk Akaun Baharu 🎁
               </h3>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
                 Akses Awal Percuma
@@ -104,22 +106,22 @@ export default function DashboardPage() {
             <Sparkles className="w-4 h-4 text-indigo-500" />
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-2">
-            {balance !== null ? balance : 50}
+            {balance !== null ? balance : '—'}
           </div>
           <div className="text-[11px] text-emerald-600 mt-1 flex items-center gap-1 font-medium">
             <CheckCircle2 className="w-3 h-3" />
-            <span>50 Kredit Percuma Aktif</span>
+            <span>Baki sebenar akaun anda</span>
           </div>
         </div>
 
         <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Video Disahkan Siap</span>
+            <span>Tugasan Selesai</span>
             <Video className="w-4 h-4 text-slate-400" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">0</div>
+          <div className="text-2xl font-bold text-slate-900 mt-2">{jobs ? jobs.filter((job) => job.status === 'COMPLETED').length : '—'}</div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Sifar statistik palsu (Real MP4 only)
+            Daripada tugasan terkini dalam pangkalan data
           </div>
         </div>
 
@@ -128,9 +130,9 @@ export default function DashboardPage() {
             <span>Giliran Pemprosesan</span>
             <ListOrdered className="w-4 h-4 text-slate-400" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">0</div>
+          <div className="text-2xl font-bold text-slate-900 mt-2">{jobs ? jobs.filter((job) => ['QUEUED', 'SUBMITTING', 'PROCESSING'].includes(job.status)).length : '—'}</div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Tiada tugasan awan sedang aktif
+            Status tugasan terkini
           </div>
         </div>
 
@@ -139,9 +141,9 @@ export default function DashboardPage() {
             <span>Pustaka Produk</span>
             <ShoppingBag className="w-4 h-4 text-slate-400" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">0</div>
+          <div className="text-2xl font-bold text-slate-900 mt-2">—</div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Muat naik tangkap layar untuk mula
+            Storan produk belum disahkan
           </div>
         </div>
       </div>

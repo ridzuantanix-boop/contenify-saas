@@ -104,7 +104,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
   // 3. Authoritative Plan Enforcement in Manual Activation
   // ---------------------------------------------------------------------------
   describe('P0 Authoritative Plan & Verifiable Payment Enforcement', () => {
-    it('strictly enforces Authoritative Plan pricing: Starter (50 cr @ RM49), Pro (160 cr @ RM129), Agency (600 cr @ RM399)', async () => {
+    it('strictly enforces Authoritative Plan pricing: Starter (100 cr @ RM49), Pro (300 cr @ RM129), Agency (1000 cr @ RM399)', async () => {
       const workspaceId = crypto.randomUUID();
 
       // Seed customer in local store
@@ -153,7 +153,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       });
 
       expect(starterResult.success).toBe(true);
-      expect(starterResult.balance).toBe(50);
+      expect(starterResult.balance).toBe(100);
       expect(starterResult.tier).toBe('starter');
 
       // 4. Pro plan grants exactly 160 credits for RM129
@@ -178,7 +178,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       });
 
       expect(proResult.success).toBe(true);
-      expect(proResult.balance).toBe(160);
+      expect(proResult.balance).toBe(300);
       expect(proResult.tier).toBe('pro');
 
       // 5. Agency studio grants exactly 600 credits for RM399
@@ -203,7 +203,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       });
 
       expect(agencyResult.success).toBe(true);
-      expect(agencyResult.balance).toBe(600);
+      expect(agencyResult.balance).toBe(1000);
       expect(agencyResult.tier).toBe('agency');
     });
   });
@@ -223,13 +223,14 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
         tier: 'free',
       });
 
+      await DurableStore.getWallet('ws_sarah_01');
       const result = await DurableStore.listRegisteredUsers();
       expect(result.users.length).toBeGreaterThan(0);
       const user = result.users.find((u) => u.fullName === 'Sarah Abdullah');
       expect(user).toBeDefined();
       expect(user?.emailMasked).toBe('s***h@gmail.com');
       expect(user?.whatsapp).toBe('+60123456789');
-      expect(user?.balance).toBe(50);
+      expect(user?.balance).toBe(20);
       expect(user?.provisionStatus).toBe('provisioned');
     });
   });

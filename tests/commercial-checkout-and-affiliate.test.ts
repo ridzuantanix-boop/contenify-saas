@@ -10,24 +10,24 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
     DurableStore.resetForTesting();
   });
 
-  describe('Scenario A: Customer Account Self-Registration & 50 Credit Provisioning', () => {
-    it('provisions workspace, free tier, and exactly one 50-credit grant idempotently', async () => {
+  describe('Scenario A: Customer Account Self-Registration & 20 Credit Provisioning', () => {
+    it('provisions workspace, free tier, and exactly one 20-credit grant idempotently', async () => {
       const workspaceId = 'ws-test-customer-001';
 
       // 1. First initial wallet provisioning
       const initialWallet = await DurableStore.getWallet(workspaceId);
-      expect(initialWallet.balance).toBe(50);
+      expect(initialWallet.balance).toBe(20);
       expect(initialWallet.reservedBalance).toBe(0);
 
       // 2. Verify exactly 1 GRANT ledger record
       const ledger1 = await DurableStore.getLedgerHistory(workspaceId);
       expect(ledger1).toHaveLength(1);
       expect(ledger1[0].eventType).toBe('GRANT');
-      expect(ledger1[0].amount).toBe(50);
+      expect(ledger1[0].amount).toBe(20);
 
       // 3. Second call (re-login or repeated access) must be strictly idempotent
       const secondWallet = await DurableStore.getWallet(workspaceId);
-      expect(secondWallet.balance).toBe(50);
+      expect(secondWallet.balance).toBe(20);
 
       const ledger2 = await DurableStore.getLedgerHistory(workspaceId);
       expect(ledger2).toHaveLength(1); // No double-credit grant!
@@ -38,9 +38,9 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
     it('creates an order, provides Malaysian FPX / DuitNow QR reference, and settles credits once', async () => {
       const workspaceId = 'ws-paid-customer-002';
       const userId = 'user-paid-002';
-      await DurableStore.getWallet(workspaceId); // Initial 50 credits
+      await DurableStore.getWallet(workspaceId); // Initial 20 credits
 
-      // 1. Customer initiates checkout for Starter RM49 (50 credits)
+      // 1. Customer initiates checkout for Starter RM49 (100 credits)
       const checkout = await createCheckout({
         workspaceId,
         userId,
@@ -50,7 +50,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
 
       expect(checkout.success).toBe(true);
       expect(checkout.amountMyr).toBe(49);
-      expect(checkout.creditsGranted).toBe(50);
+      expect(checkout.creditsGranted).toBe(100);
       expect(checkout.manualPaymentDetails?.referenceCode).toMatch(/^AFM-/);
 
       // Verify order is PENDING
@@ -62,7 +62,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       const settlement1 = await DurableStore.settleOrder(checkout.orderId, 'FPX-REF-12345');
       expect(settlement1.success).toBe(true);
       expect(settlement1.status).toBe('PAID');
-      expect(settlement1.balance).toBe(100); // 50 initial + 50 purchased = 100
+      expect(settlement1.balance).toBe(120); // 20 initial + 100 purchased
       expect(settlement1.tier).toBe('starter');
 
       // Verify subscription record exists
@@ -74,39 +74,50 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       // 3. Replay webhook (idempotency test)
       const settlementReplay = await DurableStore.settleOrder(checkout.orderId, 'FPX-REF-12345');
       expect(settlementReplay.success).toBe(true);
-      expect(settlementReplay.balance).toBe(100); // Must NOT credit twice!
+      expect(settlementReplay.balance).toBe(120); // Must NOT credit twice!
 
       const wallet = await DurableStore.getWallet(workspaceId);
-      expect(wallet.balance).toBe(100);
+      expect(wallet.balance).toBe(120);
     });
   });
 
-  describe('Scenario G: 20% Commercial Affiliate Commission Engine', () => {
-    it('records 20% commission on eligible paid orders and links to affiliate partner', async () => {
+  describe('Scenario G: 10% Approved Affiliate Commission Engine', () => {
+    it('withholds commission until approval and credits only the first eligible payment', async () => {
       const affiliateUserId = 'user-affiliate-001';
-      const referralCode = 'PAWARNA20';
+      const referralCode = 'PAWARNA10';
 
       // 1. Provision affiliate partner
       const partner = await DurableStore.createAffiliatePartner(affiliateUserId, referralCode);
       expect(partner.referralCode).toBe(referralCode);
 
-      // 2. Referred customer purchases Pro Affiliate plan (RM 129, 160 credits)
+      // 2. Pending applicant has no earning privileges.
+      expect((await DurableStore.getAffiliatePartner(affiliateUserId))?.status).toBe('PENDING');
+      const pendingCheckout = await createCheckout({ workspaceId: 'ws-pending-customer', userId: 'user-pending', planId: 'plan_starter', referralCode });
+      await DurableStore.settleOrder(pendingCheckout.orderId, 'FPX-PENDING');
+      expect(await DurableStore.listAffiliateCommissions(partner.id)).toHaveLength(0);
+      expect(await DurableStore.reviewAffiliatePartner(partner.id, 'APPROVED', 'owner')).toBe(true);
+
+      // 3. Approved partner refers a different customer's first payment.
       const checkoutPro = await createCheckout({
         workspaceId: 'ws-referred-customer',
         userId: 'user-referred-001',
         planId: 'plan_pro',
-        referralCode: 'PAWARNA20',
+        referralCode,
       });
 
-      // 3. Settle order payment
+      // 4. Settle order payment
       await DurableStore.settleOrder(checkoutPro.orderId, 'FPX-PRO-9988');
 
-      // 4. Verify 20% commission recorded
-      const commissions = await DurableStore.listAffiliateCommissions('PAWARNA20');
+      const commissions = await DurableStore.listAffiliateCommissions(partner.id);
       expect(commissions).toHaveLength(1);
-      expect(commissions[0].amountMyr).toBe(25.80); // 20% of RM 129 = RM 25.80
+      expect(commissions[0].amountMyr).toBe(12.90);
       expect(commissions[0].status).toBe('PENDING');
-      expect(commissions[0].ratePercentage).toBe(20.0);
+      expect(commissions[0].ratePercentage).toBe(10.0);
+
+      const renewal = await createCheckout({ workspaceId: 'ws-referred-customer', userId: 'user-referred-001', planId: 'plan_pro', referralCode });
+      await DurableStore.settleOrder(renewal.orderId, 'FPX-RENEWAL');
+      await DurableStore.settleOrder(renewal.orderId, 'FPX-RENEWAL');
+      expect(await DurableStore.listAffiliateCommissions(partner.id)).toHaveLength(1);
     });
   });
 
@@ -136,7 +147,9 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
 
       expect(finances.totalRevenueMyr).toBe(528);
       expect(finances.activePaidCustomers).toBe(2);
-      expect(finances.mrrMyr).toBe(528);
+      expect(finances.mrrMyr).toBe(0); // Manual payments are not recurring MRR.
+      expect(finances.costsVerified).toBe(false);
+      expect(finances.safeToWithdrawMyr).toBe(0);
       expect(finances.expectedProviderRenewalMyr).toBe(300); // Minimum provider commitment
       expect(finances.requiredOperatingReserveMyr).toBeGreaterThan(300);
 

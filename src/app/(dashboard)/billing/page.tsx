@@ -72,7 +72,7 @@ export default function BillingPage() {
 
   async function handleStartCheckout(plan: PricingPlan, method: 'fpx' | 'card' = 'fpx') {
     if (!publicCheckoutEnabled) {
-      setCheckoutError('Pelan berbayar belum dibuka untuk umum. Duit korang simpan dulu! Nikmati 50 kredit FREE dulu.');
+      setCheckoutError('Pelan berbayar belum dibuka untuk umum. Akaun baharu menerima 20 kredit percuma.');
       return;
     }
 
@@ -192,7 +192,7 @@ export default function BillingPage() {
             className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm whitespace-nowrap self-start sm:self-auto inline-flex items-center gap-1.5"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Cuba FREE — 50 Kredit</span>
+            <span>Cuba FREE — 20 Kredit</span>
           </Link>
         )}
       </div>
@@ -212,7 +212,7 @@ export default function BillingPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-amber-900 leading-relaxed max-w-3xl">
-            Kami bagi 50 kredit FREE dulu. Korang cuba buat video puas-puas, tengok hasil dia. Bila dah jatuh cinta dengan AffiMatik, baru kita sembang pasal duit. 😎
+            Akaun baharu menerima 20 kredit percuma sekali sahaja. Pelan berbayar belum dibuka kepada umum.
           </p>
           <div className="pt-2 flex flex-wrap items-center gap-4">
             <Link
@@ -220,7 +220,7 @@ export default function BillingPage() {
               className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm inline-flex items-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Cuba FREE — Dapat 50 Kredit</span>
+              <span>Cuba FREE — Dapat 20 Kredit</span>
             </Link>
             <a
               href="mailto:support@affimatik.online?subject=Pertanyaan%20Akses%20Awal%20AffiMatik"

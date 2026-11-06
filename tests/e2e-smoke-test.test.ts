@@ -37,7 +37,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(data.user.email).toBe(testEmail);
     expect(data.user.tier).toBe('starter'); // Authoritative starter/free tier
     expect(data.user.role).toBe('owner');
-    expect(data.wallet.balance).toBe(50); // 50 initial credits provisioned
+    expect(data.wallet.balance).toBe(20); // 20 initial credits provisioned
 
     // Check session cookie
     const cookieHeader = res.headers.get('set-cookie');
@@ -48,15 +48,15 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const wsId = 'ws_smoke_test_provision_01';
     const wallet = await DurableStore.getWallet(wsId);
 
-    expect(wallet.balance).toBe(50);
+    expect(wallet.balance).toBe(20);
     expect(wallet.reservedBalance).toBe(0);
-    expect(wallet.lifetimeGranted).toBe(50);
+    expect(wallet.lifetimeGranted).toBe(20);
 
     // Verify ledger has GRANT record
     const ledger = await DurableStore.getLedgerHistory(wsId);
     expect(ledger.length).toBe(1);
     expect(ledger[0].eventType).toBe('GRANT');
-    expect(ledger[0].amount).toBe(50);
+    expect(ledger[0].amount).toBe(20);
   });
 
   it('3. verifies credit reservation, atomic job admission, and queue persistence', async () => {
@@ -89,9 +89,9 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
 
     // Verify wallet reflects 10 reserved credits
     const walletAfter = await DurableStore.getWallet(wsId);
-    expect(walletAfter.balance).toBe(50);
+    expect(walletAfter.balance).toBe(20);
     expect(walletAfter.reservedBalance).toBe(10);
-    expect(walletAfter.balance - walletAfter.reservedBalance).toBe(40); // 40 remaining available
+    expect(walletAfter.balance - walletAfter.reservedBalance).toBe(10); // 10 remaining available
   });
 
   it('4. verifies duplicate submission prevention and double-checked idempotency locking', async () => {
@@ -172,7 +172,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     });
 
     const wallet = await DurableStore.getWallet(wsId);
-    expect(wallet.balance).toBe(40); // 50 initial - 10 settled = 40
+    expect(wallet.balance).toBe(10); // 20 initial - 10 settled
     expect(wallet.reservedBalance).toBe(0);
     expect(wallet.lifetimeSpent).toBe(10);
 
@@ -226,7 +226,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     // Verify credits released back
     const walletAfter = await DurableStore.getWallet(wsId);
     expect(walletAfter.reservedBalance).toBe(0);
-    expect(walletAfter.balance).toBe(50);
+    expect(walletAfter.balance).toBe(20);
   });
 
   it('7. verifies provider routing safety in mock mode without billing live external APIs', () => {
@@ -260,7 +260,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const regData = await regRes.json();
     expect(regData.success).toBe(true);
     expect(regData.user.email).toBe('commercial.creator@affimatik.io');
-    expect(regData.wallet.balance).toBe(50); // Initial 50 credits provisioned
+    expect(regData.wallet.balance).toBe(20); // Initial 20 credits provisioned
 
     // Step 2: Login to acquire valid session cookie
     const loginReq = new NextRequest('http://localhost:3000/api/auth/session', {
@@ -301,7 +301,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(orderData.success).toBe(true);
     expect(orderData.orderId).toBeDefined();
     expect(orderData.amountMyr).toBe(49);
-    expect(orderData.creditsGranted).toBe(50);
+    expect(orderData.creditsGranted).toBe(100);
     expect(orderData.manualPaymentDetails.referenceCode).toBeDefined();
 
     // Verify order is initially PENDING in store
@@ -328,7 +328,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(verifyData.success).toBe(true);
     expect(verifyData.settlement.status).toBe('PAID');
     // Balance granted once: initial 50 + 50 = 100 credits
-    expect(verifyData.settlement.balance).toBe(100);
+    expect(verifyData.settlement.balance).toBe(120);
 
     // Step 5: Verify double-credit protection (idempotent replay)
     const duplicateAdminVerifyReq = new NextRequest('http://localhost:3000/api/admin/operations', {
@@ -347,7 +347,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const duplicateVerifyRes = await adminOpsHandler(duplicateAdminVerifyReq);
     expect(duplicateVerifyRes.status).toBe(200);
     const dupData = await duplicateVerifyRes.json();
-    expect(dupData.settlement.balance).toBe(100); // Still 100! NOT 150!
+    expect(dupData.settlement.balance).toBe(120); // No duplicate grant
 
     // Step 6: Generate mock video job using acquired customer session
     const clientRequestId = `req_comm_${Date.now()}`;
@@ -360,6 +360,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
       body: JSON.stringify({
         styleId: 'NX01',
         clientRequestId,
+        imageKeys: ['workspaces/test/inputs/product.png'],
         prompt: 'Ulasan produk kosmetik organik Malaysia',
       }),
     });
@@ -398,9 +399,9 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     // Step 8: Verify final customer wallet after complete lifecycle
     const finalWallet = await DurableStore.getWallet(activeWorkspaceId);
     // 100 minus 10 settled = 90 remaining available credits
-    expect(finalWallet.balance).toBe(90);
+    expect(finalWallet.balance).toBe(110);
     expect(finalWallet.reservedBalance).toBe(0);
-    expect(finalWallet.lifetimeGranted).toBe(100);
+    expect(finalWallet.lifetimeGranted).toBe(120);
     expect(finalWallet.lifetimeSpent).toBe(10);
   });
 

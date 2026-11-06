@@ -54,7 +54,7 @@ export default function LandingPage() {
             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
           >
             <Gift className="w-3.5 h-3.5 text-amber-300" />
-            <span>Daftar FREE (50 Kredit)</span>
+            <span>Daftar FREE (20 Kredit)</span>
           </Link>
         </div>
       </header>
@@ -65,7 +65,7 @@ export default function LandingPage() {
           {/* Trial Highlight Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-50 via-purple-50 to-amber-50 border border-indigo-200 text-indigo-800 text-xs font-bold shadow-xs">
             <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-            <span>Daftar FREE & Dapat 50 Kredit Percuma</span>
+            <span>Daftar FREE & Dapat 20 Kredit Percuma</span>
           </div>
 
           {/* Main Headline */}
@@ -133,7 +133,7 @@ export default function LandingPage() {
                   </p>
                 </div>
                 <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>5 video penuh dengan 50 kredit percuma</span>
+                  <span>2 video Voice dengan 20 kredit percuma</span>
                   <Link href="/factory?engine=nexabot" className="text-indigo-600 hover:text-indigo-700">Pilih Gaya &rarr;</Link>
                 </div>
               </div>
@@ -153,7 +153,7 @@ export default function LandingPage() {
                   </p>
                 </div>
                 <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>3 video penuh dengan 50 kredit percuma</span>
+                  <span>1 video Motion dengan 20 kredit percuma</span>
                   <Link href="/factory?engine=runninghub" className="text-purple-600 hover:text-purple-700">Pilih Gaya &rarr;</Link>
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-amber-900 leading-relaxed max-w-3xl">
-                Kami bagi 50 kredit FREE dulu. Korang cuba buat video puas-puas, tengok hasil dia. Bila dah jatuh cinta dengan AffiMatik, baru kita sembang pasal duit. 😎
+                Kami bagi 20 kredit percuma untuk mencuba video AffiMatik. Pelan berbayar belum dibuka untuk umum.
               </p>
               <div className="pt-2 flex flex-wrap items-center gap-4">
                 <Link
@@ -230,7 +230,7 @@ export default function LandingPage() {
                   className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm inline-flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Cuba FREE — Dapat 50 Kredit</span>
+                  <span>Cuba FREE — Dapat 20 Kredit</span>
                 </Link>
                 <a
                   href="mailto:support@affimatik.online?subject=Pertanyaan%20Akses%20Awal%20AffiMatik"

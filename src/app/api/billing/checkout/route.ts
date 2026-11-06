@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         {
           error: 'PAYMENTS_COMING_SOON',
           code: 'PAYMENTS_COMING_SOON',
-          message: 'Pelan berbayar belum dibuka untuk umum. Duit korang simpan dulu! Nikmati 50 kredit percuma anda sekarang untuk cuba jana video.',
+          message: 'Pelan berbayar belum dibuka untuk umum. Akaun baharu menerima 20 kredit percuma untuk mencuba penjanaan video.',
           status: 'COMING_SOON',
         },
         { status: 403 }

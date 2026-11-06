@@ -17,13 +17,15 @@ import {
   Sliders,
   Settings,
   Gift,
+  BadgePercent,
   X,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Video Factory', href: '/factory', icon: Video, badge: 'Quick / Adv' },
-  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '12 Gaya' },
+  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '13 Gaya' },
+  { name: 'Program Affiliate', href: '/affiliate', icon: BadgePercent },
   { name: 'Product Library', href: '/products', icon: ShoppingBag },
   { name: 'Avatar Library', href: '/avatars', icon: Users },
   { name: 'Video Library', href: '/library', icon: Film },
@@ -31,6 +33,7 @@ const NAV_ITEMS = [
   { name: 'Posting Automation', href: '#', icon: Send, badge: 'Akan Datang', disabled: true },
   { name: 'Billing & Credits', href: '/billing', icon: CreditCard },
   { name: 'Style Testing Lab', href: '/admin/styles', icon: ShieldCheck, badge: 'Admin' },
+  { name: 'Kelulusan Affiliate', href: '/admin/affiliates', icon: ShieldCheck, badge: 'Owner' },
   { name: 'Admin Console', href: '/admin', icon: ShieldCheck, badge: 'Owner' },
 ];
 
@@ -160,7 +163,7 @@ export function Sidebar() {
           <div className="space-y-2 text-center">
             <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-700">
               <Gift className="w-3.5 h-3.5 text-amber-500" />
-              <span>50 Kredit Percuma</span>
+              <span>20 Kredit Percuma</span>
             </div>
             <p className="text-[10px] text-slate-500 leading-tight">
               Daftar akaun sekarang untuk mula jana video secara automatik.
@@ -341,7 +344,7 @@ export function MobileSidebarDrawer({
               onClick={onClose}
               className="block w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold text-center transition min-h-[44px] flex items-center justify-center"
             >
-              Daftar Percuma (50 Kredit)
+              Daftar Percuma (20 Kredit)
             </Link>
           )}
         </div>

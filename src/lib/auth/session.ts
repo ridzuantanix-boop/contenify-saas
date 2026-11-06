@@ -21,7 +21,7 @@ const DEFAULT_SESSION_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
 let runtimeDevSecret: string | null = null;
 
 function getSecretKey(): string {
-  const secret = process.env.SESSION_SECRET || process.env.ADMIN_ACCESS_KEY;
+  const secret = process.env.SESSION_SECRET;
   if (secret && secret.trim().length > 0) {
     return secret.trim();
   }

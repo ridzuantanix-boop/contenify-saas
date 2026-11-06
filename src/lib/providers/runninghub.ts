@@ -30,7 +30,7 @@ export class RunningHubAdapter implements IProviderAdapter {
     return {
       providerName: 'runninghub',
       supportedDurations: [15],
-      supportsSpokenBM: false, // Visual/video primarily; BM audio paired with Edge-TTS or post-stitch
+      supportsSpokenBM: false, // AffiMatik Motion is visual-only, with ambient audio and no spoken dialogue.
       supportsProductResearch: false,
       maxReferenceImages: 4,
       creditCostPerSecond: 1.0,

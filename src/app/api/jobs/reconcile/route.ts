@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
+import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { ProviderRouter } from '@/lib/providers/router';
 
 export const runtime = 'edge';
@@ -57,19 +58,13 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const adapter = router.resolveProvider(10, job.provider, true);
+        const adapter = router.resolveProvider(job.durationSeconds as 10 | 15, job.provider, true);
         const statusRes = await adapter.getStatus(job.providerTaskId);
 
         if (statusRes.normalizedStatus === 'COMPLETED') {
           const outputs = await adapter.getOutputs(job.providerTaskId);
           if (outputs?.videoUrl) {
-            await DurableStore.settleCredits(job.workspaceId, job.id, job.requiredCredits, `stl_recon_${job.id}`);
-            await DurableStore.updateJobStatus(job.id, {
-              status: 'COMPLETED',
-              videoUrl: outputs.videoUrl,
-              rawStatus: statusRes.rawStatus,
-            });
-            results.settled++;
+            if (await persistCompletedVideo(job, outputs.videoUrl, statusRes.rawStatus)) results.settled++;
           }
         } else if (statusRes.normalizedStatus === 'FAILED') {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_recon_${job.id}`);

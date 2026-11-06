@@ -53,6 +53,7 @@ export interface VideoJobRecord {
   productCategory?: string;
   requiredCredits: number;
   videoUrl?: string;
+  videoObjectKey?: string;
   errorMessage?: string;
   rawStatus?: string;
   createdAt: string;
@@ -296,7 +297,7 @@ export class DurableStore {
         };
       }
 
-      // Auto-provision initial wallet with 50 free trial credits atomically (wallet + GRANT ledger entry in single transaction)
+      // Auto-provision initial wallet with 20 free trial credits atomically (wallet + GRANT ledger entry in single transaction)
       const rpcRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
         method: 'POST',
         headers: {
@@ -306,7 +307,7 @@ export class DurableStore {
         },
         body: JSON.stringify({
           p_workspace_id: workspaceId,
-          p_initial_balance: 50,
+          p_initial_balance: 20,
         }),
       });
 
@@ -335,9 +336,9 @@ export class DurableStore {
     if (!localDb.wallets[workspaceId]) {
       localDb.wallets[workspaceId] = {
         workspaceId,
-        balance: 50, // Initial free credits by policy (50 free trial credits for soft launch)
+        balance: 20,
         reservedBalance: 0,
-        lifetimeGranted: 50,
+        lifetimeGranted: 20,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -346,12 +347,12 @@ export class DurableStore {
       localDb.ledger[grantKey] = {
         id: grantKey,
         workspaceId,
-        amount: 50,
+        amount: 20,
         eventType: 'GRANT',
         referenceType: 'SUBSCRIPTION',
         referenceId: workspaceId,
         idempotencyKey: grantKey,
-        description: 'Pemberian baki permulaan akaun AffiMatik (50 kredit percuma)',
+        description: 'Pemberian baki permulaan akaun AffiMatik (20 kredit percuma)',
         timestamp: new Date().toISOString(),
       };
     }
@@ -450,9 +451,9 @@ export class DurableStore {
       // 3. Balance verification
       const wallet = localDb.wallets[req.workspaceId] || {
         workspaceId: req.workspaceId,
-        balance: 50,
+        balance: 20,
         reservedBalance: 0,
-        lifetimeGranted: 50,
+        lifetimeGranted: 20,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -575,9 +576,9 @@ export class DurableStore {
 
       const wallet = localDb.wallets[workspaceId] || {
         workspaceId,
-        balance: 50,
+        balance: 20,
         reservedBalance: 0,
-        lifetimeGranted: 50,
+        lifetimeGranted: 20,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -818,6 +819,7 @@ export class DurableStore {
       productCategory: row.product_category || undefined,
       requiredCredits: row.required_credits || (row.duration_seconds === 10 ? 10 : 15),
       videoUrl: row.result_video_url || undefined,
+      videoObjectKey: row.result_video_r2_key || undefined,
       errorMessage: row.error_message || undefined,
       rawStatus: row.raw_status || undefined,
       createdAt: row.created_at,
@@ -1037,7 +1039,7 @@ export class DurableStore {
 
   static async updateJobStatus(
     jobId: string,
-    updates: Partial<Pick<VideoJobRecord, 'status' | 'videoUrl' | 'errorMessage' | 'rawStatus' | 'providerTaskId'>>
+    updates: Partial<Pick<VideoJobRecord, 'status' | 'videoUrl' | 'videoObjectKey' | 'errorMessage' | 'rawStatus' | 'providerTaskId'>>
   ): Promise<VideoJobRecord | null> {
     this.checkFailClosed();
 
@@ -1048,6 +1050,7 @@ export class DurableStore {
       if (updates.status) patchPayload.status = updates.status;
       if (updates.providerTaskId) patchPayload.provider_task_id = updates.providerTaskId;
       if (updates.videoUrl) patchPayload.result_video_url = updates.videoUrl;
+      if (updates.videoObjectKey) patchPayload.result_video_r2_key = updates.videoObjectKey;
       if (updates.errorMessage) patchPayload.error_message = updates.errorMessage;
 
       const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}`;
@@ -1426,9 +1429,9 @@ export class DurableStore {
     // Grant credits
     const wallet = localDb.wallets[order.workspaceId] || {
       workspaceId: order.workspaceId,
-      balance: 50,
+      balance: 20,
       reservedBalance: 0,
-      lifetimeGranted: 50,
+      lifetimeGranted: 20,
       lifetimeSpent: 0,
       updatedAt: new Date().toISOString(),
     };
@@ -1452,20 +1455,24 @@ export class DurableStore {
       description: `Plan Credit Purchase: ${order.planId} (+${order.creditsGranted} credits)`,
     };
 
-    // Affiliate Commission attribution (20%)
+    // Affiliate commission is only earned by an approved partner on a customer's first paid order.
     if (order.referralCode) {
-      const commissionAmount = Math.round(order.amountMyr * 0.20 * 100) / 100;
-      const commId = crypto.randomUUID();
-      localDb.commissions[commId] = {
-        id: commId,
-        affiliateId: order.referralCode,
-        orderId: order.id,
-        workspaceId: order.workspaceId,
-        amountMyr: commissionAmount,
-        ratePercentage: 20.0,
-        status: 'PENDING',
-        createdAt: new Date().toISOString(),
-      };
+      const partner = Object.values(localDb.affiliates).find((a) => a.referralCode === order.referralCode && a.status === 'APPROVED');
+      const priorPaidOrder = Object.values(localDb.orders).some((candidate) => candidate.id !== order.id && candidate.workspaceId === order.workspaceId && candidate.status === 'PAID');
+      if (partner && partner.userId !== order.userId && !priorPaidOrder) {
+        const commissionAmount = Math.round(order.amountMyr * 0.10 * 100) / 100;
+        const commId = crypto.randomUUID();
+        localDb.commissions[commId] = {
+          id: commId,
+          affiliateId: partner.id,
+          orderId: order.id,
+          workspaceId: order.workspaceId,
+          amountMyr: commissionAmount,
+          ratePercentage: 10.0,
+          status: 'PENDING',
+          createdAt: new Date().toISOString(),
+        };
+      }
     }
 
     return {
@@ -1579,8 +1586,10 @@ export class DurableStore {
           id,
           user_id: userId,
           referral_code: cleanCode,
-          commission_rate: 20.0,
-          status: 'active',
+          commission_rate: 10.0,
+          status: 'PENDING',
+          applied_at: new Date().toISOString(),
+          terms_accepted_at: new Date().toISOString(),
         }),
       });
 
@@ -1597,8 +1606,47 @@ export class DurableStore {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
-    localDb.affiliates[id] = { id, userId, referralCode: cleanCode, rate: 20.0, status: 'active' };
+    localDb.affiliates[id] = { id, userId, referralCode: cleanCode, rate: 10.0, status: 'PENDING' };
     return { id, referralCode: cleanCode };
+  }
+
+  static async reviewAffiliatePartner(id: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED', reviewer: string): Promise<boolean> {
+    this.checkFailClosed();
+    if (this.isSupabaseConfigured()) {
+      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?id=eq.${encodeURIComponent(id)}&status=in.(PENDING,APPROVED)`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({ status, reviewed_at: new Date().toISOString(), reviewed_by: reviewer, commission_rate: 10 }),
+      });
+      if (!res.ok) throw new Error(`Affiliate review failed: HTTP ${res.status}`);
+      const rows = await res.json();
+      return rows.length === 1;
+    }
+    const partner = localDb.affiliates[id];
+    if (!partner || !['PENDING', 'APPROVED'].includes(partner.status)) return false;
+    partner.status = status;
+    return true;
+  }
+
+  static async listAffiliatePartners(): Promise<Array<{ id: string; userId: string; status: string; appliedAt?: string }>> {
+    this.checkFailClosed();
+    if (this.isSupabaseConfigured()) {
+      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?select=id,user_id,status,applied_at&order=applied_at.desc&limit=100`, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+      if (!res.ok) throw new Error(`Affiliate list failed: HTTP ${res.status}`);
+      const rows = await res.json();
+      return rows.map((row: { id: string; user_id: string; status: string; applied_at?: string }) => ({ id: row.id, userId: row.user_id, status: row.status, appliedAt: row.applied_at }));
+    }
+    return Object.values(localDb.affiliates).map((partner) => ({ id: partner.id, userId: partner.userId, status: partner.status }));
   }
 
   static async listAffiliateCommissions(affiliateId?: string): Promise<AffiliateCommissionRecord[]> {
@@ -1740,9 +1788,9 @@ export class DurableStore {
 
     const wallet = localDb.wallets[workspaceId] || {
       workspaceId,
-      balance: 50,
+      balance: 20,
       reservedBalance: 0,
-      lifetimeGranted: 50,
+      lifetimeGranted: 20,
       lifetimeSpent: 0,
       updatedAt: new Date().toISOString(),
     };
@@ -1976,7 +2024,7 @@ export class DurableStore {
     }
 
     if (activationType === 'COMPLIMENTARY') {
-      const grantCredits = typeof credits === 'number' && credits > 0 ? credits : 50;
+      const grantCredits = typeof credits === 'number' && credits > 0 ? credits : 20;
       const targetTier = tier || 'starter';
       const adjResult = await DurableStore.adjustCredits(
         workspaceId,
@@ -2368,9 +2416,9 @@ export class DurableStore {
       whatsapp: u.whatsapp || '-',
       tier: u.tier || 'free',
       workspaceId: u.workspaceId || '-',
-      balance: localDb.wallets[u.workspaceId]?.balance ?? 50,
+      balance: localDb.wallets[u.workspaceId]?.balance ?? 0,
       createdAt: u.registeredAt || new Date().toISOString(),
-      provisionStatus: 'provisioned' as const,
+      provisionStatus: localDb.wallets[u.workspaceId] ? 'provisioned' as const : 'pending' as const,
     }));
 
     return { users, total, isAuthoritative: false };

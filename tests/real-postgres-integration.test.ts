@@ -17,7 +17,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       await db.exec(stubsSql);
     }
 
-    // 3. Read and apply all 5 forward migrations in strict sequential order
+    // 3. Read and apply all forward migrations in strict sequential order
     const migrationsDir = path.resolve(process.cwd(), 'supabase/migrations');
     const migrationFiles = [
       '00001_initial_schema.sql',
@@ -27,6 +27,10 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00005_workspace_status_and_alignment.sql',
       '00006_billing_affiliates_and_financial_safety.sql',
       '00007_fix_admin_credit_adjustment_uuid.sql',
+      '00008_soft_launch_50_credits.sql',
+      '00009_add_whatsapp_to_profiles.sql',
+      '00010_fix_welcome_credit_ledger.sql',
+      '00011_affiliate_application_policy.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -359,7 +363,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(ledgerRows.rows[0].amount).toBe(10);
     expect(ledgerRows.rows[0].event_type).toBe('GRANT');
     expect(ledgerRows.rows[0].reference_type).toBe('SUBSCRIPTION');
-    expect(ledgerRows.rows[0].idempotency_key).toBe(`grant_initial_${freshWorkspaceId}`);
+    expect(ledgerRows.rows[0].idempotency_key).toBe(`grant_welcome_${freshWorkspaceId}`);
 
     // 2. Second provisioning call (must be strictly idempotent)
     const res2 = await db.query<{ provision_wallet_atomic: any }>(

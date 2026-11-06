@@ -384,7 +384,7 @@ export default function AdminPage() {
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Pemantauan bajet percubaan 50 kredit, pengaktifan manual pelanggan, dan kawalan penutupan checkout.
+            Pemantauan bajet percubaan 20 kredit untuk akaun baharu, pengaktifan manual pelanggan, dan kawalan penutupan checkout.
           </p>
         </div>
 
@@ -481,7 +481,7 @@ export default function AdminPage() {
             <div className="text-2xl font-bold text-slate-900 mt-2">
               {metrics ? metrics.totalRegistrations : '...'}
             </div>
-            <div className="text-[11px] text-emerald-600 mt-1">Akaun Layak 50 Kredit</div>
+            <div className="text-[11px] text-emerald-600 mt-1">Akaun Baharu Layak 20 Kredit</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
@@ -616,7 +616,7 @@ export default function AdminPage() {
                 <span>Senarai Pengguna Berdaftar ({usersTotal})</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Pengguna yang mendaftar akaun dengan nombor WhatsApp dan kelayakan 50 kredit percuma.
+                Pengguna yang mendaftar akaun dengan nombor WhatsApp dan kelayakan 20 kredit percuma bagi akaun baharu.
               </p>
             </div>
 
@@ -904,9 +904,9 @@ export default function AdminPage() {
                         }}
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                       >
-                        <option value="starter">Starter Creator (RM 49 • 50 Kredit)</option>
-                        <option value="pro">Pro Affiliate (RM 129 • 160 Kredit)</option>
-                        <option value="agency">Agency Studio (RM 399 • 600 Kredit)</option>
+                        <option value="starter">Starter Creator (RM 49 • 100 Kredit)</option>
+                        <option value="pro">Pro Creator (RM 129 • 300 Kredit)</option>
+                        <option value="agency">Agency Studio (RM 399 • 1,000 Kredit)</option>
                       </select>
                     </div>
                     <div>

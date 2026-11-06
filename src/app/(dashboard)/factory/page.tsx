@@ -33,6 +33,7 @@ interface UploadedFilePreview {
   name: string;
   size: number;
   dataUrl: string;
+  assetId: string;
 }
 
 interface ActiveJobDisplay {
@@ -59,6 +60,7 @@ function VideoFactoryContent() {
   // Step 1: Product reference asset (the provider owns interpretation)
   const [productName, setProductName] = useState('');
   const [images, setImages] = useState<UploadedFilePreview[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Step 2: Engine Selector & Selected Video Style
   const [selectedEngine, setSelectedEngine] = useState<'all' | 'nexabot' | 'runninghub'>('all');
@@ -87,6 +89,19 @@ function VideoFactoryContent() {
   const selectedStyle = useMemo(() => {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
+
+  useEffect(() => {
+    const selectedAssetId = searchParams.get('imageAssetId');
+    if (!selectedAssetId) return;
+    fetch('/api/products', { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) throw new Error('Imej produk tidak dapat dimuatkan.');
+      const data = await response.json();
+      const asset = data.assets?.find((item: { id: string }) => item.id === selectedAssetId);
+      if (!asset) throw new Error('Imej produk tidak ditemui.');
+      setImages([{ id: asset.id, assetId: asset.id, name: asset.filename, size: 0, dataUrl: asset.imageUrl }]);
+      if (asset.name !== 'Produk tanpa nama') setProductName(asset.name);
+    }).catch((err) => setSubmitError(err.message));
+  }, [searchParams]);
 
   const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
 
@@ -117,15 +132,13 @@ function VideoFactoryContent() {
           const pending = data.jobs.find(
             (j: ActiveJobDisplay) => j.status === 'PROCESSING' || j.status === 'SUBMITTING' || j.status === 'QUEUED'
           );
-          if (pending && !activeJob) {
-            setActiveJob(pending);
-          }
+          if (pending) setActiveJob((current) => current || pending);
         }
       }
     } catch {
       // ignore
     }
-  }, [activeJob]);
+  }, []);
 
   useEffect(() => {
     refreshAccountBalance();
@@ -133,8 +146,10 @@ function VideoFactoryContent() {
   }, [refreshAccountBalance, refreshJobsFromDatabase]);
 
   // Polling for active job with honest elapsed time (No fake percentage increments)
+  const activeJobId = activeJob?.jobId;
+  const activeJobStatus = activeJob?.status;
   useEffect(() => {
-    if (!activeJob || activeJob.status === 'COMPLETED' || activeJob.status === 'FAILED') {
+    if (!activeJobId || activeJobStatus === 'COMPLETED' || activeJobStatus === 'FAILED') {
       return;
     }
 
@@ -145,7 +160,7 @@ function VideoFactoryContent() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/jobs?jobId=${activeJob.jobId}`);
+        const res = await fetch(`/api/jobs?jobId=${activeJobId}`);
         if (!res.ok) return;
         const data = await res.json();
 
@@ -179,7 +194,7 @@ function VideoFactoryContent() {
       clearInterval(timerInterval);
       clearInterval(pollInterval);
     };
-  }, [activeJob?.jobId, activeJob?.status, refreshAccountBalance, refreshJobsFromDatabase]);
+  }, [activeJobId, activeJobStatus, refreshAccountBalance, refreshJobsFromDatabase]);
 
   // Image upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,25 +202,30 @@ function VideoFactoryContent() {
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 25 * 1024 * 1024) {
-      setSubmitError('Saiz imej melebihi had 25MB.');
+    if (file.size > 15 * 1024 * 1024) {
+      setSubmitError('Saiz imej melebihi had 15MB.');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    setIsUploadingImage(true);
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      setImages([
-        {
-          id: crypto.randomUUID(),
-          name: file.name,
-          size: file.size,
-          dataUrl,
-        },
-      ]);
-      // Filename remains file metadata only; never fabricate product name from filename
-      setSubmitError(null);
+      try {
+        const form = new FormData();
+        form.append('image', file);
+        if (productName.trim()) form.append('name', productName.trim());
+        const response = await fetch('/api/products', { method: 'POST', body: form });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Imej tidak dapat disimpan.');
+        setImages([{ id: crypto.randomUUID(), name: file.name, size: file.size, dataUrl, assetId: result.assetId }]);
+        setSubmitError(null);
+      } catch (err) {
+        setImages([]);
+        setSubmitError(err instanceof Error ? err.message : 'Imej tidak dapat disimpan.');
+      } finally { setIsUploadingImage(false); }
     };
+    reader.onerror = () => { setIsUploadingImage(false); setSubmitError('Imej tidak dapat dibaca.'); };
     reader.readAsDataURL(file);
   };
 
@@ -223,7 +243,7 @@ function VideoFactoryContent() {
     setSubmitError(null);
     setSubmitSuccess(null);
 
-    if (images.length === 0) {
+    if (images.length === 0 || isUploadingImage) {
       setSubmitError('Sila muat naik sekurang-kurangnya satu gambar produk untuk menjana video.');
       return;
     }
@@ -248,7 +268,7 @@ function VideoFactoryContent() {
         productName: productName.trim() || undefined,
         creativeInstruction: creativeInstruction.trim() || undefined,
         isMuslimahModest,
-        imageKeys: [images[0].dataUrl],
+        imageAssetId: images[0].assetId,
       };
 
       const res = await fetch('/api/jobs', {
@@ -369,10 +389,11 @@ function VideoFactoryContent() {
                   <Upload className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-bold text-slate-800">Pilih atau Seret Gambar Produk</span>
-                <span className="text-[11px] text-slate-400 mt-0.5">JPG, PNG atau WebP (Maksimum 25MB)</span>
+                <span className="text-[11px] text-slate-400 mt-0.5">JPG, PNG atau WebP (Maksimum 15MB)</span>
               </label>
             ) : (
               <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={images[0].dataUrl}
                   alt="Product preview"

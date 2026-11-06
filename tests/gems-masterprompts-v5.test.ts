@@ -143,7 +143,7 @@ describe('AFFIMATIK GEMS MASTERPROMPTS V5.0 — Authoritative Creative Suite', (
   // ---------------------------------------------------------------------------
   // 4. Verbatim User Custom Script Preservation
   // ---------------------------------------------------------------------------
-  it('4. ensures the user approved script is preserved exactly word-for-word to provider payload', () => {
+  it('4. excludes a legacy custom script from the direct provider payload', () => {
     const style = getVideoStyle('NX01')!;
     const profile = AICreativeDirector.extractProductProfile({
       productName: 'Minyak Habbatus Sauda',
@@ -158,8 +158,9 @@ describe('AFFIMATIK GEMS MASTERPROMPTS V5.0 — Authoritative Creative Suite', (
     });
 
     expect(compiled.preflightValid).toBe(true);
-    expect(compiled.spokenScript).toBe(approvedCustomScript);
-    expect(compiled.providerPrompt).toContain(`"${approvedCustomScript}"`);
+    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.providerPrompt).not.toContain(approvedCustomScript);
+    expect(compiled.providerPrompt).toContain('PROVIDER-CREATED DIALOGUE');
   });
 
   // ---------------------------------------------------------------------------

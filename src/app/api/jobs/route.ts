@@ -6,6 +6,8 @@ import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
+import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
+import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 
 export const runtime = 'edge';
 
@@ -70,6 +72,7 @@ export async function POST(req: NextRequest) {
       creativeInstruction,
       customPrompt,
       imageKeys = [],
+      imageAssetId,
     } = body;
 
     // Mandate clientRequestId to prevent accidental non-idempotent job creation
@@ -80,11 +83,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!Array.isArray(imageKeys) || imageKeys.length === 0 || typeof imageKeys[0] !== 'string' || imageKeys[0].trim().length === 0) {
+    if (!imageAssetId && (!Array.isArray(imageKeys) || imageKeys.length === 0 || typeof imageKeys[0] !== 'string' || imageKeys[0].trim().length === 0)) {
       return NextResponse.json(
         { error: 'Sila muat naik sekurang-kurangnya satu imej rujukan produk sebelum menjana video.' },
         { status: 400 }
       );
+    }
+
+    let savedImageUrl: string | undefined;
+    if (imageAssetId) {
+      if (typeof imageAssetId !== 'string' || !/^[0-9a-f-]{36}$/i.test(imageAssetId) || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return NextResponse.json({ error: 'Aset imej produk tidak sah.' }, { status: 400 });
+      }
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const lookup = await fetch(`${process.env.SUPABASE_URL}/rest/v1/product_images?id=eq.${encodeURIComponent(imageAssetId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=r2_key,mime_type&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (!lookup.ok) return NextResponse.json({ error: 'Pengesahan aset imej gagal.' }, { status: 503 });
+      const rows = await lookup.json() as Array<{ r2_key: string; mime_type: string }>;
+      if (!rows.length) return NextResponse.json({ error: 'Aset imej tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
+      savedImageUrl = requestedProvider === 'nexabot' || (!requestedProvider && (styleId || presetId || 'NX01').startsWith('NX'))
+        ? await privateImageDataUri(rows[0].r2_key, rows[0].mime_type)
+        : await signPrivateAsset(rows[0].r2_key);
+    } else if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
+      return NextResponse.json({ error: 'Simpan imej dalam Pustaka Produk sebelum menjana video.' }, { status: 400 });
     }
 
     // Disallow mock provider for non-admin accounts in production
@@ -207,6 +227,7 @@ export async function POST(req: NextRequest) {
       inputOptions: {
         isMuslimahModest,
         imageKeysCount: imageKeys.length,
+        imageAssetId: typeof imageAssetId === 'string' ? imageAssetId : null,
       },
     });
 
@@ -236,7 +257,7 @@ export async function POST(req: NextRequest) {
 
     // 8. Provider API Dispatch (Job is already durably recorded with SUBMITTING status)
     const idempotencyKey = `idem_${jobId}`;
-    const mainImage = String(imageKeys[0]);
+    const mainImage = savedImageUrl || String(imageKeys[0]);
     let submitResult;
     try {
       submitResult = await providerAdapter.submit({
@@ -333,6 +354,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    if (job.status === 'COMPLETED' && job.videoObjectKey) {
+      return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'COMPLETED', output: { videoUrl: `/api/videos/${job.id}/stream` } });
+    }
+
     try {
       const activeTaskId = job.providerTaskId;
       if (!activeTaskId) {
@@ -344,28 +369,17 @@ export async function GET(req: NextRequest) {
       }
 
       // Query provider adapter using the validated job's providerTaskId
-      const adapter = router.resolveProvider(10, job.provider, session.role === 'superadmin');
+      const adapter = router.resolveProvider(job.durationSeconds as 10 | 15, job.provider, session.role === 'superadmin');
       const statusRes = await adapter.getStatus(activeTaskId);
 
       let outputRes = null;
       if (statusRes.normalizedStatus === 'COMPLETED') {
         outputRes = await adapter.getOutputs(activeTaskId);
 
-        // Atomic settlement upon verified MP4 URL
-        if (outputRes?.videoUrl && job.status !== 'COMPLETED') {
-          const settleRes = await DurableStore.settleCredits(
-            job.workspaceId,
-            job.id,
-            job.requiredCredits,
-            `stl_${job.id}`
-          );
-          if (settleRes.success) {
-            await DurableStore.updateJobStatus(job.id, {
-              status: 'COMPLETED',
-              videoUrl: outputRes.videoUrl,
-              rawStatus: statusRes.rawStatus,
-            });
-          }
+        if (outputRes?.videoUrl && (job.status !== 'COMPLETED' || !job.videoObjectKey)) {
+          const persisted = await persistCompletedVideo(job, outputRes.videoUrl, statusRes.rawStatus);
+          if (!persisted) throw new Error('Penyelesaian kredit belum berjaya. Tugasan akan dicuba semula.');
+          outputRes.videoUrl = job.provider === 'mock' || process.env.NODE_ENV !== 'production' ? outputRes.videoUrl : `/api/videos/${job.id}/stream`;
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
         if (job.status !== 'FAILED') {

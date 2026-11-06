@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Pesanan tidak dijumpai.' }, { status: 404 });
   }
 
-  // Tenant isolation: Only order owner or admin can inspect order
-  if (order.workspaceId !== session.workspaceId && session.role !== 'owner' && session.role !== 'admin') {
+  // Tenant isolation: ordinary workspace admins cannot inspect another tenant.
+  if (order.workspaceId !== session.workspaceId && session.role !== 'superadmin') {
     return NextResponse.json({ error: 'Akses Ditolak ke pesanan ini.' }, { status: 403 });
   }
 
-  const wallet = await DurableStore.getWallet(session.workspaceId);
+  const wallet = await DurableStore.getWallet(order.workspaceId);
 
   return NextResponse.json({
     orderId: order.id,

@@ -29,6 +29,8 @@ export interface FinancialHealthMetrics {
     nexabot10sMyr: number;
     runninghub15sMyr: number;
   };
+  costsVerified: boolean;
+  gatewaySettlementVerified: boolean;
   notes: {
     clearedCashBasis: string;
     creditLiabilityBasis: string;
@@ -53,8 +55,8 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
     paidOrders.reduce((sum, o) => sum + (o.amountMyr * 0.02 + 1.00), 0) * 100
   ) / 100;
 
-  // Actual cleared cash in owner bank account (excluding pending transfer receipts)
-  const clearedCash = Math.max(0, Math.round((grossPaidRevenue - estimatedGatewayFees) * 100) / 100);
+  // Orders marked PAID are not proof of bank settlement. Do not treat them as cash.
+  const clearedCash = 0;
 
   // Settings
   const genSettings = (await DurableStore.getSystemSettings('generation_status')) || {};
@@ -65,21 +67,18 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
   const runninghubCost = Number(costSettings.runninghub_15s_myr || 2.00);
   const safetyBuffer = Number(safetySettings.minimum_safety_buffer_myr || 500.00);
   const refundPercent = Number(safetySettings.refund_reserve_percent || 10.0);
+  const costsVerified = Boolean(costSettings.verified_at && costSettings.source && costSettings.nexabot_10s_myr && costSettings.runninghub_15s_myr);
 
   // Active customer tiers & MRR estimation
   const customerBreakdown = { free: 0, starter: 0, pro: 0, agency: 0 };
-  let mrr = 0;
 
   for (const order of paidOrders) {
     if (order.planId.includes('agency')) {
       customerBreakdown.agency++;
-      mrr += 399;
     } else if (order.planId.includes('pro')) {
       customerBreakdown.pro++;
-      mrr += 129;
     } else if (order.planId.includes('starter')) {
       customerBreakdown.starter++;
-      mrr += 49;
     }
   }
 
@@ -138,6 +137,7 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
   } else if (clearedCash < (requiredReserve + safetyBuffer)) {
     reserveStatus = 'WARNING';
   }
+  if (!costsVerified) reserveStatus = 'CRITICAL';
 
   return {
     totalRevenueMyr: grossPaidRevenue,
@@ -147,7 +147,7 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
     clearedCashMyr: clearedCash,
     activePaidCustomers,
     customerBreakdown,
-    mrrMyr: mrr,
+    mrrMyr: 0, // Manual orders are not verified recurring contracts.
     outstandingCreditsCount: outstandingCredits,
     estimatedCreditLiabilityMyr: creditLiability,
     expectedProviderRenewalMyr: providerRenewals,
@@ -155,7 +155,7 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
     refundBufferMyr: refundBuffer,
     requiredOperatingReserveMyr: requiredReserve,
     safetyBufferMyr: safetyBuffer,
-    safeToWithdrawMyr: advisorySafeToWithdraw,
+    safeToWithdrawMyr: 0,
     advisorySafeToWithdrawMyr: advisorySafeToWithdraw,
     reserveStatus,
     emergencyPauseActive: Boolean(genSettings.paused),
@@ -163,10 +163,12 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
       nexabot10sMyr: nexabotCost,
       runninghub15sMyr: runninghubCost,
     },
+    costsVerified,
+    gatewaySettlementVerified: false,
     notes: {
-      clearedCashBasis: 'Dikira dari pesanan PAID ditolak anggaran yuran gateway (2% + RM1). Pesanan PENDING tidak dikira.',
-      creditLiabilityBasis: 'Anggaran kos pemenuhan liabiliti kredit aktif berdasarkan RM1.50 per 10 kredit Nexabot.',
-      safeToWithdrawBasis: 'Anggaran jumlah selamat dikeluarkan selepas menolak simpanan operasi, liabiliti AI provider (RM300), komisen affiliate, dan rizab keselamatan (RM500).',
+      clearedCashBasis: 'UNAVAILABLE: status PAID dalam aplikasi tidak membuktikan wang telah dijelaskan ke akaun bank.',
+      creditLiabilityBasis: 'Anggaran sementara daripada tetapan kos pembekal; kos sebenar belum disahkan.',
+      safeToWithdrawBasis: 'RM0 sehingga penyelesaian gateway dan kos pembekal disahkan. Anggaran sahaja tidak boleh digunakan untuk pengeluaran pemilik.',
     },
   };
 }

@@ -1,0 +1,20 @@
+import { DurableStore, VideoJobRecord } from '@/lib/db/store';
+import { ingestProviderMp4 } from '@/lib/storage/supabase-assets';
+
+export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string): Promise<boolean> {
+  let objectKey = job.videoObjectKey;
+  if (process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider !== 'mock' && !objectKey) {
+    const stored = await ingestProviderMp4(job.provider, providerUrl, job.workspaceId, job.id);
+    objectKey = stored.objectKey;
+    await DurableStore.updateJobStatus(job.id, { videoObjectKey: objectKey });
+  }
+  const settled = await DurableStore.settleCredits(job.workspaceId, job.id, job.requiredCredits, `stl_${job.id}`);
+  if (!settled.success) return false;
+  await DurableStore.updateJobStatus(job.id, {
+    status: 'COMPLETED',
+    videoObjectKey: objectKey,
+    videoUrl: objectKey ? `/api/videos/${job.id}/stream` : providerUrl,
+    rawStatus,
+  });
+  return true;
+}

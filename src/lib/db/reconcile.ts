@@ -147,14 +147,14 @@ export async function reconcileOrphanAccounts(): Promise<ReconciliationReport> {
         completeCount++;
       }
 
-      // Check wallet and provision 50 credits if not yet provisioned
+      // Check wallet and provision 20 credits if not yet provisioned
       if (workspaceId) {
         const provRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
           method: 'POST',
           headers: sHeaders,
           body: JSON.stringify({
             p_workspace_id: workspaceId,
-            p_initial_balance: 50,
+            p_initial_balance: 20,
           }),
         });
 

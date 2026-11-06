@@ -81,10 +81,10 @@ describe('AFFIMATIK V2.0 — Dynamic Prompt Engine & Video Style Registry', () =
     expect(compiled.preflightValid).toBe(true);
     expect(compiled.provider).toBe('nexabot');
     expect(compiled.providerPrompt).toContain('Bahasa Melayu standard Malaysia');
-    expect(compiled.providerPrompt).toContain('Strictly avoid Indonesian loanwords');
-    expect(compiled.providerPrompt).toContain('Strictly NO English dialogue');
+    expect(compiled.providerPrompt).toContain('strictly avoid Indonesian loanwords');
+    expect(compiled.providerPrompt).toContain('strictly NO English dialogue');
     expect(compiled.providerPrompt).toContain('iPhone 15 Pro');
-    expect(compiled.spokenScript).toBeDefined();
+    expect(compiled.spokenScript).toBeUndefined();
   });
 
   it('enforces HARD RULE: RunningHub 15s styles strictly prohibit spoken voiceover', () => {

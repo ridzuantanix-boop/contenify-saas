@@ -85,15 +85,8 @@ describe('AFFIMATIK VIDEO FACTORY — V1 Creative Quality Acceptance Suite', () 
 
       expect(compiled.preflightValid).toBe(true);
       expect(compiled.provider).toBe('nexabot');
-      expect(compiled.spokenScript).toBeDefined();
-
-      // Check spoken script word count budget (12 to 26 words)
-      const words = compiled.spokenScript!.split(/\s+/).filter(Boolean);
-      expect(words.length).toBeGreaterThanOrEqual(12);
-      expect(words.length).toBeLessThanOrEqual(26);
-
-      // Check Bahasa Melayu and no prohibited Indonesian slang
-      expect(compiled.spokenScript).not.toMatch(/\b(kamu|kalian|nggak|banget|cobain|keranjang kuning)\b/i);
+      expect(compiled.spokenScript).toBeUndefined();
+      expect(compiled.providerPrompt).toContain('PROVIDER-CREATED DIALOGUE');
 
       // Check visual camera specifications (UGC, vertical 9:16, 5500K daylight, realistic product scale 20-30%)
       expect(compiled.visualPrompt).toContain('9:16 aspect ratio');

@@ -4,15 +4,25 @@ import { Client } from 'pg';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import { createServer } from 'net';
 
 describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Suite', () => {
   let pgServer: EmbeddedPostgres;
   let dbDir: string;
   let client1: Client;
   let client2: Client;
-  const pgPort = 54333;
+  let pgPort: number;
 
   beforeAll(async () => {
+    pgPort = await new Promise<number>((resolve, reject) => {
+      const server = createServer();
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', () => {
+        const address = server.address();
+        const port = typeof address === 'object' && address ? address.port : 0;
+        server.close(() => resolve(port));
+      });
+    });
     // 1. Setup disposable real PostgreSQL instance
     dbDir = path.join(os.tmpdir(), `pg_concurrency_${Date.now()}`);
     pgServer = new EmbeddedPostgres({
