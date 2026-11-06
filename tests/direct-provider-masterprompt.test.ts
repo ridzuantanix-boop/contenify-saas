@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DynamicPromptCompiler } from '../src/lib/engine/compiler';
-import { getVideoStyle } from '../src/lib/styles/registry';
+import { getVideoStyle, VIDEO_STYLES_REGISTRY } from '../src/lib/styles/registry';
 import { NexabotAdapter } from '../src/lib/providers/nexabot';
 import { RunningHubAdapter } from '../src/lib/providers/runninghub';
 import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
@@ -39,6 +39,30 @@ const scene: ScenePlan = {
 };
 
 describe('direct-to-provider masterprompt architecture', () => {
+  it('compiles all 13 distinct prompts without legacy script directives', () => {
+    const prompts = VIDEO_STYLES_REGISTRY.map((style) => {
+      const compiled = DynamicPromptCompiler.compile(product, style, {
+        ...scene,
+        audioPolicy: style.audioMode,
+        targetDurationSeconds: style.durationSeconds,
+      });
+      expect(compiled.preflightValid, style.id).toBe(true);
+      expect(compiled.providerPrompt, style.id).toContain('[PRODUCT IDENTITY MAX LOCK]');
+      expect(compiled.providerPrompt, style.id).toContain('[ZERO UI & WATERMARK LOCK]');
+      expect(compiled.providerPrompt, style.id).toContain('[REALISTIC UGC PROFILE]');
+      expect(compiled.providerPrompt, style.id).toContain('[SHARIAH MODESTY LOCK');
+      expect(compiled.providerPrompt, style.id).not.toMatch(/approved spoken script|approved script|script to speak|Script: ""|""|\$\{p\.spokenScript\}|\{script_body\}/i);
+      if (style.engine === 'nexabot') {
+        expect(compiled.providerPrompt, style.id).toContain('provider creates');
+        expect(compiled.providerPrompt, style.id).not.toContain('Strictly NO spoken dialogue');
+      } else {
+        expect(compiled.providerPrompt, style.id).toContain('Strictly NO spoken dialogue');
+        expect(compiled.providerPrompt, style.id).not.toContain('[PROVIDER-CREATED DIALOGUE');
+      }
+      return compiled.providerPrompt;
+    });
+    expect(new Set(prompts).size).toBe(13);
+  });
   it('does not generate or expose a local spoken script by default', () => {
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene);
     expect(compiled.spokenScript).toBeUndefined();

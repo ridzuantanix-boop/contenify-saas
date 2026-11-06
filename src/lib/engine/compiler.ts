@@ -59,7 +59,6 @@ export interface PromptPreviewResult {
  */
 export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
   productName: string;
-  spokenScript: string;
   feature: string;
   useCase: string;
   buyerProblem: string;
@@ -70,31 +69,31 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
 }) => string> = {
   // NX01: Sembang Kawan (10s)
   NX01: (p) =>
-    `A single adult modest Malaysian Muslimah creator, full hijab covering hair neck and chest, loose long-sleeved clothing. Natural smartphone 1x eye-level medium shot in a bright lived-in Malaysian home. She casually chats as if recommending a relevant product to a friend, gently holding the EXACT reference product at chest height without bringing it into macro-close-up. Natural hand gesture, soft sincere expression and believable lip-sync. The provider independently creates dialogue that first mentions the buyer situation, then the actual supported function or benefit and its practical use. One continuous handheld take, no cut.`,
+    `A single adult modest Malaysian Muslimah creator, full hijab covering hair neck and chest, loose long-sleeved clothing. Natural smartphone 1x eye-level medium shot in a bright lived-in Malaysian home. She casually chats like a friend, holding the reference product at chest height. Open with a buyer situation genuinely relevant to the visible product, then explain its supported purpose and practical benefit in a warm, sincere voice. The provider creates the words and lip-sync. Natural hand gesture, one continuous handheld take, no cut.`,
 
   // NX02: Review Sambil Pegang (10s)
   NX02: (p) =>
-    `Adult modest Malaysian Muslimah reviewer in a bright ordinary room, direct eye-level smartphone 1x handheld shot. The EXACT reference product is in one hand at comfortable chest height. The provider independently creates a concise, honest Malaysian Malay explanation of what the product is for and the single grounded feature or benefit "${p.feature}", translating it into a practical user situation ${p.useCase}. Very small natural object adjustment only, no label examination monologue, no close-up. One continuous take.`,
+    `Adult modest Malaysian Muslimah reviewer in a bright ordinary room, direct eye-level smartphone 1x handheld shot. Hold the reference product in one hand at chest height. Open by identifying its supported purpose, review one feature visible in the image or explicitly supplied by the user, then connect it to a practical buyer benefit. Speak directly and honestly; the provider creates the Malaysian Malay dialogue and lip-sync. Very small natural object adjustment, no label examination monologue, no close-up, one continuous take.`,
 
   // NX03: First Impression (10s)
   NX03: (p) =>
-    `Authentic first-look creator footage with an adult modest Malaysian Muslimah. Start with the EXACT reference product already naturally held near chest. She looks down at it briefly, notices the grounded real feature "${p.feature}", then looks up naturally with mild curiosity, explaining the useful benefit or use case in ${p.useCase} to the viewer. She has not used it in this scene and makes no personal testing claim. The provider independently creates cautious Malaysian Malay dialogue. Small real movements, no fake unboxing, no reaction exaggeration, 1x smartphone full-frame one take.`,
+    `Authentic first-look creator footage with an adult modest Malaysian Muslimah. Start holding the reference product near chest, glance at it, then look up with mild curiosity. Open with a genuine first observation and explain a purpose or benefit only when supported by the image or user notes. The provider creates cautious Malaysian Malay dialogue without implying personal use or a tested result. Small real movements, no fake unboxing or exaggerated reaction, 1x smartphone full-frame one take.`,
 
   // NX05: Masalah Seharian (10s)
   NX05: (p) =>
-    `Single-take realistic Malaysian home UGC. Adult modest Muslimah creator starts with a relatable specific buyer problem "${p.buyerProblem}" implied by naturally arranged real objects in the same scene, then lifts the EXACT reference "${p.productName}" into frame by second two and calmly explains one supported product function or benefit "${p.feature}". Show a credible possible use context in ${p.useCase}, not a miraculous instant transformation. Same camera position, no jump cut, no zoom, neutral daylight. The provider independently creates cautious natural Malaysian Malay speech.`,
+    `Single-take realistic Malaysian home UGC. Adult modest Muslimah creator opens with a buyer problem that genuinely follows from the visible product, then lifts the reference product into frame by second two and explains one supported function and practical benefit. The provider creates empathetic, cautious Malaysian Malay dialogue and a credible everyday action, never a miraculous instant transformation. Same camera position, no jump cut, no zoom, neutral daylight.`,
 
   // NX07: Soalan & Jawapan (10s)
   NX07: (p) =>
-    `Modest Malaysian Muslimah Q&A creator in a naturally bright Malaysian room, single continuous phone 1x shot, with the EXACT reference "${p.productName}" visible from the start. She verbally asks ONE common and meaningful factual question "${p.qaQuestion}", then answers it using ONLY evidenced answer "${p.feature}" and succinctly ties it to ${p.useCase}. No fake comment box, chat bubble, text graphics, or extra people. The provider independently creates the natural Malaysian Malay Q&A and omits the answer if the image does not support it.`,
+    `Modest Malaysian Muslimah Q&A creator in a naturally bright Malaysian room, single continuous phone 1x shot, with the reference product visible from the start. The provider creates ONE meaningful Malaysian Malay buyer question about the product's purpose or supported feature, then answers only with evidence visible in the image or user notes and relates it to practical use. If evidence is insufficient, choose a narrower answerable question. Curious, helpful speaking personality. No fake comment box, chat bubble, text graphics, or extra people.`,
 
   // NX09: Goyang Produk + VO (10s)
   NX09: (p) =>
-    `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the EXACT reference "${p.productName}" upright in a natural home space. The hand performs a relaxed, continuous, natural slight side-to-side micro-tilt (goyang santai) keeping the product stable and visible around 20–30% of the vertical frame. Clean, non-distracting domestic background suited to ${p.useCase}. No presenter face, no second hand. The provider independently creates a cautious off-camera Malaysian Malay voiceover about actual purpose and practical use. Neutral 1x phone camera, daylight, zero UI, one single continuous take.`,
+    `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the reference product upright in a natural home space. Relaxed continuous side-to-side micro-tilt keeps it stable at 20–30% of the vertical frame. The provider creates a calm off-camera Malaysian Malay voiceover opening with a relevant use situation, then its supported purpose and practical benefit, using cautious language if evidence is limited. No presenter face or second hand. Neutral 1x phone camera, daylight, zero UI, one continuous take.`,
 
   // NX10: Label Talk • Fakta & Fungsi Dulu (10s)
   NX10: (p) =>
-    `HAND ONLY. Exactly one adult female hand with long sleeve covering wrist holds the EXACT reference "${p.productName}" upright facing the 1x phone camera in a naturally lit room. The hand points subtly only to a clearly visible specification on the bottle/pack as physical evidence, then holds steady. Focus remains on the actual product utility supported by the image in ${p.useCase}. No face, no second hand. The provider independently creates a cautious Malaysian Malay voiceover. No phone frame, no watermark, one continuous take.`,
+    `HAND ONLY. Exactly one adult female hand with long sleeve covering wrist holds the reference product upright facing the 1x phone camera in a naturally lit room. Point subtly to a clearly legible, relevant specification only if one is visible; otherwise hold steady without pretending a specification exists. The provider creates a precise Malaysian Malay voiceover opening with a supported fact, explaining its actual purpose and a cautious practical benefit. No face, second hand, phone frame or watermark; one continuous take.`,
 
   // RH01: Goyang Produk Natural (15s)
   RH01: (p) =>
@@ -201,9 +200,6 @@ export class DynamicPromptCompiler {
     options: CompilerOptions = {}
   ): PromptPreviewResult {
     const isMuslimah = options.isMuslimahModest ?? style.modestyLock;
-    const spokenScript = options.providerCreatesDialogue === false
-      ? this.resolveSpokenScript(product, style, options)
-      : '';
     const engineDisplayName = getEngineDisplayName(style.engine);
 
     let modestyRules = 'Pemakaian santai kontemporari sopan bersesuaian khalayak Malaysia.';
@@ -222,7 +218,7 @@ export class DynamicPromptCompiler {
       engineDisplayName,
       durationSeconds: style.durationSeconds,
       creditCost: style.engine === 'nexabot' ? 10 : 15,
-      spokenScript: style.engine === 'nexabot' ? spokenScript : null,
+      spokenScript: null,
       visualSummary,
       sceneEnvironment: scenePlan.location,
       cameraProfile: 'Kamera telefon pintar 9:16 menegak, 1x perspektif tanpa sempadan telefon atau mockup bingkai.',
@@ -335,12 +331,6 @@ export class DynamicPromptCompiler {
     universalMasterPrompt: string,
     preflight: { isValid: boolean; errors: string[] }
   ): CompiledGenerationPrompt {
-    // 1. In production the provider creates dialogue from the image. The
-    // legacy resolver is only reachable when explicitly opted into.
-    const spokenScript = options.providerCreatesDialogue === false
-      ? this.resolveSpokenScript(product, style, options)
-      : '';
-
     // Audio instruction is a provider directive; AffiMatik does not author or
     // preview the dialogue in the automatic generation path.
     const audioDirective = 'Provider-created natural Malaysian Malay dialogue for exactly 10 seconds; grounded in the uploaded image and optional user notes, cautious where facts are unclear.';
@@ -356,7 +346,6 @@ export class DynamicPromptCompiler {
     if (stylePromptFn) {
       styleSpecificPrompt = stylePromptFn({
         productName: product.name,
-        spokenScript,
         feature,
         useCase,
         buyerProblem,
@@ -366,7 +355,8 @@ export class DynamicPromptCompiler {
         coreFunction: product.coreFunction || 'kegunaan harian',
       });
     } else {
-      styleSpecificPrompt = `One single continuous 10-second shot. Setting: ${scenePlan.location}. Action: ${scenePlan.primaryAction}. ${scenePlan.actionProgression}. Script: "${spokenScript}".`;
+      preflight.errors.push(`Gaya ${style.id} tiada masterprompt rasmi.`);
+      preflight.isValid = false;
     }
 
     // Visual Prompt
@@ -441,7 +431,6 @@ export class DynamicPromptCompiler {
     if (stylePromptFn) {
       styleSpecificPrompt = stylePromptFn({
         productName: product.name,
-        spokenScript: '',
         feature,
         useCase: useContext,
         buyerProblem: product.buyerProblem || '',
