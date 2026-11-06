@@ -67,13 +67,13 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 
 ## Keselamatan source dan penerbitan branch
 
-- Git Credential Manager tidak memberi respons dalam proses tanpa TTY. `git push` dalam sesi TTY interaktif berjaya tanpa force push; remote `codex/launch-v2-audit` pernah disahkan sama dengan commit setempat `e9f6941ac29dd5ffc454176954b1a8771b8bdadb` melalui `git ls-remote` dan GitHub fetch commit. Bundle terdahulu masih disimpan. Commit QA akhir mesti dipush dan diverifikasi semula.
+- Git Credential Manager tidak memberi respons dalam proses tanpa TTY. `git push` dalam sesi TTY interaktif berjaya tanpa force push; commit QA akhir telah disahkan sama pada branch setempat dan remote melalui `git ls-remote` dan GitHub fetch commit. Bundle Git yang diverifikasi masih disimpan.
 - Branch remote dilaporkan `protected: false`. Sambungan GitHub boleh membaca tetapi `create_blob` ditolak 403 `Resource not accessible by integration`; Git CLI interaktif ialah laluan penerbitan yang berjaya.
 
 ## Halangan yang memerlukan tindakan sebenar di luar kod
 
 1. Konfigurasi SMTP yang pemilik kawal, domain sender/DNS dan ujian emel ke inbox sebenar.
-2. Snapshot/backup Supabase Auth, database dan Storage serta latihan restore pada projek terasing sebelum migrasi 00012–00017. Dashboard menunjukkan **Free Plan tidak menyediakan scheduled backups** dan “Restore to new project” memerlukan Pro Plan dengan physical backups. Alternatif ialah backup manual lengkap dengan akses DB dan eksport objek Storage yang sah; akses itu belum tersedia. Hanya migration 00011 telah dipasang sebelum tugasan ini. Fail `scripts/v2-production-preflight.sql` ialah query manifest baca sahaja.
+2. Snapshot/backup Supabase Auth, database dan Storage serta latihan restore pada projek terasing sebelum migrasi 00012–00017. Dashboard menunjukkan **Free Plan tidak menyediakan scheduled backups** dan “Restore to new project” memerlukan Pro Plan dengan physical backups. Pemilik memilih backup manual lengkap dengan akses DB dan eksport objek Storage; artefak itu belum diterima/disahkan. Hanya migration 00011 telah dipasang sebelum tugasan ini. Fail `scripts/v2-production-preflight.sql` ialah query manifest baca sahaja.
 3. Rahsia dan routing Worker OpenNext untuk Supabase, Nexabot, RunningHub, SESSION_SECRET, ADMIN_ACCESS_KEY dan cron; peralihan Cloudflare Pages→Worker/DNS mesti melalui proses release sah.
 4. Tambah baki RunningHub yang mencukupi dan jalankan satu generasi Motion sebenar. Nexabot key semasa sah dan dua generasi sebenar selesai, tetapi kualiti dialog/identiti perlu lulus QA manual dan ulangan selepas pembetulan prompt. Kos Nexabot setiap ujian semasa 0.15 provider credit, bukan kredit pelanggan.
 5. Ujian iPhone Safari dan Android Chrome fizikal bagi signup→video→Files→login semula; transaksi rujukan affiliate/payout/refund bank sebenar hanya selepas pembayaran dibenarkan.
