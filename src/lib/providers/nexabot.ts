@@ -26,11 +26,11 @@ export class NexabotAdapter implements IProviderAdapter {
   getCapabilities(): ProviderCapabilities {
     return {
       providerName: 'nexabot',
-      supportedDurations: [10],
+      supportedDurations: [10, 15], // 10s historical jobs; new Voice styles request verified i2v 15s.
       supportsSpokenBM: true, // Priority for native Malaysian Malay
       supportsProductResearch: true, // Provider interprets the uploaded reference image
       maxReferenceImages: 3, // i2v supports 1-3 images
-      creditCostPerSecond: 1.0,
+      creditCostPerSecond: 0.01, // Observed 0.15 provider credit for the 15s i2v test; not a billing rate.
       supportsDirectCancellation: false,
       supportsWebhooks: false,
     };
@@ -40,10 +40,10 @@ export class NexabotAdapter implements IProviderAdapter {
     if (!this.apiKey) {
       return { isValid: false, error: 'Nexabot API key is not configured in server environment' };
     }
-    if (input.durationSeconds !== 10) {
+    if (input.durationSeconds !== 10 && input.durationSeconds !== 15) {
       return {
         isValid: false,
-        error: `Nexabot adapter is prioritized for 10s duration. Received: ${input.durationSeconds}s`,
+        error: `Nexabot i2v supports 15s new generation or 10s historical compatibility. Received: ${input.durationSeconds}s`,
       };
     }
     if (!input.prompt || input.prompt.trim().length === 0) {
@@ -204,7 +204,7 @@ export class NexabotAdapter implements IProviderAdapter {
       providerTaskId,
       videoUrl,
       thumbnailUrl: String(job.thumbnail_url || ''),
-      durationSeconds: typeof job.duration_seconds === 'number' ? job.duration_seconds : undefined,
+      durationSeconds: typeof job.duration_seconds === 'number' ? job.duration_seconds : typeof job.duration === 'number' ? job.duration : undefined,
       metadata: job,
     };
   }

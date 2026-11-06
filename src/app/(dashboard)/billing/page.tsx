@@ -171,7 +171,7 @@ export default function BillingPage() {
             )}
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Kadar penjanaan autoritatif: <strong>{GENERATION_COSTS.TEN_SECONDS_NEXABOT} Kredit</strong> untuk video 10s (AffiMatik Voice • Pertuturan BM) | <strong>{GENERATION_COSTS.FIFTEEN_SECONDS_RUNNINGHUB} Kredit</strong> untuk video 15s (AffiMatik Motion • Visual Realistik).
+            Kadar penjanaan apabila dibuka: <strong>{GENERATION_COSTS.VOICE_NEXABOT} Kredit</strong> untuk video Voice 15s. Motion tidak tersedia untuk penjanaan baharu.
           </p>
         </div>
 

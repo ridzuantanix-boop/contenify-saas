@@ -77,7 +77,7 @@ export function Header({
         <div className="hidden md:flex items-center gap-2">
           <h1 className="text-xs sm:text-sm font-medium text-slate-500">
             Penjana Video AI Pasaran Malaysia &mdash;{' '}
-            <span className="text-slate-800 font-semibold">10s Spoken & 15s Realistic</span>
+            <span className="text-slate-800 font-semibold">Voice 15s · Motion belum tersedia</span>
           </h1>
         </div>
       </div>

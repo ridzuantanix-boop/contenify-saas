@@ -1,5 +1,7 @@
 # AffiMatik V2 — laporan pelaksanaan dan pelepasan
 
+Laporan ini ialah rekod V2 sebelum keputusan Nexabot-first V3. Status terkini ada dalam `RELEASE_V3_REPORT.md`.
+
 Tarikh: 6 November 2026. Candidate branch: `codex/launch-v2-audit`.
 Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berbayar kekal OFF.
 

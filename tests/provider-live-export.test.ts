@@ -42,8 +42,8 @@ describe('real-provider QA prompt export', () => {
       expect(prompt).toContain('A buyer problem does not prove that this product resolves it');
       expect(prompt).toContain('Omit all unsupported benefit and performance claims');
       expect(prompt).toContain('When no product facts were supplied, restrict speech');
-      expect(prompt).toContain('a complete uncut final CTA');
-      expect(prompt).toContain('reserve the final 1.5 seconds for one complete neutral CTA');
+      expect(prompt).toContain('Finish one complete neutral spoken CTA');
+      expect(prompt).toContain('before second 14');
     }
     expect(prompts.lampMotion).not.toContain('[PROVIDER-CREATED DIALOGUE');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {

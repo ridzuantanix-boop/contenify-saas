@@ -108,10 +108,22 @@ describe('Nexabot Adapter', () => {
     expect(payload).toMatchObject({ mode: 'i2v', duration: 10, resolution: 720 });
   });
 
-  it('rejects unpermitted durations', () => {
-    const invalid = adapter.validateInput({ ...valid10sInput, durationSeconds: 15 });
+  it('accepts verified 15s i2v while retaining 10s historical support', () => {
+    expect(adapter.validateInput({ ...valid10sInput, durationSeconds: 15 }).isValid).toBe(true);
+    expect(adapter.getCapabilities().supportedDurations).toEqual([10, 15]);
+    const invalid = adapter.validateInput({ ...valid10sInput, durationSeconds: 20 });
     expect(invalid.isValid).toBe(false);
-    expect(invalid.error).toContain('10s duration');
+    expect(invalid.error).toContain('15s new generation');
+  });
+
+  it('reads the actual duration field returned by live Nexabot i2v jobs', async () => {
+    const response = { ok: true, job: { status: 'done', mode: 'i2v', duration: 15, storage_url: 'https://nexabot.id/api/v1/jobs/job/download' } };
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(response), { status: 200 }))));
+    try {
+      const output = await adapter.getOutputs('job');
+      expect(output.durationSeconds).toBe(15);
+      expect(output.videoUrl).toContain('/download');
+    } finally { vi.unstubAllGlobals(); }
   });
 });
 

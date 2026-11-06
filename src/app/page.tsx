@@ -196,7 +196,7 @@ export default function LandingPage() {
               </div>
               <h4 className="font-bold text-slate-900 text-sm">Pilih Gaya Video</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Pilih daripada 13 Gaya Video Rasmi (Voice 10s atau Motion 15s). Anda boleh pratonton video contoh dengan audio sebenar.
+                Teroka 13 identiti gaya rasmi. Voice menjana 15s apabila dibuka; enam gaya Motion masih dalam pustaka tetapi tidak tersedia untuk penjanaan baharu. Pratonton Voice lama berdurasi 10s.
               </p>
             </div>
 

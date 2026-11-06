@@ -16,13 +16,13 @@ export const GEMS_PROMPT_VERSION = 'affimatik-gems-masterprompts-v5.0';
  * Internal Provider to AffiMatik White-Label Display Name Mapping
  */
 export function getEngineDisplayName(engine: 'nexabot' | 'runninghub' | string): string {
-  if (engine === 'nexabot') return 'AffiMatik Voice (10s)';
+  if (engine === 'nexabot') return 'AffiMatik Voice (15s)';
   if (engine === 'runninghub') return 'AffiMatik Motion (15s)';
   return 'AffiMatik Engine';
 }
 
 export function getEngineDescription(engine: 'nexabot' | 'runninghub' | string): string {
-  if (engine === 'nexabot') return 'Video pertuturan Bahasa Melayu santai semula jadi (10 saat)';
+  if (engine === 'nexabot') return 'Video pertuturan Bahasa Melayu santai semula jadi (15 saat)';
   if (engine === 'runninghub') return 'Video visual realistik, pergerakan lembut, ASMR / audio bersesuaian (15 saat)';
   return 'Enjin penjanaan video AffiMatik';
 }
@@ -67,33 +67,33 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
   relevantSurface: string;
   coreFunction: string;
 }) => string> = {
-  // NX01: Sembang Kawan (10s)
+  // NX01: Sembang Kawan (15s)
   NX01: (p) =>
     `A single adult modest Malaysian Muslimah creator, full hijab covering hair neck and chest, loose long-sleeved clothing. Natural smartphone 1x eye-level medium shot in a bright lived-in Malaysian home. She casually chats like a friend, holding the reference product at chest height. Open with a buyer situation genuinely relevant to the visible product, then explain its supported intended purpose and an ordinary use context in a warm, sincere voice. The provider creates the words and lip-sync. Natural hand gesture, one continuous handheld take, no cut.`,
 
-  // NX02: Review Sambil Pegang (10s)
+  // NX02: Review Sambil Pegang (15s)
   NX02: (p) =>
     `Adult modest Malaysian Muslimah reviewer in a bright ordinary room, direct eye-level smartphone 1x handheld shot. Hold the reference product in one hand at chest height. Open by identifying its supported intended purpose, mention one feature actually legible in the image or explicitly supplied by the user, then explain when a buyer might use it without predicting a result. Speak directly and honestly; the provider creates the Malaysian Malay dialogue and lip-sync. Very small natural object adjustment, no label examination monologue, no close-up, one continuous take.`,
 
-  // NX03: First Impression (10s)
+  // NX03: First Impression (15s)
   NX03: (p) =>
     `Authentic first-look creator footage with an adult modest Malaysian Muslimah. Start holding the reference product near chest, glance at it, then look up with mild curiosity. Open with a genuine first observation and explain only an intended purpose supported by the image or user notes, never an achieved benefit. The provider creates cautious Malaysian Malay dialogue without implying personal use or a tested result. Small real movements, no fake unboxing or exaggerated reaction, 1x smartphone full-frame one take.`,
 
-  // NX05: Masalah Seharian (10s)
+  // NX05: Masalah Seharian (15s)
   NX05: (p) =>
     `Single-take realistic Malaysian home UGC. Adult modest Muslimah creator opens with a buyer situation relevant to the visible product, then lifts the reference product into frame by second two and explains its supported intended function and ordinary use. Do not claim the product solves the problem or delivers a result. The provider creates empathetic, cautious Malaysian Malay dialogue and a credible everyday action, never a miraculous instant transformation. Same camera position, no jump cut, no zoom, neutral daylight.`,
 
-  // NX07: Soalan & Jawapan (10s)
+  // NX07: Soalan & Jawapan (15s)
   NX07: (p) =>
     `Modest Malaysian Muslimah Q&A creator in a naturally bright Malaysian room, single continuous phone 1x shot, with the reference product visible from the start. The provider creates ONE meaningful Malaysian Malay buyer question about the product's purpose or supported feature, then answers only with evidence visible in the image or user notes and relates it to practical use. If evidence is insufficient, choose a narrower answerable question. Curious, helpful speaking personality. No fake comment box, chat bubble, text graphics, or extra people.`,
 
-  // NX09: Goyang Produk + VO (10s)
+  // NX09: Goyang Produk + VO (15s)
   NX09: (p) =>
     `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the reference product upright in a natural home space. Relaxed continuous side-to-side micro-tilt keeps it stable at 20–30% of the vertical frame. The provider creates a calm off-camera Malaysian Malay voiceover opening with a relevant use situation, then its supported intended purpose, without claiming an outcome. No presenter face or second hand. Neutral 1x phone camera, daylight, zero UI, one continuous take.`,
 
-  // NX10: Label Talk • Fakta & Fungsi Dulu (10s)
+  // NX10: Label Talk • Fakta & Fungsi Dulu (15s)
   NX10: (p) =>
-    `HAND ONLY. Exactly one adult female hand with long sleeve covering wrist holds the reference product upright facing the 1x phone camera in a naturally lit room. Point subtly to a clearly legible, relevant specification only if one is visible; otherwise hold steady without pretending a specification exists. The provider creates a precise Malaysian Malay voiceover opening with a supported fact and explaining only its intended purpose or use context, never an unverified outcome. No face, second hand, phone frame or watermark; one continuous take.`,
+    `HAND ONLY. Exactly one adult female hand with long sleeve covering wrist holds the reference product upright facing the 1x phone camera in a naturally lit room. Point subtly to a clearly legible, relevant specification only if one is visible; otherwise hold steady without pretending a specification exists. The provider creates a precise Malaysian Malay voiceover opening with a supported fact and explaining only its intended purpose or use context, never an unverified outcome. No face, second hand or phone frame; one continuous take.`,
 
   // RH01: Goyang Produk Natural (15s)
   RH01: (p) =>
@@ -132,8 +132,8 @@ export class DynamicPromptCompiler {
     const errors: string[] = [];
 
     // Engine and duration validation
-    if (style.engine === 'nexabot' && style.durationSeconds !== 10) {
-      errors.push(`Gaya AffiMatik Voice (${style.id}) mesti tepat 10 saat.`);
+    if (style.engine === 'nexabot' && style.durationSeconds !== 15) {
+      errors.push(`Gaya AffiMatik Voice (${style.id}) mesti tepat 15 saat.`);
     }
     if (style.engine === 'runninghub' && style.durationSeconds !== 15) {
       errors.push(`Gaya AffiMatik Motion (${style.id}) mesti tepat 15 saat.`);
@@ -254,13 +254,14 @@ export class DynamicPromptCompiler {
       `The uploaded product image is an authoritative identity reference for "${product.name}".`,
       `Preserve exact product geometry, shape, scale (approximately 20-30% of the frame), cap, material, logo, brand, label, typography, and packaging colour with stable consistency across all frames.`,
       `Strictly NO product morphing, NO duplicate products, NO changing labels, NO changing packaging colours, NO missing caps, NO oversized containers, NO floating objects, NO artificial product rotation, NO sudden disappearance, NO unexpected object replacement.`,
+      `Never add a printed volume, size, specification, certification, ingredient, icon or word that is absent from the reference image. If small text is unreadable, leave it indistinct instead of inventing letters or numbers.`,
     ].join(' ');
 
     // 2. ZERO UI / PLATFORM / WATERMARK LOCK
     const zeroUiLockDirectives = [
       `[ZERO UI & WATERMARK LOCK]`,
       `Full-frame vertical 9:16 aspect ratio footage naturally recorded in physical space, WITHOUT displaying any smartphone border, phone mockup frame, or screen bezel.`,
-      `Strictly NO TikTok logo, NO social media interface, NO watermark, NO phone frame, NO phone UI overlays, NO fake buttons, NO smartphone mockup, NO embedded video player, NO screen borders, NO playback controls, NO floating captions, NO UI overlay, NO picture-in-picture, NO yellow basket graphics, NO shopping app interface, NO username overlays, NO like/comment/share buttons.`,
+      `Strictly NO TikTok logo, NO social media interface, NO user-added or fabricated watermark, NO phone frame, NO phone UI overlays, NO fake buttons, NO smartphone mockup, NO embedded video player, NO screen borders, NO playback controls, NO floating captions, NO UI overlay, NO picture-in-picture, NO yellow basket graphics, NO shopping app interface, NO username overlays, NO like/comment/share buttons. An authentic, unavoidable Nexabot Omni-Flash provider watermark is permitted; do not imitate or remove it.`,
       `No decorative sparkles, glints, star stickers, lens flares, floating symbols or animated graphic effects.`,
     ].join(' ');
 
@@ -323,7 +324,7 @@ export class DynamicPromptCompiler {
   }
 
   /**
-   * Nexabot Compiler (AffiMatik Voice, 10s, Malaysian Malay Spoken Dialogue)
+   * Nexabot Compiler (AffiMatik Voice, 15s, Malaysian Malay Spoken Dialogue)
    */
   private static compileNexabot(
     product: ProductProfile,
@@ -335,7 +336,7 @@ export class DynamicPromptCompiler {
   ): CompiledGenerationPrompt {
     // Audio instruction is a provider directive; AffiMatik does not author or
     // preview the dialogue in the automatic generation path.
-    const audioDirective = 'Provider-created natural Malaysian Malay dialogue for exactly 10 seconds; grounded in the uploaded image and optional user notes, cautious where facts are unclear.';
+    const audioDirective = 'Provider-created natural Malaysian Malay dialogue within a 15-second video; grounded in the uploaded image and optional user notes, cautious where facts are unclear.';
 
     // 2. Authoritative Style Masterprompt V5
     const stylePromptFn = AUTHORITATIVE_STYLE_MASTERPROMPTS[style.id];
@@ -363,21 +364,24 @@ export class DynamicPromptCompiler {
 
     // Visual Prompt
     const visualPrompt = [
-      `One single continuous 10-second shot.`,
+      `One single continuous 15-second shot.`,
       styleSpecificPrompt,
       universalMasterPrompt,
       options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
     ].filter(Boolean).join(' ');
 
     const providerDialogueDirective = [
-      '[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 10s]',
+      '[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 15s]',
       'The external video-generation AI must independently inspect the uploaded product reference image and create the natural Malaysian Malay dialogue, scene interpretation and lip-sync. AffiMatik supplies no generated script.',
       'Dialogue must discuss the product\'s intended purpose, a relevant buyer situation, and only features actually legible in the image or explicitly supplied by the user. Describe ordinary use, not an achieved benefit. Do not narrate generic packaging or label descriptions.',
       'If the image and optional user notes do not establish a fact, omit the claim entirely. Never invent a special formula, ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
       'The image establishes identity and perhaps a printed intended use; it cannot establish cleaning efficacy, relief, speed, comparative superiority or any outcome. A buyer problem does not prove that this product resolves it. State only a visible or user-confirmed function. Omit all unsupported benefit and performance claims rather than softening them with uncertain words.',
-      'When no product facts were supplied, restrict speech to the product category or legible printed intended purpose, an ordinary use situation, and a neutral CTA. Never imply it works better, faster, more thoroughly, or has a special formulation. Do not say a problem disappears or a customer has personally used it.',
-      'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. In every Voice style, reserve the final 1.5 seconds for one complete neutral CTA inviting the viewer to learn more or consider the product; finish the sentence before 10 seconds, without promising an outcome or price.',
-      'Before rendering, check the spoken words against these rules: no Indonesian forms such as "karena" or "cobalah", no unsupported result claims, and a complete uncut final CTA. Rewrite internally if needed; AffiMatik does not provide a script.',
+      'When no product facts were supplied, restrict speech to the product category or legible printed intended purpose and an ordinary use situation. Include a neutral CTA only when the customer selected one. Never imply it works better, faster, more thoroughly, or has a special formulation. Do not say a problem disappears or a customer has personally used it.',
+      'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. Keep speech concise despite the longer video. Leave a natural quiet hold at the end.',
+      options.callToAction === 'none'
+        ? 'The customer chose no CTA. Do not add a spoken call to action.'
+        : 'Finish one complete neutral spoken CTA inviting the viewer to learn more or consider the product before second 14, without promising an outcome or price.',
+      'Before rendering, check the spoken words against these rules: no Indonesian forms such as "karena" or "cobalah", no unsupported result claims, and no clipped narration. Rewrite internally if needed; AffiMatik does not provide a script.',
     ].join(' ');
     const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;
 
@@ -389,7 +393,7 @@ export class DynamicPromptCompiler {
       continuityAnchor: product.name,
       audioDirective,
       safetyRules: [
-        'AffiMatik Voice (10s) native Malaysian Malay spoken audio',
+        'AffiMatik Voice (15s) native Malaysian Malay spoken audio',
         'GEMS V5 Masterprompt Lock enforced',
         'No Indonesia loanwords or slang',
         'Zero UI, no TikTok logo, no phone frame',

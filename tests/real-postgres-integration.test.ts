@@ -37,6 +37,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00015_customer_dashboard_metrics.sql',
       '00016_verified_video_metadata.sql',
       '00017_refund_credit_integrity.sql',
+      '00018_manual_video_qa.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -668,5 +669,41 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     const overDebitResult = overDebitRes.rows[0].admin_adjust_credits_atomic;
     expect(overDebitResult.success).toBe(false);
     expect(overDebitResult.error).toContain('Insufficient credit balance for debit');
+  });
+
+  it('holds media for review, settles once on approval and releases once on rejection', async () => {
+    const workspace = 'a8888888-8888-4888-8888-888888888888';
+    const user = 'b8888888-8888-4888-8888-888888888888';
+    const approvedJob = 'c8888888-8888-4888-8888-888888888888';
+    const rejectedJob = 'd8888888-8888-4888-8888-888888888888';
+    const expiredJob = 'e8888888-8888-4888-8888-888888888888';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id) VALUES($1,'QA Test','qa-test-888',$2)`, [workspace,user]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted) VALUES($1,100,0,100)`, [workspace]);
+    const admit = (job: string, request: string) => db.query<{ result: { success: boolean; concurrency_limit_reached?: boolean } }>(
+      `SELECT admit_video_job_atomic($1,$2,$3,$4,'NX01',2,'nexabot',15,10,1,'QA prompt') AS result`,
+      [workspace,user,job,request]);
+    expect((await admit(approvedJob,'qa-approve')).rows[0].result.success).toBe(true);
+    await db.query(`UPDATE video_jobs SET status='QA_PENDING',result_video_r2_key='workspaces/test/outputs/approved.mp4',actual_duration_seconds=15.04,output_has_audio=true,qa_started_at=now() WHERE id=$1`,[approvedJob]);
+    expect((await admit(rejectedJob,'qa-blocked')).rows[0].result.concurrency_limit_reached).toBe(true);
+    const review = (job: string, decision: string, reason: string) => db.query<{ result: { success: boolean; status?: string; idempotent?: boolean } }>(
+      `SELECT review_video_job_atomic($1,$2,$3,NULL) AS result`,[job,decision,reason]);
+    expect((await review(approvedJob,'APPROVE','Dialog dan identiti disemak')).rows[0].result.status).toBe('COMPLETED');
+    expect((await review(approvedJob,'APPROVE','Ulang')).rows[0].result.idempotent).toBe(true);
+    expect((await admit(rejectedJob,'qa-reject')).rows[0].result.success).toBe(true);
+    await db.query(`UPDATE video_jobs SET status='QA_PENDING',result_video_r2_key='workspaces/test/outputs/rejected.mp4',actual_duration_seconds=15,output_has_audio=true,qa_started_at=now() WHERE id=$1`,[rejectedJob]);
+    expect((await review(rejectedJob,'REJECT','Logo produk berubah')).rows[0].result.status).toBe('REJECTED');
+    expect((await review(rejectedJob,'REJECT','Ulang')).rows[0].result.idempotent).toBe(true);
+    expect((await admit(expiredJob,'qa-expire')).rows[0].result.success).toBe(true);
+    await db.query(`UPDATE video_jobs SET status='QA_PENDING',result_video_r2_key='workspaces/test/outputs/expired.mp4',actual_duration_seconds=15,output_has_audio=true,qa_started_at=now()-interval '25 hours' WHERE id=$1`,[expiredJob]);
+    const expired = await db.query<{ result: { expired: number } }>(`SELECT expire_video_qa_atomic() AS result`);
+    expect(expired.rows[0].result.expired).toBe(1);
+    expect((await db.query<{ status: string }>(`SELECT status FROM video_jobs WHERE id=$1`,[expiredJob])).rows[0].status).toBe('REJECTED');
+    const wallet = await db.query<{ balance: number; reserved_balance: number; lifetime_spent: number }>(`SELECT balance,reserved_balance,lifetime_spent FROM credit_wallets WHERE workspace_id=$1`,[workspace]);
+    expect(wallet.rows[0]).toMatchObject({balance:90,reserved_balance:0,lifetime_spent:10});
+    const ledger = await db.query<{ event_type: string; count: number }>(`SELECT event_type,count(*)::int AS count FROM credit_ledger WHERE workspace_id=$1 AND event_type IN ('SETTLE','RELEASE') GROUP BY event_type`,[workspace]);
+    expect(ledger.rows.find((row) => row.event_type === 'SETTLE')?.count).toBe(1);
+    expect(ledger.rows.find((row) => row.event_type === 'RELEASE')?.count).toBe(2);
+    const audit = await db.query<{ count: number }>(`SELECT count(*)::int AS count FROM audit_logs WHERE action='VIDEO_QA_REVIEW' AND target_id IN ($1,$2,$3)`,[approvedJob,rejectedJob,expiredJob]);
+    expect(audit.rows[0].count).toBe(3);
   });
 });

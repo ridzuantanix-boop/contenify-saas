@@ -9,7 +9,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   if (!session) return NextResponse.json({ error: 'Sila log masuk.' }, { status: 401 });
   const { id } = await context.params;
   const job = await DurableStore.getJob(id);
-  if (!job || job.workspaceId !== session.workspaceId || !job.videoObjectKey || job.status !== 'COMPLETED') {
+  const adminQaPreview = session.role === 'superadmin' && job?.status === 'QA_PENDING';
+  if (!job || (!adminQaPreview && job.workspaceId !== session.workspaceId) || !job.videoObjectKey || (job.status !== 'COMPLETED' && !adminQaPreview)) {
     return NextResponse.json({ error: 'Video tidak ditemui.' }, { status: 404 });
   }
   try {

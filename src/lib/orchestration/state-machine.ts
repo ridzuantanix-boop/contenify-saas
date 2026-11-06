@@ -19,9 +19,11 @@ export class JobStateMachine {
     PROMPT_READY: ['SUBMITTING', 'CANCELLED'],
     SUBMITTING: ['GENERATING', 'FAILED_RETRYABLE', 'FAILED_FINAL'],
     GENERATING: ['PROCESSING', 'FAILED_RETRYABLE', 'FAILED_FINAL'],
-    PROCESSING: ['QUALITY_CHECK', 'FAILED_RETRYABLE', 'FAILED_FINAL'],
-    QUALITY_CHECK: ['COMPLETED', 'FAILED_RETRYABLE', 'FAILED_FINAL'],
+    PROCESSING: ['QUALITY_CHECK', 'QA_PENDING', 'FAILED_RETRYABLE', 'FAILED_FINAL'],
+    QUALITY_CHECK: ['QA_PENDING', 'FAILED_RETRYABLE', 'FAILED_FINAL'],
+    QA_PENDING: ['COMPLETED', 'REJECTED'],
     COMPLETED: [],
+    REJECTED: [],
     FAILED_RETRYABLE: ['QUEUED', 'FAILED_FINAL'],
     FAILED_FINAL: [],
     CANCELLED: [],
@@ -54,6 +56,6 @@ export class JobStateMachine {
   }
 
   static isTerminal(status: JobStatus): boolean {
-    return status === 'COMPLETED' || status === 'FAILED_FINAL' || status === 'CANCELLED';
+    return status === 'COMPLETED' || status === 'REJECTED' || status === 'FAILED_FINAL' || status === 'CANCELLED';
   }
 }

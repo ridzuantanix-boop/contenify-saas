@@ -66,7 +66,7 @@ describe('AFFIMATIK VIDEO FACTORY — V1 Creative Quality Acceptance Suite', () 
     }
   });
 
-  it('2. verifies Nexabot 10s dynamic prompt specification for beauty, food, and fashion', () => {
+  it('2. verifies Nexabot 15s dynamic prompt specification for beauty, food, and fashion', () => {
     const nexabotItems = categories.filter((c) => c.testStyleId.startsWith('NX'));
 
     for (const item of nexabotItems) {
@@ -92,7 +92,7 @@ describe('AFFIMATIK VIDEO FACTORY — V1 Creative Quality Acceptance Suite', () 
       expect(compiled.visualPrompt).toContain('9:16 aspect ratio');
       expect(compiled.visualPrompt).toContain('5500K');
       expect(compiled.visualPrompt).toContain('scale (approximately 20-30% of the frame)');
-      expect(compiled.visualPrompt).toContain('One single continuous 10-second shot');
+      expect(compiled.visualPrompt).toContain('One single continuous 15-second shot');
       expect(compiled.visualPrompt).toContain('NO phone UI overlays');
       expect(compiled.visualPrompt).toContain('NO fake buttons');
 
@@ -143,10 +143,10 @@ describe('AFFIMATIK VIDEO FACTORY — V1 Creative Quality Acceptance Suite', () 
     });
 
     expect(preview.provider).toBe('nexabot');
-    expect(preview.durationSeconds).toBe(10);
+    expect(preview.durationSeconds).toBe(15);
     expect(preview.creditCost).toBe(10);
-    expect(preview.spokenScript).toBeDefined();
-    expect(preview.visualSummary).toContain('10 saat');
+    expect(preview.spokenScript).toBeNull();
+    expect(preview.visualSummary).toContain('15 saat');
     expect(preview.modestyRules).toBeDefined();
     expect(preview.productIdentityRules).toContain('Jus Halia Organik');
   });

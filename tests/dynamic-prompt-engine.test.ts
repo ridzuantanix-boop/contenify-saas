@@ -12,7 +12,7 @@ describe('AFFIMATIK V2.0 — Dynamic Prompt Engine & Video Style Registry', () =
     const nx01 = getVideoStyle('NX01');
     expect(nx01).toBeDefined();
     expect(nx01?.engine).toBe('nexabot');
-    expect(nx01?.durationSeconds).toBe(10);
+    expect(nx01?.durationSeconds).toBe(15);
     expect(nx01?.audioMode).toBe('spoken_bm');
 
     // Verify RunningHub pilot styles

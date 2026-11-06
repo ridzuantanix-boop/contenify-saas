@@ -26,7 +26,7 @@ export interface FinancialHealthMetrics {
   reserveStatus: 'HEALTHY' | 'WARNING' | 'CRITICAL';
   emergencyPauseActive: boolean;
   providerUnitCosts: {
-    nexabot10sMyr: number;
+    nexabot15sMyr: number;
     runninghub15sMyr: number;
   };
   costsVerified: boolean;
@@ -63,11 +63,11 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
   const costSettings = (await DurableStore.getSystemSettings('provider_unit_costs')) || {};
   const safetySettings = (await DurableStore.getSystemSettings('financial_safety')) || {};
 
-  const nexabotCost = Number(costSettings.nexabot_10s_myr || 1.50);
+  const nexabotCost = Number(costSettings.nexabot_15s_myr || 1.50);
   const runninghubCost = Number(costSettings.runninghub_15s_myr || 2.00);
   const safetyBuffer = Number(safetySettings.minimum_safety_buffer_myr || 500.00);
   const refundPercent = Number(safetySettings.refund_reserve_percent || 10.0);
-  const costsVerified = Boolean(costSettings.verified_at && costSettings.source && costSettings.nexabot_10s_myr && costSettings.runninghub_15s_myr);
+  const costsVerified = Boolean(costSettings.verified_at && costSettings.source && costSettings.nexabot_15s_myr);
 
   // Active customer tiers & MRR estimation
   const customerBreakdown = { free: 0, starter: 0, pro: 0, agency: 0 };
@@ -160,7 +160,7 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
     reserveStatus,
     emergencyPauseActive: Boolean(genSettings.paused),
     providerUnitCosts: {
-      nexabot10sMyr: nexabotCost,
+      nexabot15sMyr: nexabotCost,
       runninghub15sMyr: runninghubCost,
     },
     costsVerified,

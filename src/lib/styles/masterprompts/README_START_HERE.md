@@ -1,7 +1,7 @@
 # AFFIMATIK • GEMS-GRADE MASTERPROMPT PACK V5.0
-**Status:** Creative source of truth, hand-authored; NOT an automatic code patch.  
-**Scope:** 13 published styles: NX01, NX02, NX03, NX05, NX07, NX09, NX10; RH01, RH02, RH03, RH04, RH17, RH19.  
-**Engines (internal):** NX = 10s with spoken natural Malaysian Malay; RH = 15s visual-only, optional authentic ambient/ASMR if supported. **Customer UI:** AffiMatik Voice / AffiMatik Motion.
+**Status:** Historical creative reference. The executable source of truth for V3 is `src/lib/engine/compiler.ts` plus `src/lib/styles/registry.ts`. Legacy 10s, exact-script and internal-analysis instructions in this pack must not enter the automatic generation path.
+**Scope:** 13 published styles: NX01, NX02, NX03, NX05, NX07, NX09, NX10; RH01, RH02, RH03, RH04, RH17, RH19.
+**Current engines:** NX = Nexabot `i2v` 15s with provider-created Malaysian Malay dialogue; RH = preserved but unavailable for public generation. Historical previews may remain 10s.
 
 ## Matlamat produk
 **Gambar Produk Masuk. Video Affiliate Keluar.** Sama macam Gems AI Factory: user pilih gaya, upload gambar, arahan ringkas jika mahu; **sistem sendiri** buat product analysis, positioning, skrip, aksi dan prompt. User bukan penulis prompt. Antigravity/Codex hanyalah *implementer*; **jangan cipta atau tulis semula masterprompt ini** tanpa kelulusan pemilik.

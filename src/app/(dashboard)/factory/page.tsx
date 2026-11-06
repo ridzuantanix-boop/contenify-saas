@@ -42,7 +42,7 @@ interface ActiveJobDisplay {
   provider: 'nexabot' | 'runninghub' | 'mock';
   styleName: string;
   durationSeconds: number;
-  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'QA_PENDING' | 'COMPLETED' | 'REJECTED' | 'FAILED';
   requiredCredits: number;
   videoUrl?: string;
   errorMessage?: string;
@@ -136,12 +136,12 @@ function VideoFactoryContent() {
       if (res.ok) {
         const data = await res.json();
         if (data.jobs && Array.isArray(data.jobs)) {
-          setRecentJobs(data.jobs);
+          setRecentJobs(data.jobs.map((job: ActiveJobDisplay & { id?: string }) => ({ ...job, jobId: job.jobId || job.id })));
           // If there is an incomplete job in the queue, track it
           const pending = data.jobs.find(
-            (j: ActiveJobDisplay) => j.status === 'PROCESSING' || j.status === 'SUBMITTING' || j.status === 'QUEUED'
+            (j: ActiveJobDisplay) => j.status === 'PROCESSING' || j.status === 'SUBMITTING' || j.status === 'QUEUED' || j.status === 'QA_PENDING'
           );
-          if (pending) setActiveJob((current) => current || pending);
+          if (pending) setActiveJob((current) => current || { ...pending, jobId: pending.jobId || (pending as ActiveJobDisplay & { id: string }).id });
         }
       }
     } catch {
@@ -158,7 +158,7 @@ function VideoFactoryContent() {
   const activeJobId = activeJob?.jobId;
   const activeJobStatus = activeJob?.status;
   useEffect(() => {
-    if (!activeJobId || activeJobStatus === 'COMPLETED' || activeJobStatus === 'FAILED') {
+    if (!activeJobId || ['COMPLETED', 'FAILED', 'REJECTED', 'QA_PENDING'].includes(activeJobStatus || '')) {
       return;
     }
 
@@ -183,11 +183,15 @@ function VideoFactoryContent() {
           refreshAccountBalance();
           refreshJobsFromDatabase();
           clearInterval(pollInterval);
-        } else if (data.status === 'FAILED') {
+        } else if (data.status === 'QA_PENDING') {
+          setActiveJob((prev) => prev ? { ...prev, status: 'QA_PENDING' } : null);
+          refreshJobsFromDatabase();
+          clearInterval(pollInterval);
+        } else if (data.status === 'FAILED' || data.status === 'REJECTED') {
           setActiveJob((prev) => prev ? {
             ...prev,
-            status: 'FAILED',
-            errorMessage: data.errorMessage || data.rawStatus || 'Penjanaan video gagal di pelayan AI.',
+            status: data.status,
+            errorMessage: data.error || data.errorMessage || data.rawStatus || 'Video tidak lulus semakan kualiti.',
           } : null);
           refreshAccountBalance();
           refreshJobsFromDatabase();
@@ -474,7 +478,7 @@ function VideoFactoryContent() {
               </span>
             </div>
 
-            {/* Engine Tabs (AffiMatik Voice 10s vs AffiMatik Motion 15s) */}
+            {/* Engine Tabs: Voice 15s; historical Motion styles remain visible but unavailable. */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -491,7 +495,7 @@ function VideoFactoryContent() {
                 <div>
                   <div className="flex items-center gap-1.5 font-bold text-xs">
                     <Volume2 className="w-3.5 h-3.5 text-primary" />
-                    <span>AffiMatik Voice (10s)</span>
+                    <span>AffiMatik Voice (15s)</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">Pertuturan BM Asli Malaysia (10 Kredit)</p>
                 </div>
@@ -515,7 +519,7 @@ function VideoFactoryContent() {
                     <VolumeX className="w-3.5 h-3.5 text-slate-700" />
                     <span>AffiMatik Motion (15s)</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Visual Realistik & ASMR (15 Kredit)</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Tidak tersedia untuk penjanaan baharu</p>
                 </div>
                 {selectedStyle.engine === 'runninghub' && <Check className="w-4 h-4 text-primary" />}
               </button>
@@ -525,7 +529,7 @@ function VideoFactoryContent() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                 <span>Pilih daripada 13 Gaya Video Rasmi (Hover untuk main, klik pembesar suara untuk audio):</span>
-                <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya tersedia</span>
+                <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya dipaparkan</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -787,7 +791,7 @@ function VideoFactoryContent() {
                     ? 'bg-rose-100 text-rose-800'
                     : 'bg-amber-100 text-amber-800'
                 }`}>
-                  {activeJob.status === 'COMPLETED' ? 'Video Siap' : activeJob.status === 'FAILED' ? 'Gagal' : 'Sedang Menjana'}
+                  {activeJob.status === 'COMPLETED' ? 'Video Siap' : activeJob.status === 'QA_PENDING' ? 'Menunggu Semakan' : activeJob.status === 'FAILED' || activeJob.status === 'REJECTED' ? 'Tidak Lulus' : 'Sedang Menjana'}
                 </span>
               )}
             </div>
@@ -818,6 +822,7 @@ function VideoFactoryContent() {
                   )}
 
                   {/* Completed State (Interactive MP4 Video Player) */}
+                  {activeJob.status === 'QA_PENDING' && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Video sudah disimpan dan sedang disemak. Kredit masih ditempah; video akan muncul di Pustaka Video selepas diluluskan. Semak Production Queue untuk status terkini.</div>}
                   {activeJob.status === 'COMPLETED' && (
                     <div className="space-y-3">
                       <div className="relative aspect-[9/16] max-h-96 w-full rounded-xl overflow-hidden bg-black mx-auto shadow-inner">
@@ -863,7 +868,7 @@ function VideoFactoryContent() {
                   )}
 
                   {/* Failed State */}
-                  {activeJob.status === 'FAILED' && (
+                  {(activeJob.status === 'FAILED' || activeJob.status === 'REJECTED') && (
                     <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-2">
                       <div className="font-bold flex items-center gap-1.5">
                         <AlertCircle className="w-4 h-4 text-rose-600" />
@@ -899,7 +904,7 @@ function VideoFactoryContent() {
                       Spesifikasi Gaya: {selectedStyle.name}
                     </div>
                     <div>• Format: 9:16 Menegak (UGC Smartphone)</div>
-                    <div>• Enjin: {selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice (10s)' : 'AffiMatik Motion (15s)'}</div>
+                    <div>• Enjin: {selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice (15s)' : 'AffiMatik Motion (tidak tersedia)'}</div>
                     <div>• Durasi: {selectedStyle.durationSeconds} Saat ({selectedStyle.engine === 'nexabot' ? '10' : '15'} Kredit)</div>
                     <div>• Audio: {selectedStyle.engine === 'nexabot' ? 'Pertuturan BM Malaysia Santai' : 'Visual Realistik & Audio Persekitaran / ASMR'}</div>
                     <div>• Kesopanan: {isMuslimahModest ? 'Pematuhan Muslimah Aktif' : 'Moden Santai'}</div>
@@ -934,7 +939,7 @@ function VideoFactoryContent() {
                           ? 'bg-rose-50 text-rose-700'
                           : 'bg-amber-50 text-amber-700'
                       }`}>
-                        {job.status === 'COMPLETED' ? 'Siap' : job.status === 'FAILED' ? 'Gagal' : 'Memproses'}
+                        {job.status === 'COMPLETED' ? 'Siap' : job.status === 'QA_PENDING' ? 'Menunggu QA' : job.status === 'FAILED' || job.status === 'REJECTED' ? 'Tidak Lulus' : 'Memproses'}
                       </span>
                       {job.videoUrl && (
                         <button
@@ -995,7 +1000,7 @@ function VideoFactoryContent() {
               <div className="text-xs text-slate-600">
                 <span className="font-bold">{modalPreviewStyle.engine === 'nexabot' ? 'AffiMatik Voice (10 Kredit)' : 'AffiMatik Motion (15 Kredit)'}</span>
                 <div className="text-[11px] text-slate-500">
-                  {modalPreviewStyle.engine === 'nexabot' ? 'Pertuturan Bahasa Melayu Malaysia (10s)' : 'Visual Realistik & Audio Persekitaran / ASMR (15s)'}
+                  {modalPreviewStyle.engine === 'nexabot' ? 'Pratonton gaya lama 10s; penjanaan baharu 15s' : 'Pratonton Motion lama; penjanaan baharu tidak tersedia'}
                 </div>
               </div>
               <button

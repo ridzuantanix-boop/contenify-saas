@@ -51,7 +51,7 @@ export interface VideoJobRecord {
   actualDurationSeconds?: number;
   outputHasAudio?: boolean;
   outputSizeBytes?: number;
-  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'QA_PENDING' | 'COMPLETED' | 'REJECTED' | 'FAILED';
   productName?: string;
   productCategory?: string;
   requiredCredits: number;
@@ -173,7 +173,7 @@ const localDb: LocalDatabaseState = {
   settings: {
     generation_status: { paused: false },
     provider_concurrency_caps: { nexabot: 5, runninghub: 5 },
-    provider_unit_costs: { nexabot_10s_myr: 1.5, runninghub_15s_myr: 2.0 },
+    provider_unit_costs: { nexabot_15s_myr: 1.5, runninghub_15s_myr: 2.0 },
     financial_safety: { minimum_safety_buffer_myr: 500, refund_reserve_percent: 10 },
   },
   forceDbDown: false,
@@ -221,7 +221,7 @@ export class DurableStore {
     localDb.settings = {
       generation_status: { paused: false },
       provider_concurrency_caps: { nexabot: 5, runninghub: 5 },
-      provider_unit_costs: { nexabot_10s_myr: 1.5, runninghub_15s_myr: 2.0 },
+      provider_unit_costs: { nexabot_15s_myr: 1.5, runninghub_15s_myr: 2.0 },
       financial_safety: { minimum_safety_buffer_myr: 500, refund_reserve_percent: 10 },
     };
     localDb.forceDbDown = false;
@@ -440,7 +440,7 @@ export class DurableStore {
 
       // 2. Concurrency check
       const activeCount = Object.values(localDb.jobs).filter(
-        (j) => j.workspaceId === req.workspaceId && (j.status === 'QUEUED' || j.status === 'SUBMITTING' || j.status === 'PROCESSING')
+        (j) => j.workspaceId === req.workspaceId && (j.status === 'QUEUED' || j.status === 'SUBMITTING' || j.status === 'PROCESSING' || j.status === 'QA_PENDING')
       ).length;
 
       if (activeCount >= req.maxConcurrency) {
@@ -823,7 +823,7 @@ export class DurableStore {
       status: row.status || 'QUEUED',
       productName: row.product_name || undefined,
       productCategory: row.product_category || undefined,
-      requiredCredits: row.required_credits || (row.duration_seconds === 10 ? 10 : 15),
+      requiredCredits: row.required_credits || (row.provider === 'runninghub' ? 15 : 10),
       videoUrl: row.result_video_url || undefined,
       videoObjectKey: row.result_video_r2_key || undefined,
       errorMessage: row.error_message || undefined,
@@ -1017,7 +1017,7 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=in.(QUEUED,SUBMITTING,PROCESSING)&select=id`;
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=in.(QUEUED,SUBMITTING,PROCESSING,QA_PENDING)&select=id`;
       const res = await fetch(url, {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -1039,7 +1039,7 @@ export class DurableStore {
     }
 
     return Object.values(localDb.jobs).filter(
-      (j) => j.workspaceId === workspaceId && (j.status === 'QUEUED' || j.status === 'SUBMITTING' || j.status === 'PROCESSING')
+      (j) => j.workspaceId === workspaceId && (j.status === 'QUEUED' || j.status === 'SUBMITTING' || j.status === 'PROCESSING' || j.status === 'QA_PENDING')
     ).length;
   }
 
@@ -1054,6 +1054,7 @@ export class DurableStore {
         updated_at: new Date().toISOString(),
       };
       if (updates.status) patchPayload.status = updates.status;
+      if (updates.status === 'QA_PENDING') patchPayload.qa_started_at = new Date().toISOString();
       if (updates.providerTaskId) patchPayload.provider_task_id = updates.providerTaskId;
       if (updates.videoUrl) patchPayload.result_video_url = updates.videoUrl;
       if (updates.videoObjectKey) patchPayload.result_video_r2_key = updates.videoObjectKey;

@@ -34,6 +34,7 @@ const NAV_ITEMS = [
   { name: 'Billing & Credits', href: '/billing', icon: CreditCard },
   { name: 'Tetapan Akaun', href: '/settings', icon: Settings },
   { name: 'Style Testing Lab', href: '/admin/styles', icon: ShieldCheck, badge: 'Admin' },
+  { name: 'Semakan Video', href: '/admin/video-qa', icon: Video, badge: 'Owner' },
   { name: 'Kelulusan Affiliate', href: '/admin/affiliates', icon: ShieldCheck, badge: 'Owner' },
   { name: 'Pulih MP4 Lama', href: '/admin/recovery', icon: Film, badge: 'Owner' },
   { name: 'Refund & Clawback', href: '/admin/finance-ops', icon: CreditCard, badge: 'Owner' },
@@ -45,6 +46,7 @@ export function Sidebar() {
   const [balance, setBalance] = useState<number | null>(null);
   const [workspaceName, setWorkspaceName] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [role, setRole] = useState<string>('member');
 
   useEffect(() => {
     async function loadSidebarSession() {
@@ -54,6 +56,7 @@ export function Sidebar() {
           const data = await res.json();
           if (data.authenticated && data.user) {
             setIsAuthenticated(true);
+            setRole(data.user.role || 'member');
             setWorkspaceName(data.user.fullName ? `${data.user.fullName.split(' ')[0]}'s Workspace` : 'Workspace Utama');
             if (data.wallet) {
               setBalance(data.wallet.balance);
@@ -93,6 +96,8 @@ export function Sidebar() {
           Studio Utama
         </div>
         {NAV_ITEMS.map((item) => {
+          if (item.badge === 'Owner' && role !== 'superadmin') return null;
+          if (item.badge === 'Admin' && role !== 'superadmin' && role !== 'admin') return null;
           const isActive = pathname === item.href || (item.href !== '#' && pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
           if (item.disabled) {

@@ -59,9 +59,8 @@ export class ProviderRouter {
       return this.runningHub;
     }
 
-    // Default intelligent routing as per Blueprint:
-    // 10s -> AffiMatik Voice priority (natural Malaysian Malay spoken creator videos)
-    // 15s -> AffiMatik Motion priority (natural motion & ambient audio)
+    // New 15s jobs must specify a style/provider: duration alone is ambiguous
+    // because historical Motion jobs also last 15 seconds.
     if (durationSeconds === 10) {
       const key = process.env.NEXABOT_API_KEY;
       if (!key || key.trim().length === 0) {
@@ -70,16 +69,10 @@ export class ProviderRouter {
       return this.nexabot;
     }
 
-    if (durationSeconds === 15) {
-      const key = process.env.RUNNINGHUB_API_KEY;
-      if (!key || key.trim().length === 0) {
-        throw new Error('Ralat Konfigurasi Pelayan: Kunci API RunningHub (AffiMatik Motion / RUNNINGHUB_API_KEY) tidak dikonfigurasi untuk video 15 saat.');
-      }
-      return this.runningHub;
-    }
+    if (durationSeconds === 15) throw new Error('Gaya atau pembekal mesti dinyatakan untuk video 15 saat.');
 
     throw new Error(
-      `Tiada enjin AI menyokong durasi ${durationSeconds}s secara terus. Sila pilih gaya 10s (AffiMatik Voice) atau 15s (AffiMatik Motion).`
+      `Tiada enjin AI menyokong durasi ${durationSeconds}s secara terus.`
     );
   }
 

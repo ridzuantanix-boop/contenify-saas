@@ -1,5 +1,7 @@
 # AffiMatik V2 provider QA — 6 November 2026
 
+V3 owner policy now permits a confirmed official Nexabot provider watermark. The V2 observations below remain historical evidence; see `RELEASE_V3_REPORT.md` for the current release decision. A star-like graphic alone is not enough to prove its source.
+
 This records actual Nexabot generations using two unrelated synthetic product images. Transcripts below are machine estimates from local faster-whisper `small`; a Malay-speaking human must verify the audio before a release gate can pass. Test media and contact sheets are kept locally in ignored `output/provider-qa/`, not in Git.
 
 ## Final strict-budget run

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       settled: 0,
       released: 0,
       stillProcessing: 0,
+      expiredQa: 0,
     };
 
     const now = Date.now();
@@ -63,7 +64,10 @@ export async function POST(req: NextRequest) {
         if (statusRes.normalizedStatus === 'COMPLETED') {
           const outputs = await adapter.getOutputs(job.providerTaskId);
           if (outputs?.videoUrl) {
-            if (await persistCompletedVideo(job, outputs.videoUrl, statusRes.rawStatus)) results.settled++;
+            if (await persistCompletedVideo(job, outputs.videoUrl, statusRes.rawStatus)) {
+              if (process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider !== 'mock') results.stillProcessing++;
+              else results.settled++;
+            }
           }
         } else if (statusRes.normalizedStatus === 'FAILED') {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_recon_${job.id}`);
@@ -100,6 +104,15 @@ export async function POST(req: NextRequest) {
           results.stillProcessing++;
         }
       }
+    }
+
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const expiry = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/expire_video_qa_atomic`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` }, body: '{}',
+      });
+      if (!expiry.ok) throw new Error('Semakan tempoh QA gagal.');
+      results.expiredQa = Number((await expiry.json()).expired || 0);
     }
 
     return NextResponse.json({

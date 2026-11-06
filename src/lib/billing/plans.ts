@@ -10,15 +10,15 @@ export interface PricingPlan {
   priceMyr: number;
   billingPeriod: string;
   monthlyCredits: number;
-  tenSecondVideoAllowance: number;
-  fifteenSecondVideoAllowance: number;
+  voiceVideoAllowance: number;
   features: string[];
   isPopular?: boolean;
   highlightBadge?: string;
 }
 
 export const GENERATION_COSTS = {
-  TEN_SECONDS_NEXABOT: 10, // 10 credits for 10-second Nexabot video with spoken BM
+  VOICE_NEXABOT: 10, // 10 wallet credits for Nexabot Voice; independent of duration
+  TEN_SECONDS_NEXABOT: 10, // Legacy alias for historical records
   FIFTEEN_SECONDS_RUNNINGHUB: 15, // 15 credits for 15-second RunningHub video (visual, no voice)
 } as const;
 
@@ -30,13 +30,12 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     priceMyr: 49,
     billingPeriod: '/bulan',
     monthlyCredits: 100,
-    tenSecondVideoAllowance: 10,
-    fifteenSecondVideoAllowance: 6,
+    voiceVideoAllowance: 10,
     features: [
       '100 Kredit Sebulan',
-      'Hingga 10 video Voice atau 6 video Motion',
+      'Hingga 10 video Voice 15 saat apabila penjanaan dibuka',
       'Akses Penuh Video Style Library',
-      '13 gaya video rasmi',
+      '7 gaya Voice; 6 gaya Motion belum tersedia',
       'Video menegak 9:16',
     ],
   },
@@ -47,16 +46,15 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     priceMyr: 129,
     billingPeriod: '/bulan',
     monthlyCredits: 300,
-    tenSecondVideoAllowance: 30,
-    fifteenSecondVideoAllowance: 20,
+    voiceVideoAllowance: 30,
     isPopular: true,
     highlightBadge: 'Paling Popular',
     features: [
       '300 Kredit Sebulan',
-      'Hingga 30 video Voice atau 20 video Motion',
+      'Hingga 30 video Voice 15 saat apabila penjanaan dibuka',
       'Semua Ciri Starter',
-      'Akses Penuh Enjin AffiMatik Motion Visual Realistik',
-      'Akses 13 gaya video rasmi',
+      'Motion tidak tersedia semasa pelancaran Nexabot',
+      '7 gaya Voice; 6 gaya Motion belum tersedia',
     ],
   },
   {
@@ -66,23 +64,20 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     priceMyr: 399,
     billingPeriod: '/bulan',
     monthlyCredits: 1000,
-    tenSecondVideoAllowance: 100,
-    fifteenSecondVideoAllowance: 66,
+    voiceVideoAllowance: 100,
     features: [
       '1,000 Kredit Sebulan',
-      'Hingga 100 video Voice atau 66 video Motion',
-      'Akses 13 gaya video rasmi',
+      'Hingga 100 video Voice 15 saat apabila penjanaan dibuka',
+      '7 gaya Voice; 6 gaya Motion belum tersedia',
     ],
   },
 ];
 
-export function calculateGenerationCredits(durationSeconds: 10 | 15): number {
-  return durationSeconds === 10
-    ? GENERATION_COSTS.TEN_SECONDS_NEXABOT
-    : GENERATION_COSTS.FIFTEEN_SECONDS_RUNNINGHUB;
+export function calculateGenerationCredits(provider: 'nexabot' | 'runninghub'): number {
+  return provider === 'nexabot' ? GENERATION_COSTS.VOICE_NEXABOT : GENERATION_COSTS.FIFTEEN_SECONDS_RUNNINGHUB;
 }
 
-export function calculateVideosPossible(credits: number, durationSeconds: 10 | 15): number {
-  const cost = calculateGenerationCredits(durationSeconds);
+export function calculateVideosPossible(credits: number, provider: 'nexabot' | 'runninghub'): number {
+  const cost = calculateGenerationCredits(provider);
   return Math.floor(credits / cost);
 }

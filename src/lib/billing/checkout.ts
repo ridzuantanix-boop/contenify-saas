@@ -64,8 +64,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     metadata: {
       planName: plan.name,
       referenceCode,
-      tenSecondVideos: plan.tenSecondVideoAllowance,
-      fifteenSecondVideos: plan.fifteenSecondVideoAllowance,
+      voiceVideos: plan.voiceVideoAllowance,
     },
   });
 

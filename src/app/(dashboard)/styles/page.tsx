@@ -93,7 +93,7 @@ export default function VideoStylesPage() {
               className="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white font-medium text-slate-700 focus:outline-none"
             >
               <option value="all">Semua Audio</option>
-              <option value="with_voice">Dengan Suara (AffiMatik Voice 10s)</option>
+              <option value="with_voice">Dengan Suara (AffiMatik Voice 15s)</option>
               <option value="no_voice">Visual Estetik (AffiMatik Motion 15s)</option>
             </select>
 
@@ -208,6 +208,8 @@ export default function VideoStylesPage() {
                         <CheckCircle2 className="w-2.5 h-2.5" />
                         Quality Verified
                       </span>
+                    ) : style.qualityStatus === 'disabled' ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200">Tidak tersedia</span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold border border-sky-200 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />

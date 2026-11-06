@@ -682,9 +682,12 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
     it('verifies that only styles with documented test video evidence are marked quality_verified', () => {
       const verifiedStyles = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'quality_verified');
 
-      // All 13 official styles have verified real test MP4 videos
-      expect(verifiedStyles.length).toBe(13);
-      for (const s of verifiedStyles) {
+      // Historical previews do not certify the newly requested 15s Voice output
+      // or the currently disabled RunningHub Motion output.
+      expect(verifiedStyles.length).toBe(0);
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'prompt_validated')).toHaveLength(7);
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub' && s.qualityStatus === 'disabled')).toHaveLength(6);
+      for (const s of VIDEO_STYLES_REGISTRY) {
         expect(s.previewVideoUrl).toBeTruthy();
         expect(s.previewVideoUrl).toContain('.mp4');
       }

@@ -19,7 +19,9 @@ export type JobStatus =
   | 'GENERATING'
   | 'PROCESSING'
   | 'QUALITY_CHECK'
+  | 'QA_PENDING'
   | 'COMPLETED'
+  | 'REJECTED'
   | 'FAILED_RETRYABLE'
   | 'FAILED_FINAL'
   | 'CANCELLED';

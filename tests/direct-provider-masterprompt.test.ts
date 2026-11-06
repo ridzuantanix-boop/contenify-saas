@@ -35,7 +35,7 @@ const scene: ScenePlan = {
   endPose: 'natural end',
   primaryAction: 'style-specific action',
   audioPolicy: 'spoken_bm',
-  targetDurationSeconds: 10,
+  targetDurationSeconds: 15,
 };
 
 describe('direct-to-provider masterprompt architecture', () => {
@@ -55,7 +55,8 @@ describe('direct-to-provider masterprompt architecture', () => {
       if (style.engine === 'nexabot') {
         expect(compiled.providerPrompt, style.id).toContain('provider creates');
         expect(compiled.providerPrompt, style.id).not.toContain('Strictly NO spoken dialogue');
-        expect(compiled.providerPrompt, style.id).toContain('reserve the final 1.5 seconds for one complete neutral CTA');
+        expect(compiled.providerPrompt, style.id).toContain('before second 14');
+        expect(compiled.providerPrompt, style.id).toContain('Omni-Flash provider watermark is permitted');
         expect(compiled.providerPrompt, style.id).toContain('Never invent a special formula');
         expect(compiled.providerPrompt, style.id).toContain('No decorative sparkles, glints, star stickers');
       } else {
@@ -69,9 +70,15 @@ describe('direct-to-provider masterprompt architecture', () => {
   it('does not generate or expose a local spoken script by default', () => {
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene);
     expect(compiled.spokenScript).toBeUndefined();
-    expect(compiled.providerPrompt).toContain('[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 10s]');
+    expect(compiled.providerPrompt).toContain('[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 15s]');
     expect(compiled.providerPrompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
     expect(compiled.providerPrompt).toContain('Bahasa Melayu standard Malaysia');
+  });
+
+  it('respects a customer choice to omit a spoken CTA', () => {
+    const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene, { callToAction: 'none' });
+    expect(compiled.providerPrompt).toContain('The customer chose no CTA');
+    expect(compiled.providerPrompt).not.toContain('Finish one complete neutral spoken CTA');
   });
 
   it('sends the complete prompt and actual reference image to Nexabot', () => {
@@ -82,7 +89,7 @@ describe('direct-to-provider masterprompt architecture', () => {
       idempotencyKey: 'idem',
       workspaceId: 'workspace',
       prompt: compiled.providerPrompt,
-      durationSeconds: 10,
+      durationSeconds: 15,
       aspectRatio: '9:16',
       mainImageKeyOrUrl: image,
     }) as Record<string, unknown>;

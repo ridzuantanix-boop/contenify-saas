@@ -22,8 +22,10 @@ describe('Job State Machine', () => {
     const t6 = JobStateMachine.transition('PROCESSING', 'QUALITY_CHECK', { jobId: 'job_1' });
     expect(t6.toStatus).toBe('QUALITY_CHECK');
 
-    const t7 = JobStateMachine.transition('QUALITY_CHECK', 'COMPLETED', { jobId: 'job_1' });
-    expect(t7.toStatus).toBe('COMPLETED');
+    const t7 = JobStateMachine.transition('QUALITY_CHECK', 'QA_PENDING', { jobId: 'job_1' });
+    expect(t7.toStatus).toBe('QA_PENDING');
+    expect(JobStateMachine.transition('QA_PENDING', 'COMPLETED', { jobId: 'job_1' }).toStatus).toBe('COMPLETED');
+    expect(JobStateMachine.transition('QA_PENDING', 'REJECTED', { jobId: 'job_2' }).toStatus).toBe('REJECTED');
   });
 
   it('rejects invalid or backwards transitions', () => {

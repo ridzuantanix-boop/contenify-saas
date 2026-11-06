@@ -132,6 +132,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (requestedProvider && requestedProvider !== style.engine && !(isSuperAdmin && requestedProvider === 'mock')) {
+      return NextResponse.json({ error: 'Pembekal tidak sepadan dengan gaya yang dipilih.' }, { status: 400 });
+    }
+
     if (process.env.NODE_ENV === 'production' && !isSuperAdmin && !publicProviderAvailability()[style.engine]) {
       return NextResponse.json(
         { error: `${style.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia untuk pelanggan sementara semakan kualiti dan pembekal diselesaikan. Tiada kredit ditolak.` },
@@ -364,6 +368,9 @@ export async function GET(req: NextRequest) {
     if (job.status === 'COMPLETED' && job.videoObjectKey) {
       return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'COMPLETED', output: { videoUrl: `/api/videos/${job.id}/stream` } });
     }
+    if (job.status === 'QA_PENDING' || job.status === 'REJECTED' || job.status === 'FAILED') {
+      return NextResponse.json({ jobId: job.id, provider: job.provider, status: job.status, error: job.errorMessage || undefined });
+    }
 
     try {
       const activeTaskId = job.providerTaskId;
@@ -386,24 +393,22 @@ export async function GET(req: NextRequest) {
         if (outputRes?.videoUrl && (job.status !== 'COMPLETED' || !job.videoObjectKey)) {
           const persisted = await persistCompletedVideo(job, outputRes.videoUrl, statusRes.rawStatus);
           if (!persisted) throw new Error('Penyelesaian kredit belum berjaya. Tugasan akan dicuba semula.');
-          outputRes.videoUrl = job.provider === 'mock' || process.env.NODE_ENV !== 'production' ? outputRes.videoUrl : `/api/videos/${job.id}/stream`;
+          if (job.provider !== 'mock' && process.env.NODE_ENV === 'production' && !process.env.VITEST) outputRes = null;
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
-        if (job.status !== 'FAILED') {
-          await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_${job.id}`);
-          await DurableStore.updateJobStatus(job.id, {
-            status: 'FAILED',
-            errorMessage: statusRes.rawStatus || 'Tugasan gagal di pelayan AI.',
-            rawStatus: statusRes.rawStatus,
-          });
-        }
+        await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_${job.id}`);
+        await DurableStore.updateJobStatus(job.id, {
+          status: 'FAILED',
+          errorMessage: statusRes.rawStatus || 'Tugasan gagal di pelayan AI.',
+          rawStatus: statusRes.rawStatus,
+        });
       }
 
       return NextResponse.json({
         jobId: job.id,
         providerTaskId: activeTaskId,
         provider: job.provider,
-        status: statusRes.normalizedStatus,
+        status: statusRes.normalizedStatus === 'COMPLETED' && process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider !== 'mock' ? 'QA_PENDING' : statusRes.normalizedStatus,
         progress: statusRes.progressPercent,
         rawStatus: statusRes.rawStatus,
         output: outputRes,
