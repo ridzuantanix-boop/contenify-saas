@@ -57,6 +57,23 @@ describe('Private provider media ingestion', () => {
     expect(request).toHaveBeenCalledTimes(1);
   });
 
+  it('accepts the exact RunningHub output host observed in live generation', async () => {
+    process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
+    const request = vi.fn().mockResolvedValueOnce(new Response(mp4Fixture().buffer as ArrayBuffer, { status: 200 })).mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', request);
+    const result = await ingestProviderMp4('runninghub', 'https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/job/video.mp4', 'ws-1', 'job-1');
+    expect(result.durationSeconds).toBe(10);
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a lookalike RunningHub output host', async () => {
+    const request = vi.fn();
+    vi.stubGlobal('fetch', request);
+    await expect(ingestProviderMp4('runninghub', 'https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com.attacker.test/video.mp4', 'ws-1', 'job-1')).rejects.toThrow(/tidak dibenarkan/);
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it('uploads a valid MP4 into a workspace-scoped private path', async () => {
     process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';

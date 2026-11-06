@@ -119,7 +119,7 @@ export function inspectMp4(bytes: ArrayBuffer): { durationSeconds: number; hasVi
 export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mock', sourceUrl: string, workspaceId: string, jobId: string): Promise<{ objectKey: string; sizeBytes: number; durationSeconds: number; hasAudio: boolean }> {
   // Historical Nexabot outputs were stored in the former AffiMatik public
   // Supabase project. Keep that exact host for verified recovery only.
-  const allowed = provider === 'nexabot' ? ['nexabot.id', 'hrekuraxzpiqymgcrjyb.supabase.co'] : provider === 'runninghub' ? ['runninghub.ai', 'runninghub.cn', 'rh-images.xiaoyaoyou.com'] : [];
+  const allowed = provider === 'nexabot' ? ['nexabot.id', 'hrekuraxzpiqymgcrjyb.supabase.co'] : provider === 'runninghub' ? ['runninghub.ai', 'runninghub.cn', 'rh-images.xiaoyaoyou.com', 'rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com'] : [];
   const extra = (process.env.PROVIDER_MEDIA_HOSTS || '').split(',').map((host) => host.trim().toLowerCase()).filter(Boolean);
   let current = new URL(sourceUrl);
   let response: Response | null = null;
