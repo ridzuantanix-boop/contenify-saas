@@ -9,17 +9,26 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 - **Sebahagian**: masih ada keupayaan yang belum dilaksanakan atau dibuktikan.
 - **Disekat luaran**: memerlukan SMTP, kredensial/peruntukan pembekal, peranti fizikal, backup atau proses release produksi.
 
+## Matriks keputusan penutupan
+
+| Kategori | Butiran |
+|---|---|
+| Siap dan disahkan | Kod Factory/masterprompt, storan dan API library, ledger affiliate/refund, kawalan tenant, ujian migrasi setempat, pemulihan satu MP4 terasing, gate pembekal fail-closed, binaan aplikasi dan Worker. |
+| Dilaksanakan tetapi belum diuji integrasi produksi | Semua dashboard selepas login, Product/Video/Avatar Library rentas peranti, 8 pemulihan MP4 lama, migrasi 00012–00017 terhadap salinan database produksi, fungsi pembayaran dan payout sebenar. |
+| Disekat luaran | SMTP/inbox, baki RunningHub, backup dan restore rehearsal produksi, peranti iPhone/Android, kos penyedia/gateway sebenar, settlement bank, kredensial Git CLI atau hak tulis GitHub integration. |
+| Gagal dan masih memerlukan pembetulan | Output Voice Nexabot masih mengandungi kemungkinan klaim tanpa bukti/elemen grafik walaupun prompt diperketat. Audit penuh dev dependencies mempunyai 18 advisories; production dependency audit bersih. Jangan aktifkan suis penjanaan awam atau checkout. |
+
 ## Senarai keperluan
 
 | Keperluan | Status dan bukti ringkas |
 |---|---|
-| 13 masterprompt V5, direct-to-provider | Kod siap; ujian prompt semua gaya lulus. Tiada skrip dalaman dalam laluan automatik. Dua prompt penuh berbeza dihantar bersama imej produk sebenar kepada Nexabot dan menghasilkan video; hasil dialog masih mempunyai pelanggaran yang dinyatakan di bawah. |
-| Nexabot Voice, durasi, CTA | Adapter menghantar `duration: 10`; dua video baharu H.264/AAC masing-masing 10.027s. CTA terhasil tetapi arahan klaim/BM tidak dipatuhi sepenuhnya oleh provider. Caj pelanggan kekal 10 kredit. |
+| 13 masterprompt V5, direct-to-provider | Kod siap; ujian prompt semua gaya lulus. Tiada skrip dalaman dalam laluan automatik. Prompt dua produk berbeza dihantar bersama imej sebenar kepada Nexabot. Tujuh gaya Voice kini mengehadkan dialog kepada tujuan/fungsi yang disokong imej atau fakta pelanggan; QA output masih gagal seperti di bawah. |
+| Nexabot Voice, durasi, CTA | Adapter menghantar `duration: 10`; empat video QA H.264/AAC sekitar 10.027s. CTA terhasil tetapi klaim dan Bahasa Melayu tidak dipatuhi sepenuhnya oleh provider. Caj pelanggan kekal 10 kredit. **Belum lulus gate kualiti.** |
 | RunningHub Motion | Adapter kini memuat naik imej sebenar ke `/task/openapi/upload` dan menggunakan `fileName` pada nod imej. Permintaan RH01 dengan prompt penuh ditolak provider kod 605 kerana baki tidak cukup, sebelum tugas dicipta. Caj pelanggan kekal 15 kredit. |
-| Factory dan Jana Video | Imej wajib, nama/arahan pilihan, gaya dan caj dipaparkan; butang Jana Video tersedia. Upload menyimpan aset produk. Laluan Provider→Job memelihara reservasi/settlement. Ujian setempat lulus; journey login produksi belum diuji. |
+| Factory dan Jana Video | Imej wajib, nama/arahan pilihan, gaya dan caj dipaparkan; upload menyimpan aset produk. Laluan Provider→Job memelihara reservasi/settlement. Kedua-dua enjin kini fail-closed untuk pelanggan sehingga suis pelepasan setiap provider diaktifkan selepas gate QA; Factory memaparkan sebab dan melumpuhkan Jana Video. Ujian setempat lulus; journey login produksi belum diuji. |
 | Product Library | CRUD metadata, carian, pemilihan semula, deduplikasi atomik dan storan per-workspace berkod; ujian PostgreSQL dan storan tiruan lulus. Aset sebenar rentas peranti belum dibuktikan. |
 | Video Library dan MP4 iPhone | Senarai, carian, stream per-workspace, Range 206/416, `Content-Disposition`, metadata sebenar dan muat turun disediakan. Struktur 13 MP4 preview diperiksa. Safari pada iPhone fizikal belum diuji. |
-| Pemulihan MP4 sejarah | Route admin idempotent dan UI batch disediakan. 8 job lama belum diimport; URL lama mungkin luput. Tidak caj semula pelanggan. |
+| Pemulihan MP4 sejarah | Route admin idempotent dan UI batch disediakan. Satu job dengan MP4 sebenar diuji dalam persekitaran terasing: import sekali, ulang no-op, tiada panggilan wallet. 8 job produksi lama belum diimport; URL lama mungkin luput. |
 | Production Queue | Job sebenar, status/ralat, reload dan polling hanya semasa tab kelihatan disediakan. Data produksi belum dibuktikan dengan Worker baharu. |
 | Avatar Library | Upload, senarai, padam, pilihan dan consent per-workspace disediakan. Penggunaan avatar sebagai rujukan provider belum disahkan, maka UI tidak menjanjikannya. |
 | Customer Dashboard dan settings | Metrik SQL, wallet, jobs, produk, video, bil dan profil sebenar disediakan. Ujian pangkalan data lulus; integrasi akaun sebenar belum. |
@@ -38,13 +47,14 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 
 ## Bukti ujian
 
-- `npm test`: **126/126 lulus**, 19 fail ujian. Termasuk PGlite migrasi 00001–00017, refund/hutang kredit, affiliate hold/payout, auth provisioning, tenant, PostgreSQL dua sambungan, eksport prompt, adapter upload imej dan ralat RunningHub 605.
+- `npm test`: **129/129 lulus**, 21 fail ujian. Termasuk PGlite migrasi 00001–00017, refund/hutang kredit, affiliate hold/payout, auth provisioning, tenant, PostgreSQL dua sambungan, eksport prompt, adapter upload imej, ralat RunningHub 605, import satu MP4 sejarah secara terasing dan fail-closed status pembekal.
 - `npm run lint`: lulus. `npm run build`: lulus pada Next.js 16.4.5. `npm run worker:build`: lulus pada OpenNext Cloudflare 1.20.16, dengan amaran keserasian Windows daripada OpenNext.
-- `npm audit --omit=dev`: **0 vulnerability** dalam production dependencies. Dev dependency audit masih mempunyai temuan; semak semula sebelum rantaian CI/release.
+- `npm audit --omit=dev --json`: **0 vulnerability** dalam production dependencies pada 6 November 2026. Audit penuh: **18 temuan dev tree** (2 critical, 5 high, 11 moderate), termasuk Vitest, OpenNext dan ESLint config; butiran/mitigasi dalam `RELEASE_V2_RECOVERY.md`. Temuan ini belum diselesaikan dengan upgrade major yang belum diuji.
 - Worker tempatan `127.0.0.1:8788`: homepage/login/factory/register 200, sesi tanpa login dan laluan terlindung diuji. Frontend terlindung mengalih ke login. Tiada rahsia Supabase disuntik dalam Worker tempatan.
 - 13 fail MP4 preview sedia ada diperiksa secara struktur untuk trek video dan durasi (Voice ~10s, Motion ~15s).
 - Nexabot live QA: `4c158356c9ef8e94` (LUMA DISH SOAP, NX01) dan `c1dcfd367c88631d` (NOVA LAMP, NX05) kedua-duanya `done`, 10.027s, 720×1280, H.264/AAC. Muat turun disimpan setempat dalam `output/provider-qa/` (diabaikan Git). Payload menghantar imej PNG sebenar sebagai media data URI dan prompt penuh; perbezaan prompt disahkan.
 - Pemeriksaan bingkai: lampu NOVA muncul dalam adegan hidup dengan bentuk/label konsisten. LUMA pertama bermula dengan imej produk pegun sebelum presenter. Prompt diperketat dan ulangan `9d3e930e4396c53e` (10.027s) kini bermula dengan adegan hidup dan botol/label konsisten. Transkripsi automatik model `faster-whisper-base` (anggaran, bukan audit telinga manusia) menunjukkan dialog LUMA tentang kotoran pinggan, NOVA tentang lampu/gelap dan CTA berbeza; NOVA menyebut kemungkinan klaim sakit mata hilang, LUMA pertama mungkin klaim segera bersih dan bentuk Indonesia `karena`/`cobalah`. Ulangan LUMA masih menyebut dakwaan minyak degil hilang dan pinggan terus licin tanpa bukti imej. Ini kegagalan kualiti provider yang belum selesai.
+- Ujian keempat selepas arahan image-grounding lebih ketat: Nexabot job `aa10bb82be1f015d`, LUMA NX01, MP4 10.027s, identiti botol konsisten dalam contact sheet. Transkripsi automatik masih menunjukkan kemungkinan klaim rekaan tentang `formulasinya khas`, walaupun tiada maklumat formulasi pada imej. Beberapa bingkai juga kelihatan mempunyai grafik kilauan kecil yang bercanggah dengan Zero UI. **Provider belum memenuhi gate kualiti; prompt sahaja tidak menjamin penguatkuasaan.**
 - RunningHub live QA: `accountStatus` berjaya, `remainCoins=39548`, `remainMoney=USD 0.0620`; upload imej NOVA berjaya dan mengembalikan `api/...png`. Dua endpoint submit menolak RH01 dengan `605 / NOT_ENOUGH_BALANCE`. Tiada task/video RunningHub dihasilkan. Adapter memetakan 605 kepada ralat tidak boleh dicuba semula dan tidak dibil pelanggan; diuji secara automatik.
 
 ## Pemeriksaan produksi baca sahaja
@@ -54,6 +64,12 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 - Kolum `affiliate_commissions.available_at` belum wujud: migrasi 00012–00017 **belum** digunakan pada produksi. Bucket private `affimatik-assets` wujud tetapi belum berisi objek ketika diperiksa sebelum ini.
 - App produksi masih pada SHA `5c5430b4f15cc1c426b969c4c5c793f73aa0d61f` menurut semakan sebelumnya. Candidate belum dideploy. Tiada perubahan pada 6 pengguna, wallet, job, bayaran atau media produksi semasa tugasan ini.
 
+## Keselamatan source dan penerbitan branch
+
+- Pada awal tugasan penutupan, branch setempat bersih pada `63be860ffa047df122ed415584d5f7d1a663c8e5`; remote `codex/launch-v2-audit` pada `1b1946c643d88970ceab6c1c1d16c2ec24b993b3`. Remote ialah leluhur local, tiada divergence diketahui ketika diperiksa.
+- Branch remote `codex/launch-v2-audit` dilaporkan `protected: false` oleh GitHub API; branch protection bukan puncanya. `git push` tergantung pada Git Credential Manager. `GIT_TERMINAL_PROMPT=0` dengan credential helper dimatikan mengembalikan `fatal: could not read Username for 'https://github.com': terminal prompts disabled`. Sambungan GitHub melaporkan hak push dalam metadata repo tetapi percubaan `create_blob` ditolak 403 `Resource not accessible by integration`; jadi sambungan itu tidak boleh menerbitkan commit.
+- Bundle Git setempat merangkumi commit penutupan terkini; `git bundle verify` lulus. Tiada force push atau perubahan remote dilakukan. Laluan bundle dan SHA-256 dilaporkan dalam jawapan akhir.
+
 ## Halangan yang memerlukan tindakan sebenar di luar kod
 
 1. Konfigurasi SMTP yang pemilik kawal, domain sender/DNS dan ujian emel ke inbox sebenar.
@@ -62,6 +78,9 @@ Keputusan: **NO-GO untuk public launch dan deployment produksi.** Checkout berba
 4. Tambah baki RunningHub yang mencukupi dan jalankan satu generasi Motion sebenar. Nexabot key semasa sah dan dua generasi sebenar selesai, tetapi kualiti dialog/identiti perlu lulus QA manual dan ulangan selepas pembetulan prompt. Kos Nexabot setiap ujian semasa 0.15 provider credit, bukan kredit pelanggan.
 5. Ujian iPhone Safari dan Android Chrome fizikal bagi signup→video→Files→login semula; transaksi rujukan affiliate/payout/refund bank sebenar hanya selepas pembayaran dibenarkan.
 6. Pemulihan 8 URL MP4 sejarah selepas snapshot dan import satu job yang disahkan; laporkan mana-mana URL yang sudah luput.
+7. Kredensial Git CLI atau pembetulan kebenaran tulis GitHub integration untuk menerbitkan candidate. Bundle setempat ialah salinan pemulihan sehingga push berjaya.
+
+Prosedur boleh ulang, hasil dijangka dan bukti yang diperlukan untuk setiap gate luaran terdapat dalam `RELEASE_V2_RECOVERY.md`. Backup produksi dan latihan restore belum berlaku; ujian migrasi PGlite setempat tidak menggantikannya.
 
 ## Release dan rollback
 

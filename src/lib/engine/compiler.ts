@@ -69,19 +69,19 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
 }) => string> = {
   // NX01: Sembang Kawan (10s)
   NX01: (p) =>
-    `A single adult modest Malaysian Muslimah creator, full hijab covering hair neck and chest, loose long-sleeved clothing. Natural smartphone 1x eye-level medium shot in a bright lived-in Malaysian home. She casually chats like a friend, holding the reference product at chest height. Open with a buyer situation genuinely relevant to the visible product, then explain its supported purpose and practical benefit in a warm, sincere voice. The provider creates the words and lip-sync. Natural hand gesture, one continuous handheld take, no cut.`,
+    `A single adult modest Malaysian Muslimah creator, full hijab covering hair neck and chest, loose long-sleeved clothing. Natural smartphone 1x eye-level medium shot in a bright lived-in Malaysian home. She casually chats like a friend, holding the reference product at chest height. Open with a buyer situation genuinely relevant to the visible product, then explain its supported intended purpose and an ordinary use context in a warm, sincere voice. The provider creates the words and lip-sync. Natural hand gesture, one continuous handheld take, no cut.`,
 
   // NX02: Review Sambil Pegang (10s)
   NX02: (p) =>
-    `Adult modest Malaysian Muslimah reviewer in a bright ordinary room, direct eye-level smartphone 1x handheld shot. Hold the reference product in one hand at chest height. Open by identifying its supported purpose, review one feature visible in the image or explicitly supplied by the user, then connect it to a practical buyer benefit. Speak directly and honestly; the provider creates the Malaysian Malay dialogue and lip-sync. Very small natural object adjustment, no label examination monologue, no close-up, one continuous take.`,
+    `Adult modest Malaysian Muslimah reviewer in a bright ordinary room, direct eye-level smartphone 1x handheld shot. Hold the reference product in one hand at chest height. Open by identifying its supported intended purpose, mention one feature actually legible in the image or explicitly supplied by the user, then explain when a buyer might use it without predicting a result. Speak directly and honestly; the provider creates the Malaysian Malay dialogue and lip-sync. Very small natural object adjustment, no label examination monologue, no close-up, one continuous take.`,
 
   // NX03: First Impression (10s)
   NX03: (p) =>
-    `Authentic first-look creator footage with an adult modest Malaysian Muslimah. Start holding the reference product near chest, glance at it, then look up with mild curiosity. Open with a genuine first observation and explain a purpose or benefit only when supported by the image or user notes. The provider creates cautious Malaysian Malay dialogue without implying personal use or a tested result. Small real movements, no fake unboxing or exaggerated reaction, 1x smartphone full-frame one take.`,
+    `Authentic first-look creator footage with an adult modest Malaysian Muslimah. Start holding the reference product near chest, glance at it, then look up with mild curiosity. Open with a genuine first observation and explain only an intended purpose supported by the image or user notes, never an achieved benefit. The provider creates cautious Malaysian Malay dialogue without implying personal use or a tested result. Small real movements, no fake unboxing or exaggerated reaction, 1x smartphone full-frame one take.`,
 
   // NX05: Masalah Seharian (10s)
   NX05: (p) =>
-    `Single-take realistic Malaysian home UGC. Adult modest Muslimah creator opens with a buyer problem that genuinely follows from the visible product, then lifts the reference product into frame by second two and explains one supported function and practical benefit. The provider creates empathetic, cautious Malaysian Malay dialogue and a credible everyday action, never a miraculous instant transformation. Same camera position, no jump cut, no zoom, neutral daylight.`,
+    `Single-take realistic Malaysian home UGC. Adult modest Muslimah creator opens with a buyer situation relevant to the visible product, then lifts the reference product into frame by second two and explains its supported intended function and ordinary use. Do not claim the product solves the problem or delivers a result. The provider creates empathetic, cautious Malaysian Malay dialogue and a credible everyday action, never a miraculous instant transformation. Same camera position, no jump cut, no zoom, neutral daylight.`,
 
   // NX07: Soalan & Jawapan (10s)
   NX07: (p) =>
@@ -89,11 +89,11 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
 
   // NX09: Goyang Produk + VO (10s)
   NX09: (p) =>
-    `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the reference product upright in a natural home space. Relaxed continuous side-to-side micro-tilt keeps it stable at 20–30% of the vertical frame. The provider creates a calm off-camera Malaysian Malay voiceover opening with a relevant use situation, then its supported purpose and practical benefit, using cautious language if evidence is limited. No presenter face or second hand. Neutral 1x phone camera, daylight, zero UI, one continuous take.`,
+    `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the reference product upright in a natural home space. Relaxed continuous side-to-side micro-tilt keeps it stable at 20–30% of the vertical frame. The provider creates a calm off-camera Malaysian Malay voiceover opening with a relevant use situation, then its supported intended purpose, without claiming an outcome. No presenter face or second hand. Neutral 1x phone camera, daylight, zero UI, one continuous take.`,
 
   // NX10: Label Talk • Fakta & Fungsi Dulu (10s)
   NX10: (p) =>
-    `HAND ONLY. Exactly one adult female hand with long sleeve covering wrist holds the reference product upright facing the 1x phone camera in a naturally lit room. Point subtly to a clearly legible, relevant specification only if one is visible; otherwise hold steady without pretending a specification exists. The provider creates a precise Malaysian Malay voiceover opening with a supported fact, explaining its actual purpose and a cautious practical benefit. No face, second hand, phone frame or watermark; one continuous take.`,
+    `HAND ONLY. Exactly one adult female hand with long sleeve covering wrist holds the reference product upright facing the 1x phone camera in a naturally lit room. Point subtly to a clearly legible, relevant specification only if one is visible; otherwise hold steady without pretending a specification exists. The provider creates a precise Malaysian Malay voiceover opening with a supported fact and explaining only its intended purpose or use context, never an unverified outcome. No face, second hand, phone frame or watermark; one continuous take.`,
 
   // RH01: Goyang Produk Natural (15s)
   RH01: (p) =>
@@ -371,9 +371,9 @@ export class DynamicPromptCompiler {
     const providerDialogueDirective = [
       '[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 10s]',
       'The external video-generation AI must independently inspect the uploaded product reference image and create the natural Malaysian Malay dialogue, scene interpretation and lip-sync. AffiMatik supplies no generated script.',
-      'Dialogue must discuss the product\'s actual purpose, a relevant buyer problem, grounded visible or user-supplied features and practical benefits. Do not narrate generic packaging or label descriptions.',
+      'Dialogue must discuss the product\'s intended purpose, a relevant buyer situation, and only features actually legible in the image or explicitly supplied by the user. Describe ordinary use, not an achieved benefit. Do not narrate generic packaging or label descriptions.',
       'If the image and optional user notes do not establish a fact, use cautious wording such as "berdasarkan apa yang kelihatan" or omit the claim. Never invent ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
-      'A buyer problem does not prove that this product resolves it. State only a visible or user-confirmed function and avoid guaranteed performance, health relief or instant transformation.',
+      'The image establishes identity and perhaps a printed intended use; it cannot establish cleaning efficacy, relief, speed, comparative superiority or any outcome. A buyer problem does not prove that this product resolves it. State only a visible or user-confirmed function. Omit all unsupported benefit and performance claims rather than softening them with uncertain words.',
       'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. End with a natural concise CTA only when supported by the style.',
       'Before rendering, check the spoken words against these rules: no Indonesian forms such as "karena" or "cobalah", no unsupported result claims, and a complete uncut final CTA. Rewrite internally if needed; AffiMatik does not provide a script.',
     ].join(' ');

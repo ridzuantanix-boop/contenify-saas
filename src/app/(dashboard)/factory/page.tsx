@@ -80,6 +80,7 @@ function VideoFactoryContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [publicAvailability, setPublicAvailability] = useState({ nexabot: false, runninghub: false });
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [activeJob, setActiveJob] = useState<ActiveJobDisplay | null>(null);
   const [recentJobs, setRecentJobs] = useState<ActiveJobDisplay[]>([]);
@@ -89,6 +90,14 @@ function VideoFactoryContent() {
   const selectedStyle = useMemo(() => {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
+  const selectedAvailable = publicAvailability[selectedStyle.engine];
+
+  useEffect(() => {
+    fetch('/api/styles', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Status pembekal tidak tersedia')))
+      .then((data) => setPublicAvailability({ nexabot: data.availability?.nexabot === true, runninghub: data.availability?.runninghub === true }))
+      .catch(() => setPublicAvailability({ nexabot: false, runninghub: false }));
+  }, []);
 
   useEffect(() => {
     const selectedAssetId = searchParams.get('imageAssetId');
@@ -243,6 +252,11 @@ function VideoFactoryContent() {
   const handleGenerateVideo = async () => {
     setSubmitError(null);
     setSubmitSuccess(null);
+
+    if (!selectedAvailable) {
+      setSubmitError(`${selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia sementara semakan kualiti dan pembekal diselesaikan. Tiada kredit ditolak.`);
+      return;
+    }
 
     if (images.length === 0 || isUploadingImage) {
       setSubmitError('Sila muat naik sekurang-kurangnya satu gambar produk untuk menjana video.');
@@ -679,6 +693,12 @@ function VideoFactoryContent() {
 
           {/* GENERATE ACTION BUTTON */}
           <div className="space-y-2">
+            {!selectedAvailable && (
+              <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                {selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia untuk pelanggan. Semakan kualiti dan pembekal masih berjalan; tiada kredit akan ditolak.
+              </div>
+            )}
+
             {submitError && (
               <div className={`p-4 border rounded-xl text-xs space-y-2 ${
                 submitError.includes('kredit FREE dah habis')
@@ -720,14 +740,16 @@ function VideoFactoryContent() {
             <button
               type="button"
               onClick={handleGenerateVideo}
-              disabled={Boolean(isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
+              disabled={Boolean(!selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
               className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
-                isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
+                !selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
                   ? 'bg-slate-400 cursor-not-allowed'
                   : 'bg-primary hover:bg-primary/95 active:scale-[0.99]'
               }`}
             >
-              {isSubmitting ? (
+              {!selectedAvailable ? (
+                <span>Penjanaan Belum Tersedia</span>
+              ) : isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Mendaftarkan Tugasan Video...</span>
@@ -1011,14 +1033,16 @@ function VideoFactoryContent() {
           <button
             type="button"
             onClick={handleGenerateVideo}
-            disabled={Boolean(isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
+            disabled={Boolean(!selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
             className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 ${
-              isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
+              !selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-primary hover:bg-primary/95 active:scale-95'
             }`}
           >
-            {isSubmitting ? (
+            {!selectedAvailable ? (
+              <span>Belum Tersedia</span>
+            ) : isSubmitting ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Menjana...</span>

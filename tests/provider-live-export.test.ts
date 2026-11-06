@@ -39,6 +39,7 @@ describe('real-provider QA prompt export', () => {
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice]) {
       expect(prompt).toContain('A buyer problem does not prove that this product resolves it');
+      expect(prompt).toContain('Omit all unsupported benefit and performance claims');
       expect(prompt).toContain('a complete uncut final CTA');
     }
     expect(prompts.lampMotion).not.toContain('[PROVIDER-CREATED DIALOGUE');

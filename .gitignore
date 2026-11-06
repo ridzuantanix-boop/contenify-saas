@@ -16,6 +16,7 @@ out/
 build/
 dist/
 output/provider-qa/
+output/release/
 
 # Misc
 .DS_Store

@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAllVideoStyles, filterVideoStyles, getVideoStyle } from '@/lib/styles/registry';
 import { SmartStyleMatcher } from '@/lib/engine/smart-match';
 import { AICreativeDirector } from '@/lib/engine/creative-director';
+import { publicProviderAvailability } from '@/lib/providers/public-availability';
 
 
 export async function GET(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     if (!style) {
       return NextResponse.json({ error: `Gaya video '${styleId}' tidak ditemui.` }, { status: 404 });
     }
-    return NextResponse.json({ style });
+    return NextResponse.json({ style, availability: publicProviderAvailability() });
   }
 
   // Filter styles
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     count: styles.length,
     styles,
+    availability: publicProviderAvailability(),
   });
 }
 

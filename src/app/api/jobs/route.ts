@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { publicProviderAvailability } from '@/lib/providers/public-availability';
 import { getVideoStyle, getAllVideoStyles } from '@/lib/styles/registry';
 import { DynamicPromptCompiler } from '@/lib/engine/compiler';
 import { ProductProfile, ScenePlan } from '@/lib/engine/types';
@@ -128,6 +129,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: `Gaya video '${targetStyleId}' belum diterbitkan untuk kegunaan umum.` },
         { status: 400 }
+      );
+    }
+
+    if (process.env.NODE_ENV === 'production' && !isSuperAdmin && !publicProviderAvailability()[style.engine]) {
+      return NextResponse.json(
+        { error: `${style.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia untuk pelanggan sementara semakan kualiti dan pembekal diselesaikan. Tiada kredit ditolak.` },
+        { status: 503 }
       );
     }
 
