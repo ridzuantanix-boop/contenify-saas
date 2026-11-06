@@ -55,6 +55,9 @@ describe('direct-to-provider masterprompt architecture', () => {
       if (style.engine === 'nexabot') {
         expect(compiled.providerPrompt, style.id).toContain('provider creates');
         expect(compiled.providerPrompt, style.id).not.toContain('Strictly NO spoken dialogue');
+        expect(compiled.providerPrompt, style.id).toContain('reserve the final 1.5 seconds for one complete neutral CTA');
+        expect(compiled.providerPrompt, style.id).toContain('Never invent a special formula');
+        expect(compiled.providerPrompt, style.id).toContain('No decorative sparkles, glints, star stickers');
       } else {
         expect(compiled.providerPrompt, style.id).toContain('Strictly NO spoken dialogue');
         expect(compiled.providerPrompt, style.id).not.toContain('[PROVIDER-CREATED DIALOGUE');
@@ -67,7 +70,7 @@ describe('direct-to-provider masterprompt architecture', () => {
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene);
     expect(compiled.spokenScript).toBeUndefined();
     expect(compiled.providerPrompt).toContain('[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 10s]');
-    expect(compiled.providerPrompt).toContain('Never invent ingredients, certifications, medical outcomes');
+    expect(compiled.providerPrompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
     expect(compiled.providerPrompt).toContain('Bahasa Melayu standard Malaysia');
   });
 

@@ -35,12 +35,15 @@ describe('real-provider QA prompt export', () => {
       expect(prompt.length).toBeGreaterThan(2000);
       expect(prompt).toContain('[PRODUCT IDENTITY MAX LOCK]');
       expect(prompt).toContain('never paste it in as a still introductory frame');
+      expect(prompt).toContain('No decorative sparkles, glints, star stickers');
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice]) {
       expect(prompt).toContain('A buyer problem does not prove that this product resolves it');
       expect(prompt).toContain('Omit all unsupported benefit and performance claims');
+      expect(prompt).toContain('When no product facts were supplied, restrict speech');
       expect(prompt).toContain('a complete uncut final CTA');
+      expect(prompt).toContain('reserve the final 1.5 seconds for one complete neutral CTA');
     }
     expect(prompts.lampMotion).not.toContain('[PROVIDER-CREATED DIALOGUE');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {

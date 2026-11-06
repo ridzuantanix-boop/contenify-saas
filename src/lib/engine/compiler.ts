@@ -261,6 +261,7 @@ export class DynamicPromptCompiler {
       `[ZERO UI & WATERMARK LOCK]`,
       `Full-frame vertical 9:16 aspect ratio footage naturally recorded in physical space, WITHOUT displaying any smartphone border, phone mockup frame, or screen bezel.`,
       `Strictly NO TikTok logo, NO social media interface, NO watermark, NO phone frame, NO phone UI overlays, NO fake buttons, NO smartphone mockup, NO embedded video player, NO screen borders, NO playback controls, NO floating captions, NO UI overlay, NO picture-in-picture, NO yellow basket graphics, NO shopping app interface, NO username overlays, NO like/comment/share buttons.`,
+      `No decorative sparkles, glints, star stickers, lens flares, floating symbols or animated graphic effects.`,
     ].join(' ');
 
     // 3. REALISTIC UGC / HUMAN REALISM LOCK (Includes smartphone 1x, iPhone 15 Pro, daylight 5500K)
@@ -372,9 +373,10 @@ export class DynamicPromptCompiler {
       '[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 10s]',
       'The external video-generation AI must independently inspect the uploaded product reference image and create the natural Malaysian Malay dialogue, scene interpretation and lip-sync. AffiMatik supplies no generated script.',
       'Dialogue must discuss the product\'s intended purpose, a relevant buyer situation, and only features actually legible in the image or explicitly supplied by the user. Describe ordinary use, not an achieved benefit. Do not narrate generic packaging or label descriptions.',
-      'If the image and optional user notes do not establish a fact, use cautious wording such as "berdasarkan apa yang kelihatan" or omit the claim. Never invent ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
+      'If the image and optional user notes do not establish a fact, omit the claim entirely. Never invent a special formula, ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
       'The image establishes identity and perhaps a printed intended use; it cannot establish cleaning efficacy, relief, speed, comparative superiority or any outcome. A buyer problem does not prove that this product resolves it. State only a visible or user-confirmed function. Omit all unsupported benefit and performance claims rather than softening them with uncertain words.',
-      'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. End with a natural concise CTA only when supported by the style.',
+      'When no product facts were supplied, restrict speech to the product category or legible printed intended purpose, an ordinary use situation, and a neutral CTA. Never imply it works better, faster, more thoroughly, or has a special formulation. Do not say a problem disappears or a customer has personally used it.',
+      'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. In every Voice style, reserve the final 1.5 seconds for one complete neutral CTA inviting the viewer to learn more or consider the product; finish the sentence before 10 seconds, without promising an outcome or price.',
       'Before rendering, check the spoken words against these rules: no Indonesian forms such as "karena" or "cobalah", no unsupported result claims, and a complete uncut final CTA. Rewrite internally if needed; AffiMatik does not provide a script.',
     ].join(' ');
     const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;

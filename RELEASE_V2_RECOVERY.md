@@ -12,7 +12,9 @@ Public video generation is fail-closed in the V2 candidate. `AFFIMATIK_VOICE_PUB
 
 ## Backup and migration gate
 
-**Production backup and restore rehearsal have not occurred. Do not run migrations 00012–00017 on production until they do.**
+**Production backup and restore rehearsal have not occurred. Do not run migrations 00012–00017 on production until they do.** The production dashboard reports Free Plan without scheduled backups; restore to a new project requires Pro Plan with physical backups. The owner must either enable that path or provide a complete manual database/Auth and Storage-object backup plus an isolated restore target. No database credentials were present in the local environment.
+
+The owner selected the **manual backup** path on 6 November 2026. The handoff must include an encrypted `pg_dump -Fc` covering `auth`, `public` and `storage` metadata, a separate encrypted export of all private Storage objects, a manifest with counts and SHA-256 hashes, and an isolated restore destination. Do not send database passwords or service-role keys in the repository or report. Once supplied, verify checksums, rehearse restore, compare the preflight counts and only then try migrations 00012–00017 on that copy.
 
 1. Record an immutable UTC timestamp, project ID, application SHA and the result of `scripts/v2-production-preflight.sql`. Record counts and sums for Auth users, profiles, workspaces, wallets, reservations, jobs, paid orders and commissions.
 2. Take a database snapshot or `pg_dump -Fc` of the production PostgreSQL database with Auth, public and Storage metadata included, using a role permitted to read them. Keep connection credentials outside command output and source control. Encrypt the dump and record its size and SHA-256.
