@@ -34,6 +34,9 @@ interface UploadedFilePreview {
   size: number;
   dataUrl: string;
   assetId: string;
+  productId?: string;
+  category?: string;
+  notes?: string;
 }
 
 interface ActiveJobDisplay {
@@ -107,7 +110,8 @@ function VideoFactoryContent() {
       const data = await response.json();
       const asset = data.assets?.find((item: { id: string }) => item.id === selectedAssetId);
       if (!asset) throw new Error('Imej produk tidak ditemui.');
-      setImages([{ id: asset.id, assetId: asset.id, name: asset.filename, size: 0, dataUrl: asset.imageUrl }]);
+      setImages([{ id: asset.id, assetId: asset.id, productId: asset.productId, name: asset.filename, size: 0,
+        dataUrl: asset.imageUrl, category: asset.category || '', notes: asset.notes || '' }]);
       if (asset.name !== 'Produk tanpa nama') setProductName(asset.name);
     }).catch((err) => setSubmitError(err.message));
   }, [searchParams]);
@@ -232,7 +236,8 @@ function VideoFactoryContent() {
         const response = await fetch('/api/products', { method: 'POST', body: form });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Imej tidak dapat disimpan.');
-        setImages([{ id: crypto.randomUUID(), name: file.name, size: file.size, dataUrl, assetId: result.assetId }]);
+        setImages([{ id: crypto.randomUUID(), name: file.name, size: file.size, dataUrl,
+          assetId: result.assetId, productId: result.productId, category: '', notes: '' }]);
         setSubmitError(null);
       } catch (err) {
         setImages([]);
@@ -280,6 +285,19 @@ function VideoFactoryContent() {
     setIsSubmitting(true);
 
     try {
+      const image = images[0];
+      if (productName.trim() && image.productId) {
+        const metadataResponse = await fetch('/api/products', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: image.productId, name: productName.trim(),
+            category: image.category || '', notes: image.notes || '' }),
+        });
+        if (!metadataResponse.ok) {
+          const metadataError = await metadataResponse.json().catch(() => ({}));
+          throw new Error(metadataError.error || 'Nama produk tidak dapat disimpan. Sila cuba semula.');
+        }
+      }
       const clientRequestId = `req_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
       const payload: Record<string, unknown> = {
         clientRequestId,
