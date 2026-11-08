@@ -79,19 +79,24 @@ BEGIN
   SELECT pg_get_functiondef('public.settle_order_payment_atomic(uuid,character varying,jsonb)'::regprocedure) INTO v_sql;
   v_old := 'IF v_order.status = ''PAID'' THEN';
   IF position(v_old IN v_sql)=0 THEN RAISE EXCEPTION 'Settlement function changed; review required'; END IF;
-  v_sql := replace(v_sql,v_old,'IF v_order.status NOT IN (''PENDING'',''PAID'') THEN RETURN jsonb_build_object(''success'',false,''error'',''Order is not pending''); END IF;'||E'\n    '||v_old);
-  IF position('10 + v_order.credits_granted' IN v_sql)=0 OR position('v_wallet.id, 10, ''GRANT''' IN v_sql)=0 THEN
+  IF position('Order is not pending' IN v_sql)=0 THEN
+    v_sql := replace(v_sql,v_old,'IF v_order.status NOT IN (''PENDING'',''PAID'') THEN RETURN jsonb_build_object(''success'',false,''error'',''Order is not pending''); END IF;'||E'\n    '||v_old);
+  END IF;
+  IF position('10 + v_order.credits_granted' IN v_sql)>0 AND position('v_wallet.id, 10, ''GRANT''' IN v_sql)>0 THEN
+    v_sql := replace(v_sql,'10 + v_order.credits_granted','20 + v_order.credits_granted');
+    v_sql := replace(v_sql,'v_wallet.id, 10, ''GRANT''','v_wallet.id, 20, ''GRANT''');
+  ELSIF position('20 + v_order.credits_granted' IN v_sql)=0 OR position('v_wallet.id, 20, ''GRANT''' IN v_sql)=0 THEN
     RAISE EXCEPTION 'Fallback welcome grant changed; review required';
   END IF;
-  v_sql := replace(v_sql,'10 + v_order.credits_granted','20 + v_order.credits_granted');
-  v_sql := replace(v_sql,'v_wallet.id, 10, ''GRANT''','v_wallet.id, 20, ''GRANT''');
   EXECUTE v_sql;
 
   SELECT pg_get_functiondef('public.admit_video_job_atomic(uuid,uuid,uuid,character varying,character varying,integer,character varying,integer,integer,integer,text,jsonb)'::regprocedure) INTO v_sql;
   v_old := 'v_available := v_wallet.balance - v_wallet.reserved_balance;';
   IF position(v_old IN v_sql)=0 THEN RAISE EXCEPTION 'Job admission function changed; review required'; END IF;
-  v_sql := replace(v_sql,v_old,
-    'IF EXISTS (SELECT 1 FROM credit_refund_debts WHERE workspace_id=p_workspace_id AND outstanding_credits>0) THEN RETURN jsonb_build_object(''success'',false,''error'',''Refund credit debt must be settled before new generation''); END IF;'||E'\n    '||v_old);
+  IF position('Refund credit debt must be settled before new generation' IN v_sql)=0 THEN
+    v_sql := replace(v_sql,v_old,
+      'IF EXISTS (SELECT 1 FROM credit_refund_debts WHERE workspace_id=p_workspace_id AND outstanding_credits>0) THEN RETURN jsonb_build_object(''success'',false,''error'',''Refund credit debt must be settled before new generation''); END IF;'||E'\n    '||v_old);
+  END IF;
   EXECUTE v_sql;
 END $guard$;
 

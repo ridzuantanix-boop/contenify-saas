@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
     const asset = await registered.json() as { asset_id: string; product_id: string; object_key: string; reused: boolean };
     if (asset.reused) await deletePrivateAsset(path);
     return NextResponse.json({ assetId: asset.asset_id, productId: asset.product_id, imageUrl: await signPrivateAsset(asset.object_key), reused: asset.reused }, { status: asset.reused ? 200 : 201 });
-  } catch {
+  } catch (error) {
+    console.error('[Product Library] Upload failed:', error);
     return NextResponse.json({ error: 'Imej tidak dapat disimpan. Sila cuba semula.' }, { status: 503 });
   }
 }
