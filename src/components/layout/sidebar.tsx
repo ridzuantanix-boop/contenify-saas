@@ -199,6 +199,7 @@ export function MobileSidebarDrawer({
   const [balance, setBalance] = useState<number | null>(null);
   const [workspaceName, setWorkspaceName] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [role, setRole] = useState<string>('member');
 
   useEffect(() => {
     async function loadSession() {
@@ -208,6 +209,7 @@ export function MobileSidebarDrawer({
           const data = await res.json();
           if (data.authenticated && data.user) {
             setIsAuthenticated(true);
+            setRole(data.user.role || 'member');
             setWorkspaceName(data.user.fullName ? `${data.user.fullName.split(' ')[0]}'s Workspace` : 'Workspace Utama');
             if (data.wallet) {
               setBalance(data.wallet.balance);
@@ -277,6 +279,8 @@ export function MobileSidebarDrawer({
             Studio Utama
           </div>
           {NAV_ITEMS.map((item) => {
+            if (item.badge === 'Owner' && role !== 'superadmin') return null;
+            if (item.badge === 'Admin' && role !== 'superadmin' && role !== 'admin') return null;
             const isActive = pathname === item.href || (item.href !== '#' && pathname.startsWith(`${item.href}/`));
             const Icon = item.icon;
             if (item.disabled) {
