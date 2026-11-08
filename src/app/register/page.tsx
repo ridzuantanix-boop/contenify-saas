@@ -97,22 +97,22 @@ export default function RegisterPage() {
                 <Mail className="w-7 h-7" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-lg font-bold text-slate-900">Sila Sahkan Emel Anda</h3>
+                <h3 className="text-lg font-bold text-slate-900">Semak Emel atau Log Masuk</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Permintaan emel pengesahan diterima untuk:
+                  Permintaan pendaftaran diterima untuk:
                 </p>
                 <div className="inline-block px-3 py-1 bg-slate-100 rounded-lg text-xs font-mono font-bold text-slate-800">
                   {registeredEmail}
                 </div>
                 <p className="text-[11px] text-slate-500 pt-2 leading-relaxed">
-                  Sila buka peti masuk (inbox) emel anda dan klik pautan pengesahan untuk mengaktifkan akaun serta menuntut <strong>20 Kredit Percuma</strong>.
+                  Jika ini akaun baharu, semak Inbox dan Spam lalu sahkan emel untuk menuntut <strong>20 Kredit Percuma</strong>. Jika anda pernah mendaftar, terus log masuk dengan akaun sedia ada.
                 </p>
               </div>
 
               <div className="pt-4 border-t border-slate-100 space-y-2">
                 {errorMsg && <p role="alert" className="text-xs text-red-700">{errorMsg}</p>}
                 {successMsg && <p role="status" className="text-xs text-emerald-700">{successMsg}</p>}
-                <button type="button" disabled={resendBusy} onClick={resendConfirmation} className="w-full rounded-xl border px-4 py-2.5 text-xs font-semibold disabled:opacity-50">{resendBusy ? 'Menghantar…' : 'Hantar semula emel pengesahan'}</button>
+                <button type="button" disabled={resendBusy} onClick={resendConfirmation} className="w-full rounded-xl border px-4 py-2.5 text-xs font-semibold disabled:opacity-50">{resendBusy ? 'Menghantar…' : 'Hantar semula jika belum disahkan'}</button>
                 <Link
                   href="/login"
                   className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition"

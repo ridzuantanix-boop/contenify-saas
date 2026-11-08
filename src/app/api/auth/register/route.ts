@@ -23,16 +23,20 @@ export async function POST(req: NextRequest) {
         method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_ANON_KEY },
         body: JSON.stringify({ email, password, data: { full_name: fullName || email.split('@')[0], whatsapp, referral_code: referralCode || null } }),
       });
-      const result = await response.json().catch(() => ({}));
+      const result = await response.json().catch(() => ({})) as Record<string, unknown>;
       if (!response.ok) return NextResponse.json({ error: result.msg || result.error_description || result.message || 'Pendaftaran gagal.' }, { status: response.status });
-      if (!result.user?.id) return NextResponse.json({ error: 'Respons pendaftaran tidak lengkap.' }, { status: 502 });
+      // GoTrue's raw /signup endpoint returns a flat user object. SDK wrappers
+      // may instead return { user, session }. Accept both documented shapes.
+      const user = result.user && typeof result.user === 'object'
+        ? result.user as Record<string, unknown> : result;
+      if (typeof user.id !== 'string' || !user.id) return NextResponse.json({ error: 'Respons pendaftaran tidak lengkap.' }, { status: 502 });
       // A confirmed Supabase identity is provisioned atomically at first login.
       // No workspace or welcome credit is created for an unverified mailbox.
       if (result.session) {
         return NextResponse.json({ error: 'Pengesahan emel mesti diaktifkan pada Supabase Auth sebelum pendaftaran boleh digunakan.' }, { status: 503 });
       }
       return NextResponse.json({ success: true, requiresEmailConfirmation: true, email,
-        message: 'Pendaftaran diterima. Sila sahkan alamat emel anda sebelum log masuk.' });
+        message: 'Jika ini akaun baharu, semak emel pengesahan. Jika pernah mendaftar, sila log masuk.' });
     } catch { return NextResponse.json({ error: 'Perkhidmatan pendaftaran tidak dapat diakses.' }, { status: 503 }); }
   }
 
