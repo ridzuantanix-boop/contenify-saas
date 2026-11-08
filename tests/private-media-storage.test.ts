@@ -74,6 +74,32 @@ describe('Private provider media ingestion', () => {
     expect(request).not.toHaveBeenCalled();
   });
 
+  it('accepts the exact Nexabot storage host and media path observed in staging', async () => {
+    process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
+    const mp4 = mp4Fixture();
+    const request = vi.fn().mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }));
+    vi.stubGlobal('fetch', request);
+    const result = await ingestProviderMp4('nexabot', 'https://iosrygyeustxztewibzq.supabase.co/storage/v1/object/public/storage/media/2026/11/output.mp4', 'ws-1', 'job-1');
+    expect(result.sizeBytes).toBe(mp4.length);
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects other paths on the Nexabot storage host and lookalike hosts', async () => {
+    const request = vi.fn();
+    vi.stubGlobal('fetch', request);
+    for (const url of [
+      'https://iosrygyeustxztewibzq.supabase.co/storage/v1/object/public/other/file.mp4',
+      'https://sub.iosrygyeustxztewibzq.supabase.co/storage/v1/object/public/storage/media/a.mp4',
+      'https://iosrygyeustxztewibzq.supabase.co.attacker.test/storage/v1/object/public/storage/media/a.mp4',
+    ]) {
+      await expect(ingestProviderMp4('nexabot', url, 'ws-1', 'job-1')).rejects.toThrow(/tidak dibenarkan/);
+    }
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it('uploads a valid MP4 into a workspace-scoped private path', async () => {
     process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';

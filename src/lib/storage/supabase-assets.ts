@@ -117,16 +117,22 @@ export function inspectMp4(bytes: ArrayBuffer): { durationSeconds: number; hasVi
 }
 
 export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mock', sourceUrl: string, workspaceId: string, jobId: string): Promise<{ objectKey: string; sizeBytes: number; durationSeconds: number; hasAudio: boolean }> {
-  // Historical Nexabot outputs were stored in the former AffiMatik public
-  // Supabase project. Keep that exact host for verified recovery only.
-  const allowed = provider === 'nexabot' ? ['nexabot.id', 'hrekuraxzpiqymgcrjyb.supabase.co'] : provider === 'runninghub' ? ['runninghub.ai', 'runninghub.cn', 'rh-images.xiaoyaoyou.com', 'rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com'] : [];
+  // Historical and current Nexabot outputs use two observed Supabase projects.
+  // Keep those exact hosts and their media path instead of trusting *.supabase.co.
+  const nexabotStorageHosts = ['hrekuraxzpiqymgcrjyb.supabase.co', 'iosrygyeustxztewibzq.supabase.co'];
+  const allowed = provider === 'nexabot' ? ['nexabot.id', ...nexabotStorageHosts] : provider === 'runninghub' ? ['runninghub.ai', 'runninghub.cn', 'rh-images.xiaoyaoyou.com', 'rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com'] : [];
   const extra = (process.env.PROVIDER_MEDIA_HOSTS || '').split(',').map((host) => host.trim().toLowerCase()).filter(Boolean);
   let current = new URL(sourceUrl);
   let response: Response | null = null;
   for (let redirect = 0; redirect < 3; redirect++) {
     const hostname = current.hostname.toLowerCase();
-    if (current.protocol !== 'https:' || current.username || current.password || ![...allowed, ...extra].some((host) => hostname === host || hostname.endsWith(`.${host}`))) {
+    if (current.protocol !== 'https:' || current.username || current.password || ![...allowed, ...extra].some((host) =>
+      nexabotStorageHosts.includes(host) ? hostname === host : hostname === host || hostname.endsWith(`.${host}`))) {
       throw new Error('Domain sumber video tidak dibenarkan.');
+    }
+    if (provider === 'nexabot' && nexabotStorageHosts.includes(hostname) &&
+        (!current.pathname.startsWith('/storage/v1/object/public/storage/media/') || !current.pathname.toLowerCase().endsWith('.mp4'))) {
+      throw new Error('Laluan sumber video Nexabot tidak dibenarkan.');
     }
     response = await fetch(current, {
       redirect: 'manual',

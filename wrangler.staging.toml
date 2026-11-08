@@ -1,0 +1,21 @@
+name = "affimatik-launch-lite-staging"
+main = "scripts/release/staging-worker.mjs"
+compatibility_date = "2026-10-14"
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env", "global_fetch_strictly_public"]
+workers_dev = true
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+SUPABASE_URL = "https://oudxnvazrdmnxdndpgmy.supabase.co"
+AFFIMATIK_VOICE_PUBLIC_ENABLED = "true"
+AFFIMATIK_MOTION_PUBLIC_ENABLED = "false"
+PUBLIC_CHECKOUT_ENABLED = "false"
+USE_MOCK_PROVIDERS = "false"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "affimatik-launch-lite-staging"

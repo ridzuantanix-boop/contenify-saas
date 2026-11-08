@@ -24,6 +24,10 @@ function Ensure-GeneratedSecret([string]$Name, [int]$ByteCount) {
 Ensure-GeneratedSecret 'worker-session-secret' 48
 Ensure-GeneratedSecret 'worker-admin-access-key' 32
 Ensure-GeneratedSecret 'worker-cron-secret' 32
+Ensure-GeneratedSecret 'staging-gate-secret' 32
+Ensure-GeneratedSecret 'staging-session-secret' 48
+Ensure-GeneratedSecret 'staging-admin-access-key' 32
+Ensure-GeneratedSecret 'staging-cron-secret' 32
 
 foreach ($name in @('supabase-anon-key', 'supabase-service-role-key', 'nexabot-api-key')) {
   if (Test-Path -LiteralPath (Join-Path $secureDir "$name.dpapi")) {
