@@ -44,4 +44,29 @@ describe('Supabase signup response contract', () => {
     expect(body.message).not.toContain('fake-user');
     expect(response.headers.get('set-cookie')).toBeNull();
   });
+
+  it('translates the Supabase email quota response without exposing provider internals', async () => {
+    configure();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'over_email_send_rate_limit', message: 'email rate limit exceeded',
+    }), { status: 429, headers: { 'Retry-After': '3600' } })));
+    const response = await POST(request());
+    const body = await response.json();
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('3600');
+    expect(body).toMatchObject({ code: 'AUTH_EMAIL_RATE_LIMIT', retryAfterSeconds: 3600 });
+    expect(body.error).not.toContain('email rate limit exceeded');
+  });
+
+  it('reports that public delivery is unavailable when built-in SMTP rejects an address', async () => {
+    configure();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'email_address_not_authorized', message: 'Email address not authorized',
+    }), { status: 422 })));
+    const response = await POST(request());
+    const body = await response.json();
+    expect(response.status).toBe(503);
+    expect(body.code).toBe('AUTH_EMAIL_NOT_CONFIGURED');
+    expect(body.error).not.toContain('Email address not authorized');
+  });
 });

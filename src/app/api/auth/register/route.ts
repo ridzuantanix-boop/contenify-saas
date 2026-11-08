@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 
+function authEmailFailure(response: Response, result: Record<string, unknown>) {
+  const code = typeof result.error_code === 'string' ? result.error_code
+    : typeof result.code === 'string' ? result.code : '';
+  const providerMessage = [result.msg, result.error_description, result.message]
+    .find((value): value is string => typeof value === 'string') || '';
+  const rateLimited = response.status === 429
+    || code === 'over_email_send_rate_limit'
+    || /email rate limit exceeded/i.test(providerMessage);
+  if (rateLimited) {
+    const retryAfter = Number.parseInt(response.headers.get('retry-after') || '', 10);
+    return NextResponse.json({
+      error: 'Had penghantaran emel pengesahan telah dicapai. Pendaftaran belum selesai. Sila cuba semula kemudian; jangan tekan daftar berulang kali.',
+      code: 'AUTH_EMAIL_RATE_LIMIT',
+      ...(Number.isFinite(retryAfter) && retryAfter > 0 ? { retryAfterSeconds: retryAfter } : {}),
+    }, { status: 429, headers: Number.isFinite(retryAfter) && retryAfter > 0 ? { 'Retry-After': String(retryAfter) } : undefined });
+  }
+  if (code === 'email_address_not_authorized' || /email address not authorized/i.test(providerMessage)) {
+    return NextResponse.json({
+      error: 'Penghantaran emel pendaftaran belum dikonfigurasi untuk alamat awam. Sila hubungi sokongan AffiMatik.',
+      code: 'AUTH_EMAIL_NOT_CONFIGURED',
+    }, { status: 503 });
+  }
+  return NextResponse.json({ error: providerMessage || 'Pendaftaran gagal.' }, { status: response.status });
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -24,7 +48,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ email, password, data: { full_name: fullName || email.split('@')[0], whatsapp, referral_code: referralCode || null } }),
       });
       const result = await response.json().catch(() => ({})) as Record<string, unknown>;
-      if (!response.ok) return NextResponse.json({ error: result.msg || result.error_description || result.message || 'Pendaftaran gagal.' }, { status: response.status });
+      if (!response.ok) return authEmailFailure(response, result);
       // GoTrue's raw /signup endpoint returns a flat user object. SDK wrappers
       // may instead return { user, session }. Accept both documented shapes.
       const user = result.user && typeof result.user === 'object'
