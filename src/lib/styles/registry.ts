@@ -1,488 +1,77 @@
-/**
- * AFFIMATIK by Pawarna — Video Style Registry (GEMS Masterprompts V5.0)
- * Authoritative Canonical Creative Registry for all 13 Video Styles
- * 
- * Engines:
- * - NX: AffiMatik Voice (15s, Malaysian Malay Spoken Dialogue, Nexabot internal)
- * - RH: AffiMatik Motion (15s, legacy definitions; public generation inactive)
- */
+/** AffiMatik Creative V6 — canonical 20-style registry. */
+import { VideoStyle, StyleCategory, StyleFilterOptions, AudioMode } from './types';
 
-import { VideoStyle, StyleFilterOptions } from './types';
+const VERSION = 'affimatik-creative-v6.0';
+type Direction = [string, string, string, string, string, string, string];
+type Seed = {
+  id: string; slug: string; name: string; benefit: string; description: string;
+  category: StyleCategory; suitable: string[]; audio?: AudioMode; action: string;
+  camera: string; tags: string[]; direction: Direction; legacyAliasId?: string;
+  tested?: boolean; avatar?: boolean;
+};
+
+function make(s: Seed): VideoStyle {
+  const [targetViewingExperience, openingStrategy, speakingPersonality, humanBehaviour, sceneContext, productInteraction, expectedEnding] = s.direction;
+  return {
+    id: s.id, slug: s.slug, name: s.name, benefit: s.benefit, description: s.description,
+    category: s.category, engine: 'nexabot', durationSeconds: 15, audioMode: s.audio ?? 'spoken_bm',
+    supportedProductCategories: s.suitable, requiredAssets: ['product_image'], optionalAssets: s.avatar ? ['avatar_reference'] : [],
+    actionType: s.action, cameraProfile: s.camera, identityLock: true, realismLock: true, modestyLock: true,
+    promptTemplateVersion: VERSION, qualityStatus: 'video_tested', publicationStatus: 'published',
+    previewVideoUrl: `/api/style-samples/${s.id}`, tags: s.tags, legacyAliasId: s.legacyAliasId,
+    creativeDirection: { targetViewingExperience, openingStrategy, speakingPersonality, humanBehaviour, sceneContext, productInteraction, expectedEnding },
+    actionPlan: {
+      primaryAction: productInteraction, startPose: openingStrategy, actionProgression: humanBehaviour,
+      endPose: expectedEnding, cameraMovement: s.camera, lightingSpec: 'Bright neutral daylight, realistic soft shadows, no cinematic colour grade',
+    },
+  };
+}
 
 export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
-  // ===========================================================================
-  // AFFIMATIK VOICE / NEXABOT ENGINE (15s, Malaysian Malay Spoken Dialogue)
-  // ===========================================================================
-  {
-    id: 'NX01',
-    slug: 'sembang-kawan',
-    name: 'Sembang Kawan',
-    benefit: 'Perbualan santai macam kongsi petua dengan kawan rapat',
-    description: 'Pencipta Muslimah bercakap santai ke kamera berkongsi situasi dan manfaat produk seperti bersembang dengan kawan.',
-    category: 'creator_review',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: ['avatar_reference'],
-    actionType: 'casual_creator_talk',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX01',
-    tags: ['ugc', 'spoken_bm', 'casual', 'creator', '15s'],
-    actionPlan: {
-      primaryAction: 'Casual friendly talking while holding product at chest level',
-      startPose: 'Creator smiles warmly into camera, holding product comfortably at chest height',
-      actionProgression: 'Chats naturally about buyer situation for 7 seconds, slight gesture with free hand',
-      endPose: 'Holds product steady with sincere expression and confident friendly nod',
-      cameraMovement: 'Subtle handheld 1x smartphone micro-movements, eye-level framing',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'NX02',
-    slug: 'review-sambil-pegang',
-    name: 'Review Sambil Pegang',
-    benefit: 'Penerangan produk terus & bersahaja di tangan',
-    description: 'Penerangan produk terus dan meyakinkan di hadapan kamera menerangkan fungsi dan manfaat sebenar.',
-    category: 'creator_review',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: ['avatar_reference'],
-    actionType: 'direct_product_explainer',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX02',
-    tags: ['review', 'spoken_bm', 'product_explainer', '15s'],
-    legacyAliasId: 'gem_real_affiliate',
-    actionPlan: {
-      primaryAction: 'Direct concise product explanation while holding product naturally',
-      startPose: 'Creator holds physical product upright naturally at comfortable chest height',
-      actionProgression: 'Explains what product is for and states one grounded benefit with subtle hand adjustment',
-      endPose: 'Concludes concisely with product held steady and clear',
-      cameraMovement: 'Direct eye-level smartphone 1x handheld framing',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'NX03',
-    slug: 'first-impression',
-    name: 'First Impression',
-    benefit: 'Reaksi pandang pertama yang jujur & bersahaja',
-    description: 'Reaksi pertama yang jujur dan bersahaja terhadap fungsi dan ciri sebenar produk tanpa overacting.',
-    category: 'creator_review',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: ['avatar_reference'],
-    actionType: 'first_impression_reaction',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX03',
-    tags: ['first_impression', 'spoken_bm', 'spontaneous', 'reaction', '15s'],
-    actionPlan: {
-      primaryAction: 'Curious and authentic first-look creator reaction to product utility',
-      startPose: 'Creator starts with product naturally held near chest, looking down at it briefly',
-      actionProgression: 'Notices grounded feature, looks up naturally with mild curiosity, explains utility to viewer',
-      endPose: 'Smiles naturally with mild recommendation, holding product steady',
-      cameraMovement: 'Natural 1x smartphone handheld one continuous take',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'NX05',
-    slug: 'masalah-seharian',
-    name: 'Masalah Seharian',
-    benefit: 'Kaitkan masalah harian pembeli dengan solusi produk',
-    description: 'Menyatakan masalah harian pembeli secara tenang dan menunjukkan bagaimana produk menyelesaikan situasi tersebut.',
-    category: 'creator_review',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: ['avatar_reference'],
-    actionType: 'problem_solution_dialogue',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX05',
-    tags: ['problem_solution', 'spoken_bm', 'empathy', 'solution', '15s'],
-    legacyAliasId: 'gem_realistic_ugc',
-    actionPlan: {
-      primaryAction: 'Relatable everyday problem-solution presentation in one continuous take',
-      startPose: 'Creator starts with relatable specific buyer problem implied by natural surroundings',
-      actionProgression: 'Lifts product into frame by second two, calmly explains supported function and solution',
-      endPose: 'Product held clearly in frame with positive and reassuring resolution',
-      cameraMovement: 'Natural smartphone 1x eye-level medium shot in lived-in Malaysian home',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'NX07',
-    slug: 'soalan-jawapan',
-    name: 'Soalan & Jawapan',
-    benefit: 'Jawab soalan lazim pembeli dengan fakta tepat',
-    description: 'Format Q&A spontan menjawab satu soalan lazim pembeli menggunakan fakta dan ciri produk yang disahkan.',
-    category: 'creator_review',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: ['avatar_reference'],
-    actionType: 'qa_dialogue',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX07',
-    tags: ['qa', 'spoken_bm', 'answers', 'factual', '15s'],
-    actionPlan: {
-      primaryAction: 'Spoken Q&A creator answering a common buyer question with grounded facts',
-      startPose: 'Creator visible with product from start, verbally asking one common factual question',
-      actionProgression: 'Answers directly using only evidenced facts and succinctly ties to practical use',
-      endPose: 'Holds product steady, finishes verbal answer cleanly with soft CTA',
-      cameraMovement: 'Single continuous 1x phone camera shot, naturally bright room',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'NX09',
-    slug: 'goyang-produk-vo',
-    name: 'Goyang Produk + VO',
-    benefit: 'Fokus visual pada produk digoyang perlahan dengan suara latar',
-    description: 'Satu tangan memegang produk dengan pergerakan goyang santai sambil suara latar menerangkan kegunaan produk.',
-    category: 'hand_demo',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'gentle_motion_with_voiceover',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX09',
-    tags: ['hand_only', 'spoken_bm', 'gentle_motion', 'voiceover', '15s'],
-    actionPlan: {
-      primaryAction: 'Single covered hand holding product with natural slight micro-tilt and off-camera VO',
-      startPose: 'Exactly one naturally proportioned adult hand holds product upright facing camera',
-      actionProgression: 'Performs relaxed slight side-to-side micro-tilt keeping product stable at 20-30% frame',
-      endPose: 'Holds product steady in center frame as voiceover concludes cleanly',
-      cameraMovement: 'Hand-level smartphone 1x framing, clean non-distracting domestic background',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'NX10',
-    slug: 'label-talk',
-    name: 'Label Talk (Fakta & Fungsi Dulu)',
-    benefit: 'Fokus pada fakta, spesifikasi sahih & manfaat pembeli',
-    description: 'Kamera memfokuskan produk dengan tangan menunjukkan bukti spesifikasi fizikal sambil menerangkan fungsi sebenar.',
-    category: 'hand_demo',
-    engine: 'nexabot',
-    durationSeconds: 15,
-    audioMode: 'spoken_bm',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'label_inspection_narration',
-    cameraProfile: 'smartphone_tabletop_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'video_tested',
-    publicationStatus: 'published',
-    previewVideoUrl: '/api/style-samples/NX10',
-    tags: ['label', 'facts', 'voiceover', 'product_focus', '15s'],
-    actionPlan: {
-      primaryAction: 'Hand demo showing physical specification evidence with factual utility narration',
-      startPose: 'Hand with covered wrist holds product upright facing 1x camera in naturally lit room',
-      actionProgression: 'Subtly points to printed spec on bottle/pack as physical evidence of verified attribute',
-      endPose: 'Holds product upright and steady with focus on actual product utility',
-      cameraMovement: 'Tabletop / chest-level smartphone 1x framing, bright neutral daylight',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
+  make({ id:'NX01',slug:'sembang-kawan',name:'Sembang Kawan',benefit:'Kongsi penemuan berguna macam bersembang dengan kawan',description:'Creator berkongsi satu kegunaan produk secara hangat dan santai.',category:'creator_review',suitable:['*'],action:'friendly_creator_share',camera:'eye-level handheld smartphone 1x',tags:['creator_review','friendly','spoken_bm'],tested:true,avatar:true,direction:['Perkongsian oleh kawan yang dipercayai','Mulakan dengan pemerhatian harian yang relevan','Hangat, relaks dan ringan','Senyum kecil, kelip mata dan jeda spontan','Ruang rumah Malaysia yang sesuai dengan produk','Pegang di paras dada dengan satu pelarasan kecil','Cadangan mesra atau product hold yang tenang'] }),
+  make({ id:'NX02',slug:'review-sambil-pegang',name:'Review Sambil Pegang',benefit:'Penerangan fungsi praktikal secara terus',description:'Review ringkas dan jelas tentang satu fungsi produk.',category:'creator_review',suitable:['*'],action:'direct_practical_review',camera:'stable eye-level smartphone 1x',tags:['creator_review','practical','spoken_bm'],tested:true,avatar:true,legacyAliasId:'gem_real_affiliate',direction:['Review praktikal yang padat','Terus nyatakan tujuan atau keperluan','Jelas, yakin dan bersahaja','Satu jeda dan anggukan kecil','Ruang biasa yang relevan dengan penggunaan','Label kekal kelihatan dengan satu pusingan kecil','Kesimpulan praktikal, CTA hanya jika natural'] }),
+  make({ id:'NX03',slug:'first-impression',name:'First Impression',benefit:'Rasa ingin tahu spontan tanpa testimoni palsu',description:'Reaksi pandang pertama berdasarkan rupa dan tujuan produk.',category:'creator_review',suitable:['*'],action:'mild_first_look',camera:'natural handheld smartphone 1x',tags:['creator_review','curious','spoken_bm'],tested:true,avatar:true,direction:['Pandang pertama yang jujur','Buka dengan rasa ingin tahu pada butiran yang jelas','Spontan, observant dan terkawal','Pandang produk, angkat kening sedikit, kemudian kamera','Lokasi harian yang masuk akal untuk kategori','Lihat kemudian pegang produk secara natural','Takeaway ingin tahu tanpa dakwaan pernah guna'] }),
+  make({ id:'NX05',slug:'masalah-seharian',name:'Masalah Seharian',benefit:'Situasi relatable diikuti pilihan produk yang sesuai',description:'Masalah harian dan fungsi produk tanpa jaminan hasil.',category:'problem_solution',suitable:['*'],action:'everyday_problem_option',camera:'lived-in home smartphone 1x',tags:['problem_solution','relatable','spoken_bm'],tested:true,avatar:true,legacyAliasId:'gem_realistic_ugc',direction:['Masalah biasa dengan pilihan munasabah','Mulakan dengan satu situasi pembeli khusus','Empati, tenang dan praktikal','Ekspresi memahami lalu angkat produk','Lokasi sebenar berkaitan masalah','Bawa produk masuk selepas situasi diterangkan','Cadangan meyakinkan tanpa janji hasil'] }),
+  make({ id:'NX07',slug:'soalan-jawab',name:'Soalan & Jawab',benefit:'Satu soalan pembeli dijawab dengan padat',description:'Q&A lisan tanpa kotak komen atau fakta rekaan.',category:'creator_review',suitable:['*'],action:'buyer_question_answer',camera:'eye-level continuous smartphone 1x',tags:['creator_review','qa','factual'],tested:true,avatar:true,direction:['Jawapan berguna kepada kebimbangan pembeli','Tanya satu soalan sempit yang boleh dijawab','Membantu, padat dan tidak formal','Jeda fikir pendek dan anggukan kecil','Latar neutral yang sesuai kategori','Kekalkan bahagian produk relevan dalam bingkai','Jawapan lengkap tanpa CTA generik berulang'] }),
+  make({ id:'NX09',slug:'goyang-produk-vo',name:'Goyang Produk + VO',benefit:'Fokus produk dengan suara latar santai',description:'Satu tangan membuat micro-tilt dengan VO kegunaan biasa.',category:'product_handling',suitable:['*'],audio:'off_camera_narration',action:'gentle_hand_voiceover',camera:'hand-level smartphone 1x',tags:['product_handling','hand_only','voiceover'],tested:true,direction:['Komen santai yang mengutamakan produk','VO bermula dengan situasi penggunaan, bukan sapaan','Tenang dan conversational','Grip nyata dan gerakan pergelangan kecil','Ruang rumah kemas yang relevan','Satu tangan, tilt 8–12 darjah, label stabil','Hold dua saat dengan CTA lembut pilihan'] }),
+  make({ id:'NX10',slug:'label-talk',name:'Label Talk',benefit:'Fakta yang benar-benar kelihatan dahulu',description:'Tunjuk satu butiran label tanpa mencipta spesifikasi.',category:'product_handling',suitable:['packaged_goods','food','beverage','health','beauty','household','gadget'],audio:'off_camera_narration',action:'visible_fact_narration',camera:'tabletop smartphone 1x',tags:['product_handling','label','factual'],tested:true,direction:['Pemerhatian fakta yang dicetak','Mulakan dengan satu fakta yang boleh dibaca','Tepat, berguna dan plain-spoken','Tunjuk perlahan dan pegang stabil','Permukaan cerah yang menjadikan label jelas','Jangan tunjuk teks kabur atau direka','Hubungkan fakta kepada kegunaan biasa'] }),
 
-  // ===========================================================================
-  // AFFIMATIK MOTION / RUNNINGHUB ENGINE (15s, Visual Realism, No Spoken Dialogue)
-  // ===========================================================================
-  {
-    id: 'RH01',
-    slug: 'goyang-produk-natural',
-    name: 'Goyang Produk Natural',
-    benefit: 'Pergerakan tangan 15s yang tenang & visual super-realistik',
-    description: 'Satu tangan bersopan memegang produk dan menggerakkannya secara perlahan dan bersahaja dalam konteks penggunaan sebenar.',
-    category: 'hand_demo',
-    engine: 'runninghub',
-    durationSeconds: 15,
-    audioMode: 'no_speech',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'gentle_handheld_motion',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'disabled',
-    publicationStatus: 'published',
-    previewVideoUrl: null,
-    tags: ['hand_demo', 'no_speech', 'realistic', '15s', 'runninghub'],
-    legacyAliasId: 'gem_product_hand_demo',
-    actionPlan: {
-      primaryAction: 'Single covered hand holding product with small authentic left/right tilt',
-      startPose: 'One hand with covered wrist holds product naturally in grounded usage context',
-      actionProgression: '0-4s establish product in context; 4-10s small authentic left tilt, center, small right tilt; 10-15s hold steady',
-      endPose: 'Product held perfectly steady in natural daylight with clean focus',
-      cameraMovement: 'One continuous smartphone 1x handheld shot with subtle natural micro-shake',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'RH02',
-    slug: 'gentle-product-tilt',
-    name: 'Gentle Product Tilt',
-    benefit: 'Kelepetan sudut 10-12 darjah menonjolkan bentuk fizikal produk',
-    description: 'Satu tangan condongkan produk 10-12 darjah ke kiri dan kanan di atas meja untuk menonjolkan bentuk dan rekaan produk.',
-    category: 'hand_demo',
-    engine: 'runninghub',
-    durationSeconds: 15,
-    audioMode: 'no_speech',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'controlled_product_tilt',
-    cameraProfile: 'smartphone_tabletop_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'disabled',
-    publicationStatus: 'published',
-    previewVideoUrl: null,
-    tags: ['tilt', 'no_speech', 'tabletop', 'physical_form', '15s'],
-    actionPlan: {
-      primaryAction: 'Gentle 10-12 degree product tilt on real surface showing authentic physical form',
-      startPose: 'Product upright on clean domestic surface in relevant usage context',
-      actionProgression: '0-4s establish on surface; 4-10s gentle 10-12 degree tilt left, center, tilt right; 10-15s rest on surface',
-      endPose: 'Rests steadily on tabletop with natural contact shadow',
-      cameraMovement: 'Eye-level or tabletop 1x smartphone handheld shot',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'RH03',
-    slug: 'pick-up-put-down',
-    name: 'Pick Up & Put Down',
-    benefit: 'Interaksi angkat & letak produk membuktikan saiz & berat sebenar',
-    description: 'Satu tangan masuk dari sisi, mengangkat produk dari meja, memegang sebentar, dan meletakkannya kembali dengan bayang graviti nyata.',
-    category: 'hand_demo',
-    engine: 'runninghub',
-    durationSeconds: 15,
-    audioMode: 'no_speech',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'pickup_and_putdown',
-    cameraProfile: 'smartphone_tabletop_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'disabled',
-    publicationStatus: 'published',
-    previewVideoUrl: null,
-    tags: ['pickup', 'putdown', 'no_speech', 'handling', '15s'],
-    actionPlan: {
-      primaryAction: 'Authentic pick up and put down interaction on real surface',
-      startPose: 'Exact physical product resting upright on real surface in usage context',
-      actionProgression: '0-3s product resting; 3-8s covered hand enters, lifts 5-10cm, holds in context; 8-12s slowly places back with clear contact shadow; 12-15s hand withdraws',
-      endPose: 'Product rests undisturbed on surface with hand retracted out of frame',
-      cameraMovement: 'Tabletop medium-shot 1x phone perspective, neutral bright daylight',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'RH04',
-    slug: 'shelf-pickup',
-    name: 'Shelf Pickup',
-    benefit: 'Ambil produk dari rak kediaman secara santai & semula jadi',
-    description: 'Satu tangan mengambil produk dari rak penyimpanan rumah dan memegangnya pada jarak santai seperti pelanggan mengambil barang.',
-    category: 'hand_demo',
-    engine: 'runninghub',
-    durationSeconds: 15,
-    audioMode: 'no_speech',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'shelf_interaction',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'disabled',
-    publicationStatus: 'published',
-    previewVideoUrl: null,
-    tags: ['shelf', 'no_speech', 'lifestyle', 'store_context', '15s'],
-    actionPlan: {
-      primaryAction: 'Casual shelf interaction lifting product naturally from storage shelf',
-      startPose: 'Product sits on a suitable tidy shelf in genuine home usage context',
-      actionProgression: '0-3s product on shelf; 3-8s covered hand reaches in, grasps, lifts naturally off shelf; 8-12s holds at ordinary arm distance; 12-15s holds stable',
-      endPose: 'Product held steadily at comfortable viewing distance with neutral daylight',
-      cameraMovement: 'Handheld smartphone 1x eye-level continuous shot',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'RH17',
-    slug: 'desk-setup',
-    name: 'Desk Setup',
-    benefit: 'Penyusunan produk di meja kerja/belajar harian yang kemas',
-    description: 'Produk diletakkan dalam susunan meja kerja atau belajar sebenar dengan satu tangan membuat sedikit pelarasan kedudukan.',
-    category: 'hand_demo',
-    engine: 'runninghub',
-    durationSeconds: 15,
-    audioMode: 'no_speech',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'desk_lifestyle_setup',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'disabled',
-    publicationStatus: 'published',
-    previewVideoUrl: null,
-    tags: ['desk', 'setup', 'workplace', 'no_speech', '15s'],
-    actionPlan: {
-      primaryAction: 'Authentic desk setup arrangement with subtle hand adjustment',
-      startPose: 'Product placed naturally on everyday Malaysian work/study desk beside minimal realistic desk items',
-      actionProgression: '0-4s product in desk context; 4-9s covered hand enters, makes small practical position adjustment; 9-15s hand exits, product steady',
-      endPose: 'Product sits neatly in its natural working position on desk',
-      cameraMovement: 'Desktop 1x normal perspective with barely noticeable handheld drift',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
-  {
-    id: 'RH19',
-    slug: 'window-daylight',
-    name: 'Window Daylight',
-    benefit: 'Pencahayaan neutral siang hari dari tingkap menyerlahkan rupa asli',
-    description: 'Satu tangan memegang produk berhampiran tingkap rumah dengan cahaya matahari neutral menyerlahkan warna dan label sebenar.',
-    category: 'hand_demo',
-    engine: 'runninghub',
-    durationSeconds: 15,
-    audioMode: 'no_speech',
-    supportedProductCategories: ['*'],
-    requiredAssets: ['product_image'],
-    optionalAssets: [],
-    actionType: 'window_lighting_demo',
-    cameraProfile: 'smartphone_handheld_1x',
-    identityLock: true,
-    realismLock: true,
-    modestyLock: true,
-    promptTemplateVersion: 'affimatik-gems-masterprompts-v5.0',
-    qualityStatus: 'disabled',
-    publicationStatus: 'published',
-    previewVideoUrl: null,
-    tags: ['window', 'daylight', 'natural_lighting', 'no_speech', '15s'],
-    actionPlan: {
-      primaryAction: 'Clear natural window daylight showcase with subtle hand adjustment',
-      startPose: 'Product held in one modest sleeve-covered adult hand near an ordinary home window',
-      actionProgression: '0-4s establish in clean window daylight; 4-10s small authentic 5-8 degree hand adjustment; 10-15s hold stable',
-      endPose: 'Product held stable in pure neutral window daylight with true soft shadows',
-      cameraMovement: 'Single real-looking handheld smartphone 1x clip near window',
-      lightingSpec: 'Neutral balanced daylight (5500K), soft authentic shadows',
-    },
-  },
+  make({ id:'RH01',slug:'goyang-produk-natural',name:'Goyang Produk Natural',benefit:'Gerakan semula jadi dengan VO minimum',description:'Identiti legacy RH01, kini versi Nexabot-native.',category:'product_handling',suitable:['*'],audio:'off_camera_narration',action:'legacy_natural_hand_motion',camera:'hand-level handheld smartphone 1x',tags:['legacy_rh','product_handling'],legacyAliasId:'gem_product_hand_demo',direction:['Klip handling produk yang tenang','Pemerhatian pendek berkaitan konteks guna','Terkawal dan tidak tergesa','Satu tangan dan grip natural','Konteks penggunaan dunia sebenar','Tilt kiri-tengah-kanan tanpa turntable','Hold stabil selepas VO selesai'] }),
+  make({ id:'RH02',slug:'gentle-product-tilt',name:'Gentle Product Tilt',benefit:'Sudut kecil menampakkan bentuk produk',description:'Identiti legacy RH02 dengan tilt dan VO ringkas.',category:'product_handling',suitable:['packaged_goods','beauty','health','household','gadget','food','beverage'],audio:'off_camera_narration',action:'legacy_controlled_tilt',camera:'tabletop smartphone 1x',tags:['legacy_rh','tilt'],direction:['Pandangan tactile terhadap bentuk produk','Nyatakan tempat atau masa produk sesuai','Lembut dan observant','Kawalan pergelangan dan berat yang nyata','Permukaan sebenar berkaitan kategori','Tilt 10–12 darjah lalu kembali rehat','Produk berehat dengan bayang sentuhan'] }),
+  make({ id:'RH03',slug:'pick-up-put-down',name:'Pick Up & Put Down',benefit:'Interaksi angkat-letak menunjukkan skala sebenar',description:'Identiti legacy RH03 dengan graviti nyata.',category:'product_handling',suitable:['packaged_goods','household','gadget','beauty','health','food','beverage'],audio:'off_camera_narration',action:'legacy_pickup_putdown',camera:'tabletop smartphone 1x',tags:['legacy_rh','handling'],direction:['Handling harian, bukan turntable iklan','VO bermula dari momen mencapai produk','Ringkas dan praktikal','Grip, berat dan pelepasan believable','Meja atau kaunter yang sesuai','Angkat 5–10cm, pegang, letak semula','Tangan keluar dan produk kekal diam'] }),
+  make({ id:'RH04',slug:'shelf-pickup',name:'Shelf Pickup',benefit:'Ambil produk dari rak seperti rutin sebenar',description:'Identiti legacy RH04 dengan konteks rak relevan.',category:'lifestyle',suitable:['household','beauty','health','food','beverage','packaged_goods'],audio:'off_camera_narration',action:'legacy_shelf_pickup',camera:'eye-level handheld smartphone 1x',tags:['legacy_rh','lifestyle','shelf'],direction:['Momen rak rumah yang believable tanpa testimoni','VO buka dengan kegunaan kategori, bukan rutin peribadi','Kasual dan familiar tanpa mendakwa pernah guna','Reach santai dan gerakan lengan natural','Rak bilik air, pantri atau utiliti mengikut kategori','Ambil sekali tanpa display spin','Hold stabil tanpa suruhan membeli atau dakwaan hasil'] }),
+  make({ id:'RH17',slug:'desk-setup',name:'Desk Setup',benefit:'Penempatan praktikal dalam rutin kerja',description:'Identiti legacy RH17 untuk produk meja yang sesuai.',category:'lifestyle',suitable:['gadget','stationery','office','lighting','drinkware','accessory'],audio:'off_camera_narration',action:'legacy_desk_setup',camera:'desk-level smartphone 1x',tags:['legacy_rh','lifestyle','desk'],direction:['Rutin meja yang kemas tetapi believable','VO sebut momen kerja atau belajar','Fokus, tenang dan berguna','Satu pelarasan tanpa gaya iklan','Meja kerja/belajar Malaysia biasa','Posisi sekali menurut kegunaan sebenar','Susunan kerja stabil dan close ringkas'] }),
+  make({ id:'RH19',slug:'window-daylight',name:'Window Daylight',benefit:'Rupa produk dalam cahaya siang neutral',description:'Identiti legacy RH19 dengan VO minimum.',category:'product_handling',suitable:['*'],audio:'off_camera_narration',action:'legacy_window_daylight',camera:'window handheld smartphone 1x',tags:['legacy_rh','daylight'],direction:['Pandangan jujur terhadap rupa produk','Pemerhatian visual atau kegunaan biasa','Senyap, bersih dan tidak dipaksa','Satu tangan dengan gerak kecil','Tingkap rumah tanpa cahaya keemasan','Pelarasan sudut 5–8 darjah','Paparan stabil selepas ucapan selesai'] }),
+
+  make({ id:'NX11',slug:'pov-customer',name:'POV Customer',benefit:'Perspektif pembeli menilai kesesuaian produk',description:'POV pelanggan tanpa dakwaan telah membeli.',category:'pov',suitable:['*'],audio:'off_camera_narration',action:'shopper_pov',camera:'first-person smartphone 1x',tags:['pov','shopper'],direction:['Pemerhatian POV tanpa mengaku membeli','Mulakan dengan soalan kesesuaian, bukan niat membeli','Berfikir, kasual dan neutral','Reach first-person dengan hesitation kecil','Konteks melihat produk mengikut kategori','Tunjuk satu ciri jelas tanpa mengambil pemilikan','Akhiri dengan pemerhatian praktikal tanpa CTA beli'] }),
+  make({ id:'NX12',slug:'jumpa-barang-menarik',name:'Jumpa Barang Menarik',benefit:'Hook penemuan yang genuine',description:'Kongsi barang menarik tanpa testimoni palsu.',category:'creator_review',suitable:['*'],action:'genuine_discovery',camera:'energetic stable smartphone 1x',tags:['creator_review','discovery'],avatar:true,direction:['Penemuan segar yang layak dilihat','Hook discovery khusus produk','Cerah, ingin tahu dan believable','Senyum terkejut kecil dan lift natural','Lokasi penemuan sesuai kategori','Bawa produk ke bingkai dan pegang jelas','CTA “boleh tengok” tanpa urgensi'] }),
+  make({ id:'NX13',slug:'borak-dapur',name:'Borak Dapur',benefit:'Perbualan dapur yang relevan',description:'Hanya untuk makanan, minuman dan produk dapur sesuai.',category:'lifestyle',suitable:['food','beverage','kitchen','cookware','cleaning'],action:'kitchen_chat',camera:'counter-height smartphone 1x',tags:['lifestyle','kitchen'],avatar:true,direction:['Penerangan dapur tanpa cerita penggunaan peribadi','Buka dari konteks penyediaan umum, bukan dapur sendiri','Homely, praktikal dan neutral','Gestur kaunter dan pandang produk','Dapur Malaysia sebenar','Hold, letak atau tunjuk mengikut kategori','Takeaway dapur tanpa rutin keluarga, rasa atau kesihatan'] }),
+  make({ id:'NX14',slug:'meja-kerja',name:'Meja Kerja',benefit:'Konteks produktiviti untuk produk meja',description:'Fungsi produk dalam rutin kerja atau belajar.',category:'lifestyle',suitable:['gadget','stationery','office','lighting','drinkware','accessory'],action:'desk_creator_explainer',camera:'desk-side smartphone 1x',tags:['lifestyle','desk'],avatar:true,direction:['Tip setup kerja yang relatable','Mulakan dari rutin atau gangguan meja','Fokus, mesra dan efisien','Postur duduk dan satu aksi kecil','Meja kerja/belajar believable','Guna atau posisi hanya sebagaimana disokong','Takeaway produktiviti tanpa jaminan'] }),
+  make({ id:'NX15',slug:'cerita-masalah',name:'Cerita Masalah',benefit:'Cerita ringkas sebelum pilihan produk muncul',description:'Storytelling tanpa pengalaman penggunaan palsu.',category:'problem_solution',suitable:['*'],action:'mini_problem_story',camera:'intimate eye-level smartphone 1x',tags:['problem_solution','story'],avatar:true,direction:['Cerita relatable, bukan sales pitch','Mulakan di tengah situasi biasa','Reflective, empati dan conversational','Sigh atau knowing look tanpa melodrama','Lokasi berkaitan cerita','Masukkan produk selepas situasi jelas','Pilihan munasabah dan close tenang'] }),
+  make({ id:'NX16',slug:'soft-sell-santai',name:'Soft Sell Santai',benefit:'Bahasa rendah tekanan dalam konteks harian',description:'Cadangan santai tanpa urgensi atau harga rekaan.',category:'soft_sell',suitable:['*'],action:'low_pressure_recommendation',camera:'relaxed handheld smartphone 1x',tags:['soft_sell','casual'],avatar:true,direction:['Sebutan natural dalam kehidupan harian','Mulakan daripada aktiviti, bukan nama produk','Lembut, perlahan dan non-salesy','Teruskan satu aktiviti kecil sambil bercakap','Rutin harian mengikut kategori','Guna atau pegang ringan tanpa hero shot','CTA “kalau sesuai” tanpa scarcity'] }),
+  make({ id:'NX17',slug:'spontaneous-recommendation',name:'Spontaneous Recommendation',benefit:'Cadangan spontan yang product-specific',description:'Satu sebab praktikal tanpa mendakwa penggunaan peribadi.',category:'creator_review',suitable:['*'],action:'spontaneous_practical_recommendation',camera:'natural eye-level smartphone 1x',tags:['creator_review','spontaneous'],avatar:true,direction:['Creator teringat satu item berguna','Mulakan seperti idea baru terlintas','Cepat, ikhlas dan ringan','Pusing kecil ke kamera dan half-smile','Lokasi biasa berkaitan keperluan','Angkat sekali dan kekalkan stabil','Satu recommendation lengkap tanpa slogan generik'] }),
 ];
 
-/**
- * Helper to fetch a video style by its modern ID or legacy preset identifier
- */
-export function getVideoStyle(idOrLegacySlug: string): VideoStyle | undefined {
-  if (!idOrLegacySlug) return undefined;
-  const target = idOrLegacySlug.trim().toLowerCase();
+export function getVideoStyle(value: string): VideoStyle | undefined {
+  const q = value?.trim().toLowerCase();
+  return VIDEO_STYLES_REGISTRY.find((s) => s.id.toLowerCase() === q || s.slug.toLowerCase() === q || s.legacyAliasId?.toLowerCase() === q);
+}
 
-  return VIDEO_STYLES_REGISTRY.find(
-    (style) =>
-      style.id.toLowerCase() === target ||
-      style.slug.toLowerCase() === target ||
-      (style.legacyAliasId && style.legacyAliasId.toLowerCase() === target)
+export function filterVideoStyles(o: StyleFilterOptions = {}): VideoStyle[] {
+  const q = o.searchQuery?.toLowerCase();
+  return VIDEO_STYLES_REGISTRY.filter((s) =>
+    (o.hasVoice === undefined || o.hasVoice === !['no_speech','ambient'].includes(s.audioMode)) &&
+    (!o.category || o.category === 'all' || s.category === o.category) &&
+    (!o.engine || s.engine === o.engine) && (!o.duration || s.durationSeconds === o.duration) &&
+    (!o.publicationStatus || s.publicationStatus === o.publicationStatus) &&
+    (!q || `${s.id} ${s.name} ${s.benefit} ${s.tags.join(' ')}`.toLowerCase().includes(q))
   );
 }
 
-/**
- * Filter video styles based on category, engine, audio mode, or published status
- */
-export function filterVideoStyles(options: StyleFilterOptions = {}): VideoStyle[] {
-  return VIDEO_STYLES_REGISTRY.filter((style) => {
-    if (options.hasVoice !== undefined) {
-      const hasVoice = style.audioMode === 'spoken_bm';
-      if (options.hasVoice !== hasVoice) {
-        return false;
-      }
-    }
-    if (options.category && options.category !== 'all' && style.category !== options.category) {
-      return false;
-    }
-    if (options.engine && style.engine !== options.engine) {
-      return false;
-    }
-    if (options.duration && style.durationSeconds !== options.duration) {
-      return false;
-    }
-    if (options.publicationStatus && style.publicationStatus !== options.publicationStatus) {
-      return false;
-    }
-    return true;
-  });
-}
+export function getAllVideoStyles(): VideoStyle[] { return VIDEO_STYLES_REGISTRY.filter((s) => s.publicationStatus === 'published'); }
 
-/**
- * Returns all published styles for customer display in Video Factory
- */
-export function getAllVideoStyles(): VideoStyle[] {
-  return VIDEO_STYLES_REGISTRY.filter((s) => s.publicationStatus === 'published');
-}
+export const STYLE_CATEGORIES_V6: Array<{id: StyleCategory; label: string}> = [
+  {id:'all',label:'Semua Gaya'},{id:'creator_review',label:'Creator Review'},{id:'pov',label:'POV'},
+  {id:'product_handling',label:'Product Handling'},{id:'lifestyle',label:'Lifestyle'},
+  {id:'soft_sell',label:'Soft Sell'},{id:'problem_solution',label:'Masalah & Pilihan'},
+];

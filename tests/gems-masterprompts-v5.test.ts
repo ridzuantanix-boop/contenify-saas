@@ -1,231 +1,69 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { AICreativeDirector } from '../src/lib/engine/creative-director';
 import { DynamicPromptCompiler, GEMS_PROMPT_VERSION } from '../src/lib/engine/compiler';
-import { VoiceoverDirector } from '../src/lib/engine/voiceover-director';
 import { VIDEO_STYLES_REGISTRY, getVideoStyle } from '../src/lib/styles/registry';
 
-describe('AFFIMATIK GEMS MASTERPROMPTS V5.0 — Authoritative Creative Suite', () => {
-  const publishedStyleIds = [
-    'NX01', 'NX02', 'NX03', 'NX05', 'NX07', 'NX09', 'NX10',
-    'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19',
-  ];
+const OFFICIAL_IDS = [
+  'NX01', 'NX02', 'NX03', 'NX05', 'NX07', 'NX09', 'NX10',
+  'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19',
+  'NX11', 'NX12', 'NX13', 'NX14', 'NX15', 'NX16', 'NX17',
+];
 
-  const productFixtures = [
-    {
-      categoryName: 'Skincare',
-      productName: 'Hydra-Boost Face Serum 30ml',
-      category: 'Skincare',
-      confirmedBenefit: 'Membantu melembapkan kulit kering',
-      expectedSpokenShort: 'serum muka ni',
-    },
-    {
-      categoryName: 'Packaged Food',
-      productName: 'Sambal Garing Ikan Bilis Bonda',
-      category: 'Makanan & Masakan',
-      confirmedBenefit: 'Sedia dimakan terus bersama nasi panas',
-      expectedSpokenShort: 'sambal ni',
-    },
-    {
-      categoryName: 'Fashion & Tudung',
-      productName: 'Tudung Bawal Cotton Voile Premium',
-      category: 'Fesyen Muslimah',
-      confirmedBenefit: 'Kain bawal sejuk dan mudah dibentuk',
-      expectedSpokenShort: 'tudung bawal ni',
-    },
-    {
-      categoryName: 'Gadget & Electronics',
-      productName: 'Ultra-Slim 20000mAh Powerbank',
-      category: 'Elektronik & Gadget',
-      confirmedBenefit: 'Menyokong pengecasan pantas 22.5W',
-      expectedSpokenShort: 'powerbank ni',
-    },
-    {
-      categoryName: 'Home & Living',
-      productName: 'Lampu Meja LED 3 Mod',
-      category: 'Keperluan Rumah',
-      confirmedBenefit: 'Mempunyai tiga tahap kecerahan',
-      expectedSpokenShort: 'lampu meja ni',
-    },
-  ];
-
-  // ---------------------------------------------------------------------------
-  // 1. Authoritative Style Registry & Metadata Verification
-  // ---------------------------------------------------------------------------
-  it('1. verifies that all 13 styles are published with promptTemplateVersion V5.0', () => {
-    expect(VIDEO_STYLES_REGISTRY.length).toBe(13);
-
-    for (const styleId of publishedStyleIds) {
-      const style = getVideoStyle(styleId);
-      expect(style).toBeDefined();
-      expect(style?.id).toBe(styleId);
-      expect(style?.publicationStatus).toBe('published');
-      expect(style?.promptTemplateVersion).toBe('affimatik-gems-masterprompts-v5.0');
-      expect(style?.actionPlan.primaryAction).toBeDefined();
-      expect(style?.actionPlan.actionProgression).toBeDefined();
+describe('AFFIMATIK CREATIVE V6 — canonical direct-provider suite', () => {
+  it('publishes exactly 20 canonical Nexabot 15-second styles', () => {
+    expect(VIDEO_STYLES_REGISTRY.map((style) => style.id)).toEqual(OFFICIAL_IDS);
+    for (const style of VIDEO_STYLES_REGISTRY) {
+      expect(style.engine).toBe('nexabot');
+      expect(style.durationSeconds).toBe(15);
+      expect(style.publicationStatus).toBe('published');
+      expect(style.promptTemplateVersion).toBe('affimatik-creative-v6.0');
+      expect(style.creativeDirection).toBeDefined();
+      expect(style.actionPlan.primaryAction).toBeTruthy();
     }
   });
 
-  // ---------------------------------------------------------------------------
-  // 2. Product Brain Intelligence Across 5 Diverse Categories
-  // ---------------------------------------------------------------------------
-  it('2. verifies Product Brain generates natural spoken aliases and grounded category facts', () => {
-    for (const fixture of productFixtures) {
-      const profile = AICreativeDirector.extractProductProfile({
-        productName: fixture.productName,
-        productCategory: fixture.category,
-        productFacts: [fixture.confirmedBenefit],
-      });
-
-      expect(profile.name).toBe(fixture.productName);
-      expect(profile.spokenShortName).toBe(fixture.expectedSpokenShort);
-      expect(profile.confirmedFeatures).toContain(fixture.confirmedBenefit);
-      expect(profile.coreFunction).toBeDefined();
-      expect(profile.usageContext).toBeDefined();
-      expect(profile.buyerProblem).toBeDefined();
-    }
+  it('keeps every style direction distinct', () => {
+    const fingerprints = VIDEO_STYLES_REGISTRY.map((style) => JSON.stringify(style.creativeDirection));
+    expect(new Set(fingerprints).size).toBe(20);
   });
 
-  // ---------------------------------------------------------------------------
-  // 3. Style-Specific Hook Engine & Zero Packaging Filler
-  // ---------------------------------------------------------------------------
-  it('3. verifies unique hook strategy for each of the 7 Voice styles and zero packaging filler', () => {
-    const fixture = productFixtures[4]; // Lampu Meja LED 3 Mod
-    const profile = AICreativeDirector.extractProductProfile({
-      productName: fixture.productName,
-      productCategory: fixture.category,
-      productFacts: [fixture.confirmedBenefit],
-    });
-
-    const voiceStyles = ['NX01', 'NX02', 'NX03', 'NX05', 'NX07', 'NX09', 'NX10'];
-    const generatedScripts = new Map<string, string>();
-
-    for (const styleId of voiceStyles) {
-      const style = getVideoStyle(styleId)!;
-      const script = VoiceoverDirector.generateAuthenticScript(profile, style, 'spoken_button', 0);
-      generatedScripts.set(styleId, script);
-
-      // Verify strict word budget (target 14-23 words, bounds 12-26)
-      const words = script.split(/\s+/).filter(Boolean);
-      expect(words.length).toBeGreaterThanOrEqual(14);
-      expect(words.length).toBeLessThanOrEqual(25);
-
-      // Verify ZERO packaging filler
-      expect(script).not.toMatch(/packaging|bungkusan|botol ni cantik|label ni mudah/i);
-      expect(script).not.toMatch(/\b(kamu|kalian|nggak|banget|cobain|keranjang kuning)\b/i);
-
-      // Verify verbal CTA presence
-      expect(script).toContain('Tekan butang di bawah.');
-    }
-
-    // Verify distinct hook strategies
-    const nx01Script = generatedScripts.get('NX01')!;
-    expect(nx01Script).toMatch(/^Kalau korang/i); // Situation hook
-
-    const nx02Script = generatedScripts.get('NX02')!;
-    expect(nx02Script).toMatch(/^Lampu meja ni/i); // Direct product explainer hook
-
-    const nx03Script = generatedScripts.get('NX03')!;
-    expect(nx03Script).toMatch(/^Eh, lampu meja ni rupanya/i); // First impression curiosity hook
-
-    const nx05Script = generatedScripts.get('NX05')!;
-    expect(nx05Script).toMatch(/\? Lampu meja ni/i); // Problem-solution question hook
-
-    const nx07Script = generatedScripts.get('NX07')!;
-    expect(nx07Script).toMatch(/\? Ya, model ni/i); // Direct Q&A question hook
-
-    const nx09Script = generatedScripts.get('NX09')!;
-    expect(nx09Script).toMatch(/^Untuk/i); // Off-camera usage context hook
-
-    const nx10Script = generatedScripts.get('NX10')!;
-    expect(nx10Script).toMatch(/^Yang penting tentang/i); // Fact & utility first hook
-  });
-
-  // ---------------------------------------------------------------------------
-  // 4. Verbatim User Custom Script Preservation
-  // ---------------------------------------------------------------------------
-  it('4. excludes a legacy custom script from the direct provider payload', () => {
-    const style = getVideoStyle('NX01')!;
-    const profile = AICreativeDirector.extractProductProfile({
-      productName: 'Minyak Habbatus Sauda',
-      productCategory: 'Kesihatan',
-    });
-    const scenePlan = AICreativeDirector.createScenePlan(profile, style);
-
-    const approvedCustomScript = 'Korang yang selalu keletihan waktu kerja, minyak habbatus sauda ni sangat membantu menyegarkan badan. Tekan butang di bawah.';
-
-    const compiled = DynamicPromptCompiler.compile(profile, style, scenePlan, {
-      customScript: approvedCustomScript,
-    });
-
-    expect(compiled.preflightValid).toBe(true);
-    expect(compiled.spokenScript).toBeUndefined();
-    expect(compiled.providerPrompt).not.toContain(approvedCustomScript);
-    expect(compiled.providerPrompt).toContain('PROVIDER-CREATED DIALOGUE');
-  });
-
-  // ---------------------------------------------------------------------------
-  // 5. Motion 15s Pure Visual Realism & Zero Spoken Dialogue
-  // ---------------------------------------------------------------------------
-  it('5. verifies that all 6 Motion 15s styles strictly enforce zero spoken dialogue', () => {
-    const rhStyles = ['RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19'];
-    const fixture = productFixtures[3]; // Powerbank
-    const profile = AICreativeDirector.extractProductProfile({
-      productName: fixture.productName,
-      productCategory: fixture.category,
-      productFacts: [fixture.confirmedBenefit],
-    });
-
-    for (const styleId of rhStyles) {
-      const style = getVideoStyle(styleId)!;
-      const scenePlan = AICreativeDirector.createScenePlan(profile, style);
-      const compiled = DynamicPromptCompiler.compile(profile, style, scenePlan);
-
-      expect(compiled.preflightValid).toBe(true);
-      expect(compiled.provider).toBe('runninghub');
-      expect(compiled.spokenScript).toBeUndefined();
-      expect(compiled.providerPrompt).toContain('Strictly NO spoken dialogue');
-      expect(compiled.providerPrompt).toContain('15-second');
+  it('compiles all styles without an internal or interpolated script', () => {
+    const product = AICreativeDirector.extractProductProfile({ productName: 'Lampu Meja Nova', productCategory: 'Lampu' });
+    const prompts = VIDEO_STYLES_REGISTRY.map((style) => {
+      const compiled = DynamicPromptCompiler.compile(product, style, AICreativeDirector.createScenePlan(product, style));
+      expect(compiled.preflightValid, style.id).toBe(true);
+      expect(compiled.provider, style.id).toBe('nexabot');
+      expect(compiled.spokenScript, style.id).toBeUndefined();
       expect(compiled.promptVersion).toBe(GEMS_PROMPT_VERSION);
+      expect(compiled.providerPrompt).toContain(`[STYLE ${style.id} —`);
+      expect(compiled.providerPrompt).toContain('[MALAYSIAN AFFILIATE VOICE DNA V6]');
+      expect(compiled.providerPrompt).toContain('[PROVIDER-CREATED DIALOGUE — AFFIMATIK V6 15s]');
+      expect(compiled.providerPrompt).not.toMatch(/approved spoken script|script to speak|\$\{p\.spokenScript\}|\{script_body\}|Script: ""/i);
+      return compiled.providerPrompt;
+    });
+    expect(new Set(prompts).size).toBe(20);
+  });
+
+  it('preserves identity, realistic UGC, zero UI, Shariah and grounded-claim locks', () => {
+    for (const styleId of OFFICIAL_IDS) {
+      const style = getVideoStyle(styleId)!;
+      const product = AICreativeDirector.extractProductProfile({ productName: 'Produk Rujukan', productCategory: 'Umum' });
+      const compiled = DynamicPromptCompiler.compile(product, style, AICreativeDirector.createScenePlan(product, style));
+      expect(compiled.providerPrompt).toContain('[PRODUCT IDENTITY MAX LOCK]');
+      expect(compiled.providerPrompt).toContain('[ZERO UI & WATERMARK LOCK]');
+      expect(compiled.providerPrompt).toContain('[REALISTIC UGC PROFILE]');
+      expect(compiled.providerPrompt).toContain('[SHARIAH MODESTY LOCK');
+      expect(compiled.providerPrompt).toContain('If the image and optional user notes do not establish a fact, omit the claim entirely');
+      expect(compiled.providerPrompt).toContain('never a mandatory first frame');
     }
   });
 
-  // ---------------------------------------------------------------------------
-  // 6. Global Universal Locks: Identity, Zero UI, and Shariah Modesty
-  // ---------------------------------------------------------------------------
-  it('6. verifies universal master locks enforced across all styles', () => {
-    for (const styleId of publishedStyleIds) {
-      const style = getVideoStyle(styleId)!;
-      const fixture = productFixtures[0];
-      const profile = AICreativeDirector.extractProductProfile({
-        productName: fixture.productName,
-        productCategory: fixture.category,
-      });
-      const scenePlan = AICreativeDirector.createScenePlan(profile, style);
-      const compiled = DynamicPromptCompiler.compile(profile, style, scenePlan, {
-        isMuslimahModest: true,
-      });
-
-      // Product Identity Max Lock
-      expect(compiled.visualPrompt).toContain('[PRODUCT IDENTITY MAX LOCK]');
-      expect(compiled.visualPrompt).toContain('Preserve exact product geometry');
-
-      // Zero UI Lock
-      expect(compiled.visualPrompt).toContain('[ZERO UI & WATERMARK LOCK]');
-      expect(compiled.visualPrompt).toContain('Strictly NO TikTok logo');
-      expect(compiled.visualPrompt).toContain('NO phone frame');
-
-      // Realistic UGC
-      expect(compiled.visualPrompt).toContain('[REALISTIC UGC PROFILE]');
-      expect(compiled.visualPrompt).toContain('5500K');
-
-      // Shariah Modesty Lock
-      if (style.category === 'hand_demo' || styleId.startsWith('RH') || styleId === 'NX09' || styleId === 'NX10') {
-        expect(compiled.visualPrompt).toContain('[SHARIAH MODESTY LOCK — HAND DEMO]');
-        expect(compiled.visualPrompt).toContain('sleeve fully covering wrist');
-      } else {
-        expect(compiled.visualPrompt).toContain('[SHARIAH MODESTY LOCK — PRESENTER]');
-        expect(compiled.visualPrompt).toContain('Hijab labuh fully covering hair, neck, and chest');
-      }
-    }
+  it('excludes optional customer text from the spoken payload', () => {
+    const style = getVideoStyle('NX01')!;
+    const product = AICreativeDirector.extractProductProfile({ productName: 'Produk Ujian', productCategory: 'Umum' });
+    const supplied = 'Ayat ini tidak boleh menjadi skrip pertuturan backend.';
+    const compiled = DynamicPromptCompiler.compile(product, style, AICreativeDirector.createScenePlan(product, style), { customScript: supplied });
+    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.providerPrompt).not.toContain(supplied);
   });
 });

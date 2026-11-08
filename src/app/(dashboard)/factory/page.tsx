@@ -20,12 +20,11 @@ import {
   Play,
   Download,
   RotateCcw,
-  Check,
   ChevronDown,
   ChevronUp,
   Info,
 } from 'lucide-react';
-import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles } from '@/lib/styles/registry';
+import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
 
 interface UploadedFilePreview {
@@ -66,7 +65,6 @@ function VideoFactoryContent() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Step 2: Engine Selector & Selected Video Style
-  const [selectedEngine, setSelectedEngine] = useState<'all' | 'nexabot' | 'runninghub'>('all');
   const [selectedStyleId, setSelectedStyleId] = useState<string>(initialStyleId);
   const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
   const [styleSearch, setStyleSearch] = useState('');
@@ -251,11 +249,11 @@ function VideoFactoryContent() {
   // Filtered styles catalogue
   const displayedStyles = useMemo(() => {
     return filterVideoStyles({
-      engine: selectedEngine === 'all' ? undefined : selectedEngine,
+      engine: 'nexabot',
       category: styleCategoryFilter === 'all' ? undefined : styleCategoryFilter,
       searchQuery: styleSearch,
     });
-  }, [selectedEngine, styleCategoryFilter, styleSearch]);
+  }, [styleCategoryFilter, styleSearch]);
 
   // Primary Action: Submit Generation Task
   const handleGenerateVideo = async () => {
@@ -363,7 +361,7 @@ function VideoFactoryContent() {
               AffiMatik Video Factory
             </h1>
             <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">
-              V1 Creative
+              Creative V6
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -496,57 +494,19 @@ function VideoFactoryContent() {
               </span>
             </div>
 
-            {/* Engine Tabs: Voice 15s; historical Motion styles remain visible but unavailable. */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedEngine('nexabot');
-                  if (selectedStyle.engine !== 'nexabot') setSelectedStyleId('NX01');
-                }}
-                className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
-                  selectedStyle.engine === 'nexabot'
-                    ? 'border-primary bg-primary/5 text-slate-900 shadow-sm ring-1 ring-primary'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-xs">
-                    <Volume2 className="w-3.5 h-3.5 text-primary" />
-                    <span>AffiMatik Voice (15s)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Pertuturan BM Asli Malaysia (10 Kredit)</p>
-                </div>
-                {selectedStyle.engine === 'nexabot' && <Check className="w-4 h-4 text-primary" />}
-              </button>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900 flex items-center gap-2">
+              <Volume2 className="w-4 h-4 text-primary shrink-0" />
+              <span><strong>AffiMatik Voice V6 · Nexabot 15s</strong> — 20 personaliti kreatif BM Malaysia, 10 kredit setiap video.</span>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedEngine('runninghub');
-                  if (selectedStyle.engine !== 'runninghub') setSelectedStyleId('RH01');
-                }}
-                className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
-                  selectedStyle.engine === 'runninghub'
-                    ? 'border-primary bg-primary/5 text-slate-900 shadow-sm ring-1 ring-primary'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-xs">
-                    <VolumeX className="w-3.5 h-3.5 text-slate-700" />
-                    <span>AffiMatik Motion (15s)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Tidak tersedia untuk penjanaan baharu</p>
-                </div>
-                {selectedStyle.engine === 'runninghub' && <Check className="w-4 h-4 text-primary" />}
-              </button>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {STYLE_CATEGORIES_V6.map((item) => <button key={item.id} type="button" onClick={() => setStyleCategoryFilter(item.id)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold ${styleCategoryFilter === item.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'}`}>{item.label}</button>)}
             </div>
 
             {/* Style Cards Grid (Hover-to-Play Video Gallery with Audio Control) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span>Pilih daripada 13 Gaya Video Rasmi (Hover untuk main, klik pembesar suara untuk audio):</span>
+                <span>Pilih daripada 20 Gaya Video Rasmi V6:</span>
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya dipaparkan</span>
               </div>
 

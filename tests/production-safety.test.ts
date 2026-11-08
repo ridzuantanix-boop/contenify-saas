@@ -671,7 +671,7 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
         callToAction: 'spoken_button',
       });
       expect(compiledGood.preflightValid).toBe(true);
-      expect(compiledGood.providerPrompt).toContain('provider creates');
+      expect(compiledGood.providerPrompt).toContain('external video-generation AI must independently inspect');
     });
   });
 
@@ -682,14 +682,14 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
     it('verifies that only styles with documented test video evidence are marked quality_verified', () => {
       const verifiedStyles = VIDEO_STYLES_REGISTRY.filter((s) => s.qualityStatus === 'quality_verified');
 
-      // Real 15s Voice samples were generated; no Motion sample is published.
+      // Real 15s Nexabot V6 samples were generated for every published style.
       expect(verifiedStyles.length).toBe(0);
-      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'video_tested')).toHaveLength(7);
-      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub' && s.qualityStatus === 'disabled')).toHaveLength(6);
-      for (const s of VIDEO_STYLES_REGISTRY.filter((item) => item.engine === 'nexabot')) {
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'video_tested')).toHaveLength(20);
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub')).toHaveLength(0);
+      for (const s of VIDEO_STYLES_REGISTRY.filter((item) => item.qualityStatus === 'video_tested')) {
         expect(s.previewVideoUrl).toBe(`/api/style-samples/${s.id}`);
       }
-      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub').every((s) => s.previewVideoUrl === null)).toBe(true);
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.id.startsWith('RH')).every((s) => s.engine === 'nexabot')).toBe(true);
     });
   });
 });

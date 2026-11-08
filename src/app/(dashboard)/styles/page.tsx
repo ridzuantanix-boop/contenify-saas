@@ -15,7 +15,7 @@ import {
   Heart,
   Layers,
 } from 'lucide-react';
-import { VIDEO_STYLES_REGISTRY, filterVideoStyles } from '@/lib/styles/registry';
+import { VIDEO_STYLES_REGISTRY, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
 
 export default function VideoStylesPage() {
@@ -51,7 +51,7 @@ export default function VideoStylesPage() {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">Video Style Library</h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-              {testedCount} gaya Voice dengan sampel video · {totalStylesCount - testedCount} gaya Coming Soon
+              {testedCount} sampel sebenar · {totalStylesCount} gaya V6
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -93,7 +93,7 @@ export default function VideoStylesPage() {
             >
               <option value="all">Semua Audio</option>
               <option value="with_voice">Dengan Suara (AffiMatik Voice 15s)</option>
-              <option value="no_voice">Visual Estetik (AffiMatik Motion 15s)</option>
+              <option value="no_voice">Tanpa suara</option>
             </select>
 
             {/* Duration filter */}
@@ -111,13 +111,7 @@ export default function VideoStylesPage() {
 
         {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-          {[
-            { id: 'all', label: 'Semua Gaya' },
-            { id: 'creator_review', label: 'Creator & Review' },
-            { id: 'hand_demo', label: 'Hand Demo' },
-            { id: 'problem_solution', label: 'Problem & Solution' },
-            { id: 'lifestyle', label: 'Lifestyle & Harian' },
-          ].map((cat) => (
+          {STYLE_CATEGORIES_V6.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id as any)}
@@ -137,7 +131,7 @@ export default function VideoStylesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredStyles.map((style) => {
           const isFav = favorites.includes(style.id);
-          const hasVoice = style.audioMode === 'spoken_bm';
+          const hasVoice = style.audioMode !== 'no_speech' && style.audioMode !== 'ambient';
 
           return (
             <div
@@ -190,7 +184,7 @@ export default function VideoStylesPage() {
                 </button>
 
                 <div className="absolute bottom-2 left-2 right-2 px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-md text-[10px] text-slate-200 truncate">
-                  <strong className="text-white">{hasVoice ? 'AffiMatik Voice' : 'AffiMatik Motion'}</strong> • {style.actionType.replace(/_/g, ' ')}
+                  <strong className="text-white">AffiMatik Voice V6</strong> • {style.actionType.replace(/_/g, ' ')}
                 </div>
               </div>
 

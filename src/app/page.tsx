@@ -114,10 +114,10 @@ export default function LandingPage() {
           <div className="max-w-5xl mx-auto space-y-8">
             <div className="text-center space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                Dua Enjin Video Pintar
+                AffiMatik Creative V6
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-                Pilih Gaya Bersuara Atau Sinematik Ambien
+                20 Gaya Affiliate Malaysia Yang Berbeza
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
                 Setiap video dijana mengikut format vertikal 9:16 siap sedia untuk TikTok, Reels, dan Shorts.
@@ -130,13 +130,13 @@ export default function LandingPage() {
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-indigo-600 bg-indigo-100/60 px-2.5 py-0.5 rounded-md">
-                      10 Saat • 10 Kredit
+                      15 Saat • 10 Kredit
                     </span>
-                    <span className="text-[11px] text-slate-400 font-medium">Spoken Voiceover BM</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Creator · POV · Soft Sell</span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mt-3">AffiMatik Voice</h3>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Pembentang AI bertutur dialek Bahasa Melayu Malaysia santai & mesra, lengkap dengan etika pemakaian sopan dan tudung labuh. Sesuai untuk gaya unboxing, review santai, dan hook padu.
+                    Dialog BM Malaysia yang santai dengan personaliti, hook dan gerakan berbeza bagi setiap gaya. Provider mencipta dialog terus daripada imej produk.
                   </p>
                 </div>
                 <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700">
@@ -145,23 +145,23 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Motion Card */}
+              {/* Handling and lifestyle card */}
               <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-4">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-purple-600 bg-purple-100/60 px-2.5 py-0.5 rounded-md">
-                      15 Saat • 15 Kredit
+                      15 Saat • 10 Kredit
                     </span>
-                    <span className="text-[11px] text-slate-400 font-medium">Visual Realism & Ambience</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Handling · Lifestyle · VO</span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mt-3">AffiMatik Motion</h3>
+                  <h3 className="text-lg font-bold text-slate-900 mt-3">Product Handling V6</h3>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Pergerakan visual sinematik produk seperti pusingan 360°, slider sisi, pencahayaan dramatik studio dan aksi angkat-letak meja dengan kualiti tekstur realistik tinggi.
+                    Enam identiti RH lama kini menggunakan Nexabot dengan gerakan tangan realistik dan suara latar BM ringkas. RunningHub kekal dimatikan.
                   </p>
                 </div>
                 <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>1 video Motion dengan 20 kredit percuma</span>
-                  <Link href="/factory?engine=runninghub" className="text-purple-600 hover:text-purple-700">Pilih Gaya &rarr;</Link>
+                  <span>20 gaya rasmi dalam satu katalog</span>
+                  <Link href="/factory" className="text-purple-600 hover:text-purple-700">Pilih Gaya &rarr;</Link>
                 </div>
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function LandingPage() {
               </div>
               <h4 className="font-bold text-slate-900 text-sm">Pilih Gaya Video</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Teroka 13 identiti gaya rasmi. Voice menjana 15s apabila dibuka; enam gaya Motion masih dalam pustaka tetapi tidak tersedia untuk penjanaan baharu. Pratonton Voice lama berdurasi 10s.
+                Teroka 20 identiti Creative V6: creator review, POV, product handling, lifestyle, masalah & pilihan, dan soft sell.
               </p>
             </div>
 

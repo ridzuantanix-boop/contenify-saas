@@ -1,5 +1,5 @@
 /**
- * AFFIMATIK by Pawarna — Dynamic Prompt Engine Compiler (GEMS Masterprompts V5.0)
+ * AFFIMATIK by Pawarna — Creative V6 direct-provider prompt compiler
  * Translates Product Profile + Video Style + Scene Plan into Provider-Specific Payloads
  * 
  * The provider owns product interpretation, dialogue, scene planning and final media.
@@ -9,8 +9,23 @@
 import { ProductProfile, ScenePlan, CompiledGenerationPrompt } from './types';
 import { VideoStyle } from '../styles/types';
 import { VoiceoverDirector } from './voiceover-director';
+import { VIDEO_STYLES_REGISTRY } from '../styles/registry';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-gems-masterprompts-v5.0';
+export const GEMS_PROMPT_VERSION = 'affimatik-creative-v6.0';
+
+export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
+  '[MALAYSIAN AFFILIATE VOICE DNA V6]',
+  'Create original spoken Bahasa Melayu Malaysia that sounds like a believable local affiliate creator, never formal corporate copy.',
+  'Use short naturally uneven sentence rhythm, meaningful pauses, subtle vocal variation and a product-relevant hook.',
+  'Focus on one supported intended purpose or ordinary category use context and finish comfortably within 15 seconds.',
+  'Do not repeat a catalogue-wide opening or closing. Match the selected style personality exactly.',
+  'No Indonesian forms, no English dialogue unless explicitly requested, no filler, no exaggerated presenter performance.',
+  'A buyer problem does not prove that this product resolves it. Omit all unsupported benefit and performance claims.',
+  'Never claim personal use, purchase, customer reviews, ingredients, certifications, prices, specifications, performance results or medical outcomes unless explicitly supplied by the user or clearly legible in the reference.',
+  'Keep factual guardrails silent: do not speak legal-disclaimer phrases such as “berdasarkan apa yang kelihatan”. When detail is unavailable, use an ordinary useful category description or omit the claim.',
+  'Never use first-person product experience or routines, including claims that the speaker uses, drinks, takes, buys or keeps the product at home.',
+  'A natural low-pressure spoken CTA is optional; never force one when it would make the delivery feel scripted.',
+].join(' ');
 
 /**
  * Internal Provider to AffiMatik White-Label Display Name Mapping
@@ -55,7 +70,7 @@ export interface PromptPreviewResult {
 }
 
 /**
- * Authoritative English Masterprompts for all 13 Styles (GEMS V5.0)
+ * Retained V5 literals, overridden below by all 20 canonical V6 styles.
  */
 export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
   productName: string;
@@ -120,6 +135,29 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
     `Single real-looking handheld smartphone 1x clip of the exact "${p.productName}" held in one modest sleeve-covered adult hand near an ordinary Malaysian home window. Pure neutral clean window daylight, soft true shadow, no golden or sepia tint. Small authentic 5–8-degree hand adjustment, otherwise stable. Product naturally scaled (20–30% of vertical frame) and appropriate to usage context (${p.useContext}); visible real object, not a stylized commercial showcase. One continuous full-frame 15-second shot with absolutely no embedded interface or phone frame. Strictly NO spoken dialogue.`,
 };
 
+// V6 derives a distinct provider masterprompt from every canonical registry
+// definition. This overrides the retained V5 literals above for compatibility
+// and ensures new and legacy RH identities use the same direct Nexabot path.
+for (const v6Style of VIDEO_STYLES_REGISTRY) {
+  AUTHORITATIVE_STYLE_MASTERPROMPTS[v6Style.id] = (p) => {
+    const d = v6Style.creativeDirection;
+    const handOnly = v6Style.category === 'product_handling' || v6Style.category === 'pov' || v6Style.id.startsWith('RH');
+    return [
+      `[STYLE ${v6Style.id} — ${v6Style.name}]`,
+      `Target experience: ${d.targetViewingExperience}.`,
+      `Opening strategy: ${d.openingStrategy}.`,
+      `Speaking personality: ${d.speakingPersonality}.`,
+      `Natural human behaviour: ${d.humanBehaviour}.`,
+      `Scene context: ${d.sceneContext}; adapt it to the uploaded product category and never force an unsuitable location.`,
+      `Product interaction: ${d.productInteraction}.`,
+      `Ending: ${d.expectedEnding}.`,
+      `Camera: ${v6Style.cameraProfile}; vertical 9:16, realistic smartphone 1x, one continuous take, small handheld micro-shake.`,
+      handOnly ? 'HAND-LED SCENE: one realistically proportioned hand only, wrist covered, no jewellery or nail polish.' : 'PRESENTER SCENE: natural expressions and accurate lip-sync; modest Malaysian Muslimah styling.',
+      `Use the exact reference product identity. The image is a reference, never a mandatory first frame. Product name metadata: "${p.productName}".`,
+    ].join(' ');
+  };
+}
+
 export class DynamicPromptCompiler {
   /**
    * Deterministic preflight validation with sanitized white-label error messages
@@ -164,33 +202,6 @@ export class DynamicPromptCompiler {
   }
 
   /**
-   * Resolves the spoken script adhering strictly to priority order:
-   * 1. Approved customer custom script (preserved word-for-word)
-   * 2. Product-specific dynamic script based on confirmed features & style hook
-   * 3. Safe category-aware honest fallback (zero packaging filler)
-   */
-  static resolveSpokenScript(
-    product: ProductProfile,
-    style: VideoStyle,
-    options: CompilerOptions = {}
-  ): string {
-    if (style.engine === 'runninghub') {
-      return '';
-    }
-
-    // 1. Customer custom script (preserved word-for-word)
-    if (options.customScript && options.customScript.trim().length > 0) {
-      return options.customScript.trim();
-    }
-
-    // 2. Product-specific dynamically generated script using confirmed facts and style hook
-    const ctaMode = options.callToAction || 'spoken_button';
-    // Legacy helper retained for explicit, opt-in compatibility only. The
-    // production factory never calls this path; providers create dialogue.
-    return VoiceoverDirector.generateAuthenticScript(product, style, ctaMode, options.variationIndex ?? 0);
-  }
-
-  /**
    * Generates a comprehensive customer-facing preview before launching generation
    */
   static previewPrompt(
@@ -204,7 +215,7 @@ export class DynamicPromptCompiler {
 
     let modestyRules = 'Pemakaian santai kontemporari sopan bersesuaian khalayak Malaysia.';
     if (isMuslimah) {
-      if (style.category === 'hand_demo' || style.id.startsWith('RH') || style.id === 'NX09' || style.id === 'NX10') {
+      if (style.category === 'hand_demo' || style.category === 'product_handling' || style.category === 'pov' || style.id.startsWith('RH')) {
         modestyRules = 'Satu tangan sahaja dengan pergelangan tangan bertutup lengan baju, tiada cincin/gelang/pengilat kuku.';
       } else {
         modestyRules = 'Tudung labuh menutup rambut, leher dan dada; pakaian longgar berlengan panjang hingga pergelangan.';
@@ -225,14 +236,14 @@ export class DynamicPromptCompiler {
       modestyRules,
       productIdentityRules: `Mengekalkan identiti visual produk ${product.name} (bentuk botol/bungkusan, warna, logo dan label).`,
       audioDirective: style.engine === 'nexabot'
-        ? 'Suara bahasa Melayu santai bersahaja (14-23 perkataan), tiada slanga luar.'
+        ? 'Provider mencipta dialog Bahasa Melayu Malaysia mengikut Voice DNA V6 dan personaliti gaya terpilih.'
         : 'Tiada suara pertuturan (visual tulen, bunyi persekitaran / ASMR / audio bersesuaian).',
       promptVersion: GEMS_PROMPT_VERSION,
     };
   }
 
   /**
-   * Compiles the complete payload for the specified provider with Masterprompts V5.0
+   * Compiles the complete Creative V6 payload for the specified provider.
    */
   static compile(
     product: ProductProfile,
@@ -242,10 +253,10 @@ export class DynamicPromptCompiler {
   ): CompiledGenerationPrompt {
     const preflight = this.validatePreflight(product, style, options);
     const isMuslimah = options.isMuslimahModest ?? style.modestyLock;
-    const isHandOnly = style.category === 'hand_demo' || style.id.startsWith('RH') || style.id === 'NX09' || style.id === 'NX10';
+    const isHandOnly = style.category === 'hand_demo' || style.category === 'product_handling' || style.category === 'pov' || style.id.startsWith('RH');
 
     // -------------------------------------------------------------------------
-    // MASTERPROMPT LOCK V5 — LAYER 1: UNIVERSAL MANDATORY LOCKS (00_GLOBAL_LOCKS)
+    // MASTERPROMPT LOCK V6 — LAYER 1: UNIVERSAL MANDATORY LOCKS
     // -------------------------------------------------------------------------
 
     // 1. PRODUCT IDENTITY MAX LOCK
@@ -336,9 +347,9 @@ export class DynamicPromptCompiler {
   ): CompiledGenerationPrompt {
     // Audio instruction is a provider directive; AffiMatik does not author or
     // preview the dialogue in the automatic generation path.
-    const audioDirective = 'Provider-created natural Malaysian Malay dialogue within a 15-second video; grounded in the uploaded image and optional user notes, cautious where facts are unclear.';
+    const audioDirective = 'Provider-created natural Malaysian Malay dialogue within 15 seconds, following the selected V6 personality and grounded in the image plus optional user notes.';
 
-    // 2. Authoritative Style Masterprompt V5
+    // Authoritative Style Masterprompt V6
     const stylePromptFn = AUTHORITATIVE_STYLE_MASTERPROMPTS[style.id];
     let styleSpecificPrompt = '';
     const feature = (product.confirmedFeatures && product.confirmedFeatures[0]) || product.coreFunction || 'kegunaan harian';
@@ -371,17 +382,18 @@ export class DynamicPromptCompiler {
     ].filter(Boolean).join(' ');
 
     const providerDialogueDirective = [
-      '[PROVIDER-CREATED DIALOGUE — AFFIMATIK VOICE 15s]',
+      MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
+      '[PROVIDER-CREATED DIALOGUE — AFFIMATIK V6 15s]',
       'The external video-generation AI must independently inspect the uploaded product reference image and create the natural Malaysian Malay dialogue, scene interpretation and lip-sync. AffiMatik supplies no generated script.',
-      'Dialogue must discuss the product\'s intended purpose, a relevant buyer situation, and only features actually legible in the image or explicitly supplied by the user. Describe ordinary use, not an achieved benefit. Do not narrate generic packaging or label descriptions.',
+      `Follow the unique ${style.id} opening, personality, human behaviour and ending above. Dialogue must discuss the product's intended purpose, a relevant buyer situation, and only features legible in the image or explicitly supplied by the user.`,
       'If the image and optional user notes do not establish a fact, omit the claim entirely. Never invent a special formula, ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
-      'The image establishes identity and perhaps a printed intended use; it cannot establish cleaning efficacy, relief, speed, comparative superiority or any outcome. A buyer problem does not prove that this product resolves it. State only a visible or user-confirmed function. Omit all unsupported benefit and performance claims rather than softening them with uncertain words.',
-      'When no product facts were supplied, restrict speech to the product category or legible printed intended purpose and an ordinary use situation. Include a neutral CTA only when the customer selected one. Never imply it works better, faster, more thoroughly, or has a special formulation. Do not say a problem disappears or a customer has personally used it.',
-      'Use Bahasa Melayu standard Malaysia only, natural conversational cadence, strictly avoid Indonesian loanwords or slang, and strictly NO English dialogue. Keep speech concise despite the longer video. Leave a natural quiet hold at the end.',
+      'When technical detail is unavailable, use a safe useful ordinary category description tied to an everyday situation. Keep these factual checks internal and never turn them into spoken disclaimers.',
       options.callToAction === 'none'
         ? 'The customer chose no CTA. Do not add a spoken call to action.'
-        : 'Finish one complete neutral spoken CTA inviting the viewer to learn more or consider the product before second 14, without promising an outcome or price.',
-      'Before rendering, check the spoken words against these rules: no Indonesian forms such as "karena" or "cobalah", no unsupported result claims, and no clipped narration. Rewrite internally if needed; AffiMatik does not provide a script.',
+        : 'Use a brief low-pressure CTA only if it fits this style naturally; complete all speech before second 11.5.',
+      '[FINAL DIALOGUE COMPLIANCE] Create exactly TWO short spoken sentences totalling 16-22 words, begin immediately, and finish completely by second 11.5. If a CTA is used, embed it inside sentence two; never add a third sentence. After sentence two, stop speaking, keep the mouth closed and leave the remaining video silent. Never repeat a sentence, phrase, CTA or outro.',
+      'Never say or imply “pilihan terbaik”, “wajib”, personal use, purchase, household routine, testimonial, dosage, when to consume, absorption, symptom relief, energy, focus, wellness or health results. For supplements or health products, only identify the visible product type and clearly readable label facts; never explain what those facts do to the body.',
+      'Never describe a product as wireless, rechargeable, battery-powered, portable or cable-free unless that exact fact is legible in the image or supplied by the user. Use Malaysian Malay only; forbidden Indonesian forms include kamu, coba, kesehatan, ianya and banget. Before rendering, silently remove every unsupported claim, superlative, personal-experience statement, repeated phrase and clipped ending. AffiMatik does not provide a script.',
     ].join(' ');
     const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;
 
@@ -394,7 +406,7 @@ export class DynamicPromptCompiler {
       audioDirective,
       safetyRules: [
         'AffiMatik Voice (15s) native Malaysian Malay spoken audio',
-        'GEMS V5 Masterprompt Lock enforced',
+        'Creative V6 Masterprompt Lock enforced',
         'No Indonesia loanwords or slang',
         'Zero UI, no TikTok logo, no phone frame',
         'No unverified medical or cosmetic claims',

@@ -24,7 +24,7 @@ import {
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Video Factory', href: '/factory', icon: Video, badge: 'Quick / Adv' },
-  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '13 Gaya' },
+  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '20 Gaya' },
   { name: 'Program Affiliate', href: '/affiliate', icon: BadgePercent },
   { name: 'Product Library', href: '/products', icon: ShoppingBag },
   { name: 'Avatar Library', href: '/avatars', icon: Users },

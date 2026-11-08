@@ -146,9 +146,9 @@ describe('Private provider media ingestion', () => {
     }
   });
 
-  it('serves genuine 15-second Voice samples for all active styles', () => {
-    for (const style of ['NX01','NX02','NX03','NX05','NX07','NX09','NX10']) {
-      const file = readFileSync(resolve(process.cwd(), 'public', 'style-previews', style, 'sample-v2.mp4'));
+  it('serves genuine 15-second Creative V6 samples for all 20 active styles', () => {
+    for (const style of ['NX01','NX02','NX03','NX05','NX07','NX09','NX10','RH01','RH02','RH03','RH04','RH17','RH19','NX11','NX12','NX13','NX14','NX15','NX16','NX17']) {
+      const file = readFileSync(resolve(process.cwd(), 'public', 'style-previews', style, 'sample-v6.mp4'));
       const bytes = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
       const result = inspectMp4(bytes);
       expect(result.hasVideo).toBe(true);

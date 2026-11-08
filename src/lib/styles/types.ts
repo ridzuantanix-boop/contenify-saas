@@ -7,6 +7,9 @@ export type StyleCategory =
   | 'all'
   | 'creator_review'
   | 'hand_demo'
+  | 'product_handling'
+  | 'pov'
+  | 'soft_sell'
   | 'problem_solution'
   | 'unboxing'
   | 'asmr'
@@ -45,6 +48,16 @@ export interface ActionPlan {
   scriptTemplate?: string;
 }
 
+export interface CreativeDirection {
+  targetViewingExperience: string;
+  openingStrategy: string;
+  speakingPersonality: string;
+  humanBehaviour: string;
+  sceneContext: string;
+  productInteraction: string;
+  expectedEnding: string;
+}
+
 export interface VideoStyle {
   id: string; // e.g. 'NX01', 'RH01'
   slug: string;
@@ -69,6 +82,7 @@ export interface VideoStyle {
   previewVideoUrl: string | null;
   tags: string[];
   actionPlan: ActionPlan;
+  creativeDirection: CreativeDirection;
   legacyAliasId?: string; // For backward compatibility with v0.1 presets
 }
 
