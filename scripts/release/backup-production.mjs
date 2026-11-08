@@ -86,7 +86,11 @@ try {
     (SELECT coalesce(sum(balance),0) FROM public.credit_wallets) AS wallet_balance,
     (SELECT coalesce(sum(reserved_balance),0) FROM public.credit_wallets) AS reserved_balance,
     (SELECT count(*) FROM public.video_jobs) AS jobs,
-    (SELECT count(*) FROM storage.objects) AS storage_objects`)).rows[0];
+    (SELECT count(*) FROM storage.objects) AS storage_objects,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(email,''), '~' ORDER BY id),'')) FROM auth.users) AS auth_identity_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(default_workspace_id::text,'') || '|' || coalesce(tier::text,''), '~' ORDER BY id),'')) FROM public.profiles) AS profile_identity_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || balance::text || '|' || reserved_balance::text || '|' || lifetime_granted::text || '|' || lifetime_spent::text, '~' ORDER BY id),'')) FROM public.credit_wallets) AS wallet_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || status::text || '|' || coalesce(result_video_url,'') || '|' || coalesce(result_video_r2_key,'') || '|' || required_credits::text, '~' ORDER BY id),'')) FROM public.video_jobs) AS job_row_hash`)).rows[0];
   const db = await dumpDatabase();
   const buckets = (await client.query('SELECT id FROM storage.buckets ORDER BY id')).rows;
   const objects = [];

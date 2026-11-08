@@ -54,7 +54,7 @@ const local = { host: '127.0.0.1', port: 55434, user: 'postgres', password: proc
 if (!local.password) throw new Error('Kata laluan kluster restore tempatan tiada.');
 const admin = new pg.Client(local);
 await admin.connect();
-const database = `affimatik_rehearsal_${new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14)}`;
+const database = `affimatik_rehearsal_${new Date().toISOString().replace(/[-:TZ.]/g, '')}`;
 try {
   for (const role of ['anon', 'authenticated', 'service_role', 'supabase_auth_admin', 'supabase_storage_admin', 'authenticator', 'dashboard_user']) {
     if (!(await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1', [role])).rowCount) await admin.query(`CREATE ROLE ${role}`);
@@ -63,6 +63,13 @@ try {
 } finally { await admin.end(); }
 
 const conn = ['-h', '127.0.0.1', '-p', '55434', '-U', 'postgres', '-d', database];
+try {
+// A new PostgreSQL database contains public by default; the production dump
+// creates that schema itself. Remove only the empty rehearsal copy first.
+await run(psqlBin, [...conn, '-v', 'ON_ERROR_STOP=1', '-c', 'DROP SCHEMA public CASCADE']);
+await run(psqlBin, [...conn, '-v', 'ON_ERROR_STOP=1', '-c', 'CREATE SCHEMA extensions']);
+await run(psqlBin, [...conn, '-v', 'ON_ERROR_STOP=1', '-c', 'CREATE EXTENSION "uuid-ossp" WITH SCHEMA extensions']);
+await run(psqlBin, [...conn, '-v', 'ON_ERROR_STOP=1', '-c', 'CREATE EXTENSION pgcrypto WITH SCHEMA extensions']);
 await run(restoreBin, [...conn, '--no-owner', '--no-acl', '--exit-on-error'], encryptedStream(manifest.database.file));
 const check = new pg.Client({ ...local, database });
 await check.connect();
@@ -74,7 +81,11 @@ async function snapshot() {
     (SELECT coalesce(sum(balance),0) FROM public.credit_wallets) AS wallet_balance,
     (SELECT coalesce(sum(reserved_balance),0) FROM public.credit_wallets) AS reserved_balance,
     (SELECT count(*) FROM public.video_jobs) AS jobs,
-    (SELECT count(*) FROM storage.objects) AS storage_objects`)).rows[0];
+    (SELECT count(*) FROM storage.objects) AS storage_objects,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(email,''), '~' ORDER BY id),'')) FROM auth.users) AS auth_identity_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(default_workspace_id::text,'') || '|' || coalesce(tier::text,''), '~' ORDER BY id),'')) FROM public.profiles) AS profile_identity_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || balance::text || '|' || reserved_balance::text || '|' || lifetime_granted::text || '|' || lifetime_spent::text, '~' ORDER BY id),'')) FROM public.credit_wallets) AS wallet_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || status::text || '|' || coalesce(result_video_url,'') || '|' || coalesce(result_video_r2_key,'') || '|' || required_credits::text, '~' ORDER BY id),'')) FROM public.video_jobs) AS job_row_hash`)).rows[0];
 }
 try {
   const restored = await snapshot();
@@ -98,3 +109,9 @@ try {
   writeFileSync(join(dir, 'restore-rehearsal.json'), JSON.stringify(receiptOut, null, 2));
   console.log(`Restore dan migrations 00012–00017 lulus pada database terasing ${database}.`);
 } finally { await check.end(); }
+} finally {
+  const cleanup = new pg.Client(local);
+  await cleanup.connect();
+  try { await cleanup.query(`DROP DATABASE ${database} WITH (FORCE)`); }
+  finally { await cleanup.end(); }
+}
