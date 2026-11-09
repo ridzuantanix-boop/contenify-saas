@@ -71,3 +71,13 @@ All twenty style posters were rebuilt from the exact 7-second frame of their ass
 - Provider watermark is accepted under the existing Launch-Lite policy.
 
 Production V8.1 media and customer data were not modified by this creative candidate. The separately requested maintenance wrapper is live in production while V8.3 remains staging-only.
+
+## Staging release verification
+
+- Access-controlled Worker: `https://affimatik-launch-lite-staging.nanotiva-garden.workers.dev`
+- Worker version: `ab771e3b-3a6d-492d-8125-cf4cf6ee2804`
+- Authenticated desktop smoke (1440×900): 20 style cards, visible preset selector, script/CTA review and Generate action; no page errors.
+- Authenticated mobile smoke (390×844): 20 style cards and visible 362×48 Generate action in the viewport; no page errors.
+- The RH03 ASMR comparison is deployed and returns `video/mp4` behind the staging access gate.
+- Static staging preview assets currently ignore a byte Range request and return the complete MP4 with HTTP 200. Private customer download Range handling remains covered by the application regression suite; this staging static-preview behavior is not presented as a private-download PASS.
+- Production `/factory` remains on the requested casual maintenance page with HTTP 503 and no V8.3 cutover.
