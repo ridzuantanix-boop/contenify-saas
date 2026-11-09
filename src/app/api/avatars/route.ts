@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
+import { OFFICIAL_AVATARS } from '@/lib/personalization/official-assets';
 import { deletePrivateAsset, signPrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
 
 
@@ -18,11 +19,16 @@ export async function GET(req: NextRequest) {
     const result = await fetch(`${base}/rest/v1/avatars?workspace_id=eq.${encodeURIComponent(session.workspaceId)}&select=id,name,description,gender,modesty_style,image_r2_key,consent_confirmed,created_at&order=created_at.desc&limit=100`, { headers });
     if (!result.ok) throw new Error(`DB HTTP ${result.status}`);
     const rows = await result.json() as Array<{ id: string; name: string; description: string | null; gender: string; modesty_style: string; image_r2_key: string; consent_confirmed: boolean; created_at: string }>;
-    return NextResponse.json({ avatars: await Promise.all(rows.map(async (row) => ({
-      id: row.id, name: row.name, description: row.description, gender: row.gender,
-      modestyStyle: row.modesty_style, consentConfirmed: row.consent_confirmed,
-      createdAt: row.created_at, imageUrl: await signPrivateAsset(row.image_r2_key, 900),
-    }))) });
+    const avatars = await Promise.all(rows.map(async (row) => {
+      const imageUrl = await signPrivateAsset(row.image_r2_key, 900);
+      return {
+        id: row.id, name: row.name, description: row.description, gender: row.gender,
+        modestyStyle: row.modesty_style, consentConfirmed: row.consent_confirmed,
+        createdAt: row.created_at, imageUrl, thumbnailUrl: imageUrl, referenceUrl: imageUrl,
+        official: false, readOnly: false, source: 'custom' as const,
+      };
+    }));
+    return NextResponse.json({ officialAvatars: OFFICIAL_AVATARS, avatars });
   } catch { return NextResponse.json({ error: 'Pustaka avatar tidak tersedia.' }, { status: 503 }); }
 }
 

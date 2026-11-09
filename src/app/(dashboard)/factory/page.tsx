@@ -55,8 +55,8 @@ interface ActiveJobDisplay {
   createdAt: string;
 }
 
-interface AvatarOption { id: string; name: string; imageUrl: string; consentConfirmed: boolean }
-interface BackgroundOption { id: string; name: string; imageUrl: string }
+interface AvatarOption { id: string; name: string; imageUrl: string; thumbnailUrl?: string; consentConfirmed: boolean; official?: boolean; ageGroup?: string; gender?: string; personality?: string }
+interface BackgroundOption { id: string; name: string; imageUrl: string; thumbnailUrl?: string; official?: boolean; category?: string }
 interface BuiltInSceneOption { id: string; name: string; directive: string }
 interface CreatorPreset {
   id: string; name: string; isDefault: boolean;
@@ -92,7 +92,11 @@ function VideoFactoryContent() {
   const [storyboard, setStoryboard] = useState('auto');
   const [callToAction, setCallToAction] = useState('auto');
   const [avatars, setAvatars] = useState<AvatarOption[]>([]);
+  const [officialAvatars, setOfficialAvatars] = useState<AvatarOption[]>([]);
   const [backgrounds, setBackgrounds] = useState<BackgroundOption[]>([]);
+  const [officialBackgrounds, setOfficialBackgrounds] = useState<BackgroundOption[]>([]);
+  const [avatarCollectionFilter, setAvatarCollectionFilter] = useState('all');
+  const [backgroundCollectionFilter, setBackgroundCollectionFilter] = useState('all');
   const [builtInScenes, setBuiltInScenes] = useState<BuiltInSceneOption[]>([]);
   const [presets, setPresets] = useState<CreatorPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState('');
@@ -114,6 +118,12 @@ function VideoFactoryContent() {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
   const selectedAvailable = publicAvailability[selectedStyle.engine];
+  const filteredOfficialAvatars = useMemo(() => officialAvatars.filter((item) =>
+    avatarCollectionFilter === 'all' || item.ageGroup === avatarCollectionFilter || item.gender === avatarCollectionFilter
+  ), [officialAvatars, avatarCollectionFilter]);
+  const filteredOfficialBackgrounds = useMemo(() => officialBackgrounds.filter((item) =>
+    backgroundCollectionFilter === 'all' || item.category === backgroundCollectionFilter
+  ), [officialBackgrounds, backgroundCollectionFilter]);
 
   const openCustomize = () => {
     setMode('advanced');
@@ -192,10 +202,13 @@ function VideoFactoryContent() {
       fetch('/api/backgrounds', { cache: 'no-store' }),
       fetch('/api/creator-presets', { cache: 'no-store' }),
     ]);
-    if (avatarResponse.ok) setAvatars((await avatarResponse.json()).avatars || []);
+    if (avatarResponse.ok) {
+      const data = await avatarResponse.json();
+      setOfficialAvatars(data.officialAvatars || []); setAvatars(data.avatars || []);
+    }
     if (backgroundResponse.ok) {
       const data = await backgroundResponse.json();
-      setBackgrounds(data.backgrounds || []); setBuiltInScenes(data.builtInScenes || []);
+      setOfficialBackgrounds(data.officialBackgrounds || []); setBackgrounds(data.backgrounds || []); setBuiltInScenes(data.builtInScenes || []);
     }
     if (presetResponse.ok) {
       const data = await presetResponse.json();
@@ -725,28 +738,38 @@ function VideoFactoryContent() {
 
               <div>
                 <label className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700"><UserRound className="h-3.5 w-3.5" />Avatar / Presenter <span className="font-normal text-slate-400">(Pilihan)</span></label>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                  <button type="button" onClick={() => setAvatarId('')} className={`rounded-xl border p-2 text-[10px] font-semibold ${!avatarId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}><div className="mx-auto mb-1 h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center"><Sparkles className="h-4 w-4" /></div>Auto Presenter</button>
-                  {avatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => setAvatarId(avatar.id)} className={`rounded-xl border p-2 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
+                <div className="space-y-3">
+                  <div><div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Auto</div><button type="button" onClick={() => setAvatarId('')} className={`rounded-xl border px-3 py-2 text-[10px] font-semibold ${!avatarId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}><Sparkles className="mr-1 inline h-3.5 w-3.5" />Auto Presenter</button></div>
+                  <div data-testid="official-avatar-collection">
+                    <div className="mb-2 flex items-center justify-between gap-2"><div><div className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Koleksi AffiMatik</div><div className="text-[10px] text-slate-500">12 presenter Malaysia · Avatar Beta</div></div><select aria-label="Tapis avatar rasmi" value={avatarCollectionFilter} onChange={(event) => setAvatarCollectionFilter(event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px]"><option value="all">Semua</option><option value="female">Wanita</option><option value="male">Lelaki</option><option value="young">Muda</option><option value="mature">Matang</option><option value="senior">Senior</option></select></div>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">{filteredOfficialAvatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => setAvatarId(avatar.id)} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={avatar.thumbnailUrl || avatar.imageUrl} alt={avatar.name} className="aspect-[3/4] w-full rounded-lg object-cover object-top" /><span className="mt-1 block truncate">{avatar.name}</span>
+                    </button>)}</div>
+                  </div>
+                  <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{avatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => setAvatarId(avatar.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={avatar.imageUrl} alt={avatar.name} className="mx-auto mb-1 h-12 w-12 rounded-lg object-cover" />
-                    <span className="block truncate">{avatar.name}</span>
-                  </button>)}
-                  <label className="rounded-xl border border-dashed border-slate-300 p-2 text-center text-[10px] font-semibold text-slate-500 cursor-pointer hover:border-primary"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadAvatar(event.target.files?.[0]); event.target.value = ''; }} /><div className="mx-auto mb-1 h-12 w-12 rounded-lg bg-slate-50 flex items-center justify-center"><Upload className="h-4 w-4" /></div>Upload Baru</label>
+                    <img src={avatar.thumbnailUrl || avatar.imageUrl} alt={avatar.name} className="aspect-[3/4] w-full rounded-lg object-cover object-top" /><span className="mt-1 block truncate">{avatar.name}</span>
+                  </button>)}<label className="rounded-xl border border-dashed border-slate-300 p-2 text-center text-[10px] font-semibold text-slate-500 cursor-pointer hover:border-primary"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadAvatar(event.target.files?.[0]); event.target.value = ''; }} /><div className="mx-auto mb-1 flex aspect-[3/4] w-full items-center justify-center rounded-lg bg-slate-50"><Upload className="h-4 w-4" /></div>Upload Baru</label></div>{avatars.length === 0 && <div className="mt-1 text-[10px] text-slate-400">Belum ada avatar peribadi.</div>}</div>
                 </div>
               </div>
 
               <div>
                 <label className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700"><ImageIcon className="h-3.5 w-3.5" />Latar / Babak <span className="font-normal text-slate-400">(Pilihan)</span></label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <button type="button" onClick={() => { setBackgroundId(''); setBuiltInSceneId(''); }} className={`rounded-xl border p-2 text-[10px] font-semibold ${!backgroundId && !builtInSceneId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>Auto Sesuai Produk</button>
-                  {builtInScenes.map((scene) => <button key={scene.id} type="button" onClick={() => { setBuiltInSceneId(scene.id); setBackgroundId(''); }} title={scene.directive} className={`rounded-xl border p-2 text-[10px] font-semibold ${builtInSceneId === scene.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>{scene.name}</button>)}
+                <div className="space-y-3">
+                  <div><div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Auto</div><div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><button type="button" onClick={() => { setBackgroundId(''); setBuiltInSceneId(''); }} className={`rounded-xl border p-2 text-[10px] font-semibold ${!backgroundId && !builtInSceneId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>Auto Sesuai Produk</button>{builtInScenes.map((scene) => <button key={scene.id} type="button" onClick={() => { setBuiltInSceneId(scene.id); setBackgroundId(''); }} title={scene.directive} className={`rounded-xl border p-2 text-[10px] font-semibold ${builtInSceneId === scene.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>{scene.name}</button>)}</div></div>
+                  <div data-testid="official-background-collection">
+                    <div className="mb-2 flex items-center justify-between gap-2"><div><div className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Koleksi AffiMatik</div><div className="text-[10px] text-slate-500">18 latar rasmi yang dioptimumkan</div></div><select aria-label="Tapis latar rasmi" value={backgroundCollectionFilter} onChange={(event) => setBackgroundCollectionFilter(event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px]"><option value="all">Semua</option><option value="living">Ruang Rumah</option><option value="kitchen">Dapur</option><option value="beauty">Beauty</option><option value="workspace">Workspace</option><option value="lifestyle">Lifestyle</option><option value="automotive">Automotif</option><option value="outdoor">Outdoor</option></select></div>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">{filteredOfficialBackgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); }} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={background.thumbnailUrl || background.imageUrl} alt={background.name} className="aspect-[9/16] w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
+                    </button>)}</div>
+                  </div>
+                  <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div>{backgrounds.length > 0 && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{backgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); }} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={background.thumbnailUrl || background.imageUrl} alt={background.name} className="aspect-[9/16] w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
+                  </button>)}</div>}<label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-600"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadBackground(event.target.files?.[0]); event.target.value = ''; }} /><Upload className="h-3.5 w-3.5" />Upload Latar Sendiri</label>{backgrounds.length === 0 && <div className="mt-1 text-[10px] text-slate-400">Belum ada latar peribadi.</div>}</div>
                 </div>
-                {backgrounds.length > 0 && <div className="mt-2 flex gap-2 overflow-x-auto pb-1">{backgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); }} className={`w-20 shrink-0 rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={background.imageUrl} alt={background.name} className="h-12 w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
-                </button>)}</div>}
-                <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-600"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadBackground(event.target.files?.[0]); event.target.value = ''; }} /><Upload className="h-3.5 w-3.5" />Upload Latar Sendiri</label>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

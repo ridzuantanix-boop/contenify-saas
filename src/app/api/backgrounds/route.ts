@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { BUILT_IN_SCENES } from '@/lib/personalization/config';
+import { OFFICIAL_BACKGROUNDS } from '@/lib/personalization/official-assets';
 import { deletePrivateAsset, signPrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
 
 function dbConfig() {
@@ -26,11 +27,15 @@ export async function GET(req: NextRequest) {
     const response = await fetch(`${base}/rest/v1/background_assets?workspace_id=eq.${encodeURIComponent(session.workspaceId)}&select=id,name,description,image_r2_key,mime_type,size_bytes,created_at&order=created_at.desc&limit=100`, { headers });
     if (!response.ok) throw new Error(`DB HTTP ${response.status}`);
     const rows = await response.json() as Array<{ id: string; name: string; description: string | null; image_r2_key: string; mime_type: string; size_bytes: number; created_at: string }>;
-    const backgrounds = await Promise.all(rows.map(async (row) => ({
-      id: row.id, name: row.name, description: row.description, mimeType: row.mime_type,
-      sizeBytes: row.size_bytes, createdAt: row.created_at, imageUrl: await signPrivateAsset(row.image_r2_key, 900),
-    })));
-    return NextResponse.json({ builtInScenes: BUILT_IN_SCENES, backgrounds });
+    const backgrounds = await Promise.all(rows.map(async (row) => {
+      const imageUrl = await signPrivateAsset(row.image_r2_key, 900);
+      return {
+        id: row.id, name: row.name, description: row.description, mimeType: row.mime_type,
+        sizeBytes: row.size_bytes, createdAt: row.created_at, imageUrl, thumbnailUrl: imageUrl,
+        referenceUrl: imageUrl, official: false, readOnly: false, source: 'custom' as const,
+      };
+    }));
+    return NextResponse.json({ builtInScenes: BUILT_IN_SCENES, officialBackgrounds: OFFICIAL_BACKGROUNDS, backgrounds });
   } catch {
     return NextResponse.json({ error: 'Pustaka latar tidak tersedia.' }, { status: 503 });
   }

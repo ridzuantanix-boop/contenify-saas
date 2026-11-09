@@ -10,6 +10,7 @@ import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
 import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personalization/config';
+import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
 
 
 const router = new ProviderRouter();
@@ -171,20 +172,37 @@ export async function POST(req: NextRequest) {
 
     let avatarReference: { id: string; name: string; source: string } | null = null;
     let backgroundReference: { id: string; name: string; source: string } | null = null;
-    if (personalization.avatarId || personalization.backgroundId) {
-      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'Pengesahan aset personalisasi tidak tersedia.' }, { status: 503 });
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const headers = { apikey: key, Authorization: `Bearer ${key}` };
-      if (personalization.avatarId) {
-        const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/avatars?id=eq.${encodeURIComponent(personalization.avatarId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&consent_confirmed=eq.true&select=id,name,image_r2_key&limit=1`, { headers });
+    if (personalization.avatarId) {
+      const official = findOfficialAvatar(personalization.avatarId);
+      if (official) {
+        avatarReference = {
+          id: official.id,
+          name: official.name,
+          source: style.engine === 'nexabot' ? await officialAssetDataUri(req, official.referenceUrl) : new URL(official.referenceUrl, req.url).toString(),
+        };
+      } else {
+        if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'Pengesahan avatar tidak tersedia.' }, { status: 503 });
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/avatars?id=eq.${encodeURIComponent(personalization.avatarId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&consent_confirmed=eq.true&select=id,name,image_r2_key&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
         if (!response.ok) return NextResponse.json({ error: 'Pengesahan avatar gagal.' }, { status: 503 });
         const rows = await response.json() as Array<{ id: string; name: string; image_r2_key: string }>;
         if (!rows.length) return NextResponse.json({ error: 'Avatar tidak ditemui atau keizinan tidak disahkan.' }, { status: 404 });
         const mime = rows[0].image_r2_key.endsWith('.png') ? 'image/png' : rows[0].image_r2_key.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
         avatarReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? await privateImageDataUri(rows[0].image_r2_key, mime) : await signPrivateAsset(rows[0].image_r2_key) };
       }
-      if (personalization.backgroundId) {
-        const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/background_assets?id=eq.${encodeURIComponent(personalization.backgroundId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,name,image_r2_key,mime_type&limit=1`, { headers });
+    }
+    if (personalization.backgroundId) {
+      const official = findOfficialBackground(personalization.backgroundId);
+      if (official) {
+        backgroundReference = {
+          id: official.id,
+          name: official.name,
+          source: style.engine === 'nexabot' ? await officialAssetDataUri(req, official.referenceUrl) : new URL(official.referenceUrl, req.url).toString(),
+        };
+      } else {
+        if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'Pengesahan latar tidak tersedia.' }, { status: 503 });
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/background_assets?id=eq.${encodeURIComponent(personalization.backgroundId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,name,image_r2_key,mime_type&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
         if (!response.ok) return NextResponse.json({ error: 'Pengesahan latar gagal.' }, { status: 503 });
         const rows = await response.json() as Array<{ id: string; name: string; image_r2_key: string; mime_type: string }>;
         if (!rows.length) return NextResponse.json({ error: 'Latar tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
@@ -304,8 +322,12 @@ export async function POST(req: NextRequest) {
         imageAssetId: typeof imageAssetId === 'string' ? imageAssetId : null,
         avatarId: avatarReference?.id || null,
         avatarName: avatarReference?.name || null,
+        avatarAssetSource: avatarReference ? (findOfficialAvatar(avatarReference.id) ? 'official' : 'custom') : null,
+        avatarAssetVersion: avatarReference && findOfficialAvatar(avatarReference.id) ? findOfficialAvatar(avatarReference.id)?.version : null,
         backgroundId: backgroundReference?.id || null,
         backgroundName: backgroundReference?.name || null,
+        backgroundAssetSource: backgroundReference ? (findOfficialBackground(backgroundReference.id) ? 'official' : 'custom') : null,
+        backgroundAssetVersion: backgroundReference && findOfficialBackground(backgroundReference.id) ? findOfficialBackground(backgroundReference.id)?.version : null,
         builtInSceneId: personalization.builtInSceneId,
         niche: personalization.niche,
         voicePersonality: personalization.voicePersonality,

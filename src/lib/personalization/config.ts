@@ -1,3 +1,5 @@
+import { findOfficialAvatar, findOfficialBackground } from './official-assets';
+
 export const BUILT_IN_SCENES = [
   { id: 'scene:home', name: 'Rumah', directive: 'an ordinary bright Malaysian home with lived-in details' },
   { id: 'scene:kitchen', name: 'Dapur', directive: 'a clean practical Malaysian home kitchen suited to a real product demonstration' },
@@ -31,8 +33,9 @@ export type PersonalizationSettings = {
 const oneOf = <T extends readonly string[]>(value: unknown, allowed: T, fallback: T[number]): T[number] =>
   typeof value === 'string' && allowed.includes(value as T[number]) ? value as T[number] : fallback;
 
-const uuidOrNull = (value: unknown): string | null =>
-  typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
+const uuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+const assetIdOrNull = (value: unknown, type: 'avatar' | 'background'): string | null =>
+  typeof value === 'string' && (uuid(value) || (type === 'avatar' ? findOfficialAvatar(value) : findOfficialBackground(value))) ? value : null;
 
 export function sanitizePersonalizationSettings(value: unknown): PersonalizationSettings {
   const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
@@ -40,8 +43,8 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
     ? input.builtInSceneId : null;
   return {
     styleId: typeof input.styleId === 'string' && /^[A-Z]{2}\d{2}$/.test(input.styleId) ? input.styleId : 'NX01',
-    avatarId: uuidOrNull(input.avatarId),
-    backgroundId: uuidOrNull(input.backgroundId),
+    avatarId: assetIdOrNull(input.avatarId, 'avatar'),
+    backgroundId: assetIdOrNull(input.backgroundId, 'background'),
     builtInSceneId: scene,
     niche: oneOf(input.niche, NICHE_OPTIONS, 'auto'),
     voicePersonality: oneOf(input.voicePersonality, VOICE_PERSONALITIES, 'auto'),
@@ -55,3 +58,4 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
 export function getBuiltInScene(id: string | null | undefined) {
   return BUILT_IN_SCENES.find((item) => item.id === id) || null;
 }
+
