@@ -2,21 +2,30 @@
  * AFFIMATIK by Pawarna — Creative V6 direct-provider prompt compiler
  * Translates Product Profile + Video Style + Scene Plan into Provider-Specific Payloads
  * 
- * The provider owns product interpretation, dialogue, scene planning and final media.
- * AffiMatik only compiles the canonical style masterprompt and forwards the image.
+ * AffiMatik compiles the canonical style masterprompt, selected V8 script mode,
+ * CTA and references. The provider renders speech, acting, scene and final media.
  */
 
 import { ProductProfile, ScenePlan, CompiledGenerationPrompt } from './types';
 import { VideoStyle } from '../styles/types';
-import { VoiceoverDirector } from './voiceover-director';
 import { VIDEO_STYLES_REGISTRY } from '../styles/registry';
 import { getBuiltInScene } from '../personalization/config';
+import {
+  buildSmartScript,
+  CtaMode,
+  quoteProviderScript,
+  resolveCtaPhrase,
+  ScriptMode,
+  validateCustomCta,
+  validateCustomerFact,
+  validateHumanScript,
+} from './script-control';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-creative-v6.0';
+export const GEMS_PROMPT_VERSION = 'affimatik-human-realism-v8.0';
 
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
   '[MALAYSIAN AFFILIATE VOICE DNA V6]',
-  'Create original spoken Bahasa Melayu Malaysia that sounds like a believable local affiliate creator, never formal corporate copy.',
+  'Use spoken Bahasa Melayu Malaysia that sounds like a believable local affiliate creator, never formal corporate copy.',
   'Use a short naturally uneven sentence rhythm, meaningful pauses, subtle vocal variation and one product-relevant hook that is distinct from the ending.',
   'Build one compact spoken turn: one distinct hook, one grounded product point, then one concise natural ending. Do not narrate for the full clip merely to fill time.',
   'Focus on one supported intended purpose or ordinary category use context and finish speech comfortably before the video ends.',
@@ -28,6 +37,19 @@ export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
   'Keep factual guardrails silent: do not speak legal-disclaimer phrases such as “berdasarkan apa yang kelihatan”. When detail is unavailable, use an ordinary useful category description or omit the claim.',
   'Never use first-person product experience or routines, including claims that the speaker uses, drinks, takes, buys or keeps the product at home.',
   'A natural low-pressure spoken CTA is optional; never force one when it would make the delivery feel scripted.',
+].join(' ');
+
+export const HUMAN_REALISM_MASTERPROMPT_V8 = [
+  '[HUMAN REALISM MASTERPROMPT V8]',
+  'Create ordinary Malaysian creator behaviour, not polished commercial acting. Keep breathing visible but subtle, eye gaze believable, blinks irregular and head or hand movement small and purposeful.',
+  'Creator review: alternate naturally between the lens and product, with one small head movement and a restrained hand gesture.',
+  'First impression: use one spontaneous micro-reaction such as a slight eyebrow lift or half-smile; never exaggerated surprise.',
+  'Question and answer: show a brief thinking expression before the answer, then return gaze naturally to the lens.',
+  'Hand demonstration: use a real grip, believable object weight, correct finger contact, stable label and physical contact shadows.',
+  'POV: use credible first-person reach and restrained handheld movement, never floating or impossible camera travel.',
+  'Lifestyle: perform one small context-relevant action while speaking instead of posing motionless.',
+  'Soft sell: relaxed local speaking tone, never a commercial announcer voice or over-rehearsed sales performance.',
+  'Use bright neutral realistic daylight with consistent exposure and white balance. Preserve natural skin texture, facial proportions, product identity and selected avatar identity.',
 ].join(' ');
 
 /**
@@ -46,15 +68,15 @@ export function getEngineDescription(engine: 'nexabot' | 'runninghub' | string):
 }
 
 export interface CompilerOptions {
-  callToAction?: 'spoken_button' | 'spoken_bio' | 'none';
+  callToAction?: CtaMode;
   isMuslimahModest?: boolean;
   customScript?: string;
+  customCta?: string;
+  scriptMode?: ScriptMode;
   creativeInstruction?: string;
   imageRole?: 'reference' | 'start_frame';
   variationIndex?: number;
   productionProfile?: 'ugc_creator' | 'studio_commercial';
-  /** Keep dialogue generation with the external provider (the production default). */
-  providerCreatesDialogue?: boolean;
   avatarName?: string;
   backgroundName?: string;
   builtInSceneId?: string;
@@ -196,12 +218,14 @@ export class DynamicPromptCompiler {
       errors.push(`Gaya 15 saat AffiMatik Motion (RunningHub ${style.id}) adalah visual pergerakan sepenuhnya dan tidak menerima sebarang skrip pertuturan.`);
     }
 
-    // Voiceover validation if custom script is provided for Voice 10s
-    if (style.engine === 'nexabot' && options?.customScript && options.customScript.trim().length > 0) {
-      const scriptValidation = VoiceoverDirector.validateScript(options.customScript, product, 'nexabot');
-      if (!scriptValidation.isValid) {
-        errors.push(...scriptValidation.errors);
+    if (style.engine === 'nexabot') {
+      const scriptMode = options?.scriptMode || 'smart';
+      if (scriptMode === 'custom') {
+        const scriptValidation = validateHumanScript(options?.customScript || '');
+        if (!scriptValidation.isValid) errors.push(...scriptValidation.errors);
       }
+      if (options?.callToAction === 'custom') errors.push(...validateCustomCta(options?.customCta || ''));
+      if (product.confirmedFeatures?.[0]) errors.push(...validateCustomerFact(product.confirmedFeatures[0]));
     }
 
     return {
@@ -233,19 +257,30 @@ export class DynamicPromptCompiler {
 
     const visualSummary = `Satu babak visual berterusan ${style.durationSeconds} saat. ${scenePlan.primaryAction}. Produk kekal pada skala 20-30% bingkai tanpa morphing atau hilang.`;
 
+    const scriptMode = options.scriptMode || 'smart';
+    const ctaMode = options.callToAction || 'none';
+    const selectedCta = resolveCtaPhrase(ctaMode, options.customCta || '');
+    const previewScript = style.engine === 'nexabot' && scriptMode === 'smart'
+      ? buildSmartScript(product, style, ctaMode, options.customCta)
+      : style.engine === 'nexabot' && scriptMode === 'custom'
+        ? `${(options.customScript || '').trim()}${selectedCta ? ` ${selectedCta}` : ''}`.trim()
+        : null;
+
     return {
       provider: style.engine,
       engineDisplayName,
       durationSeconds: style.durationSeconds,
       creditCost: style.engine === 'nexabot' ? 10 : 15,
-      spokenScript: null,
+      spokenScript: previewScript,
       visualSummary,
       sceneEnvironment: scenePlan.location,
       cameraProfile: 'Kamera telefon pintar 9:16 menegak, 1x perspektif tanpa sempadan telefon atau mockup bingkai.',
       modestyRules,
       productIdentityRules: `Mengekalkan identiti visual produk ${product.name} (bentuk botol/bungkusan, warna, logo dan label).`,
       audioDirective: style.engine === 'nexabot'
-        ? 'Provider mencipta dialog Bahasa Melayu Malaysia mengikut Voice DNA V6 dan personaliti gaya terpilih.'
+        ? scriptMode === 'provider_auto'
+          ? 'Provider mencipta dialog Bahasa Melayu Malaysia mengikut personaliti gaya terpilih.'
+          : 'Provider diminta menyampaikan skrip V8 terpilih secara natural; ketepatan sebenar perlu dinilai pada output audio.'
         : 'Tiada suara pertuturan (visual tulen, bunyi persekitaran / ASMR / audio bersesuaian).',
       promptVersion: GEMS_PROMPT_VERSION,
     };
@@ -291,6 +326,7 @@ export class DynamicPromptCompiler {
       `Natural 1x smartphone camera (iPhone 15 Pro natural optics), authentic neutral daylight 5500K (5000-5600K neutral white balance), single continuous 10-second or 15-second handheld take, subtle micro-shake, realistic human skin with natural pores and textures, lifelike eye gaze, natural gravity and believable physical object contact.`,
       `Begin immediately in the live physical scene. Treat the uploaded image solely as a product identity reference; never paste it in as a still introductory frame or automatically use it as the first video frame.`,
       `Strictly NO jump cuts, NO push-in zoom, NO camera spin, NO crash pan, NO first-frame flash, NO synthetic colour grading, NO excessive cinematic effects, NO plastic skin, NO AI-generated look.`,
+      HUMAN_REALISM_MASTERPROMPT_V8,
     ].join(' ');
 
     // 4. SHARIAH MODESTY LOCK V5
@@ -354,9 +390,24 @@ export class DynamicPromptCompiler {
     universalMasterPrompt: string,
     preflight: { isValid: boolean; errors: string[] }
   ): CompiledGenerationPrompt {
-    // Audio instruction is a provider directive; AffiMatik does not author or
-    // preview the dialogue in the automatic generation path.
-    const audioDirective = 'Provider-created natural Malaysian Malay dialogue within 15 seconds, following the selected V6 personality and grounded in the image plus optional user notes.';
+    const scriptMode = options.scriptMode || 'smart';
+    const ctaMode = options.callToAction || 'none';
+    const selectedCta = resolveCtaPhrase(ctaMode, options.customCta || '');
+    const controlledScript = scriptMode === 'smart'
+      ? buildSmartScript(product, style, ctaMode, options.customCta)
+      : scriptMode === 'custom'
+        ? `${(options.customScript || '').trim()}${selectedCta ? ` ${selectedCta}` : ''}`.trim()
+        : undefined;
+    if (controlledScript) {
+      const validation = validateHumanScript(controlledScript);
+      if (!validation.isValid) {
+        preflight.errors.push(...validation.errors);
+        preflight.isValid = false;
+      }
+    }
+    const audioDirective = controlledScript
+      ? `V8 ${scriptMode === 'smart' ? 'Smart Script' : 'Custom Script'} requested for natural Malaysian Malay delivery; provider fidelity remains subject to actual output verification.`
+      : 'Provider-created natural Malaysian Malay dialogue within 15 seconds, following the selected style personality and grounded in the image plus optional user notes.';
 
     // Authoritative Style Masterprompt V6
     const stylePromptFn = AUTHORITATIVE_STYLE_MASTERPROMPTS[style.id];
@@ -409,36 +460,45 @@ export class DynamicPromptCompiler {
       options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
     ].filter(Boolean).join(' ');
 
-    const providerDialogueDirective = [
-      MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
-      '[PROVIDER-CREATED DIALOGUE — AFFIMATIK V6 15s]',
-      'The external video-generation AI must independently inspect the uploaded product reference image and create the natural Malaysian Malay dialogue, scene interpretation and lip-sync. AffiMatik supplies no generated script.',
-      `Follow the unique ${style.id} opening, personality, human behaviour and ending above. Dialogue must discuss the product's intended purpose, a relevant buyer situation, and only features legible in the image or explicitly supplied by the user.`,
-      'If the image and optional user notes do not establish a fact, omit the claim entirely. Never invent a special formula, ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
-      'When technical detail is unavailable, use a safe useful ordinary category description tied to an everyday situation. Keep these factual checks internal and never turn them into spoken disclaimers.',
-      options.callToAction === 'none'
-        ? 'The customer chose no CTA. Do not add a spoken call to action.'
-        : options.callToAction === 'spoken_button'
-          ? 'End naturally with one brief low-pressure instruction to tap the purchase button, completed before second 11.'
-          : options.callToAction === 'spoken_bio'
-            ? 'End naturally with one brief low-pressure instruction to check the bio, completed before second 11.'
-            : 'Use one brief low-pressure CTA only if it fits this style naturally; complete all speech before second 11.',
-      '[FINAL DIALOGUE COMPLIANCE] Create one compact spoken turn, normally one or two short sentences, and finish completely before second 11. Do not target a mandatory word count or fill the full 15 seconds. Say the hook once, make one grounded product point once, then end once. After the ending, stop speaking, keep the mouth closed and leave the remaining video silent. Never repeat or semantically paraphrase a sentence, claim, phrase, CTA or outro.',
-      'Never say or imply “pilihan terbaik”, “wajib”, personal use, purchase, household routine, testimonial, dosage, when to consume, absorption, symptom relief, energy, focus, wellness or health results. For supplements or health products, only identify the visible product type and clearly readable label facts; never explain what those facts do to the body.',
-      'Never describe a product as wireless, rechargeable, battery-powered, portable or cable-free unless that exact fact is legible in the image or supplied by the user. Use Malaysian Malay only; forbidden Indonesian forms include kamu, coba, kesehatan, ianya and banget. Before rendering, silently remove every unsupported claim, superlative, personal-experience statement, repeated phrase and clipped ending. AffiMatik does not provide a script.',
+    const commonTruthfulness = [
+      'If the image and customer-confirmed facts do not establish a claim, omit it entirely. Never invent a special formula, ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
+      'Never say or imply “pilihan terbaik”, “wajib”, personal use, purchase, dosage, absorption, symptom relief, energy, focus, wellness or health results. For supplements or health products, only use the customer-confirmed fact and clearly readable label facts; never explain an unverified effect on the body.',
+      'Never describe a product as wireless, rechargeable, battery-powered, portable or cable-free unless that exact fact is explicitly customer-confirmed. Use Malaysian Malay only; forbidden Indonesian forms include kamu, coba, kesehatan, ianya and banget.',
+      'Never repeat or semantically paraphrase a hook, fact, sentence, CTA or ending.',
     ].join(' ');
+
+    const providerDialogueDirective = controlledScript
+      ? [
+          MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
+          `[V8 ${scriptMode === 'smart' ? 'SMART SCRIPT' : 'CUSTOM SCRIPT'} CONTROL]`,
+          `Requested spoken words: ${quoteProviderScript(controlledScript)}.`,
+          'Say the requested words once, in the same order, without adding claims, testimonials, a second CTA or improvised selling lines. Do not render quotation marks as speech.',
+          selectedCta ? `The customer selected this CTA and it is already included once in the requested words: ${quoteProviderScript(selectedCta)}.` : 'The customer chose no CTA. Do not add a spoken call to action.',
+          `Preserve the unique ${style.id} personality and physical behaviour while delivering the requested words with natural Malaysian intonation and accurate lip movement.`,
+          'Pace naturally across approximately 12.5 to 14 seconds when the script length supports it. Do not stretch syllables, repeat words or rush. If the supplied script is short, finish naturally and continue with meaningful silent product interaction; do not force speech to the final frame.',
+          commonTruthfulness,
+        ].join(' ')
+      : [
+          MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
+          '[PROVIDER AUTO DIALOGUE — AFFIMATIK V8 LEGACY MODE]',
+          'The external video-generation AI must inspect the uploaded product reference and independently create natural Malaysian Malay dialogue and lip-sync.',
+          `Follow the unique ${style.id} opening, personality, human behaviour and ending. Create one distinct hook, one grounded product point and one concise ending.`,
+          selectedCta ? `Finish with this exact CTA phrase once: ${quoteProviderScript(selectedCta)}.` : 'The customer chose no CTA. Do not add a spoken call to action.',
+          'Pace the dialogue for approximately 12.5 to 14 seconds when its natural length supports it. Do not fill time through repetition or dragged-out words, and do not force speech to end on the final frame.',
+          commonTruthfulness,
+        ].join(' ');
     const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;
 
     return {
       provider: 'nexabot',
       providerPrompt: fullPayload,
       visualPrompt,
-      spokenScript: undefined,
+      spokenScript: controlledScript,
       continuityAnchor: product.name,
       audioDirective,
       safetyRules: [
         'AffiMatik Voice (15s) native Malaysian Malay spoken audio',
-        'Creative V6 Masterprompt Lock enforced',
+        'Human Realism V8 Masterprompt enforced',
         'No Indonesia loanwords or slang',
         'Zero UI, no TikTok logo, no phone frame',
         'No unverified medical or cosmetic claims',

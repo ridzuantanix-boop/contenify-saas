@@ -82,6 +82,10 @@ export async function POST(req: NextRequest) {
       voicePersonality,
       storyboard,
       callToAction,
+      scriptMode,
+      customScript,
+      customCta,
+      productFact,
       creatorPresetId,
     } = body;
 
@@ -148,7 +152,8 @@ export async function POST(req: NextRequest) {
 
     const personalization = sanitizePersonalizationSettings({
       styleId: style.id, avatarId, backgroundId, builtInSceneId, niche, voicePersonality,
-      storyboard, callToAction, isMuslimahModest, creativeInstruction,
+      storyboard, callToAction, scriptMode, customScript, customCta, productFact,
+      isMuslimahModest, creativeInstruction,
     });
     if (avatarId && !personalization.avatarId) return NextResponse.json({ error: 'Avatar yang dipilih tidak sah.' }, { status: 400 });
     if (backgroundId && !personalization.backgroundId) return NextResponse.json({ error: 'Latar yang dipilih tidak sah.' }, { status: 400 });
@@ -233,12 +238,13 @@ export async function POST(req: NextRequest) {
     // internal product research or generated script is used here. Optional
     // user notes are forwarded as context only; the provider interprets the
     // actual product and creates dialogue/scene details.
-    const userFacts = Array.isArray(productFacts)
+    const legacyFacts = Array.isArray(productFacts)
       ? productFacts.filter((fact): fact is string => typeof fact === 'string' && fact.trim().length > 0).map((fact) => fact.trim())
       : [];
+    const userFacts = [personalization.productFact, ...legacyFacts].filter(Boolean).slice(0, 1);
     const productProfile: ProductProfile = {
       name: typeof productName === 'string' && productName.trim() ? productName.trim() : 'the uploaded product image',
-      category: typeof productCategory === 'string' && productCategory.trim() ? productCategory.trim() : 'the product shown in the reference image',
+      category: typeof productCategory === 'string' && productCategory.trim() ? productCategory.trim() : personalization.niche !== 'auto' ? personalization.niche : 'the product shown in the reference image',
       packagingFormat: 'general',
       spokenShortName: 'produk ini',
       coreFunction: 'the actual purpose supported by the uploaded image and optional user notes only',
@@ -279,14 +285,16 @@ export async function POST(req: NextRequest) {
     const compiled = DynamicPromptCompiler.compile(productProfile, style, scenePlan, {
       isMuslimahModest,
       creativeInstruction: resolvedCreativeInstruction,
-      callToAction: personalization.callToAction === 'auto' ? undefined : personalization.callToAction,
+      callToAction: personalization.callToAction,
+      scriptMode: personalization.scriptMode,
+      customScript: personalization.customScript,
+      customCta: personalization.customCta,
       avatarName: avatarReference?.name,
       backgroundName: backgroundReference?.name,
       builtInSceneId: personalization.builtInSceneId || undefined,
       niche: personalization.niche,
       voicePersonality: personalization.voicePersonality,
       storyboard: personalization.storyboard,
-      providerCreatesDialogue: true,
     });
 
     if (!compiled.preflightValid) {
@@ -333,6 +341,10 @@ export async function POST(req: NextRequest) {
         voicePersonality: personalization.voicePersonality,
         storyboard: personalization.storyboard,
         callToAction: personalization.callToAction,
+        scriptMode: personalization.scriptMode,
+        customScript: personalization.scriptMode === 'custom' ? personalization.customScript : null,
+        customCta: personalization.callToAction === 'custom' ? personalization.customCta : null,
+        productFact: personalization.productFact || null,
         creatorPresetId: verifiedCreatorPresetId,
       },
     });

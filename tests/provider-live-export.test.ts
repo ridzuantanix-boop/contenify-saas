@@ -39,13 +39,12 @@ describe('real-provider QA prompt export', () => {
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
-      expect(prompt).toContain('If the image and optional user notes do not establish a fact, omit the claim entirely');
+      expect(prompt).toContain('If the image and customer-confirmed facts do not establish a claim, omit it entirely');
       expect(prompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
-      expect(prompt).toContain('Keep these factual checks internal');
-      expect(prompt).toContain('before second 11');
-      expect(prompt).toContain('Do not target a mandatory word count');
+      expect(prompt).toContain('approximately 12.5 to 14 seconds');
+      expect(prompt).not.toContain('before second 11');
     }
-    expect(prompts.lampMotion).toContain('[PROVIDER-CREATED DIALOGUE');
+    expect(prompts.lampMotion).toContain('[V8 SMART SCRIPT CONTROL]');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {
       const directory = resolve(process.cwd(), 'output', 'provider-qa');
       mkdirSync(directory, { recursive: true });

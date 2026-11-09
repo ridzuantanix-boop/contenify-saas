@@ -21,16 +21,17 @@ describe('AFFIMATIK V6 — prompt engine and style registry', () => {
     expect(recommendations.every((item) => item.style.engine === 'nexabot')).toBe(true);
   });
 
-  it('compiles Malaysian direct-provider dialogue instructions without a local script', () => {
+  it('compiles the default Malaysian Smart Script and V8 realism controls', () => {
     const style = getVideoStyle('NX01')!;
     const product = AICreativeDirector.extractProductProfile({ productName: 'Sambal Hijau Padu', productCategory: 'Makanan' });
     const compiled = DynamicPromptCompiler.compile(product, style, AICreativeDirector.createScenePlan(product, style));
     expect(compiled.preflightValid).toBe(true);
     expect(compiled.provider).toBe('nexabot');
-    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.spokenScript).toContain('Sambal Hijau Padu');
     expect(compiled.providerPrompt).toContain('Bahasa Melayu Malaysia');
     expect(compiled.providerPrompt).toContain('No Indonesian forms');
-    expect(compiled.providerPrompt).toContain('AffiMatik supplies no generated script');
+    expect(compiled.providerPrompt).toContain('[HUMAN REALISM MASTERPROMPT V8]');
+    expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
   });
 
   it('filters voice, off-camera and category styles correctly', () => {

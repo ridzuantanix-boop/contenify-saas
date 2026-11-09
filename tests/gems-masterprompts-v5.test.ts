@@ -27,18 +27,18 @@ describe('AFFIMATIK CREATIVE V6 — canonical direct-provider suite', () => {
     expect(new Set(fingerprints).size).toBe(20);
   });
 
-  it('compiles all styles without an internal or interpolated script', () => {
+  it('compiles all styles with distinct curated V8 Smart Script patterns', () => {
     const product = AICreativeDirector.extractProductProfile({ productName: 'Lampu Meja Nova', productCategory: 'Lampu' });
     const prompts = VIDEO_STYLES_REGISTRY.map((style) => {
       const compiled = DynamicPromptCompiler.compile(product, style, AICreativeDirector.createScenePlan(product, style));
       expect(compiled.preflightValid, style.id).toBe(true);
       expect(compiled.provider, style.id).toBe('nexabot');
-      expect(compiled.spokenScript, style.id).toBeUndefined();
+      expect(compiled.spokenScript, style.id).toBeTruthy();
       expect(compiled.promptVersion).toBe(GEMS_PROMPT_VERSION);
       expect(compiled.providerPrompt).toContain(`[STYLE ${style.id} —`);
       expect(compiled.providerPrompt).toContain('[MALAYSIAN AFFILIATE VOICE DNA V6]');
-      expect(compiled.providerPrompt).toContain('[PROVIDER-CREATED DIALOGUE — AFFIMATIK V6 15s]');
-      expect(compiled.providerPrompt).not.toMatch(/approved spoken script|script to speak|\$\{p\.spokenScript\}|\{script_body\}|Script: ""/i);
+      expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
+      expect(compiled.providerPrompt).not.toMatch(/\$\{p\.spokenScript\}|\{script_body\}|Script: ""/i);
       return compiled.providerPrompt;
     });
     expect(new Set(prompts).size).toBe(20);
@@ -53,17 +53,17 @@ describe('AFFIMATIK CREATIVE V6 — canonical direct-provider suite', () => {
       expect(compiled.providerPrompt).toContain('[ZERO UI & WATERMARK LOCK]');
       expect(compiled.providerPrompt).toContain('[REALISTIC UGC PROFILE]');
       expect(compiled.providerPrompt).toContain('[SHARIAH MODESTY LOCK');
-      expect(compiled.providerPrompt).toContain('If the image and optional user notes do not establish a fact, omit the claim entirely');
+      expect(compiled.providerPrompt).toContain('If the image and customer-confirmed facts do not establish a claim, omit it entirely');
       expect(compiled.providerPrompt).toContain('never a mandatory first frame');
     }
   });
 
-  it('excludes optional customer text from the spoken payload', () => {
+  it('ignores custom text unless Custom Script mode is explicitly selected', () => {
     const style = getVideoStyle('NX01')!;
     const product = AICreativeDirector.extractProductProfile({ productName: 'Produk Ujian', productCategory: 'Umum' });
     const supplied = 'Ayat ini tidak boleh menjadi skrip pertuturan backend.';
     const compiled = DynamicPromptCompiler.compile(product, style, AICreativeDirector.createScenePlan(product, style), { customScript: supplied });
-    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.spokenScript).toBeTruthy();
     expect(compiled.providerPrompt).not.toContain(supplied);
   });
 });

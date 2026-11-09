@@ -661,17 +661,18 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
 
       // Custom script with Indonesian word
       const compiledBad = DynamicPromptCompiler.compile(product, style, scenePlan, {
+        scriptMode: 'custom',
         customScript: 'Kalian wajib cobain serum ini!',
       });
       expect(compiledBad.preflightValid).toBe(false);
-      expect(compiledBad.validationErrors.some((e) => e.includes('slanga Indonesia'))).toBe(true);
+      expect(compiledBad.validationErrors.some((e) => e.includes('Bahasa Melayu Malaysia'))).toBe(true);
 
       // Compliant script
       const compiledGood = DynamicPromptCompiler.compile(product, style, scenePlan, {
-        callToAction: 'spoken_button',
+        callToAction: 'click_button',
       });
       expect(compiledGood.preflightValid).toBe(true);
-      expect(compiledGood.providerPrompt).toContain('external video-generation AI must independently inspect');
+      expect(compiledGood.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
     });
   });
 

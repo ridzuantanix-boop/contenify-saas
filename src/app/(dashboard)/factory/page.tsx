@@ -60,7 +60,7 @@ interface BackgroundOption { id: string; name: string; imageUrl: string; thumbna
 interface BuiltInSceneOption { id: string; name: string; directive: string }
 interface CreatorPreset {
   id: string; name: string; isDefault: boolean;
-  settings: { styleId: string; avatarId: string | null; backgroundId: string | null; builtInSceneId: string | null; niche: string; voicePersonality: string; storyboard: string; callToAction: string; isMuslimahModest: boolean; creativeInstruction: string };
+  settings: { styleId: string; avatarId: string | null; backgroundId: string | null; builtInSceneId: string | null; niche: string; voicePersonality: string; storyboard: string; callToAction: string; scriptMode: string; customScript: string; customCta: string; productFact: string; isMuslimahModest: boolean; creativeInstruction: string };
 }
 
 function VideoFactoryContent() {
@@ -90,7 +90,11 @@ function VideoFactoryContent() {
   const [niche, setNiche] = useState('auto');
   const [voicePersonality, setVoicePersonality] = useState('auto');
   const [storyboard, setStoryboard] = useState('auto');
-  const [callToAction, setCallToAction] = useState('auto');
+  const [callToAction, setCallToAction] = useState('none');
+  const [scriptMode, setScriptMode] = useState('smart');
+  const [customScript, setCustomScript] = useState('');
+  const [customCta, setCustomCta] = useState('');
+  const [productFact, setProductFact] = useState('');
   const [avatars, setAvatars] = useState<AvatarOption[]>([]);
   const [officialAvatars, setOfficialAvatars] = useState<AvatarOption[]>([]);
   const [backgrounds, setBackgrounds] = useState<BackgroundOption[]>([]);
@@ -137,7 +141,9 @@ function VideoFactoryContent() {
     setAvatarId(settings.avatarId || ''); setBackgroundId(settings.backgroundId || '');
     setBuiltInSceneId(settings.builtInSceneId || ''); setNiche(settings.niche || 'auto');
     setVoicePersonality(settings.voicePersonality || 'auto'); setStoryboard(settings.storyboard || 'auto');
-    setCallToAction(settings.callToAction || 'auto'); setIsMuslimahModest(settings.isMuslimahModest !== false);
+    setCallToAction(settings.callToAction || 'none'); setScriptMode(settings.scriptMode || 'smart');
+    setCustomScript(settings.customScript || ''); setCustomCta(settings.customCta || ''); setProductFact(settings.productFact || '');
+    setIsMuslimahModest(settings.isMuslimahModest !== false);
     setCreativeInstruction(settings.creativeInstruction || ''); setMode('advanced');
     setSubmitSuccess(`Preset “${preset.name}” digunakan. Pilih produk dan jana bila sedia.`);
   }
@@ -145,7 +151,8 @@ function VideoFactoryContent() {
   const currentPersonalizationSettings = () => ({
     styleId: selectedStyleId, avatarId: avatarId || null, backgroundId: backgroundId || null,
     builtInSceneId: backgroundId ? null : builtInSceneId || null, niche, voicePersonality,
-    storyboard, callToAction, isMuslimahModest, creativeInstruction: creativeInstruction.trim(),
+    storyboard, callToAction, scriptMode, customScript: customScript.trim(), customCta: customCta.trim(),
+    productFact: productFact.trim(), isMuslimahModest, creativeInstruction: creativeInstruction.trim(),
   });
 
   const savePreset = async () => {
@@ -391,6 +398,22 @@ function VideoFactoryContent() {
       return;
     }
 
+    if (scriptMode === 'custom' && !customScript.trim()) {
+      setSubmitError('Masukkan dialog untuk mod Custom Script.');
+      openCustomize();
+      return;
+    }
+    if (scriptMode === 'custom' && customScript.trim().split(/\s+/).length > 48) {
+      setSubmitError('Custom Script terlalu panjang. Gunakan maksimum 48 perkataan untuk video 15 saat.');
+      openCustomize();
+      return;
+    }
+    if (callToAction === 'custom' && !customCta.trim()) {
+      setSubmitError('Masukkan ayat Custom CTA.');
+      openCustomize();
+      return;
+    }
+
     const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
     if (userBalance !== null && userBalance < requiredCredits) {
       if (userBalance < 10) {
@@ -434,6 +457,10 @@ function VideoFactoryContent() {
         voicePersonality,
         storyboard,
         callToAction,
+        scriptMode,
+        customScript: scriptMode === 'custom' ? customScript.trim() : undefined,
+        customCta: callToAction === 'custom' ? customCta.trim() : undefined,
+        productFact: productFact.trim() || undefined,
         creatorPresetId: selectedPresetId || undefined,
       };
 
@@ -773,7 +800,7 @@ function VideoFactoryContent() {
                 <label className="text-[11px] font-bold text-slate-700">Niche / Kategori<select value={niche} onChange={(e) => setNiche(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto ikut imej</option><option value="wellness">Supplement & Wellness</option><option value="beauty">Beauty & Kosmetik</option><option value="kitchen">Produk Dapur</option><option value="automotive">Aksesori Automotif</option><option value="gadgets">Gajet</option><option value="home">Home Living</option><option value="fashion">Fesyen</option><option value="gardening">Gardening</option></select></label>
                 <label className="text-[11px] font-bold text-slate-700">Personaliti Suara<select value={voicePersonality} onChange={(e) => setVoicePersonality(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Ikut gaya dipilih</option><option value="friendly">Mesra macam kawan</option><option value="confident">Yakin</option><option value="calm">Tenang</option><option value="energetic">Bertenaga</option><option value="helpful">Membantu</option><option value="premium">Premium & kemas</option></select></label>
                 <label className="text-[11px] font-bold text-slate-700">Storyboard<select value={storyboard} onChange={(e) => setStoryboard(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto ikut gaya</option><option value="conversation">Sembang presenter</option><option value="problem_demo">Masalah → demo</option><option value="step_by_step">Langkah demi langkah</option><option value="before_after_context">Konteks sebelum/selepas</option><option value="q_and_a">Soalan & jawapan</option><option value="product_showcase">Showcase produk</option></select></label>
-                <label className="text-[11px] font-bold text-slate-700">CTA<select value={callToAction} onChange={(e) => setCallToAction(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto, jika natural</option><option value="spoken_button">Sebut klik butang</option><option value="spoken_bio">Sebut semak bio</option><option value="none">Tanpa CTA</option></select></label>
+                <label className="text-[11px] font-bold text-slate-700">CTA<select value={callToAction} onChange={(e) => setCallToAction(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="tiktok_shop">TikTok Shop — Beg Kuning</option><option value="click_button">Klik Butang Di Bawah</option><option value="tap_button">Tekan Butang Di Bawah</option><option value="check_bio">Semak Bio</option><option value="dm_info">DM Untuk Info</option><option value="none">Tanpa CTA</option><option value="custom">Custom CTA</option></select></label>
                 <div className="md:col-span-2">
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">Kawalan Kesopanan Shariah</label>
                   <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-2">
@@ -787,6 +814,24 @@ function VideoFactoryContent() {
                   </label>
                 </div>
               </div>
+
+              <section className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4" aria-labelledby="script-control-title">
+                <div>
+                  <div id="script-control-title" className="text-[11px] font-bold text-slate-800">Script Control V8</div>
+                  <p className="mt-1 text-[10px] leading-relaxed text-slate-600">Nexabot akan menerima arahan skrip ini. Ketepatan setiap perkataan dan lip-sync bergantung pada hasil provider dan tidak dijamin sempurna.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {[
+                    ['smart', 'Smart Script', 'Corak manusia ikut gaya + fakta disahkan'],
+                    ['custom', 'Custom Script', 'Ayat anda sendiri'],
+                    ['provider_auto', 'Provider Auto', 'Dialog automatik legacy'],
+                  ].map(([value, label, help]) => <button key={value} type="button" onClick={() => setScriptMode(value)} className={`rounded-xl border p-3 text-left ${scriptMode === value ? 'border-primary bg-white text-primary ring-2 ring-primary/10' : 'border-slate-200 bg-white text-slate-700'}`}><span className="block text-[11px] font-bold">{label}</span><span className="mt-1 block text-[10px] font-normal text-slate-500">{help}</span></button>)}
+                </div>
+                {scriptMode === 'smart' && <label className="block text-[11px] font-bold text-slate-700">Satu Fakta Produk Yang Disahkan <span className="font-normal text-slate-400">(Pilihan)</span><input type="text" maxLength={180} value={productFact} onChange={(event) => setProductFact(event.target.value)} placeholder="Contoh: mempunyai tiga tahap kecerahan (hanya jika benar)" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal" /><span className="mt-1 block text-[10px] font-normal text-slate-500">Masukkan hanya fakta yang anda sudah sahkan. Jika kosong, Smart Script menggunakan ayat neutral tanpa meneka manfaat.</span></label>}
+                {scriptMode === 'custom' && <label className="block text-[11px] font-bold text-slate-700">Skrip Tepat Anda<textarea maxLength={600} rows={4} value={customScript} onChange={(event) => setCustomScript(event.target.value)} placeholder="Tulis atau tampal dialog Bahasa Melayu Malaysia di sini..." className="mt-1 w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal" /><span className="mt-1 block text-[10px] font-normal text-slate-500">Maksimum 600 aksara / 48 perkataan. Provider mungkin sesekali menyimpang daripada ayat tepat.</span></label>}
+                {scriptMode === 'provider_auto' && <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] leading-relaxed text-slate-600">Provider mencipta dialog sendiri berdasarkan imej, gaya dan fakta yang anda beri. Mod ini mengekalkan aliran V7.1 sebagai pilihan legacy.</div>}
+                {callToAction === 'custom' && <label className="block text-[11px] font-bold text-slate-700">Ayat Custom CTA<input type="text" maxLength={80} value={customCta} onChange={(event) => setCustomCta(event.target.value)} placeholder="Contoh: DM saya kalau nak info lanjut." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal" /><span className="mt-1 block text-[10px] font-normal text-slate-500">Maksimum 80 aksara. Ayat dihantar seperti ditaip, tertakluk pada semakan keselamatan.</span></label>}
+              </section>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">

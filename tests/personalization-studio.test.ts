@@ -46,7 +46,7 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(compiled.providerPrompt).toContain('not a mandatory first video frame');
     expect(compiled.providerPrompt).toContain('Customer-selected storyboard: step_by_step');
     expect(compiled.providerPrompt).toContain('Do not add a spoken call to action');
-    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.spokenScript).toBeTruthy();
   });
 
   it('orders and caps Nexabot media exactly as product, avatar, background', () => {

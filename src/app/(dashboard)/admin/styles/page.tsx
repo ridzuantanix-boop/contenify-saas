@@ -55,7 +55,6 @@ export default function StyleTestingLabPage() {
   const scenePlan = AICreativeDirector.createScenePlan(profile, selectedStyle, { modestyLock: isMuslimah });
   const compiled = DynamicPromptCompiler.compile(profile, selectedStyle, scenePlan, {
     isMuslimahModest: isMuslimah,
-    providerCreatesDialogue: true,
   });
 
   return (
@@ -233,7 +232,7 @@ export default function StyleTestingLabPage() {
             </div>
 
             <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
-              <strong>Dialog:</strong> Dicipta terus oleh provider video daripada imej rujukan; AffiMatik tidak menjana atau mempratonton skrip.
+              <strong>Dialog:</strong> V8 menyokong Smart Script, Custom Script dan Provider Auto. Provider merender pertuturan dan mungkin sesekali menyimpang daripada perkataan tepat.
             </div>
           </div>
         </div>

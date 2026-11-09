@@ -3,7 +3,7 @@ import { AICreativeDirector } from '../src/lib/engine/creative-director';
 import { DynamicPromptCompiler } from '../src/lib/engine/compiler';
 import { getVideoStyle } from '../src/lib/styles/registry';
 
-describe('AFFIMATIK V6 — creative quality regression', () => {
+describe('AFFIMATIK V8 — creative quality regression', () => {
   const products = [
     ['Hydra Face Serum', 'Skincare', 'NX02'],
     ['Sambal Garing Bonda', 'Makanan', 'NX13'],
@@ -17,8 +17,8 @@ describe('AFFIMATIK V6 — creative quality regression', () => {
       const profile = AICreativeDirector.extractProductProfile({ productName: name, productCategory: category });
       const compiled = DynamicPromptCompiler.compile(profile, style, AICreativeDirector.createScenePlan(profile, style));
       expect(compiled.provider).toBe('nexabot');
-      expect(compiled.spokenScript).toBeUndefined();
-      expect(compiled.providerPrompt).toContain('PROVIDER-CREATED DIALOGUE');
+      expect(compiled.spokenScript).toBeTruthy();
+      expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
       expect(compiled.visualPrompt).toContain('9:16 aspect ratio');
       expect(compiled.visualPrompt).toContain('5500K');
       expect(compiled.visualPrompt).toContain('NO phone UI overlays');
@@ -26,18 +26,18 @@ describe('AFFIMATIK V6 — creative quality regression', () => {
     }
   });
 
-  it('previews provider-owned dialogue without deducting or exposing a script', () => {
+  it('keeps the non-billing prompt summary available', () => {
     const style = getVideoStyle('NX16')!;
     const profile = AICreativeDirector.extractProductProfile({ productName: 'Lampu Nova', productCategory: 'Lampu' });
     const preview = DynamicPromptCompiler.previewPrompt(profile, style, AICreativeDirector.createScenePlan(profile, style));
     expect(preview.provider).toBe('nexabot');
     expect(preview.durationSeconds).toBe(15);
     expect(preview.creditCost).toBe(10);
-    expect(preview.spokenScript).toBeNull();
-    expect(preview.audioDirective).toContain('Provider mencipta dialog');
+    expect(preview.spokenScript).toContain('Lampu Nova');
+    expect(preview.audioDirective).toContain('skrip V8');
   });
 
-  it('never reintroduces internal script generation or customer script injection', () => {
+  it('does not treat a legacy customScript field as Custom Script without explicit mode', () => {
     expect('resolveSpokenScript' in DynamicPromptCompiler).toBe(false);
     const style = getVideoStyle('NX05')!;
     const profile = AICreativeDirector.extractProductProfile({ productName: 'Produk Kesihatan', productCategory: 'Kesihatan' });

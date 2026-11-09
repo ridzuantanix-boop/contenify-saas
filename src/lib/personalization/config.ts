@@ -1,4 +1,5 @@
 import { findOfficialAvatar, findOfficialBackground } from './official-assets';
+import { CTA_MODES, SCRIPT_MODES, CtaMode, ScriptMode } from '../engine/script-control';
 
 export const BUILT_IN_SCENES = [
   { id: 'scene:home', name: 'Rumah', directive: 'an ordinary bright Malaysian home with lived-in details' },
@@ -15,7 +16,7 @@ export const BUILT_IN_SCENES = [
 export const NICHE_OPTIONS = ['auto', 'wellness', 'beauty', 'kitchen', 'automotive', 'gadgets', 'home', 'fashion', 'gardening'] as const;
 export const VOICE_PERSONALITIES = ['auto', 'friendly', 'confident', 'calm', 'energetic', 'helpful', 'premium'] as const;
 export const STORYBOARD_OPTIONS = ['auto', 'conversation', 'problem_demo', 'step_by_step', 'before_after_context', 'q_and_a', 'product_showcase'] as const;
-export const CTA_OPTIONS = ['auto', 'spoken_button', 'spoken_bio', 'none'] as const;
+export const CTA_OPTIONS = CTA_MODES;
 
 export type PersonalizationSettings = {
   styleId: string;
@@ -25,7 +26,11 @@ export type PersonalizationSettings = {
   niche: typeof NICHE_OPTIONS[number];
   voicePersonality: typeof VOICE_PERSONALITIES[number];
   storyboard: typeof STORYBOARD_OPTIONS[number];
-  callToAction: typeof CTA_OPTIONS[number];
+  callToAction: CtaMode;
+  scriptMode: ScriptMode;
+  customScript: string;
+  customCta: string;
+  productFact: string;
   isMuslimahModest: boolean;
   creativeInstruction: string;
 };
@@ -41,6 +46,9 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
   const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   const scene = typeof input.builtInSceneId === 'string' && BUILT_IN_SCENES.some((item) => item.id === input.builtInSceneId)
     ? input.builtInSceneId : null;
+  const legacyCta = input.callToAction === 'spoken_button' ? 'click_button'
+    : input.callToAction === 'spoken_bio' ? 'check_bio'
+      : input.callToAction === 'auto' ? 'none' : input.callToAction;
   return {
     styleId: typeof input.styleId === 'string' && /^[A-Z]{2}\d{2}$/.test(input.styleId) ? input.styleId : 'NX01',
     avatarId: assetIdOrNull(input.avatarId, 'avatar'),
@@ -49,7 +57,11 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
     niche: oneOf(input.niche, NICHE_OPTIONS, 'auto'),
     voicePersonality: oneOf(input.voicePersonality, VOICE_PERSONALITIES, 'auto'),
     storyboard: oneOf(input.storyboard, STORYBOARD_OPTIONS, 'auto'),
-    callToAction: oneOf(input.callToAction, CTA_OPTIONS, 'auto'),
+    callToAction: oneOf(legacyCta, CTA_OPTIONS, 'none'),
+    scriptMode: oneOf(input.scriptMode, SCRIPT_MODES, 'smart'),
+    customScript: typeof input.customScript === 'string' ? input.customScript.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 600) : '',
+    customCta: typeof input.customCta === 'string' ? input.customCta.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 80) : '',
+    productFact: typeof input.productFact === 'string' ? input.productFact.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 180) : '',
     isMuslimahModest: input.isMuslimahModest !== false,
     creativeInstruction: typeof input.creativeInstruction === 'string' ? input.creativeInstruction.trim().slice(0, 1000) : '',
   };
