@@ -91,7 +91,9 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(factory).toContain('Simpan sebagai Preset');
     expect(factory).toContain('Jana Video Sekarang');
     expect(factory).toContain('Status Personalisasi Provider');
+    expect(factory).toContain('produk sahaja, latar imej');
+    expect(factory).toContain('Beta:');
     expect(factory).toContain('Produk + Avatar + Latar');
-    expect(factory).toContain('tidak akan digugurkan secara senyap');
+    expect(factory).toContain('tiada rujukan dipadam secara senyap');
   });
 });
