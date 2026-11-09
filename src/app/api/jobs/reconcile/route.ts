@@ -3,6 +3,7 @@ import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { ProviderRouter } from '@/lib/providers/router';
+import { customerFailureMessage } from '@/lib/jobs/customer-failure';
 
 
 const router = new ProviderRouter();
@@ -37,32 +38,33 @@ export async function POST(req: NextRequest) {
     };
 
     const now = Date.now();
-    const EXPIRY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes expiration threshold
+    const ORPHAN_TIMEOUT_MS = 30 * 60 * 1000;
+    const PROVIDER_HARD_TIMEOUT_MS = 45 * 60 * 1000;
 
     for (const job of pendingJobs) {
       const createdAtMs = new Date(job.createdAt).getTime();
-      const isExpired = now - createdAtMs > EXPIRY_TIMEOUT_MS;
+      const ageMs = now - createdAtMs;
+      const isOrphanExpired = ageMs > ORPHAN_TIMEOUT_MS;
+      const isProviderExpired = ageMs > PROVIDER_HARD_TIMEOUT_MS;
 
       if (!job.providerTaskId) {
-        if (isExpired) {
+        if (isOrphanExpired) {
           // Release reservation for orphaned jobs
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_timeout_${job.id}`);
           await DurableStore.updateJobStatus(job.id, {
             status: 'FAILED',
-            errorMessage: 'Masa menunggu penjanaan tamat (Tiada respons pembekal).',
+            errorMessage: customerFailureMessage('provider timeout without task id'),
           });
           results.released++;
         }
         continue;
       }
 
-      let providerCompleted = false;
       try {
         const adapter = router.resolveProvider(job.durationSeconds as 10 | 15, job.provider, true);
         const statusRes = await adapter.getStatus(job.providerTaskId);
 
         if (statusRes.normalizedStatus === 'COMPLETED') {
-          providerCompleted = true;
           const outputs = await adapter.getOutputs(job.providerTaskId);
           if (outputs?.videoUrl) {
             if (await persistCompletedVideo(job, outputs.videoUrl, statusRes.rawStatus)) {
@@ -74,19 +76,28 @@ export async function POST(req: NextRequest) {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_recon_${job.id}`);
           await DurableStore.updateJobStatus(job.id, {
             status: 'FAILED',
-            errorMessage: statusRes.rawStatus || 'Tugasan gagal di pembekal AI.',
-            rawStatus: statusRes.rawStatus,
+            errorMessage: customerFailureMessage(statusRes.errorMessage || statusRes.rawStatus),
+            rawStatus: `${statusRes.rawStatus}${statusRes.errorMessage ? `: ${statusRes.errorMessage}` : ''}`.slice(0, 1000),
           });
           results.released++;
         } else if (statusRes.normalizedStatus === 'RUNNING' || statusRes.normalizedStatus === 'PENDING') {
-          // Provider actively generating or queued: NEVER prematurely release credits or mark failed
-          results.stillProcessing++;
-        } else if (isExpired) {
+          if (isProviderExpired) {
+            await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_hard_timeout_${job.id}`);
+            await DurableStore.updateJobStatus(job.id, {
+              status: 'FAILED',
+              errorMessage: customerFailureMessage('provider remained pending beyond hard timeout'),
+              rawStatus: statusRes.rawStatus,
+            });
+            results.released++;
+          } else {
+            results.stillProcessing++;
+          }
+        } else if (isProviderExpired) {
           // Provider status terminal or unrecognized after expiry
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_timeout_${job.id}`);
           await DurableStore.updateJobStatus(job.id, {
             status: 'FAILED',
-            errorMessage: statusRes.rawStatus || 'Masa menunggu penjanaan tamat tempoh.',
+            errorMessage: customerFailureMessage(statusRes.rawStatus || 'provider timeout'),
             rawStatus: statusRes.rawStatus,
           });
           results.released++;
@@ -94,11 +105,11 @@ export async function POST(req: NextRequest) {
           results.stillProcessing++;
         }
       } catch (pollErr: unknown) {
-        // If provider explicitly throws 404/not-found after timeout, release credits
+        // Keep transient polling errors credit-safe, but never hold a reservation forever.
         const errMsg = pollErr instanceof Error ? pollErr.message : String(pollErr);
-        if (isExpired && (providerCompleted || errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('tidak ditemui'))) {
+        if (isProviderExpired) {
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_err_${job.id}`);
-          await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: 'Tugasan tidak ditemui di pembekal selepas tamat tempoh.' });
+          await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: customerFailureMessage(errMsg) });
           results.released++;
         } else {
           // Transient network error while polling provider: keep processing

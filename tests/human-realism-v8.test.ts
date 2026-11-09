@@ -29,13 +29,20 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
     const neutralScripts = VIDEO_STYLES_REGISTRY.map((style) => buildSmartScript(product(), style, 'none'));
     expect(new Set(neutralScripts).size).toBe(20);
     expect(neutralScripts.join(' ')).not.toMatch(/wireless|rechargeable|menyembuhkan|berkesan/i);
-    expect(neutralScripts.every((script) => script.split(/\s+/).length >= 22 && script.split(/\s+/).length <= 48)).toBe(true);
+    expect(neutralScripts.every((script) => script.split(/\s+/).length <= 48)).toBe(true);
+    expect(neutralScripts.join(' ')).not.toMatch(/fakta yang disahkan|maklumat yang disahkan|nilai kesesuaiannya|perkara utama untuk dipertimbangkan|rujuk maklumat yang sah/i);
   });
 
   it('only interpolates a customer-confirmed fact into Smart Script', () => {
     const style = getVideoStyle('NX02')!;
     expect(buildSmartScript(product(), style, 'none')).not.toContain('tiga tahap kecerahan');
     expect(buildSmartScript(product('mempunyai tiga tahap kecerahan'), style, 'none')).toContain('mempunyai tiga tahap kecerahan');
+  });
+
+  it('does not append formal filler merely to reach a word target', () => {
+    const script = buildSmartScript(product(), getVideoStyle('NX17')!, 'none');
+    expect(script.split(/\s+/).length).toBeLessThan(22);
+    expect(script).toBe(CURATED_STYLE_SCRIPT_PATTERNS.NX17.neutral.replace('{product}', 'Lampu Nova'));
   });
 
   it('supports all approved CTA phrases and exact bounded custom CTA', () => {
@@ -57,8 +64,9 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
     });
     expect(compiled.preflightValid).toBe(true);
     expect(compiled.spokenScript).toBe(`${customScript} ${customCta}`);
-    expect(compiled.providerPrompt.match(/DM untuk info lanjut\./g)).toHaveLength(2); // requested words + explicit CTA identity
+    expect(compiled.providerPrompt.match(/DM untuk info lanjut\./g)).toHaveLength(1);
     expect(compiled.providerPrompt).toContain('without adding claims, testimonials, a second CTA');
+    expect(compiled.providerPrompt).toContain('Speak that CTA exactly once');
   });
 
   it('keeps Provider Auto optional and removes the forced second-11 ending', () => {

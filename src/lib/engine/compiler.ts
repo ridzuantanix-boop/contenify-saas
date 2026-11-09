@@ -473,7 +473,7 @@ export class DynamicPromptCompiler {
           `[V8 ${scriptMode === 'smart' ? 'SMART SCRIPT' : 'CUSTOM SCRIPT'} CONTROL]`,
           `Requested spoken words: ${quoteProviderScript(controlledScript)}.`,
           'Say the requested words once, in the same order, without adding claims, testimonials, a second CTA or improvised selling lines. Do not render quotation marks as speech.',
-          selectedCta ? `The customer selected this CTA and it is already included once in the requested words: ${quoteProviderScript(selectedCta)}.` : 'The customer chose no CTA. Do not add a spoken call to action.',
+          selectedCta ? 'The requested words already contain the customer-selected CTA. Speak that CTA exactly once; do not add, paraphrase or repeat any call to action.' : 'The customer chose no CTA. Do not add a spoken call to action.',
           `Preserve the unique ${style.id} personality and physical behaviour while delivering the requested words with natural Malaysian intonation and accurate lip movement.`,
           'Pace naturally across approximately 12.5 to 14 seconds when the script length supports it. Do not stretch syllables, repeat words or rush. If the supplied script is short, finish naturally and continue with meaningful silent product interaction; do not force speech to the final frame.',
           commonTruthfulness,

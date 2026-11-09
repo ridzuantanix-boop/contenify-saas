@@ -11,6 +11,7 @@ import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-as
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personalization/config';
 import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
+import { customerFailureMessage, describeCustomerFailure } from '@/lib/jobs/customer-failure';
 
 
 const router = new ProviderRouter();
@@ -398,11 +399,20 @@ export async function POST(req: NextRequest) {
     } catch (submitErr: unknown) {
       // Safe Rollback: release reserved credits immediately if provider dispatch fails
       await DurableStore.releaseCredits(workspaceId, jobId, `rel_${idempotencyKey}`);
+      const technicalDetail = submitErr instanceof Error ? submitErr.message : String(submitErr);
+      const failure = describeCustomerFailure(submitErr);
       await DurableStore.updateJobStatus(jobId, {
         status: 'FAILED',
-        errorMessage: submitErr instanceof Error ? submitErr.message : 'Kegagalan komunikasi pembekal AI.',
+        errorMessage: customerFailureMessage(submitErr),
+        rawStatus: technicalDetail.slice(0, 1000),
       });
-      throw submitErr;
+      console.error(`[AffiMatik provider dispatch] job=${jobId} provider=${providerAdapter.name} category=${failure.category}: ${technicalDetail.slice(0, 1000)}`);
+      return NextResponse.json({
+        error: `${failure.headline}. ${failure.message} ${failure.creditNotice} ${failure.retryGuidance}`,
+        failure,
+        creditRestored: true,
+        jobId,
+      }, { status: 503 });
     }
 
     // 11. Customer-Safe Response
@@ -477,7 +487,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'COMPLETED', output: { videoUrl: `/api/videos/${job.id}/stream` } });
     }
     if (job.status === 'QA_PENDING' || job.status === 'REJECTED' || job.status === 'FAILED') {
-      return NextResponse.json({ jobId: job.id, provider: job.provider, status: job.status, error: job.errorMessage || undefined });
+      const failure = job.status === 'FAILED' ? describeCustomerFailure(job.errorMessage) : undefined;
+      return NextResponse.json({
+        jobId: job.id,
+        provider: job.provider,
+        status: job.status,
+        error: job.errorMessage || undefined,
+        failure,
+        creditRestored: job.status === 'FAILED',
+      });
     }
 
     try {
@@ -512,11 +530,22 @@ export async function GET(req: NextRequest) {
           }
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
+        const failure = describeCustomerFailure(statusRes.errorMessage || statusRes.rawStatus);
         await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_${job.id}`);
         await DurableStore.updateJobStatus(job.id, {
           status: 'FAILED',
-          errorMessage: statusRes.rawStatus || 'Tugasan gagal di pelayan AI.',
+          errorMessage: customerFailureMessage(statusRes.errorMessage || statusRes.rawStatus),
+          rawStatus: `${statusRes.rawStatus}${statusRes.errorMessage ? `: ${statusRes.errorMessage}` : ''}`.slice(0, 1000),
+        });
+        return NextResponse.json({
+          jobId: job.id,
+          providerTaskId: activeTaskId,
+          provider: job.provider,
+          status: 'FAILED',
           rawStatus: statusRes.rawStatus,
+          error: `${failure.headline}. ${failure.message}`,
+          failure,
+          creditRestored: true,
         });
       }
 

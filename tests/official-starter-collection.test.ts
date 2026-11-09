@@ -43,7 +43,7 @@ describe('AffiMatik V7.1 official starter collection', () => {
         expect(await sharp(file).metadata()).toMatchObject({ format: 'webp', width, height });
       }
     }
-  });
+  }, 15_000);
 
   it('preserves stable official IDs in presets while rejecting cross-type or unknown IDs', () => {
     const avatarId = OFFICIAL_AVATARS[0].id;

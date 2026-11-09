@@ -125,7 +125,7 @@ describe('Scheduled Reconciliation Worker & Job Recovery Suite', () => {
       // 5. Verify orphaned job was safely released and marked FAILED
       const jobAfter = await DurableStore.getJob(expiredJobId);
       expect(jobAfter?.status).toBe('FAILED');
-      expect(jobAfter?.errorMessage).toContain('tamat');
+      expect(jobAfter?.errorMessage).toContain('Pelayan AI Sedang Terganggu');
 
       // Verify wallet reserved credits released back to balance
       const walletAfter = await DurableStore.getWallet(wsId);

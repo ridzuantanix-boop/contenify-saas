@@ -33,11 +33,12 @@ try {
   $env:STAGING_GATE_SECRET = Read-LocalSecret 'staging-gate-secret'
   $env:V8_QA_EMAIL = Read-LocalSecret 'v8-qa-email'
   $env:V8_QA_PASSWORD = Read-LocalSecret 'v8-qa-password'
+  $env:NEXABOT_API_KEY = Read-LocalSecret 'nexabot-api-key'
   Push-Location $repo
   try {
     & node scripts/release/v8-staging-qa.mjs
     if ($LASTEXITCODE -ne 0) { throw "V8 staging QA gagal (exit $LASTEXITCODE)." }
   } finally { Pop-Location }
 } finally {
-  Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY,Env:STAGING_GATE_SECRET,Env:V8_QA_EMAIL,Env:V8_QA_PASSWORD -ErrorAction SilentlyContinue
+  Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY,Env:STAGING_GATE_SECRET,Env:V8_QA_EMAIL,Env:V8_QA_PASSWORD,Env:NEXABOT_API_KEY -ErrorAction SilentlyContinue
 }

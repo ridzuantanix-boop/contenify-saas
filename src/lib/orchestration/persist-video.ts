@@ -1,5 +1,6 @@
 import { DurableStore, VideoJobRecord } from '@/lib/db/store';
 import { ingestProviderMp4 } from '@/lib/storage/supabase-assets';
+import { customerFailureMessage } from '@/lib/jobs/customer-failure';
 
 export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string): Promise<boolean> {
   let objectKey = job.videoObjectKey;
@@ -12,7 +13,7 @@ export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: st
       const message = error instanceof Error ? error.message : String(error);
       if (/bukan MP4|trek video|Saiz MP4|Domain sumber video|Kandungan video tersimpan tidak sepadan|Saiz video tersimpan tidak sepadan|Video tersimpan tidak lengkap/i.test(message)) {
         await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_media_${job.id}`);
-        await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: message });
+        await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: customerFailureMessage(message) });
         return false;
       }
       throw error;
@@ -29,7 +30,7 @@ export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: st
   if (process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider === 'nexabot' &&
       (actualDuration === undefined || Math.abs(actualDuration - job.durationSeconds) > 0.5 || hasAudio !== true)) {
     await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_media_${job.id}`);
-    await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: 'Video pembekal tidak menepati tempoh atau audio gaya Voice.' });
+    await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: customerFailureMessage('Video pembekal tidak menepati tempoh atau audio gaya Voice.') });
     return false;
   }
   const settled = await DurableStore.settleCredits(job.workspaceId, job.id, job.requiredCredits, `stl_${job.id}`);

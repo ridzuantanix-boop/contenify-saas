@@ -52,6 +52,9 @@ interface ActiveJobDisplay {
   videoUrl?: string;
   errorMessage?: string;
   rawStatus?: string;
+  creditRestored?: boolean;
+  failureHeadline?: string;
+  failureGuidance?: string;
   createdAt: string;
 }
 
@@ -117,6 +120,7 @@ function VideoFactoryContent() {
   const [activeJob, setActiveJob] = useState<ActiveJobDisplay | null>(null);
   const [recentJobs, setRecentJobs] = useState<ActiveJobDisplay[]>([]);
   const [pollElapsedTime, setPollElapsedTime] = useState<number>(0);
+  const [providerCooldownSeconds, setProviderCooldownSeconds] = useState(0);
 
   // Selected Style Reference
   const selectedStyle = useMemo(() => {
@@ -251,7 +255,13 @@ function VideoFactoryContent() {
 
   const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
   const hasActiveSubmission = Boolean(activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'));
-  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || hasActiveSubmission;
+  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || hasActiveSubmission || providerCooldownSeconds > 0;
+
+  useEffect(() => {
+    if (providerCooldownSeconds <= 0) return;
+    const timer = window.setInterval(() => setProviderCooldownSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [providerCooldownSeconds]);
 
   // Load account balance from server session
   const refreshAccountBalance = useCallback(async () => {
@@ -305,9 +315,13 @@ function VideoFactoryContent() {
         setActiveJob((prev) => prev ? { ...prev, status: 'QA_PENDING' } : null);
         await refreshJobsFromDatabase();
       } else if (data.status === 'FAILED' || data.status === 'REJECTED') {
+        if (data.failure?.category === 'provider_unavailable') setProviderCooldownSeconds(300);
         setActiveJob((prev) => prev ? {
           ...prev, status: data.status,
           errorMessage: data.error || data.errorMessage || data.rawStatus || 'Video tidak dapat diselesaikan.',
+          creditRestored: data.creditRestored === true,
+          failureHeadline: data.failure?.headline,
+          failureGuidance: data.failure?.retryGuidance,
         } : null);
         await Promise.all([refreshAccountBalance(), refreshJobsFromDatabase()]);
       } else if (data.status === 'RUNNING' || data.status === 'PROCESSING' || data.status === 'PENDING') {
@@ -472,6 +486,7 @@ function VideoFactoryContent() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.failure?.category === 'provider_unavailable') setProviderCooldownSeconds(300);
         throw new Error(data.error || 'Gagal menghantar tugasan penjanaan video.');
       }
 
@@ -887,6 +902,13 @@ function VideoFactoryContent() {
               </div>
             )}
 
+            {providerCooldownSeconds > 0 && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                <div className="font-bold">Pelayan penjana video AI sedang pulih</div>
+                <div className="mt-1">Butang Jana direhatkan sementara untuk mengelakkan cubaan berulang. Cuba lagi dalam {Math.ceil(providerCooldownSeconds / 60)} minit.</div>
+              </div>
+            )}
+
             {submitSuccess && (
               <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -918,6 +940,11 @@ function VideoFactoryContent() {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Mendaftarkan Tugasan Video...</span>
+                </>
+              ) : providerCooldownSeconds > 0 ? (
+                <>
+                  <Clock className="w-4 h-4" />
+                  <span>Pelayan AI Sedang Pulih ({Math.ceil(providerCooldownSeconds / 60)} min)</span>
                 </>
               ) : activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING') ? (
                 <>
@@ -1043,9 +1070,15 @@ function VideoFactoryContent() {
                     <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-2">
                       <div className="font-bold flex items-center gap-1.5">
                         <AlertCircle className="w-4 h-4 text-rose-600" />
-                        <span>Penjanaan Terhenti</span>
+                        <span>{activeJob.failureHeadline || 'Penjanaan Terhenti'}</span>
                       </div>
                       <p>{activeJob.errorMessage || 'Tugasan tidak dapat diselesaikan oleh pelayan video AI.'}</p>
+                      {activeJob.creditRestored && (
+                        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 font-semibold text-emerald-800">
+                          Kredit untuk tugasan ini telah dipulangkan secara automatik.
+                        </p>
+                      )}
+                      {activeJob.failureGuidance && <p className="text-rose-700">{activeJob.failureGuidance}</p>}
                       <button
                         type="button"
                         onClick={() => setActiveJob(null)}
@@ -1196,6 +1229,11 @@ function VideoFactoryContent() {
             {submitError}
           </div>
         )}
+        {providerCooldownSeconds > 0 && (
+          <div className="max-w-md mx-auto mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
+            Pelayan AI sedang pulih · cuba lagi dalam {Math.ceil(providerCooldownSeconds / 60)} minit.
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
@@ -1235,6 +1273,11 @@ function VideoFactoryContent() {
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Menjana...</span>
+              </>
+            ) : providerCooldownSeconds > 0 ? (
+              <>
+                <Clock className="w-3.5 h-3.5" />
+                <span>AI Pulih {Math.ceil(providerCooldownSeconds / 60)}m</span>
               </>
             ) : activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING') ? (
               <>

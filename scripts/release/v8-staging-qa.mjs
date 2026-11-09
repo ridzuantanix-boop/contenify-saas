@@ -9,7 +9,8 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const gateKey = process.env.STAGING_GATE_SECRET;
 const email = process.env.V8_QA_EMAIL || 'codex.v8.qa@affimatik.online';
 const password = process.env.V8_QA_PASSWORD;
-if (!serviceKey || !gateKey || !password) throw new Error('Rahsia V8 staging QA tidak lengkap.');
+const nexabotKey = process.env.NEXABOT_API_KEY;
+if (!serviceKey || !gateKey || !password || !nexabotKey) throw new Error('Rahsia V8 staging QA tidak lengkap.');
 
 const out = resolve('output/provider-qa', process.env.V8_QA_RUN_NAME || 'v8-journey');
 mkdirSync(out, { recursive: true });
@@ -67,6 +68,15 @@ async function wallet(page) {
   return session.wallet;
 }
 
+async function providerCredits() {
+  const response = await fetch('https://nexabot.id/api/v1/credits', {
+    headers: { Authorization: `Bearer ${nexabotKey}`, 'X-API-Key': nexabotKey },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || typeof data.credit !== 'number') throw new Error(`Semakan kredit provider gagal HTTP ${response.status}`);
+  return data.credit;
+}
+
 async function waitForJob(page, jobId, timeoutMs = 12 * 60 * 1000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
@@ -82,15 +92,19 @@ async function waitForJob(page, jobId, timeoutMs = 12 * 60 * 1000) {
 }
 
 async function generate(page, spec, workspaceId) {
-  await page.goto(`${base}/factory`, { waitUntil: 'networkidle' });
+  await page.goto(`${base}/factory?styleId=${encodeURIComponent(spec.styleId || 'NX01')}`, { waitUntil: 'networkidle' });
   const before = await wallet(page);
+  const providerCreditBefore = await providerCredits();
   await page.locator('label').filter({ hasText: 'Pilih atau Seret Gambar Produk' }).locator('input[type="file"]').setInputFiles(spec.image);
   await page.getByText('Identiti produk dikunci').waitFor();
   await page.locator('input[placeholder*="Serum Rawatan"]').fill(spec.name);
   await page.getByRole('button', { name: 'Customize' }).click();
   await page.getByRole('button', { name: 'Smart Script', exact: false }).click();
-  await page.locator('label').filter({ hasText: 'CTA' }).locator('select').selectOption('none');
+  await page.locator('label').filter({ hasText: 'CTA' }).locator('select').selectOption(spec.cta || 'none');
   await page.locator('label').filter({ hasText: 'Niche / Kategori' }).locator('select').selectOption(spec.niche);
+  if (spec.fact) {
+    await page.locator('label').filter({ hasText: 'Satu Fakta Produk Yang Disahkan' }).locator('input').fill(spec.fact);
+  }
   await page.screenshot({ path: resolve(out, `${spec.case}-before-submit.png`), fullPage: true });
   const submitPromise = page.waitForResponse((response) => response.url().endsWith('/api/jobs') && response.request().method() === 'POST', { timeout: 180000 });
   await page.getByRole('button', { name: /Jana Video Sekarang/ }).click();
@@ -100,6 +114,7 @@ async function generate(page, spec, workspaceId) {
   const reserved = await wallet(page);
   const completed = await waitForJob(page, submit.jobId);
   const after = await wallet(page);
+  const providerCreditAfter = await providerCredits();
   const media = await page.request.get(`${base}/api/videos/${submit.jobId}/stream`);
   const bytes = await media.body();
   const mp4Path = resolve(out, `${spec.case}.mp4`);
@@ -108,10 +123,12 @@ async function generate(page, spec, workspaceId) {
   const rows = await api(`/rest/v1/video_jobs?id=eq.${encodeURIComponent(submit.jobId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,provider_task_id,status,compiled_prompt_snapshot,input_options,actual_duration_seconds,output_size_bytes&limit=1`);
   const row = rows[0] || {};
   const result = {
-    case: spec.case, category: spec.niche, product: spec.name, source: basename(spec.image), jobId: submit.jobId,
+    case: spec.case, category: spec.niche, product: spec.name, styleId: spec.styleId || 'NX01', requestedCta: spec.cta || 'none',
+    requestedFact: spec.fact || null, source: basename(spec.image), jobId: submit.jobId,
     providerTaskId: submit.providerTaskId, status: completed.status, before, reserved, after,
     mp4Path, fullStatus: media.status(), fullBytes: bytes.length, rangeStatus: range.status(), contentRange: range.headers()['content-range'] || null,
     actualDurationSeconds: row.actual_duration_seconds, storedBytes: row.output_size_bytes,
+    providerCreditBefore, providerCreditAfter, providerCost: Number((providerCreditBefore - providerCreditAfter).toFixed(4)),
     scriptMode: row.input_options?.scriptMode, cta: row.input_options?.callToAction,
     promptHasV8: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('[HUMAN REALISM MASTERPROMPT V8]'),
     promptHasSmartScript: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('[V8 SMART SCRIPT CONTROL]'),
@@ -136,12 +153,18 @@ try {
   evidence.desktop.ctaOptions = await page.locator('label').filter({ hasText: 'CTA' }).locator('option').allTextContents();
   await page.screenshot({ path: resolve(out, 'desktop-v8-controls.png'), fullPage: true });
 
-  const allSpecs = [
+  const originalSpecs = [
     { case: 'BEAUTY_NX01_V8', niche: 'beauty', name: 'Seri Dewi Facial Serum', image: resolve('output/provider-qa/v7-inputs/beauty-seri-dewi.png') },
     { case: 'SUPPLEMENT_NX01_V8', niche: 'wellness', name: 'Omega 3 Reference', image: resolve('output/release/journey-ui/health-omega3.png') },
     { case: 'KITCHEN_NX01_V8', niche: 'kitchen', name: 'Potonggo Manual Chopper', image: resolve('output/provider-qa/v7-inputs/kitchen-potonggo.png') },
     { case: 'AUTOMOTIVE_NX01_V8', niche: 'automotive', name: 'Roadgrip Phone Holder', image: resolve('output/provider-qa/v7-inputs/automotive-roadgrip.png') },
   ];
+  const v81CtaSpecs = [
+    { case: 'SUPPLEMENT_NX07_V81_BEG_KUNING', styleId: 'NX07', cta: 'tiktok_shop', niche: 'wellness', name: 'Omega 3 Reference', fact: 'mengandungi Omega-3', image: resolve('output/release/journey-ui/health-omega3.png') },
+    { case: 'BEAUTY_NX16_V81_KLIK', styleId: 'NX16', cta: 'click_button', niche: 'beauty', name: 'Seri Dewi Facial Serum', fact: 'serum untuk rutin wajah', image: resolve('output/provider-qa/v7-inputs/beauty-seri-dewi.png') },
+    { case: 'KITCHEN_NX17_V81_NONE', styleId: 'NX17', cta: 'none', niche: 'kitchen', name: 'Potonggo Manual Chopper', fact: 'pemotong manual untuk bahan dapur', image: resolve('output/provider-qa/v7-inputs/kitchen-potonggo.png') },
+  ];
+  const allSpecs = process.env.V8_QA_PROFILE === 'v81_cta' ? v81CtaSpecs : originalSpecs;
   const selectedCases = new Set((process.env.V8_QA_CASES || '').split(',').map((value) => value.trim()).filter(Boolean));
   const specs = selectedCases.size ? allSpecs.filter((spec) => selectedCases.has(spec.case)) : allSpecs;
   for (const spec of specs) {

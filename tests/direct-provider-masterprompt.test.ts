@@ -68,7 +68,8 @@ describe('V8 direct-to-provider masterprompt architecture', () => {
   });
   it('uses a neutral curated Smart Script by default', () => {
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene);
-    expect(compiled.spokenScript).toContain('semak fungsi pada label');
+    expect(compiled.spokenScript).toContain('Jom tengok dekat-dekat dulu');
+    expect(compiled.spokenScript).not.toMatch(/fakta yang disahkan|nilai kesesuaiannya/i);
     expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
     expect(compiled.providerPrompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
     expect(compiled.providerPrompt).toContain('Bahasa Melayu Malaysia');

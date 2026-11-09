@@ -37,49 +37,26 @@ type CuratedPattern = {
  * facts are interpolated into {fact}.
  */
 export const CURATED_STYLE_SCRIPT_PATTERNS: Record<string, CuratedPattern> = {
-  NX01: { styleId: 'NX01', withFact: 'Kalau tengah cari {product}, yang penting {fact}. Pilih ikut keperluan sendiri.', neutral: 'Kalau tengah tengok {product}, semak fungsi pada label dan pilih ikut keperluan sendiri.' },
-  NX02: { styleId: 'NX02', withFact: '{product} ini diterangkan dengan ringkas: {fact}. Itu perkara utama untuk dipertimbangkan.', neutral: '{product} ini boleh dinilai melalui fungsi yang dinyatakan pada label. Semak dulu sebelum memilih.' },
-  NX03: { styleId: 'NX03', withFact: 'Oh, menarik juga {product} ini. Maklumat yang disahkan ialah {fact}.', neutral: 'Oh, ini {product}. Menarik untuk tengok fungsi pada label sebelum buat pilihan.' },
-  NX05: { styleId: 'NX05', withFact: 'Bila perlukan pilihan yang sesuai, {product} ini ada satu perkara relevan: {fact}.', neutral: 'Bila perlukan pilihan yang sesuai, tengok dulu tujuan {product} ini dan padankan dengan keperluan.' },
-  NX07: { styleId: 'NX07', withFact: 'Apa yang perlu tahu tentang {product}? Fakta yang disahkan ialah {fact}.', neutral: 'Apa yang perlu tahu tentang {product}? Semak tujuan dan arahan pada label sebelum memilih.' },
-  NX09: { styleId: 'NX09', withFact: 'Untuk pertimbangan harian, {product} ini mempunyai maklumat disahkan: {fact}.', neutral: 'Untuk pertimbangan harian, lihat tujuan {product} ini dan semak maklumat pada label.' },
-  NX10: { styleId: 'NX10', withFact: 'Pada label {product}, perkara yang sudah disahkan ialah {fact}. Gunakan maklumat itu untuk menilai kesesuaian.', neutral: 'Untuk {product} ini, baca maklumat yang jelas pada label dan nilai kesesuaiannya.' },
-  RH01: { styleId: 'RH01', withFact: '{product} ini ditunjukkan secara dekat. Maklumat yang disahkan: {fact}.', neutral: '{product} ini ditunjukkan secara dekat supaya bentuk dan labelnya boleh dilihat dengan jelas.' },
-  RH02: { styleId: 'RH02', withFact: 'Dari sudut ini, {product} kekal jelas. Fakta yang disahkan ialah {fact}.', neutral: 'Dari sudut ini, bentuk dan label {product} boleh dilihat tanpa mengubah rupanya.' },
-  RH03: { styleId: 'RH03', withFact: 'Bila diangkat, skala {product} nampak lebih jelas. Maklumat disahkan: {fact}.', neutral: 'Bila diangkat dan diletak semula, skala sebenar {product} nampak lebih jelas.' },
-  RH04: { styleId: 'RH04', withFact: '{product} ini berada dalam konteks yang sesuai. Fakta yang disahkan ialah {fact}.', neutral: '{product} ini ditunjukkan dalam konteks biasa supaya mudah dinilai sebelum memilih.' },
-  RH17: { styleId: 'RH17', withFact: 'Untuk ruang kerja, {product} ini ada maklumat disahkan: {fact}.', neutral: 'Untuk ruang kerja, pertimbangkan {product} ini mengikut fungsi yang dinyatakan pada label.' },
-  RH19: { styleId: 'RH19', withFact: 'Dalam cahaya siang, {product} nampak jelas. Fakta yang disahkan ialah {fact}.', neutral: 'Dalam cahaya siang, warna, bentuk dan label {product} boleh dilihat dengan lebih jelas.' },
-  NX11: { styleId: 'NX11', withFact: 'Sesuai tak {product} ini untuk keperluan anda? Fakta yang disahkan ialah {fact}.', neutral: 'Sesuai tak {product} ini? Semak tujuan pada label dan padankan dengan keperluan anda.' },
-  NX12: { styleId: 'NX12', withFact: 'Eh, jumpa {product} ini. Perkara yang sudah disahkan ialah {fact}.', neutral: 'Eh, jumpa {product} ini. Boleh tengok fungsi pada label sebelum tentukan kesesuaiannya.' },
-  NX13: { styleId: 'NX13', withFact: 'Untuk kegunaan dapur, {product} ini ada maklumat disahkan: {fact}.', neutral: 'Untuk kegunaan dapur, semak tujuan dan arahan {product} ini sebelum menggunakannya.' },
-  NX14: { styleId: 'NX14', withFact: 'Kalau tengah kemaskan meja kerja, {product} ini mempunyai fakta disahkan: {fact}.', neutral: 'Kalau tengah kemaskan meja kerja, nilai {product} ini berdasarkan fungsi yang dinyatakan.' },
-  NX15: { styleId: 'NX15', withFact: 'Kadang-kadang kita cuma perlukan pilihan yang jelas. Untuk {product}, fakta disahkan ialah {fact}.', neutral: 'Kadang-kadang kita cuma perlukan pilihan yang jelas. Semak tujuan {product} ini sebelum memilih.' },
-  NX16: { styleId: 'NX16', withFact: 'Kalau {product} ini sesuai dengan keperluan anda, fakta yang disahkan ialah {fact}.', neutral: 'Kalau {product} ini sesuai dengan keperluan anda, semak maklumat pada label dahulu.' },
-  NX17: { styleId: 'NX17', withFact: 'Teringat nak tunjuk {product} ini. Satu perkara yang disahkan ialah {fact}.', neutral: 'Teringat nak tunjuk {product} ini. Tengok tujuan pada label dan nilai ikut keperluan.' },
-};
-
-const CURATED_STYLE_ENDINGS: Record<string, string> = {
-  NX01: 'Ambil masa semak arahan yang jelas sebelum tentukan pilihan.',
-  NX02: 'Nilai maklumat yang dinyatakan supaya keputusan lebih tepat.',
-  NX03: 'Yang penting, tengok butiran yang jelas tanpa buat andaian.',
-  NX05: 'Semak kesesuaiannya secara tenang sebelum jadikan ia pilihan.',
-  NX07: 'Jadi, rujuk maklumat yang sah untuk jawapan lengkap.',
-  NX09: 'Lihat butiran produk dengan jelas sebelum membuat pilihan sendiri.',
-  NX10: 'Gunakan fakta yang boleh dibaca, bukan andaian tentang hasil.',
-  RH01: 'Perhatikan bentuk dan labelnya dengan tenang sebelum menilai.',
-  RH02: 'Sudut kecil ini membantu melihat rupa fizikalnya dengan jelas.',
-  RH03: 'Gerakan angkat dan letak menunjukkan saiznya dalam konteks sebenar harian.',
-  RH04: 'Konteks rak membantu menilai tempat dan cara produk ini biasanya dipertimbangkan.',
-  RH17: 'Pastikan fungsi yang dinyatakan benar-benar sesuai untuk ruang kerja.',
-  RH19: 'Cahaya neutral membantu melihat warna dan bentuk tanpa kesan tambahan.',
-  NX11: 'Bandingkan maklumat yang jelas dengan keperluan sebenar sebelum memilih.',
-  NX12: 'Menarik untuk dilihat, tetapi semak butiran yang sah dahulu.',
-  NX13: 'Rujuk arahan yang dinyatakan supaya penggunaannya sesuai dalam konteks dapur.',
-  NX14: 'Nilai fungsinya secara praktikal sebelum letakkan dalam setup kerja.',
-  NX15: 'Pilihan yang baik bermula dengan maklumat jelas, bukan janji hasil.',
-  NX16: 'Tak perlu tergesa-gesa; semak maklumat dan pilih kalau benar-benar sesuai.',
-  NX17: 'Satu cadangan yang munasabah tetap perlu dinilai melalui fakta yang jelas.',
+  NX01: { styleId: 'NX01', withFact: 'Kalau korang tengah cari {product}, yang ni {fact}. Boleh tengok sama ada ngam dengan rutin korang.', neutral: 'Korang tengah tengok {product} ni? Jom tengok dekat-dekat dulu, mana tahu ngam dengan apa yang korang cari.' },
+  NX02: { styleId: 'NX02', withFact: '{product} ni {fact}. Aku pegang macam ni supaya korang boleh tengok dengan lebih jelas.', neutral: 'Ni {product}. Aku tunjuk depan-depan dulu supaya korang boleh tengok rupa dan saiz dia.' },
+  NX03: { styleId: 'NX03', withFact: 'Eh, baru perasan {product} ni {fact}. Menarik juga kalau itu yang korang tengah cari.', neutral: 'Eh, ni {product} rupanya. Sekali pandang memang buat aku nak tengok dekat sikit.' },
+  NX05: { styleId: 'NX05', withFact: 'Kadang susah nak jumpa yang kena dengan keperluan. {product} ni {fact}, jadi boleh tengok yang ni dulu.', neutral: 'Kadang banyak sangat pilihan sampai tak tahu nak tengok yang mana. Ni {product}, kita tengok yang penting dulu.' },
+  NX07: { styleId: 'NX07', withFact: '{product} ni ada apa? Yang jelas, {fact}. Ha, itu yang korang boleh tengok dulu.', neutral: '{product} ni macam mana? Jom tengok benda yang jelas pada produk ni dulu, lepas tu baru senang nak pilih.' },
+  NX09: { styleId: 'NX09', withFact: 'Ni {product}. Yang ni {fact}. Aku pusing sikit supaya korang boleh tengok dengan lebih jelas.', neutral: 'Ni {product}. Aku gerakkan perlahan sikit supaya korang boleh tengok bentuk dia dari dekat.' },
+  NX10: { styleId: 'NX10', withFact: 'Dekat {product} ni memang tertulis {fact}. Aku tunjuk dekat sikit supaya korang nampak.', neutral: 'Kalau nak tengok {product} ni, kita mula dengan apa yang memang tercetak dekat produk dulu.' },
+  RH01: { styleId: 'RH01', withFact: 'Ni {product} bila dipegang macam biasa. Yang ni {fact}. Aku gerakkan perlahan bagi nampak jelas.', neutral: 'Ni {product} bila dipegang macam biasa. Aku gerakkan perlahan bagi korang nampak bentuk dia.' },
+  RH02: { styleId: 'RH02', withFact: 'Aku sengetkan sikit {product} ni. Yang ni {fact}, jadi korang boleh tengok dari sudut lain.', neutral: 'Aku sengetkan sikit {product} ni, senang korang nak tengok bentuk dia dari sudut lain.' },
+  RH03: { styleId: 'RH03', withFact: 'Bila angkat {product} ni, senang nak agak saiz dia. Yang ni {fact}.', neutral: 'Aku angkat {product} ni sekejap, lepas tu letak balik. Senang sikit nak agak saiz dia.' },
+  RH04: { styleId: 'RH04', withFact: 'Nampak {product} dekat rak ni? Yang ni {fact}. Aku ambil bagi korang tengok lebih jelas.', neutral: 'Nampak {product} dekat rak ni? Aku ambil sekejap bagi korang tengok lebih jelas.' },
+  RH17: { styleId: 'RH17', withFact: 'Untuk setup meja, {product} ni {fact}. Aku letak sini supaya korang boleh bayang ruang dia.', neutral: 'Aku letak {product} dekat meja kerja macam ni, senang korang nak bayang ruang yang dia guna.' },
+  RH19: { styleId: 'RH19', withFact: 'Bawah cahaya siang, {product} ni nampak lebih jelas. Yang ni {fact}.', neutral: 'Bawah cahaya siang macam ni, warna dan bentuk {product} nampak lebih jelas.' },
+  NX11: { styleId: 'NX11', withFact: 'Kalau jumpa {product} ni, apa korang nak tengok dulu? Yang ni {fact}.', neutral: 'Kalau jumpa {product} ni, apa korang nak tengok dulu? Jom tengok dari sudut pembeli.' },
+  NX12: { styleId: 'NX12', withFact: 'Eh, ternampak {product} ni. Rupanya {fact}. Patutlah buat aku berhenti tengok sekejap.', neutral: 'Eh, ternampak {product} ni. Nampak menarik untuk kita tengok dekat sikit.' },
+  NX13: { styleId: 'NX13', withFact: 'Kalau dekat dapur, {product} ni {fact}. Aku tunjuk macam mana rupa dia atas kaunter.', neutral: 'Kalau barang dapur macam {product} ni, aku suka tengok dulu macam mana rupa dia atas kaunter.' },
+  NX14: { styleId: 'NX14', withFact: 'Untuk setup meja, {product} ni {fact}. Aku tunjuk macam mana rupa dia dekat ruang kerja.', neutral: 'Kalau nak letak {product} dekat meja kerja, jom tengok dulu macam mana rupa dia dalam ruang ni.' },
+  NX15: { styleId: 'NX15', withFact: 'Kadang nak pilih barang pun pening sebab banyak sangat pilihan. {product} ni {fact}.', neutral: 'Kadang nak pilih barang pun pening sebab banyak sangat pilihan. Ni {product}, kita tengok satu-satu dulu.' },
+  NX16: { styleId: 'NX16', withFact: 'Aku share santai je, {product} ni {fact}. Kalau ngam dengan apa yang korang cari, boleh tengok.', neutral: 'Aku share santai je pasal {product} ni. Kalau nampak ngam dengan apa yang korang cari, boleh tengok.' },
+  NX17: { styleId: 'NX17', withFact: 'Eh, tiba-tiba teringat {product} ni. Yang ni {fact}. Boleh tengok kalau memang korang perlukan.', neutral: 'Eh, tiba-tiba teringat {product} ni. Boleh tengok kalau benda ni memang kena dengan apa yang korang cari.' },
 };
 
 const forbiddenIndonesian = ['kamu', 'kalian', 'nggak', 'enggak', 'banget', 'cobain', 'keranjang kuning', 'gimana', 'bikin', 'gue', 'lu'];
@@ -153,9 +130,8 @@ export function buildSmartScript(
     .replaceAll('{fact}', confirmedFact)
     .replace(/\s+/g, ' ')
     .trim();
-  const pacedBase = base.split(/\s+/).length < 22 ? `${base} ${CURATED_STYLE_ENDINGS[style.id]}` : base;
   const cta = resolveCtaPhrase(ctaMode, customCta);
-  return `${pacedBase}${cta ? ` ${cta}` : ''}`.trim();
+  return `${base}${cta ? ` ${cta}` : ''}`.trim();
 }
 
 export function quoteProviderScript(script: string): string {
