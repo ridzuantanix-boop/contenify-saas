@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import { authCallbackUrl } from '@/lib/auth/public-origin';
 
 /**
  * POST /api/auth/password-reset
@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
 
     if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-      const res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/recover`, {
+      const redirectTo = authCallbackUrl(req);
+      const res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,9 +31,16 @@ export async function POST(req: NextRequest) {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
+        if (res.status === 429) {
+          const retryAfter = Number.parseInt(res.headers.get('retry-after') || '', 10);
+          return NextResponse.json({
+            error: 'Had penghantaran emel telah dicapai. Sila tunggu sebelum meminta pautan baharu.',
+            code: 'AUTH_EMAIL_RATE_LIMIT',
+            ...(Number.isFinite(retryAfter) && retryAfter > 0 ? { retryAfterSeconds: retryAfter } : {}),
+          }, { status: 429, headers: Number.isFinite(retryAfter) && retryAfter > 0 ? { 'Retry-After': String(retryAfter) } : undefined });
+        }
         return NextResponse.json(
-          { error: errData.msg || errData.message || 'Gagal menghantar pautan tetapan semula kata laluan.' },
+          { error: 'Permintaan pemulihan tidak dapat diproses buat masa ini.' },
           { status: res.status }
         );
       }
@@ -42,8 +50,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Sekiranya emel tersebut berdaftar, pautan tetapan semula kata laluan telah dihantar ke peti masuk anda.',
     });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Perkhidmatan pemulihan kata laluan tidak dapat diakses.' }, { status: 503 });
   }
 }

@@ -69,14 +69,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password, supabaseAccessToken } = body;
 
-    if (!email || typeof email !== 'string') {
+    if ((!email || typeof email !== 'string') && (!supabaseAccessToken || typeof supabaseAccessToken !== 'string')) {
       return NextResponse.json(
         { error: 'Sila masukkan alamat emel yang sah.' },
         { status: 400 }
       );
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    let cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     let verifiedUserId = '';
     let verifiedTier: 'free' | 'starter' | 'pro' | 'agency' = 'free';
     let verifiedRole: 'owner' | 'admin' | 'member' | 'superadmin' = 'member';
@@ -128,6 +128,16 @@ export async function POST(req: NextRequest) {
           if (loginRes.ok) {
             const tokenData = await loginRes.json();
             authUser = tokenData.user;
+          } else {
+            const loginError = await loginRes.json().catch(() => ({})) as Record<string, unknown>;
+            const code = typeof loginError.error_code === 'string' ? loginError.error_code : typeof loginError.code === 'string' ? loginError.code : '';
+            const description = [loginError.msg, loginError.error_description, loginError.message].find((value): value is string => typeof value === 'string') || '';
+            if (code === 'email_not_confirmed' || /email not confirmed/i.test(description)) {
+              return NextResponse.json({ error: 'Emel belum disahkan. Buka emel pengesahan terkini atau minta penghantaran semula.', code: 'AUTH_EMAIL_NOT_CONFIRMED' }, { status: 403 });
+            }
+            if (loginRes.status === 429) {
+              return NextResponse.json({ error: 'Terlalu banyak cubaan log masuk. Sila tunggu sebentar sebelum mencuba lagi.', code: 'AUTH_RATE_LIMIT' }, { status: 429 });
+            }
           }
         }
 
@@ -138,6 +148,10 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        if (typeof authUser.email !== 'string' || !authUser.email.includes('@')) {
+          return NextResponse.json({ error: 'Identiti Supabase tidak mempunyai alamat emel yang sah.' }, { status: 401 });
+        }
+        cleanEmail = authUser.email.trim().toLowerCase();
         verifiedUserId = authUser.id;
 
         // Supabase Auth has verified this identity. Provisioning is transactional

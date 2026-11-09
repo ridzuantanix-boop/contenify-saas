@@ -10,6 +10,8 @@ binding = "ASSETS"
 run_worker_first = true
 
 [vars]
+DEPLOYMENT_ENV = "staging"
+APP_BASE_URL = "https://affimatik-launch-lite-staging.nanotiva-garden.workers.dev"
 SUPABASE_URL = "https://oudxnvazrdmnxdndpgmy.supabase.co"
 AFFIMATIK_VOICE_PUBLIC_ENABLED = "true"
 AFFIMATIK_MOTION_PUBLIC_ENABLED = "false"
