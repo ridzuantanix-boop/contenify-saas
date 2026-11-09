@@ -15,23 +15,25 @@ import {
   CtaMode,
   quoteProviderScript,
   resolveCtaPhrase,
+  ScriptVariant,
   ScriptMode,
   validateCustomCta,
   validateCustomerFact,
   validateHumanScript,
 } from './script-control';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-human-realism-v8.1-reference-lock';
+export const GEMS_PROMPT_VERSION = 'affimatik-real-malaysian-affiliate-v8.3';
 
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
-  '[MALAYSIAN AFFILIATE VOICE DNA V6]',
-  'Use spoken Bahasa Melayu Malaysia that sounds like a believable local affiliate creator, never formal corporate copy.',
-  'Use a short naturally uneven sentence rhythm, meaningful pauses, subtle vocal variation and one product-relevant hook that is distinct from the ending.',
+  '[REAL MALAYSIAN AFFILIATE VOICE DNA V8.3]',
+  'Use spoken Bahasa Melayu Malaysia like a real Malaysian TikTok affiliate casually sharing a useful find with friends, never like a corporate presenter, newsreader, advertisement narrator or compliance officer.',
+  'Use ordinary Malaysian phrasing, naturally imperfect sentence links, small breaths, uneven but fluent rhythm and meaningful changes of intonation.',
+  'Do not mechanically insert eh, haa, weh, korang or tau. Let the requested script determine where conversational particles belong.',
   'Build one compact spoken turn: one distinct hook, one grounded product point, then one concise natural ending. Do not narrate for the full clip merely to fill time.',
   'Focus on one supported intended purpose or ordinary category use context and finish speech comfortably before the video ends.',
   'Do not repeat a catalogue-wide opening or closing. Match the selected style personality exactly.',
   'Never repeat or paraphrase the same meaning twice. Each spoken clause must add new information; remove any echoed claim, hook, product point, CTA or outro before rendering.',
-  'No Indonesian forms, no English dialogue unless explicitly requested, no filler, no exaggerated presenter performance.',
+  'No Indonesian forms, no English dialogue unless explicitly requested, no filler, no fake excitement, no uniform emphasis and no long unnatural pause.',
   'A buyer problem does not prove that this product resolves it. Omit all unsupported benefit and performance claims.',
   'Never claim personal use, purchase, customer reviews, ingredients, certifications, prices, specifications, performance results or medical outcomes unless explicitly supplied by the user or clearly legible in the reference.',
   'Keep factual guardrails silent: do not speak legal-disclaimer phrases such as “berdasarkan apa yang kelihatan”. When detail is unavailable, use an ordinary useful category description or omit the claim.',
@@ -40,8 +42,10 @@ export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
 ].join(' ');
 
 export const HUMAN_REALISM_MASTERPROMPT_V8 = [
-  '[HUMAN REALISM MASTERPROMPT V8]',
-  'Create ordinary Malaysian creator behaviour, not polished commercial acting. Keep breathing visible but subtle, eye gaze believable, blinks irregular and head or hand movement small and purposeful.',
+  '[HUMAN REALISM MASTERPROMPT V8] [REAL HUMAN PERFORMANCE DIRECTOR V8.3]',
+  'Create ordinary Malaysian creator behaviour, not polished commercial acting. Use irregular natural blinking, subtle breathing, relaxed jaw movement during pauses and believable facial-muscle transitions.',
+  'Do not stare into the lens throughout. Alternate motivated eye contact with one or two brief product glances; never use periodic blinking, repeated nodding, a frozen smile or a frozen final pose.',
+  'Maintain believable weight distribution, tiny posture and shoulder adjustments, and hands that react to the object’s plausible real weight. One purposeful gesture is better than decorative repeated motion.',
   'Creator review: alternate naturally between the lens and product, with one small head movement and a restrained hand gesture.',
   'First impression: use one spontaneous micro-reaction such as a slight eyebrow lift or half-smile; never exaggerated surprise.',
   'Question and answer: show a brief thinking expression before the answer, then return gaze naturally to the lens.',
@@ -49,8 +53,31 @@ export const HUMAN_REALISM_MASTERPROMPT_V8 = [
   'POV: use credible first-person reach and restrained handheld movement, never floating or impossible camera travel.',
   'Lifestyle: perform one small context-relevant action while speaking instead of posing motionless.',
   'Soft sell: relaxed local speaking tone, never a commercial announcer voice or over-rehearsed sales performance.',
-  'Use bright neutral realistic daylight with consistent exposure and white balance. Preserve natural skin texture, facial proportions, product identity and selected avatar identity.',
+  'Use environment-appropriate believable light, natural skin tones, consistent exposure and white balance, authentic material texture and physical shadows. No yellow cast, teal-orange grade, fake glow, excessive sharpening or plastic skin.',
 ].join(' ');
+
+const VOICE_PERSONALITY_DIRECTIONS: Record<string, string> = {
+  friendly: 'Warm and relaxed, like speaking to a friend; soft hook, easy sentence linking and a small reassuring finish.',
+  energetic: 'Start quickly with lively but controlled energy, vary pace after the hook and emphasize only the useful product point; never shout.',
+  calm: 'Low-pressure and measured with clear articulation, soft pauses and an unhurried CTA; never monotone.',
+  confident: 'Direct and convincing with a firm hook and clean ending, but still conversational and never like a commercial announcer.',
+  helpful: 'Naturally offer one useful buying consideration, with a caring matter-of-fact tone rather than a warning or disclaimer.',
+  premium: 'Polished and composed with restrained warmth and precise articulation, while remaining a real phone creator rather than luxury-ad narration.',
+};
+
+function productScaleDirective(product: ProductProfile): string {
+  const category = `${product.category} ${product.packagingFormat}`.toLowerCase();
+  const categoryGuide = /serum|beauty|cosmetic|bottle/.test(category)
+    ? 'Treat a serum or cosmetic bottle as a small palm-sized retail object unless the customer supplied other dimensions.'
+    : /supplement|health|wellness/.test(category)
+      ? 'Treat a retail supplement bottle or box as a normal hand-held pharmacy-sized object, never a giant jar.'
+      : /lamp|lighting/.test(category)
+        ? 'Keep a desk lamp plausibly sized beside furniture, a laptop and the presenter.'
+        : /organizer|kitchen|household/.test(category)
+          ? 'Keep the object plausibly sized against hands, counters, shelves and nearby household items.'
+          : 'Use conservative category-appropriate real-world scale against hands, furniture and the human body.';
+  return `[PLAUSIBLE PRODUCT SCALE LOCK] ${categoryGuide} Preserve one consistent physical size throughout. Never enlarge the product for label readability, never infer exact dimensions from a screenshot, and use realistic grip, contact shadows and perspective.`;
+}
 
 /**
  * Internal Provider to AffiMatik White-Label Display Name Mapping
@@ -83,6 +110,8 @@ export interface CompilerOptions {
   niche?: string;
   voicePersonality?: string;
   storyboard?: string;
+  scriptVariant?: ScriptVariant;
+  audioTreatment?: 'voiceover' | 'ambient' | 'asmr';
 }
 
 export interface PromptPreviewResult {
@@ -135,7 +164,7 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
 
   // NX09: Goyang Produk + VO (15s)
   NX09: (p) =>
-    `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the reference product upright in a natural home space. Relaxed continuous side-to-side micro-tilt keeps it stable at 20–30% of the vertical frame. The provider creates a calm off-camera Malaysian Malay voiceover opening with a relevant use situation, then its supported intended purpose, without claiming an outcome. No presenter face or second hand. Neutral 1x phone camera, daylight, zero UI, one continuous take.`,
+    `HAND ONLY. Exactly one naturally proportioned adult female hand, sleeve fully covering the wrist, holds the reference product upright in a natural home space. Use one relaxed side-to-side micro-tilt while retaining plausible category-appropriate physical scale. The voiceover discusses a relevant buyer situation or practical consideration, never the hand or camera action. No presenter face or second hand. Neutral 1x phone camera, daylight, zero UI, one continuous take.`,
 
   // NX10: Label Talk • Fakta & Fungsi Dulu (15s)
   NX10: (p) =>
@@ -163,7 +192,7 @@ export const AUTHORITATIVE_STYLE_MASTERPROMPTS: Record<string, (params: {
 
   // RH19: Window Daylight (15s)
   RH19: (p) =>
-    `Single real-looking handheld smartphone 1x clip of the exact "${p.productName}" held in one modest sleeve-covered adult hand near an ordinary Malaysian home window. Pure neutral clean window daylight, soft true shadow, no golden or sepia tint. Small authentic 5–8-degree hand adjustment, otherwise stable. Product naturally scaled (20–30% of vertical frame) and appropriate to usage context (${p.useContext}); visible real object, not a stylized commercial showcase. One continuous full-frame 15-second shot with absolutely no embedded interface or phone frame. Strictly NO spoken dialogue.`,
+    `Single real-looking handheld smartphone 1x clip of the exact "${p.productName}" held in one modest sleeve-covered adult hand near an ordinary Malaysian home window. Pure neutral clean window daylight, soft true shadow, no golden or sepia tint. Small authentic 5–8-degree hand adjustment, otherwise stable. Product uses plausible category-appropriate physical scale in context (${p.useContext}); visible real object, not a stylized commercial showcase. One continuous full-frame 15-second shot with absolutely no embedded interface or phone frame.`,
 };
 
 // V6 derives a distinct provider masterprompt from every canonical registry
@@ -183,7 +212,7 @@ for (const v6Style of VIDEO_STYLES_REGISTRY) {
       `Product interaction: ${d.productInteraction}.`,
       `Ending: ${d.expectedEnding}.`,
       `Camera: ${v6Style.cameraProfile}; vertical 9:16, realistic smartphone 1x, one continuous take, small handheld micro-shake.`,
-      handOnly ? 'HAND-LED SCENE: one realistically proportioned hand only, wrist covered, no jewellery or nail polish.' : 'PRESENTER SCENE: natural expressions and accurate lip-sync; modest Malaysian Muslimah styling.',
+      handOnly ? 'HAND-LED SCENE HARD LOCK: show exactly one realistically proportioned sleeve-covered hand only. Absolutely NO presenter face, head, eyes, mouth, torso or full human body may enter any frame. No jewellery or nail polish.' : 'PRESENTER SCENE: natural expressions and accurate lip-sync; modest Malaysian Muslimah styling.',
       `Use the exact reference product identity. The image is a reference, never a mandatory first frame. Product name metadata: "${p.productName}".`,
     ].join(' ');
   };
@@ -255,13 +284,13 @@ export class DynamicPromptCompiler {
       }
     }
 
-    const visualSummary = `Satu babak visual berterusan ${style.durationSeconds} saat. ${scenePlan.primaryAction}. Produk kekal pada skala 20-30% bingkai tanpa morphing atau hilang.`;
+    const visualSummary = `Satu babak visual berterusan ${style.durationSeconds} saat. ${scenePlan.primaryAction}. Produk kekal pada skala fizikal dunia sebenar yang munasabah tanpa morphing atau hilang.`;
 
     const scriptMode = options.scriptMode || 'smart';
     const ctaMode = options.callToAction || 'none';
     const selectedCta = resolveCtaPhrase(ctaMode, options.customCta || '');
     const previewScript = style.engine === 'nexabot' && scriptMode === 'smart'
-      ? buildSmartScript(product, style, ctaMode, options.customCta)
+      ? buildSmartScript(product, style, ctaMode, options.customCta, options.scriptVariant)
       : style.engine === 'nexabot' && scriptMode === 'custom'
         ? `${(options.customScript || '').trim()}${selectedCta ? ` ${selectedCta}` : ''}`.trim()
         : null;
@@ -307,7 +336,8 @@ export class DynamicPromptCompiler {
     const identityLockDirectives = [
       `[PRODUCT IDENTITY MAX LOCK]`,
       `The uploaded product image is an authoritative identity reference for "${product.name}".`,
-      `Preserve exact product geometry, shape, scale (approximately 20-30% of the frame), cap, material, logo, brand, label, typography, and packaging colour with stable consistency across all frames.`,
+      `Preserve exact product geometry, shape, proportions, cap, material, logo, brand, label, typography, and packaging colour with stable consistency across all frames.`,
+      productScaleDirective(product),
       `Strictly NO product morphing, NO duplicate products, NO changing labels, NO changing packaging colours, NO missing caps, NO oversized containers, NO floating objects, NO artificial product rotation, NO sudden disappearance, NO unexpected object replacement.`,
       `Never add a printed volume, size, specification, certification, ingredient, icon or word that is absent from the reference image. If small text is unreadable, leave it indistinct instead of inventing letters or numbers.`,
     ].join(' ');
@@ -416,8 +446,10 @@ export class DynamicPromptCompiler {
     const scriptMode = options.scriptMode || 'smart';
     const ctaMode = options.callToAction || 'none';
     const selectedCta = resolveCtaPhrase(ctaMode, options.customCta || '');
-    const controlledScript = scriptMode === 'smart'
-      ? buildSmartScript(product, style, ctaMode, options.customCta)
+    const supportsSoundOnly = ['NX09', 'NX10', 'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19', 'NX11'].includes(style.id);
+    const audioTreatment = supportsSoundOnly ? options.audioTreatment || 'voiceover' : 'voiceover';
+    const controlledScript = audioTreatment !== 'voiceover' ? undefined : scriptMode === 'smart'
+      ? buildSmartScript(product, style, ctaMode, options.customCta, options.scriptVariant)
       : scriptMode === 'custom'
         ? `${(options.customScript || '').trim()}${selectedCta ? ` ${selectedCta}` : ''}`.trim()
         : undefined;
@@ -428,7 +460,11 @@ export class DynamicPromptCompiler {
         preflight.isValid = false;
       }
     }
-    const audioDirective = controlledScript
+    const audioDirective = audioTreatment === 'ambient'
+      ? 'Natural room ambience only; silence is provider-dependent and remains experimental until output verification.'
+      : audioTreatment === 'asmr'
+        ? 'Natural product-handling ASMR only; silence is provider-dependent and remains experimental until output verification.'
+        : controlledScript
       ? `V8 ${scriptMode === 'smart' ? 'Smart Script' : 'Custom Script'} requested for natural Malaysian Malay delivery; provider fidelity remains subject to actual output verification.`
       : 'Provider-created natural Malaysian Malay dialogue within 15 seconds, following the selected style personality and grounded in the image plus optional user notes.';
 
@@ -476,7 +512,7 @@ export class DynamicPromptCompiler {
           ? `Use this customer-selected textual environment: ${selectedScene.directive}. This is a scene direction, not an image reference.`
           : 'Choose a believable environment appropriate to the actual product category.',
       options.niche && options.niche !== 'auto' ? `Customer-selected niche: ${options.niche}. Adapt buyer context and demonstrations to this niche without inventing product facts.` : '',
-      options.voicePersonality && options.voicePersonality !== 'auto' ? `Customer-selected speaking personality: ${options.voicePersonality}. Preserve the style identity while applying this vocal tone.` : '',
+      options.voicePersonality && options.voicePersonality !== 'auto' ? `Customer-selected speaking personality: ${options.voicePersonality}. ${VOICE_PERSONALITY_DIRECTIONS[options.voicePersonality] || ''} Preserve the style identity while applying this vocal performance.` : '',
       options.storyboard && options.storyboard !== 'auto' ? `Customer-selected storyboard: ${options.storyboard}. Use it only when physically appropriate to the reference product.` : '',
       'Never quietly substitute, merge or ignore a selected reference. If a reference conflicts with safety or cannot be followed, keep the product identity authoritative and avoid fabricating substitute identities.',
     ].filter(Boolean).join(' ');
@@ -488,6 +524,8 @@ export class DynamicPromptCompiler {
       personalizationDirectives,
       universalMasterPrompt,
       options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
+      audioTreatment === 'ambient' ? 'Audio treatment: natural room ambience only. Do not create spoken words, mouth speech or narration.' : '',
+      audioTreatment === 'asmr' ? 'Audio treatment: close natural product-handling ASMR only. Do not create spoken words, mouth speech or narration.' : '',
     ].filter(Boolean).join(' ');
 
     const commonTruthfulness = [
@@ -497,7 +535,16 @@ export class DynamicPromptCompiler {
       'Never repeat or semantically paraphrase a hook, fact, sentence, CTA or ending.',
     ].join(' ');
 
-    const providerDialogueDirective = controlledScript
+    const providerDialogueDirective = audioTreatment !== 'voiceover'
+      ? [
+          `[EXPERIMENTAL ${audioTreatment.toUpperCase()} AUDIO MODE]`,
+          audioTreatment === 'ambient'
+            ? 'Create only believable low-level room ambience that matches the visible environment.'
+            : 'Create only subtle, physically synchronized product-handling sounds from the visible grip, contact and placement.',
+          'Strictly no spoken dialogue, no voiceover, no lip-sync speech, no music and no artificial sound effects. Do not narrate the hand, camera, packaging or movement.',
+          commonTruthfulness,
+        ].join(' ')
+      : controlledScript
       ? [
           MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
           `[V8 ${scriptMode === 'smart' ? 'SMART SCRIPT' : 'CUSTOM SCRIPT'} CONTROL]`,
@@ -505,7 +552,8 @@ export class DynamicPromptCompiler {
           'Say the requested words once, in the same order, without adding claims, testimonials, a second CTA or improvised selling lines. Do not render quotation marks as speech.',
           selectedCta ? 'The requested words already contain the customer-selected CTA. Speak that CTA exactly once; do not add, paraphrase or repeat any call to action.' : 'The customer chose no CTA. Do not add a spoken call to action.',
           `Preserve the unique ${style.id} personality and physical behaviour while delivering the requested words with natural Malaysian intonation and accurate lip movement.`,
-          'Pace naturally across approximately 12.5 to 14 seconds when the script length supports it. Do not stretch syllables, repeat words or rush. If the supplied script is short, finish naturally and continue with meaningful silent product interaction; do not force speech to the final frame.',
+          'The voice contributes buyer context, a grounded product point or a useful buying consideration. Never narrate camera framing, bottle rotation, hand movement, label visibility, product colour or packaging appearance.',
+          'Aim for a natural 10 to 13 seconds of speech when the script length supports it. Do not stretch syllables, repeat words or rush. If speech ends earlier, continue a meaningful physical product interaction with natural breathing or room sound; never freeze the subject.',
           commonTruthfulness,
         ].join(' ')
       : [
@@ -513,8 +561,9 @@ export class DynamicPromptCompiler {
           '[PROVIDER AUTO DIALOGUE — AFFIMATIK V8 LEGACY MODE]',
           'The external video-generation AI must inspect the uploaded product reference and independently create natural Malaysian Malay dialogue and lip-sync.',
           `Follow the unique ${style.id} opening, personality, human behaviour and ending. Create one distinct hook, one grounded product point and one concise ending.`,
+          'Never narrate camera framing, bottle rotation, hand movement, label visibility, product colour or packaging appearance.',
           selectedCta ? `Finish with this exact CTA phrase once: ${quoteProviderScript(selectedCta)}.` : 'The customer chose no CTA. Do not add a spoken call to action.',
-          'Pace the dialogue for approximately 12.5 to 14 seconds when its natural length supports it. Do not fill time through repetition or dragged-out words, and do not force speech to end on the final frame.',
+          'Aim for a natural 10 to 13 seconds of speech when its length supports it. Do not fill time through repetition or dragged-out words. If speech ends earlier, continue meaningful physical interaction and never freeze the subject.',
           commonTruthfulness,
         ].join(' ');
     const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;

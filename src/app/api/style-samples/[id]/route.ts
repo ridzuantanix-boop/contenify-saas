@@ -4,7 +4,7 @@ const SAMPLE_IDS = new Set([
   'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19',
   'NX11', 'NX12', 'NX13', 'NX14', 'NX15', 'NX16', 'NX17',
 ]);
-const SAMPLE_RELEASE = '8.1-premium-20261109';
+const SAMPLE_RELEASE = '8.3-creative-staging-20261110';
 
 async function sampleResponse(req: NextRequest, context: { params: Promise<{ id: string }> }, head = false) {
   const { id } = await context.params;

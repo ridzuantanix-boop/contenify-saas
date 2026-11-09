@@ -41,14 +41,15 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
 
   it('does not append formal filler merely to reach a word target', () => {
     const script = buildSmartScript(product(), getVideoStyle('NX17')!, 'none');
-    expect(script.split(/\s+/).length).toBeLessThan(22);
-    expect(script).toBe(CURATED_STYLE_SCRIPT_PATTERNS.NX17.neutral.replace('{product}', 'Lampu Nova'));
+    expect(script.split(/\s+/).length).toBeLessThan(38);
+    expect(script).toContain('Eh, korang yang tengah cari Lampu Nova');
+    expect(script).toContain('check detail produk dulu');
   });
 
   it('supports all approved CTA phrases and exact bounded custom CTA', () => {
     expect(APPROVED_CTA_PHRASES.tiktok_shop).toContain('Beg Kuning');
-    expect(APPROVED_CTA_PHRASES.click_button).toBe('Klik butang di bawah untuk maklumat lanjut.');
-    expect(APPROVED_CTA_PHRASES.tap_button).toBe('Tekan butang di bawah untuk maklumat lanjut.');
+    expect(APPROVED_CTA_PHRASES.click_button).toBe('Nak tengok detail? Klik butang dekat bawah.');
+    expect(APPROVED_CTA_PHRASES.tap_button).toBe('Kalau nak tahu lagi, tekan butang dekat bawah.');
     expect(APPROVED_CTA_PHRASES.check_bio).toContain('bio');
     expect(APPROVED_CTA_PHRASES.dm_info).toContain('DM');
     expect(APPROVED_CTA_PHRASES.none).toBe('');
@@ -75,7 +76,7 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
     });
     expect(compiled.spokenScript).toBeUndefined();
     expect(compiled.providerPrompt).toContain('[PROVIDER AUTO DIALOGUE — AFFIMATIK V8 LEGACY MODE]');
-    expect(compiled.providerPrompt).toContain('12.5 to 14 seconds');
+    expect(compiled.providerPrompt).toContain('10 to 13 seconds of speech');
     expect(compiled.providerPrompt).not.toMatch(/before second 11|remaining video silent/i);
   });
 
@@ -93,5 +94,30 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
     expect(HUMAN_REALISM_MASTERPROMPT_V8).toContain('POV:');
     expect(HUMAN_REALISM_MASTERPROMPT_V8).toContain('Lifestyle:');
     expect(HUMAN_REALISM_MASTERPROMPT_V8).toContain('Soft sell:');
+  });
+
+  it('keeps product-handling voiceover useful instead of narrating camera action', () => {
+    for (const id of ['RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19']) {
+      const script = buildSmartScript(product(), getVideoStyle(id)!, 'none');
+      expect(script).not.toMatch(/aku (pusing|sengetkan|angkat|pegang|letak)|bagi nampak bentuk|cahaya siang/i);
+    }
+  });
+
+  it('uses category-safe buying considerations and concrete vocal performance', () => {
+    const supplement = { ...product(), category: 'wellness', name: 'Suplemen ini' };
+    expect(buildSmartScript(supplement, getVideoStyle('NX01')!, 'none')).toContain('semak kandungan dan cara pengambilan');
+    const compiled = DynamicPromptCompiler.compile(product(), getVideoStyle('NX01')!, scene, { voicePersonality: 'energetic' });
+    expect(compiled.providerPrompt).toContain('Start quickly with lively but controlled energy');
+    expect(compiled.providerPrompt).not.toMatch(/20.?30%/);
+    expect(compiled.providerPrompt).toContain('[PLAUSIBLE PRODUCT SCALE LOCK]');
+  });
+
+  it('supports experimental ambient and ASMR without silently injecting dialogue', () => {
+    const compiled = DynamicPromptCompiler.compile(product(), getVideoStyle('RH03')!, scene, {
+      audioTreatment: 'asmr', scriptMode: 'smart', callToAction: 'tiktok_shop',
+    });
+    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.providerPrompt).toContain('[EXPERIMENTAL ASMR AUDIO MODE]');
+    expect(compiled.providerPrompt).toContain('Strictly no spoken dialogue');
   });
 });

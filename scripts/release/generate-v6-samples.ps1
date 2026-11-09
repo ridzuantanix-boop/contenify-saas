@@ -6,7 +6,9 @@ param(
   [string]$AttemptLabel = 'a1',
   [string]$ManifestRelativePath = 'output\provider-qa\v6-sample-manifest.json',
   [string]$QaRelativePath = 'output\provider-qa\v6-samples',
-  [string]$IdempotencyNamespace = 'affimatik-v6'
+  [string]$IdempotencyNamespace = 'affimatik-v6',
+  [int]$ExpectedCount = 20,
+  [switch]$DoNotPublish
 )
 
 $ErrorActionPreference = 'Stop'
@@ -69,7 +71,7 @@ function Get-ProviderJob([string]$TaskId, [hashtable]$Headers) {
 $key = Read-LocalSecret $securePath
 try {
   $manifest = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
-  if ($manifest.Count -ne 20) { throw "Expected 20 V6 styles, found $($manifest.Count)." }
+  if ($manifest.Count -ne $ExpectedCount) { throw "Expected $ExpectedCount styles, found $($manifest.Count)." }
   $state = if (Test-Path -LiteralPath $statePath) { Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -AsHashtable } else { @{} }
   if ($RetryStyles.Count -gt 0) {
     if (Test-Path -LiteralPath $receiptPath) {
@@ -134,14 +136,14 @@ try {
         $rawPath = Join-Path $qaDir "$($item.styleId)-provider.mp4"
         Invoke-WebRequest -Uri $videoUrl -Headers @{ Authorization = "Bearer $key"; 'X-API-Key' = $key } -OutFile $rawPath -UseBasicParsing
         if ((Get-Item -LiteralPath $rawPath).Length -lt 100000) { throw "Downloaded media for $($item.styleId) is unexpectedly small." }
-        $publicDir = Join-Path $repo "public\style-previews\$($item.styleId)"
+        $publicDir = if ($DoNotPublish) { $qaDir } else { Join-Path $repo "public\style-previews\$($item.styleId)" }
         New-Item -ItemType Directory -Path $publicDir -Force | Out-Null
-        $publicPath = Join-Path $publicDir 'sample-v6.mp4'
+        $publicPath = if ($DoNotPublish) { Join-Path $publicDir "$($item.styleId)-candidate.mp4" } else { Join-Path $publicDir 'sample-v6.mp4' }
         & ffmpeg -y -v error -i $rawPath -map 0:v:0 -map '0:a?' -c copy -movflags +faststart $publicPath
         if ($LASTEXITCODE -ne 0) { throw "MP4 normalization failed for $($item.styleId)." }
         $entry.status = 'downloaded'
         $entry.videoUrl = $videoUrl
-        $entry.publicPath = "public/style-previews/$($item.styleId)/sample-v6.mp4"
+        $entry.publicPath = if ($DoNotPublish) { "candidate/$($item.styleId)-candidate.mp4" } else { "public/style-previews/$($item.styleId)/sample-v6.mp4" }
         $entry.bytes = (Get-Item -LiteralPath $publicPath).Length
         $entry.completedAt = [DateTime]::UtcNow.ToString('o')
         Write-Output "Downloaded $($item.styleId) ($($entry.bytes) bytes)"
@@ -161,14 +163,14 @@ try {
   $downloaded = @($state.Values | Where-Object { $_.status -eq 'downloaded' }).Count
   $failed = @($state.Values | Where-Object { $_.status -eq 'failed' }).Count
   $receipt = [ordered]@{
-    generatedAt = [DateTime]::UtcNow.ToString('o'); promptVersion = 'affimatik-human-realism-v8.1-reference-lock'
-    requested = 20; submittedThisRun = $submitted; downloaded = $downloaded; failed = $failed
+    generatedAt = [DateTime]::UtcNow.ToString('o'); promptVersion = 'affimatik-real-malaysian-affiliate-v8.3'
+    requested = $ExpectedCount; submittedThisRun = $submitted; downloaded = $downloaded; failed = $failed
     creditsBefore = $creditsBefore; creditsAfter = $creditsAfter; creditsUsed = $creditsBefore - $creditsAfter
     jobs = $state
   }
   Save-Json $receiptPath $receipt
   Write-Output "V6 samples: $downloaded downloaded, $failed failed, credits used $($receipt.creditsUsed)."
-  if ($downloaded -ne 20 -or $failed -ne 0) { throw 'Not all V6 provider samples completed successfully.' }
+  if ($downloaded -ne $ExpectedCount -or $failed -ne 0) { throw 'Not all provider samples completed successfully.' }
 } finally {
   Remove-Variable key -ErrorAction SilentlyContinue
 }

@@ -16,7 +16,7 @@ describe('AFFIMATIK CREATIVE V6 — canonical direct-provider suite', () => {
       expect(style.engine).toBe('nexabot');
       expect(style.durationSeconds).toBe(15);
       expect(style.publicationStatus).toBe('published');
-      expect(style.promptTemplateVersion).toBe('affimatik-creative-v6.0');
+      expect(style.promptTemplateVersion).toBe('affimatik-creative-v8.3');
       expect(style.creativeDirection).toBeDefined();
       expect(style.actionPlan.primaryAction).toBeTruthy();
     }
@@ -36,7 +36,7 @@ describe('AFFIMATIK CREATIVE V6 — canonical direct-provider suite', () => {
       expect(compiled.spokenScript, style.id).toBeTruthy();
       expect(compiled.promptVersion).toBe(GEMS_PROMPT_VERSION);
       expect(compiled.providerPrompt).toContain(`[STYLE ${style.id} —`);
-      expect(compiled.providerPrompt).toContain('[MALAYSIAN AFFILIATE VOICE DNA V6]');
+      expect(compiled.providerPrompt).toContain('[REAL MALAYSIAN AFFILIATE VOICE DNA V8.3]');
       expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
       expect(compiled.providerPrompt).not.toMatch(/\$\{p\.spokenScript\}|\{script_body\}|Script: ""/i);
       return compiled.providerPrompt;

@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
       storyboard,
       callToAction,
       scriptMode,
+      scriptVariant,
+      audioTreatment,
       customScript,
       customCta,
       productFact,
@@ -153,7 +155,7 @@ export async function POST(req: NextRequest) {
 
     const personalization = sanitizePersonalizationSettings({
       styleId: style.id, avatarId, backgroundId, builtInSceneId, niche, voicePersonality,
-      storyboard, callToAction, scriptMode, customScript, customCta, productFact,
+      storyboard, callToAction, scriptMode, scriptVariant, audioTreatment, customScript, customCta, productFact,
       isMuslimahModest, creativeInstruction,
     });
     if (avatarId && !personalization.avatarId) return NextResponse.json({ error: 'Avatar yang dipilih tidak sah.' }, { status: 400 });
@@ -296,6 +298,8 @@ export async function POST(req: NextRequest) {
       niche: personalization.niche,
       voicePersonality: personalization.voicePersonality,
       storyboard: personalization.storyboard,
+      scriptVariant: personalization.scriptVariant,
+      audioTreatment: personalization.audioTreatment,
     });
 
     if (!compiled.preflightValid) {
@@ -343,6 +347,8 @@ export async function POST(req: NextRequest) {
         storyboard: personalization.storyboard,
         callToAction: personalization.callToAction,
         scriptMode: personalization.scriptMode,
+        scriptVariant: personalization.scriptVariant,
+        audioTreatment: personalization.audioTreatment,
         customScript: personalization.scriptMode === 'custom' ? personalization.customScript : null,
         customCta: personalization.callToAction === 'custom' ? personalization.customCta : null,
         productFact: personalization.productFact || null,

@@ -57,7 +57,7 @@ describe('V8 direct-to-provider masterprompt architecture', () => {
       expect(compiled.providerPrompt, style.id).not.toMatch(/Script: ""|\$\{p\.spokenScript\}|\{script_body\}/i);
       expect(style.engine, style.id).toBe('nexabot');
       expect(compiled.providerPrompt, style.id).toContain('[V8 SMART SCRIPT CONTROL]');
-      expect(compiled.providerPrompt, style.id).toContain('approximately 12.5 to 14 seconds');
+      expect(compiled.providerPrompt, style.id).toContain('natural 10 to 13 seconds of speech');
       expect(compiled.providerPrompt, style.id).not.toContain('before second 11');
       expect(compiled.providerPrompt, style.id).toContain('Never repeat or semantically paraphrase');
       expect(compiled.providerPrompt, style.id).not.toContain('exactly TWO short spoken sentences');
@@ -71,7 +71,7 @@ describe('V8 direct-to-provider masterprompt architecture', () => {
   });
   it('uses a neutral curated Smart Script by default', () => {
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene);
-    expect(compiled.spokenScript).toContain('Jom tengok dekat-dekat dulu');
+    expect(compiled.spokenScript).toContain('kalau memang tengah survey produk ini');
     expect(compiled.spokenScript).not.toMatch(/fakta yang disahkan|nilai kesesuaiannya/i);
     expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
     expect(compiled.providerPrompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
@@ -138,6 +138,6 @@ describe('V8 direct-to-provider masterprompt architecture', () => {
     expect(legacyStyle.engine).toBe('nexabot');
     expect(compiled.provider).toBe('nexabot');
     expect(compiled.providerPrompt).toContain('[STYLE RH01 — Goyang Produk Natural]');
-    expect(compiled.providerPrompt).toContain('Hold stabil selepas VO selesai');
+    expect(compiled.providerPrompt).toContain('Hold stabil dengan bunyi atau ucapan tamat natural');
   });
 });

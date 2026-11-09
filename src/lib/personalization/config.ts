@@ -1,5 +1,5 @@
 import { findOfficialAvatar, findOfficialBackground } from './official-assets';
-import { CTA_MODES, SCRIPT_MODES, CtaMode, ScriptMode } from '../engine/script-control';
+import { CTA_MODES, SCRIPT_MODES, SCRIPT_VARIANTS, CtaMode, ScriptMode, ScriptVariant } from '../engine/script-control';
 
 export const BUILT_IN_SCENES = [
   { id: 'scene:home', name: 'Rumah', directive: 'an ordinary bright Malaysian home with lived-in details' },
@@ -17,6 +17,7 @@ export const NICHE_OPTIONS = ['auto', 'wellness', 'beauty', 'kitchen', 'automoti
 export const VOICE_PERSONALITIES = ['auto', 'friendly', 'confident', 'calm', 'energetic', 'helpful', 'premium'] as const;
 export const STORYBOARD_OPTIONS = ['auto', 'conversation', 'problem_demo', 'step_by_step', 'before_after_context', 'q_and_a', 'product_showcase'] as const;
 export const CTA_OPTIONS = CTA_MODES;
+export const AUDIO_TREATMENTS = ['voiceover', 'ambient', 'asmr'] as const;
 
 export type PersonalizationSettings = {
   styleId: string;
@@ -28,6 +29,8 @@ export type PersonalizationSettings = {
   storyboard: typeof STORYBOARD_OPTIONS[number];
   callToAction: CtaMode;
   scriptMode: ScriptMode;
+  scriptVariant: ScriptVariant;
+  audioTreatment: typeof AUDIO_TREATMENTS[number];
   customScript: string;
   customCta: string;
   productFact: string;
@@ -59,6 +62,8 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
     storyboard: oneOf(input.storyboard, STORYBOARD_OPTIONS, 'auto'),
     callToAction: oneOf(legacyCta, CTA_OPTIONS, 'none'),
     scriptMode: oneOf(input.scriptMode, SCRIPT_MODES, 'smart'),
+    scriptVariant: oneOf(input.scriptVariant, SCRIPT_VARIANTS, 'style'),
+    audioTreatment: oneOf(input.audioTreatment, AUDIO_TREATMENTS, 'voiceover'),
     customScript: typeof input.customScript === 'string' ? input.customScript.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 600) : '',
     customCta: typeof input.customCta === 'string' ? input.customCta.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 80) : '',
     productFact: typeof input.productFact === 'string' ? input.productFact.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 180) : '',

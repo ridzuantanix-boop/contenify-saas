@@ -5,7 +5,7 @@ import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function compileFor(name: string, styleId: string, fact = 'only the purpose supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini') {
+function compileFor(name: string, styleId: string, fact = 'only the purpose supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini', options: { audioTreatment?: 'voiceover' | 'ambient' | 'asmr'; voicePersonality?: string } = {}) {
   const style = getVideoStyle(styleId)!;
   const product: ProductProfile = {
     name, category, packagingFormat: 'general', spokenShortName,
@@ -21,7 +21,7 @@ function compileFor(name: string, styleId: string, fact = 'only the purpose supp
     actionProgression: 'style-specific action', endPose: 'natural', primaryAction: 'style-specific action',
     audioPolicy: style.audioMode, targetDurationSeconds: style.durationSeconds,
   };
-  return DynamicPromptCompiler.compile(product, style, scene).providerPrompt;
+  return DynamicPromptCompiler.compile(product, style, scene, options).providerPrompt;
 }
 
 describe('real-provider QA prompt export', () => {
@@ -41,7 +41,7 @@ describe('real-provider QA prompt export', () => {
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
       expect(prompt).toContain('If the image and customer-confirmed facts do not establish a claim, omit it entirely');
       expect(prompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
-      expect(prompt).toContain('approximately 12.5 to 14 seconds');
+      expect(prompt).toContain('natural 10 to 13 seconds of speech');
       expect(prompt).not.toContain('before second 11');
     }
     expect(prompts.lampMotion).toContain('[V8 SMART SCRIPT CONTROL]');
@@ -73,6 +73,16 @@ describe('real-provider QA prompt export', () => {
         return { styleId, ...product, prompt: compileFor(product.productName, styleId, product.fact, product.category, product.spoken) };
       });
       writeFileSync(resolve(directory, 'v6-sample-manifest.json'), JSON.stringify(manifest, null, 2));
+      const rhIds = ['RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19'];
+      const rhManifest = manifest.filter((item) => rhIds.includes(item.styleId));
+      rhManifest.push({
+        styleId: 'RH03_ASMR', ...premiumProducts.lamp,
+        prompt: compileFor(premiumProducts.lamp.productName, 'RH03', premiumProducts.lamp.fact, premiumProducts.lamp.category, premiumProducts.lamp.spoken, { audioTreatment: 'asmr' }),
+      });
+      writeFileSync(resolve(directory, 'v8-3-rh-manifest.json'), JSON.stringify(rhManifest, null, 2));
+      writeFileSync(resolve(directory, 'v8-3-rh-retry-manifest.json'), JSON.stringify(
+        rhManifest.filter((item) => ['RH01', 'RH04', 'RH17', 'RH19'].includes(item.styleId)), null, 2,
+      ));
     }
   });
 });

@@ -17,11 +17,11 @@ export const CTA_MODES = [
 export type CtaMode = typeof CTA_MODES[number];
 
 export const APPROVED_CTA_PHRASES: Record<Exclude<CtaMode, 'custom'>, string> = {
-  tiktok_shop: 'Kalau sesuai, tekan Beg Kuning.',
-  click_button: 'Klik butang di bawah untuk maklumat lanjut.',
-  tap_button: 'Tekan butang di bawah untuk maklumat lanjut.',
-  check_bio: 'Boleh semak pautan di bio.',
-  dm_info: 'DM untuk info lanjut.',
+  tiktok_shop: 'Kalau nak tengok detail, tekan Beg Kuning sekarang.',
+  click_button: 'Nak tengok detail? Klik butang dekat bawah.',
+  tap_button: 'Kalau nak tahu lagi, tekan butang dekat bawah.',
+  check_bio: 'Detail lanjut korang boleh semak dekat bio.',
+  dm_info: 'Kalau nak tanya lagi, boleh DM.',
   none: '',
 };
 
@@ -31,33 +31,56 @@ type CuratedPattern = {
   neutral: string;
 };
 
+export const SCRIPT_VARIANTS = ['style', 'direct', 'helpful'] as const;
+export type ScriptVariant = typeof SCRIPT_VARIANTS[number];
+
 /**
  * Human-written V8 pattern library. These are style examples/templates, not a
  * universal fixed script and not an AI scriptwriter. Only customer-confirmed
  * facts are interpolated into {fact}.
  */
 export const CURATED_STYLE_SCRIPT_PATTERNS: Record<string, CuratedPattern> = {
-  NX01: { styleId: 'NX01', withFact: 'Kalau korang tengah cari {product}, yang ni {fact}. Boleh tengok sama ada ngam dengan rutin korang.', neutral: 'Korang tengah tengok {product} ni? Jom tengok dekat-dekat dulu, mana tahu ngam dengan apa yang korang cari.' },
-  NX02: { styleId: 'NX02', withFact: '{product} ni {fact}. Aku pegang macam ni supaya korang boleh tengok dengan lebih jelas.', neutral: 'Ni {product}. Aku tunjuk depan-depan dulu supaya korang boleh tengok rupa dan saiz dia.' },
-  NX03: { styleId: 'NX03', withFact: 'Eh, baru perasan {product} ni {fact}. Menarik juga kalau itu yang korang tengah cari.', neutral: 'Eh, ni {product} rupanya. Sekali pandang memang buat aku nak tengok dekat sikit.' },
-  NX05: { styleId: 'NX05', withFact: 'Kadang susah nak jumpa yang kena dengan keperluan. {product} ni {fact}, jadi boleh tengok yang ni dulu.', neutral: 'Kadang banyak sangat pilihan sampai tak tahu nak tengok yang mana. Ni {product}, kita tengok yang penting dulu.' },
-  NX07: { styleId: 'NX07', withFact: '{product} ni ada apa? Yang jelas, {fact}. Ha, itu yang korang boleh tengok dulu.', neutral: '{product} ni macam mana? Jom tengok benda yang jelas pada produk ni dulu, lepas tu baru senang nak pilih.' },
-  NX09: { styleId: 'NX09', withFact: 'Ni {product}. Yang ni {fact}. Aku pusing sikit supaya korang boleh tengok dengan lebih jelas.', neutral: 'Ni {product}. Aku gerakkan perlahan sikit supaya korang boleh tengok bentuk dia dari dekat.' },
-  NX10: { styleId: 'NX10', withFact: 'Dekat {product} ni memang tertulis {fact}. Aku tunjuk dekat sikit supaya korang nampak.', neutral: 'Kalau nak tengok {product} ni, kita mula dengan apa yang memang tercetak dekat produk dulu.' },
-  RH01: { styleId: 'RH01', withFact: 'Ni {product} bila dipegang macam biasa. Yang ni {fact}. Aku gerakkan perlahan bagi nampak jelas.', neutral: 'Ni {product} bila dipegang macam biasa. Aku gerakkan perlahan bagi korang nampak bentuk dia.' },
-  RH02: { styleId: 'RH02', withFact: 'Aku sengetkan sikit {product} ni. Yang ni {fact}, jadi korang boleh tengok dari sudut lain.', neutral: 'Aku sengetkan sikit {product} ni, senang korang nak tengok bentuk dia dari sudut lain.' },
-  RH03: { styleId: 'RH03', withFact: 'Bila angkat {product} ni, senang nak agak saiz dia. Yang ni {fact}.', neutral: 'Aku angkat {product} ni sekejap, lepas tu letak balik. Senang sikit nak agak saiz dia.' },
-  RH04: { styleId: 'RH04', withFact: 'Nampak {product} dekat rak ni? Yang ni {fact}. Aku ambil bagi korang tengok lebih jelas.', neutral: 'Nampak {product} dekat rak ni? Aku ambil sekejap bagi korang tengok lebih jelas.' },
-  RH17: { styleId: 'RH17', withFact: 'Untuk setup meja, {product} ni {fact}. Aku letak sini supaya korang boleh bayang ruang dia.', neutral: 'Aku letak {product} dekat meja kerja macam ni, senang korang nak bayang ruang yang dia guna.' },
-  RH19: { styleId: 'RH19', withFact: 'Bawah cahaya siang, {product} ni nampak lebih jelas. Yang ni {fact}.', neutral: 'Bawah cahaya siang macam ni, warna dan bentuk {product} nampak lebih jelas.' },
-  NX11: { styleId: 'NX11', withFact: 'Kalau jumpa {product} ni, apa korang nak tengok dulu? Yang ni {fact}.', neutral: 'Kalau jumpa {product} ni, apa korang nak tengok dulu? Jom tengok dari sudut pembeli.' },
-  NX12: { styleId: 'NX12', withFact: 'Eh, ternampak {product} ni. Rupanya {fact}. Patutlah buat aku berhenti tengok sekejap.', neutral: 'Eh, ternampak {product} ni. Nampak menarik untuk kita tengok dekat sikit.' },
-  NX13: { styleId: 'NX13', withFact: 'Kalau dekat dapur, {product} ni {fact}. Aku tunjuk macam mana rupa dia atas kaunter.', neutral: 'Kalau barang dapur macam {product} ni, aku suka tengok dulu macam mana rupa dia atas kaunter.' },
-  NX14: { styleId: 'NX14', withFact: 'Untuk setup meja, {product} ni {fact}. Aku tunjuk macam mana rupa dia dekat ruang kerja.', neutral: 'Kalau nak letak {product} dekat meja kerja, jom tengok dulu macam mana rupa dia dalam ruang ni.' },
-  NX15: { styleId: 'NX15', withFact: 'Kadang nak pilih barang pun pening sebab banyak sangat pilihan. {product} ni {fact}.', neutral: 'Kadang nak pilih barang pun pening sebab banyak sangat pilihan. Ni {product}, kita tengok satu-satu dulu.' },
-  NX16: { styleId: 'NX16', withFact: 'Aku share santai je, {product} ni {fact}. Kalau ngam dengan apa yang korang cari, boleh tengok.', neutral: 'Aku share santai je pasal {product} ni. Kalau nampak ngam dengan apa yang korang cari, boleh tengok.' },
-  NX17: { styleId: 'NX17', withFact: 'Eh, tiba-tiba teringat {product} ni. Yang ni {fact}. Boleh tengok kalau memang korang perlukan.', neutral: 'Eh, tiba-tiba teringat {product} ni. Boleh tengok kalau benda ni memang kena dengan apa yang korang cari.' },
+  NX01: { styleId: 'NX01', withFact: 'Eh korang, kalau tengah survey {product}, yang ni {fact}. {consideration}', neutral: 'Eh korang, kalau memang tengah survey {product}, tengok yang ni dulu. {consideration}' },
+  NX02: { styleId: 'NX02', withFact: 'Okay, yang ni {product}. Dia {fact}. {consideration}', neutral: 'Okay, yang ni {product}. Tengok dulu fungsi yang korang perlukan. {consideration}' },
+  NX03: { styleId: 'NX03', withFact: 'Haa, baru nampak {product} ni. Rupanya {fact}. {consideration}', neutral: 'Haa, baru nampak {product} ni. Kalau korang tengah cari kategori macam ni, {consideration_lower}' },
+  NX05: { styleId: 'NX05', withFact: 'Korang pernah tak, susah nak pilih yang betul-betul sesuai? {product} ni {fact}. {consideration}', neutral: 'Korang pernah tak, pilihan banyak sangat sampai makin pening? Kalau tengok {product} ni, {consideration_lower}' },
+  NX07: { styleId: 'NX07', withFact: 'So, apa yang penting dekat {product} ni? Yang disahkan, dia {fact}. {consideration}', neutral: 'So, apa yang patut korang tengok dekat {product} ni? Mula dengan fungsi yang korang perlukan, lepas tu {consideration_lower}' },
+  NX09: { styleId: 'NX09', withFact: 'Kalau korang tengah cari {product}, yang ni {fact}. {consideration}', neutral: 'Kalau korang tengah cari {product}, jangan tengok rupa je. {consideration}' },
+  NX10: { styleId: 'NX10', withFact: 'Okay, dekat {product} ni dinyatakan {fact}. {consideration}', neutral: 'Okay, kalau nak pilih {product}, baca detail yang dinyatakan dulu. {consideration}' },
+  RH01: { styleId: 'RH01', withFact: 'Korang yang tengah survey {product}, jangan tengok rupa je. Yang ni {fact}. Sebelum pilih, tengok dulu cara guna dan detail yang dinyatakan. {consideration}', neutral: 'Korang yang tengah survey {product}, jangan tengok rupa je. Fikir dulu bila dan dekat mana korang nak guna. {consideration}' },
+  RH02: { styleId: 'RH02', withFact: 'Korang yang tengah bandingkan {product}, yang ni {fact}. Jangan terus pilih sebab nampak cantik; tengok apa yang rutin korang perlukan. {consideration}', neutral: 'Korang yang tengah bandingkan {product}, jangan terus pilih sebab nampak cantik. Tengok apa yang rutin korang perlukan. {consideration}' },
+  RH03: { styleId: 'RH03', withFact: 'Korang yang tengah bandingkan {product}, model ni {fact}. Tengok dulu ruang dan cara korang nak guna benda ni hari-hari. {consideration}', neutral: 'Korang yang tengah bandingkan {product}, jangan pilih terus. Tengok dulu ruang dan cara korang nak guna benda ni hari-hari. {consideration}' },
+  RH04: { styleId: 'RH04', withFact: 'Kalau memang tengah cari {product}, model ni {fact}. Jangan terus ambil satu; tengok detail dan cara guna yang dinyatakan dulu. {consideration}', neutral: 'Kalau memang tengah cari {product}, boleh masukkan yang ni dalam pilihan. Jangan terus ambil satu; tengok detail dia dulu. {consideration}' },
+  RH17: { styleId: 'RH17', withFact: 'Kalau korang selalu buat kerja dekat meja, {product} ni {fact}. Bayangkan dulu kedudukan dia dalam setup yang korang ada. {consideration}', neutral: 'Kalau korang selalu buat kerja dekat meja, {product} macam ni boleh dipertimbangkan. Bayangkan dulu kedudukan dia dalam setup korang. {consideration}' },
+  RH19: { styleId: 'RH19', withFact: 'Yang tengah survey {product}, model ni {fact}. Jangan pilih berdasarkan gambar semata-mata; tengok detail dan cara guna yang dinyatakan. {consideration}', neutral: 'Yang tengah survey {product}, jangan pilih berdasarkan gambar semata-mata. Tengok detail dan cara guna yang dinyatakan. {consideration}' },
+  NX11: { styleId: 'NX11', withFact: 'Kalau korang jumpa {product} macam ni, benda pertama nak check ialah {fact}. {consideration}', neutral: 'Kalau korang jumpa {product} macam ni, check dulu apa yang korang betul-betul perlukan. {consideration}' },
+  NX12: { styleId: 'NX12', withFact: 'Eh, ternampak {product} ni. Yang menarik, dia {fact}. {consideration}', neutral: 'Eh, ternampak {product} ni. Kalau kategori ni memang dalam list korang, {consideration_lower}' },
+  NX13: { styleId: 'NX13', withFact: 'Korang yang suka ruang dapur lebih teratur, {product} ni {fact}. {consideration}', neutral: 'Korang yang selalu pening barang dapur dah penuh, {product} macam ni boleh tengok juga. {consideration}' },
+  NX14: { styleId: 'NX14', withFact: 'Kalau setup meja korang perlukan {product}, model ni {fact}. {consideration}', neutral: 'Kalau korang selalu buat kerja dekat meja, {product} macam ni boleh masuk dalam setup. {consideration}' },
+  NX15: { styleId: 'NX15', withFact: 'Aku rasa ramai pernah pening nak pilih {product}. Yang ni {fact}. {consideration}', neutral: 'Aku rasa ramai pernah pening nak pilih {product}. Banyak nampak sama, jadi {consideration_lower}' },
+  NX16: { styleId: 'NX16', withFact: 'Okay, aku share santai je. {product} ni {fact}. {consideration}', neutral: 'Okay, aku share santai je. Kalau korang memang tengah cari {product}, {consideration_lower}' },
+  NX17: { styleId: 'NX17', withFact: 'Eh, korang yang tengah cari {product}, yang ni {fact}. {consideration}', neutral: 'Eh, korang yang tengah cari {product}, yang ni boleh tengok juga. {consideration}' },
 };
+
+function buyingConsideration(category: string): string {
+  const value = category.toLowerCase();
+  if (/supplement|wellness|health|suplemen/.test(value)) return 'Tapi sebelum pilih, semak kandungan dan cara pengambilan dulu.';
+  if (/beauty|cosmetic|skin|serum|sunscreen|sun care|spf/.test(value)) return 'Tapi semak dulu kandungan dan cara pakai yang dinyatakan.';
+  if (/automotive|car|kereta/.test(value)) return 'Tapi check dulu cara pasang dan kesesuaian dengan kereta korang.';
+  if (/kitchen|organizer|dapur|cookware/.test(value)) return 'Tapi ukur dulu ruang yang korang ada, ngam ke tak.';
+  if (/gadget|lighting|lamp|office/.test(value)) return 'Tapi check dulu fungsi dan cara sambungan yang dinyatakan.';
+  return 'Tapi check detail produk dulu, tengok sesuai tak dengan keperluan korang.';
+}
+
+function variantOpening(variant: ScriptVariant, productName: string, fact: string, consideration: string): string | null {
+  if (variant === 'direct') return fact
+    ? `Okay, ${productName} ni ${fact}. ${consideration}`
+    : `Okay, kalau tengah cari ${productName}, tengok fungsi yang korang perlukan dulu. ${consideration}`;
+  if (variant === 'helpful') return fact
+    ? `Yang tengah survey ${productName}, model ni ${fact}. ${consideration}`
+    : `Yang tengah survey ${productName}, jangan pilih sebab rupa je. ${consideration}`;
+  return null;
+}
 
 const forbiddenIndonesian = ['kamu', 'kalian', 'nggak', 'enggak', 'banget', 'cobain', 'keranjang kuning', 'gimana', 'bikin', 'gue', 'lu'];
 
@@ -120,14 +143,19 @@ export function buildSmartScript(
   style: VideoStyle,
   ctaMode: CtaMode,
   customCta = '',
+  variant: ScriptVariant = 'style',
 ): string {
   const pattern = CURATED_STYLE_SCRIPT_PATTERNS[style.id];
   if (!pattern) throw new Error(`Tiada corak Smart Script rasmi untuk ${style.id}.`);
   const productName = tidy(product.name && product.name !== 'the uploaded product image' ? product.name : 'produk ini', 80);
   const confirmedFact = tidy(product.confirmedFeatures?.[0] || '', 180);
-  const base = (confirmedFact ? pattern.withFact : pattern.neutral)
+  const consideration = buyingConsideration(product.category || 'general');
+  const alternate = variantOpening(variant, productName, confirmedFact, consideration);
+  const base = (alternate || (confirmedFact ? pattern.withFact : pattern.neutral))
     .replaceAll('{product}', productName)
     .replaceAll('{fact}', confirmedFact)
+    .replaceAll('{consideration}', consideration)
+    .replaceAll('{consideration_lower}', consideration.charAt(0).toLowerCase() + consideration.slice(1))
     .replace(/\s+/g, ' ')
     .trim();
   const cta = resolveCtaPhrase(ctaMode, customCta);

@@ -24,7 +24,7 @@ const scene: ScenePlan = {
 
 describe('AffiMatik V7 Personalization Studio', () => {
   it('keeps all personalization fields optional and rejects malformed IDs or unbounded instructions', () => {
-    expect(sanitizePersonalizationSettings({})).toMatchObject({ styleId: 'NX01', avatarId: null, backgroundId: null, niche: 'auto' });
+    expect(sanitizePersonalizationSettings({})).toMatchObject({ styleId: 'NX01', avatarId: null, backgroundId: null, niche: 'auto', scriptVariant: 'style', audioTreatment: 'voiceover' });
     const settings = sanitizePersonalizationSettings({ avatarId: '../../other-workspace', backgroundId: 'bad', builtInSceneId: 'scene:unknown', creativeInstruction: 'x'.repeat(2000) });
     expect(settings.avatarId).toBeNull(); expect(settings.backgroundId).toBeNull(); expect(settings.builtInSceneId).toBeNull();
     expect(settings.creativeInstruction).toHaveLength(1000);
@@ -118,5 +118,9 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(factory).toContain('syncActiveJobStatus(activeJobId)');
     expect(factory).toContain("document.addEventListener('visibilitychange'");
     expect(factory).toContain('Semak Status Sekarang');
+    expect(factory).toContain('Auto / Tanpa Preset');
+    expect(factory).toContain('Semak Skrip & CTA');
+    expect(factory).toContain('Ambient — Eksperimental');
+    expect(factory).toContain("setProductFact('')");
   });
 });
