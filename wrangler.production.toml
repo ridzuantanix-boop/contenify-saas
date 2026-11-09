@@ -1,7 +1,7 @@
 # Prepared release target only. Domain routes must be attached separately
 # after explicit owner cutover authorisation.
 name = "affimatik-production-v2"
-main = ".open-next/worker.js"
+main = "scripts/release/production-worker.mjs"
 compatibility_date = "2026-10-14"
 compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env", "global_fetch_strictly_public"]
 workers_dev = false
@@ -11,6 +11,8 @@ directory = ".open-next/assets"
 binding = "ASSETS"
 
 [vars]
+DEPLOYMENT_ENV = "production"
+APP_BASE_URL = "https://affimatik.online"
 SUPABASE_URL = "https://oudxnvazrdmnxdndpgmy.supabase.co"
 AFFIMATIK_VOICE_PUBLIC_ENABLED = "true"
 AFFIMATIK_MOTION_PUBLIC_ENABLED = "false"

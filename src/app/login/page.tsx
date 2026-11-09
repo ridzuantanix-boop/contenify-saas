@@ -79,6 +79,7 @@ export default function LoginPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
                 required
               />
+              <div className="mt-1 text-right"><Link href="/forgot-password" className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700">Lupa kata laluan?</Link></div>
             </div>
 
             <div>

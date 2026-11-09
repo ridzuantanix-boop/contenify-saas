@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
+import { authCallbackUrl } from '@/lib/auth/public-origin';
 
 function authEmailFailure(response: Response, result: Record<string, unknown>) {
   const code = typeof result.error_code === 'string' ? result.error_code
@@ -43,7 +44,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Pendaftaran sedang diselenggara.' }, { status: 503 });
     }
     try {
-      const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/signup`, {
+      const redirectTo = authCallbackUrl(req);
+      const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_ANON_KEY },
         body: JSON.stringify({ email, password, data: { full_name: fullName || email.split('@')[0], whatsapp, referral_code: referralCode || null } }),
       });
