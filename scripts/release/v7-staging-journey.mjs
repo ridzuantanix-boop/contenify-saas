@@ -162,6 +162,21 @@ try {
   await page.goto(`${base}/factory`, { waitUntil: 'networkidle' });
   evidence.desktop = { quickVisible: await page.getByRole('button', { name: 'Quick Mode' }).isVisible(), customizeVisible: await page.getByRole('button', { name: 'Customize' }).isVisible(), generateVisible: await page.getByRole('button', { name: /Jana Video Sekarang/ }).isVisible() };
   await page.getByRole('button', { name: 'Customize' }).click();
+  const officialAvatar = page.getByText('Aina Mesra', { exact: true });
+  const officialBackground = page.getByText('Ruang Tamu Beige', { exact: true });
+  await officialAvatar.waitFor();
+  await officialBackground.waitFor();
+  const officialApis = await page.evaluate(async () => {
+    const [avatarsResponse, backgroundsResponse] = await Promise.all([fetch('/api/avatars'), fetch('/api/backgrounds')]);
+    const [avatars, backgrounds] = await Promise.all([avatarsResponse.json(), backgroundsResponse.json()]);
+    return {
+      avatarsStatus: avatarsResponse.status,
+      backgroundsStatus: backgroundsResponse.status,
+      avatarCount: avatars.officialAvatars?.length || 0,
+      backgroundCount: backgrounds.officialBackgrounds?.length || 0,
+    };
+  });
+  evidence.library.officialCollection = officialApis;
   if (await page.getByText('Aina Synthetic QA', { exact: true }).count() === 0) {
     await uploadWithDialogs(page, page.locator('label').filter({ hasText: 'Upload Baru' }).locator('input[type="file"]'), resolve(input, 'synthetic-presenter-aina.png'), ['Aina Synthetic QA', true]);
   }
@@ -180,29 +195,31 @@ try {
     await generate(page, { case: 'D_PRODUCT_AVATAR_BACKGROUND', product: resolve(input, 'automotive-roadgrip.png'), name: 'Roadgrip Phone Holder', niche: 'automotive', avatar: 'Aina Synthetic QA', background: 'Dapur QA' });
   }
 
-  await page.goto(`${base}/factory`, { waitUntil: 'networkidle' }); await selectCustomization(page, { avatar: 'Aina Synthetic QA', background: 'Dapur QA' });
-  if (await page.getByRole('button', { name: /Aina \+ Dapur QA/ }).count() === 0) {
-    page.once('dialog', (dialog) => dialog.accept('Aina + Dapur QA'));
+  await page.goto(`${base}/factory`, { waitUntil: 'networkidle' }); await selectCustomization(page, { avatar: 'Aina Mesra', background: 'Ruang Tamu Beige' });
+  await page.getByText('Aina Mesra', { exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: resolve(out, 'desktop-official-collection.png'), fullPage: true });
+  if (await page.getByRole('button', { name: /Aina \+ Ruang Tamu/ }).count() === 0) {
+    page.once('dialog', (dialog) => dialog.accept('Aina + Ruang Tamu'));
     await page.getByRole('button', { name: 'Simpan sebagai Preset' }).click();
     await page.getByText(/berjaya disimpan/).waitFor();
   }
   await page.goto(`${base}/presets`, { waitUntil: 'networkidle' });
-  evidence.library.presetVisible = await page.getByText('Aina + Dapur QA', { exact: true }).isVisible();
-  const originalPreset = page.locator('article').filter({ hasText: 'Aina + Dapur QA' }).first();
-  page.once('dialog', (dialog) => dialog.accept('Aina + Dapur QA Copy'));
+  evidence.library.presetVisible = await page.getByText('Aina + Ruang Tamu', { exact: true }).isVisible();
+  const originalPreset = page.locator('article').filter({ hasText: 'Aina + Ruang Tamu' }).first();
+  page.once('dialog', (dialog) => dialog.accept('Aina + Ruang Tamu Copy'));
   await originalPreset.getByTitle('Duplikasi').click();
-  await page.getByText('Aina + Dapur QA Copy', { exact: true }).waitFor();
-  const copyPreset = page.locator('article').filter({ hasText: 'Aina + Dapur QA Copy' });
-  page.once('dialog', (dialog) => dialog.accept('Aina + Dapur QA Edited'));
+  await page.getByText('Aina + Ruang Tamu Copy', { exact: true }).waitFor();
+  const copyPreset = page.locator('article').filter({ hasText: 'Aina + Ruang Tamu Copy' });
+  page.once('dialog', (dialog) => dialog.accept('Aina + Ruang Tamu Edited'));
   await copyPreset.getByTitle('Edit nama').click();
-  await page.getByText('Aina + Dapur QA Edited', { exact: true }).waitFor();
-  const editedPreset = page.locator('article').filter({ hasText: 'Aina + Dapur QA Edited' });
+  await page.getByText('Aina + Ruang Tamu Edited', { exact: true }).waitFor();
+  const editedPreset = page.locator('article').filter({ hasText: 'Aina + Ruang Tamu Edited' });
   await editedPreset.getByTitle('Jadikan default').click();
   await page.getByText('Preset default ditetapkan.').waitFor();
   page.once('dialog', (dialog) => dialog.accept());
   await editedPreset.getByTitle('Padam').click();
   await page.getByText('Preset dipadam.').waitFor();
-  await page.locator('article').filter({ hasText: 'Aina + Dapur QA' }).first().getByTitle('Jadikan default').click();
+  await page.locator('article').filter({ hasText: 'Aina + Ruang Tamu' }).first().getByTitle('Jadikan default').click();
   await page.getByText('Preset default ditetapkan.').waitFor();
   evidence.library.presetCrud = true;
   await page.goto(`${base}/products`, { waitUntil: 'networkidle' });
@@ -240,10 +257,12 @@ try {
   await mobilePage.screenshot({ path: resolve(out, 'mobile-style-posters.png'), fullPage: true });
   await mobilePage.goto(`${base}/factory`, { waitUntil: 'networkidle' });
   evidence.mobile = { quickVisible: await mobilePage.getByRole('button', { name: 'Quick Mode' }).isVisible(), customizeVisible: await mobilePage.getByRole('button', { name: 'Customize' }).isVisible(), stickyGenerateVisible: await mobilePage.getByRole('button', { name: 'Jana Video', exact: true }).isVisible() };
-  await mobilePage.getByRole('button', { name: 'Customize' }).click(); await mobilePage.getByText('Aina Synthetic QA', { exact: true }).scrollIntoViewIfNeeded();
-  evidence.mobile.defaultPresetApplied = await mobilePage.getByRole('button', { name: /Aina \+ Dapur QA/ }).count() > 0;
+  await mobilePage.getByRole('button', { name: 'Customize' }).click(); await mobilePage.getByText('Aina Mesra', { exact: true }).scrollIntoViewIfNeeded();
+  evidence.mobile.officialAvatarVisible = await mobilePage.getByText('Aina Mesra', { exact: true }).isVisible();
+  evidence.mobile.officialBackgroundVisible = await mobilePage.getByText('Ruang Tamu Beige', { exact: true }).isVisible();
+  evidence.mobile.defaultPresetApplied = await mobilePage.getByRole('button', { name: /Aina \+ Ruang Tamu/ }).count() > 0;
   await loadLazyPosters(mobilePage);
-  await mobilePage.screenshot({ path: resolve(out, 'mobile-customize.png'), fullPage: true }); await mobile.close();
+  await mobilePage.screenshot({ path: resolve(out, 'mobile-official-collection.png'), fullPage: true }); await mobile.close();
 } catch (error) {
   evidence.errors.push(error instanceof Error ? { message: error.message, stack: error.stack } : { message: String(error) });
   throw error;
