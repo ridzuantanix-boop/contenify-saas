@@ -29,6 +29,7 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
     const neutralScripts = VIDEO_STYLES_REGISTRY.map((style) => buildSmartScript(product(), style, 'none'));
     expect(new Set(neutralScripts).size).toBe(20);
     expect(neutralScripts.join(' ')).not.toMatch(/wireless|rechargeable|menyembuhkan|berkesan/i);
+    expect(neutralScripts.every((script) => script.split(/\s+/).length >= 22 && script.split(/\s+/).length <= 48)).toBe(true);
   });
 
   it('only interpolates a customer-confirmed fact into Smart Script', () => {

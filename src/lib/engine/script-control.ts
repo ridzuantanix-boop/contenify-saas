@@ -59,6 +59,29 @@ export const CURATED_STYLE_SCRIPT_PATTERNS: Record<string, CuratedPattern> = {
   NX17: { styleId: 'NX17', withFact: 'Teringat nak tunjuk {product} ini. Satu perkara yang disahkan ialah {fact}.', neutral: 'Teringat nak tunjuk {product} ini. Tengok tujuan pada label dan nilai ikut keperluan.' },
 };
 
+const CURATED_STYLE_ENDINGS: Record<string, string> = {
+  NX01: 'Ambil masa semak arahan yang jelas sebelum tentukan pilihan.',
+  NX02: 'Nilai maklumat yang dinyatakan supaya keputusan lebih tepat.',
+  NX03: 'Yang penting, tengok butiran yang jelas tanpa buat andaian.',
+  NX05: 'Semak kesesuaiannya secara tenang sebelum jadikan ia pilihan.',
+  NX07: 'Jadi, rujuk maklumat yang sah untuk jawapan lengkap.',
+  NX09: 'Lihat butiran produk dengan jelas sebelum membuat pilihan sendiri.',
+  NX10: 'Gunakan fakta yang boleh dibaca, bukan andaian tentang hasil.',
+  RH01: 'Perhatikan bentuk dan labelnya dengan tenang sebelum menilai.',
+  RH02: 'Sudut kecil ini membantu melihat rupa fizikalnya dengan jelas.',
+  RH03: 'Gerakan angkat dan letak menunjukkan saiznya dalam konteks sebenar harian.',
+  RH04: 'Konteks rak membantu menilai tempat dan cara produk ini biasanya dipertimbangkan.',
+  RH17: 'Pastikan fungsi yang dinyatakan benar-benar sesuai untuk ruang kerja.',
+  RH19: 'Cahaya neutral membantu melihat warna dan bentuk tanpa kesan tambahan.',
+  NX11: 'Bandingkan maklumat yang jelas dengan keperluan sebenar sebelum memilih.',
+  NX12: 'Menarik untuk dilihat, tetapi semak butiran yang sah dahulu.',
+  NX13: 'Rujuk arahan yang dinyatakan supaya penggunaannya sesuai dalam konteks dapur.',
+  NX14: 'Nilai fungsinya secara praktikal sebelum letakkan dalam setup kerja.',
+  NX15: 'Pilihan yang baik bermula dengan maklumat jelas, bukan janji hasil.',
+  NX16: 'Tak perlu tergesa-gesa; semak maklumat dan pilih kalau benar-benar sesuai.',
+  NX17: 'Satu cadangan yang munasabah tetap perlu dinilai melalui fakta yang jelas.',
+};
+
 const forbiddenIndonesian = ['kamu', 'kalian', 'nggak', 'enggak', 'banget', 'cobain', 'keranjang kuning', 'gimana', 'bikin', 'gue', 'lu'];
 
 function tidy(value: string, max: number): string {
@@ -130,8 +153,9 @@ export function buildSmartScript(
     .replaceAll('{fact}', confirmedFact)
     .replace(/\s+/g, ' ')
     .trim();
+  const pacedBase = base.split(/\s+/).length < 22 ? `${base} ${CURATED_STYLE_ENDINGS[style.id]}` : base;
   const cta = resolveCtaPhrase(ctaMode, customCta);
-  return `${base}${cta ? ` ${cta}` : ''}`.trim();
+  return `${pacedBase}${cta ? ` ${cta}` : ''}`.trim();
 }
 
 export function quoteProviderScript(script: string): string {
