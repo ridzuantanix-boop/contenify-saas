@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Upload,
@@ -23,6 +23,9 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  UserRound,
+  ImageIcon,
+  BookmarkPlus,
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
@@ -52,6 +55,14 @@ interface ActiveJobDisplay {
   createdAt: string;
 }
 
+interface AvatarOption { id: string; name: string; imageUrl: string; consentConfirmed: boolean }
+interface BackgroundOption { id: string; name: string; imageUrl: string }
+interface BuiltInSceneOption { id: string; name: string; directive: string }
+interface CreatorPreset {
+  id: string; name: string; isDefault: boolean;
+  settings: { styleId: string; avatarId: string | null; backgroundId: string | null; builtInSceneId: string | null; niche: string; voicePersonality: string; storyboard: string; callToAction: string; isMuslimahModest: boolean; creativeInstruction: string };
+}
+
 function VideoFactoryContent() {
   const searchParams = useSearchParams();
   const initialStyleId = searchParams.get('styleId') || 'NX01';
@@ -76,6 +87,20 @@ function VideoFactoryContent() {
   // Step 3: Optional provider direction & safety controls
   const [isMuslimahModest, setIsMuslimahModest] = useState(true);
   const [creativeInstruction, setCreativeInstruction] = useState('');
+  const [avatarId, setAvatarId] = useState('');
+  const [backgroundId, setBackgroundId] = useState('');
+  const [builtInSceneId, setBuiltInSceneId] = useState('');
+  const [niche, setNiche] = useState('auto');
+  const [voicePersonality, setVoicePersonality] = useState('auto');
+  const [storyboard, setStoryboard] = useState('auto');
+  const [callToAction, setCallToAction] = useState('auto');
+  const [avatars, setAvatars] = useState<AvatarOption[]>([]);
+  const [backgrounds, setBackgrounds] = useState<BackgroundOption[]>([]);
+  const [builtInScenes, setBuiltInScenes] = useState<BuiltInSceneOption[]>([]);
+  const [presets, setPresets] = useState<CreatorPreset[]>([]);
+  const [selectedPresetId, setSelectedPresetId] = useState('');
+  const [assetActionBusy, setAssetActionBusy] = useState(false);
+  const defaultPresetApplied = useRef(false);
 
   // Status, Wallet & Durable Database Jobs
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,12 +118,104 @@ function VideoFactoryContent() {
   }, [selectedStyleId]);
   const selectedAvailable = publicAvailability[selectedStyle.engine];
 
+  const openCustomize = () => {
+    setMode('advanced');
+    window.setTimeout(() => document.getElementById('customize-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
+
+  function applyPreset(preset: CreatorPreset) {
+    const settings = preset.settings;
+    setSelectedPresetId(preset.id); setSelectedStyleId(settings.styleId || 'NX01');
+    setAvatarId(settings.avatarId || ''); setBackgroundId(settings.backgroundId || '');
+    setBuiltInSceneId(settings.builtInSceneId || ''); setNiche(settings.niche || 'auto');
+    setVoicePersonality(settings.voicePersonality || 'auto'); setStoryboard(settings.storyboard || 'auto');
+    setCallToAction(settings.callToAction || 'auto'); setIsMuslimahModest(settings.isMuslimahModest !== false);
+    setCreativeInstruction(settings.creativeInstruction || ''); setMode('advanced');
+    setSubmitSuccess(`Preset “${preset.name}” digunakan. Pilih produk dan jana bila sedia.`);
+  }
+
+  const currentPersonalizationSettings = () => ({
+    styleId: selectedStyleId, avatarId: avatarId || null, backgroundId: backgroundId || null,
+    builtInSceneId: backgroundId ? null : builtInSceneId || null, niche, voicePersonality,
+    storyboard, callToAction, isMuslimahModest, creativeInstruction: creativeInstruction.trim(),
+  });
+
+  const savePreset = async () => {
+    const name = window.prompt('Nama preset ini:')?.trim();
+    if (!name) return;
+    setAssetActionBusy(true); setSubmitError(null);
+    try {
+      const response = await fetch('/api/creator-presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, settings: currentPersonalizationSettings(), isDefault: presets.length === 0 }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Preset tidak dapat disimpan.');
+      setSelectedPresetId(data.id); await loadPersonalization(); setSubmitSuccess(`Preset “${name}” berjaya disimpan.`);
+    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Preset tidak dapat disimpan.'); }
+    finally { setAssetActionBusy(false); }
+  };
+
+  const uploadAvatar = async (file?: File) => {
+    if (!file) return;
+    const name = window.prompt('Nama avatar/presenter:')?.trim();
+    if (!name) return;
+    if (!window.confirm('Saya mengesahkan saya mempunyai hak dan keizinan individu dewasa dalam imej ini untuk digunakan sebagai avatar video.')) return;
+    setAssetActionBusy(true); setSubmitError(null);
+    try {
+      const form = new FormData(); form.set('name', name); form.set('gender', 'female'); form.set('consent', 'true'); form.set('image', file);
+      const response = await fetch('/api/avatars', { method: 'POST', body: form }); const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Avatar tidak dapat disimpan.');
+      setAvatarId(data.id); await loadPersonalization(); setSubmitSuccess(`Avatar “${name}” disimpan dan dipilih.`);
+    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Avatar tidak dapat disimpan.'); }
+    finally { setAssetActionBusy(false); }
+  };
+
+  const uploadBackground = async (file?: File) => {
+    if (!file) return;
+    const name = window.prompt('Nama latar ini:')?.trim();
+    if (!name) return;
+    setAssetActionBusy(true); setSubmitError(null);
+    try {
+      const form = new FormData(); form.set('name', name); form.set('image', file);
+      const response = await fetch('/api/backgrounds', { method: 'POST', body: form }); const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Latar tidak dapat disimpan.');
+      setBackgroundId(data.id); setBuiltInSceneId(''); await loadPersonalization(); setSubmitSuccess(`Latar “${name}” disimpan dan dipilih.`);
+    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Latar tidak dapat disimpan.'); }
+    finally { setAssetActionBusy(false); }
+  };
+
   useEffect(() => {
     fetch('/api/styles', { cache: 'no-store' })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error('Status pembekal tidak tersedia')))
       .then((data) => setPublicAvailability({ nexabot: data.availability?.nexabot === true, runninghub: data.availability?.runninghub === true }))
       .catch(() => setPublicAvailability({ nexabot: false, runninghub: false }));
   }, []);
+
+  async function loadPersonalization() {
+    const [avatarResponse, backgroundResponse, presetResponse] = await Promise.all([
+      fetch('/api/avatars', { cache: 'no-store' }),
+      fetch('/api/backgrounds', { cache: 'no-store' }),
+      fetch('/api/creator-presets', { cache: 'no-store' }),
+    ]);
+    if (avatarResponse.ok) setAvatars((await avatarResponse.json()).avatars || []);
+    if (backgroundResponse.ok) {
+      const data = await backgroundResponse.json();
+      setBackgrounds(data.backgrounds || []); setBuiltInScenes(data.builtInScenes || []);
+    }
+    if (presetResponse.ok) {
+      const data = await presetResponse.json();
+      const items = (data.presets || []) as CreatorPreset[];
+      setPresets(items);
+      const requestedPreset = items.find((item) => item.id === searchParams.get('presetId'));
+      const defaultPreset = requestedPreset || items.find((item) => item.isDefault);
+      if (defaultPreset && !defaultPresetApplied.current && (!searchParams.get('styleId') || requestedPreset)) {
+        defaultPresetApplied.current = true;
+        applyPreset(defaultPreset);
+      }
+    }
+  }
+
+  // Load workspace-scoped creator assets and the optional default preset.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadPersonalization().catch(() => {}); }, [searchParams]);
 
   useEffect(() => {
     const selectedAssetId = searchParams.get('imageAssetId');
@@ -304,6 +421,14 @@ function VideoFactoryContent() {
         creativeInstruction: creativeInstruction.trim() || undefined,
         isMuslimahModest,
         imageAssetId: images[0].assetId,
+        avatarId: avatarId || undefined,
+        backgroundId: backgroundId || undefined,
+        builtInSceneId: backgroundId ? undefined : builtInSceneId || undefined,
+        niche,
+        voicePersonality,
+        storyboard,
+        callToAction,
+        creatorPresetId: selectedPresetId || undefined,
       };
 
       const res = await fetch('/api/jobs', {
@@ -358,14 +483,14 @@ function VideoFactoryContent() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-              AffiMatik Video Factory
+              AffiMatik Creator Studio
             </h1>
             <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">
-              Creative V6
+              Personalization V7
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Upload produk, pilih gaya, terus jana video affiliate berkualiti tinggi.
+            Quick Create untuk hasil pantas, atau Customize avatar, latar dan cara penyampaian.
           </p>
         </div>
 
@@ -383,12 +508,12 @@ function VideoFactoryContent() {
             </button>
             <button
               type="button"
-              onClick={() => setMode('advanced')}
+              onClick={openCustomize}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 mode === 'advanced' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              Advanced Mode
+              Customize
             </button>
           </div>
 
@@ -510,7 +635,7 @@ function VideoFactoryContent() {
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya dipaparkan</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
                   const isHovered = hoveredStyleId === style.id || mobilePlayingStyleId === style.id;
@@ -635,15 +760,52 @@ function VideoFactoryContent() {
             </div>
           </div>
 
-          {/* ADVANCED STUDIO CONTROLS (Only visible in Advanced Mode) */}
+          {/* OPTIONAL PERSONALIZATION STUDIO */}
           {mode === 'advanced' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-primary" />
-                <span>Kawalan Studio Lanjutan</span>
-              </h3>
+            <div id="customize-panel" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Sliders className="w-4 h-4 text-primary" /><span>Customize Video</span></h3>
+                <button type="button" onClick={savePreset} disabled={assetActionBusy} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[11px] font-bold text-white disabled:opacity-50"><BookmarkPlus className="h-3.5 w-3.5" />Simpan sebagai Preset</button>
+              </div>
+
+              {presets.length > 0 && <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Preset Tersimpan</label>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {presets.map((preset) => <button key={preset.id} type="button" onClick={() => applyPreset(preset)} className={`shrink-0 rounded-lg border px-3 py-2 text-[11px] font-semibold ${selectedPresetId === preset.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-600'}`}>{preset.name}{preset.isDefault ? ' · Default' : ''}</button>)}
+                </div>
+              </div>}
+
+              <div>
+                <label className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700"><UserRound className="h-3.5 w-3.5" />Avatar / Presenter <span className="font-normal text-slate-400">(Pilihan)</span></label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  <button type="button" onClick={() => setAvatarId('')} className={`rounded-xl border p-2 text-[10px] font-semibold ${!avatarId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}><div className="mx-auto mb-1 h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center"><Sparkles className="h-4 w-4" /></div>Auto Presenter</button>
+                  {avatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => setAvatarId(avatar.id)} className={`rounded-xl border p-2 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={avatar.imageUrl} alt={avatar.name} className="mx-auto mb-1 h-12 w-12 rounded-lg object-cover" />
+                    <span className="block truncate">{avatar.name}</span>
+                  </button>)}
+                  <label className="rounded-xl border border-dashed border-slate-300 p-2 text-center text-[10px] font-semibold text-slate-500 cursor-pointer hover:border-primary"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadAvatar(event.target.files?.[0]); event.target.value = ''; }} /><div className="mx-auto mb-1 h-12 w-12 rounded-lg bg-slate-50 flex items-center justify-center"><Upload className="h-4 w-4" /></div>Upload Baru</label>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700"><ImageIcon className="h-3.5 w-3.5" />Latar / Babak <span className="font-normal text-slate-400">(Pilihan)</span></label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button type="button" onClick={() => { setBackgroundId(''); setBuiltInSceneId(''); }} className={`rounded-xl border p-2 text-[10px] font-semibold ${!backgroundId && !builtInSceneId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>Auto Sesuai Produk</button>
+                  {builtInScenes.map((scene) => <button key={scene.id} type="button" onClick={() => { setBuiltInSceneId(scene.id); setBackgroundId(''); }} title={scene.directive} className={`rounded-xl border p-2 text-[10px] font-semibold ${builtInSceneId === scene.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>{scene.name}</button>)}
+                </div>
+                {backgrounds.length > 0 && <div className="mt-2 flex gap-2 overflow-x-auto pb-1">{backgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); }} className={`w-20 shrink-0 rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={background.imageUrl} alt={background.name} className="h-12 w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
+                </button>)}</div>}
+                <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-600"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadBackground(event.target.files?.[0]); event.target.value = ''; }} /><Upload className="h-3.5 w-3.5" />Upload Latar Sendiri</label>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="text-[11px] font-bold text-slate-700">Niche / Kategori<select value={niche} onChange={(e) => setNiche(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto ikut imej</option><option value="wellness">Supplement & Wellness</option><option value="beauty">Beauty & Kosmetik</option><option value="kitchen">Produk Dapur</option><option value="automotive">Aksesori Automotif</option><option value="gadgets">Gajet</option><option value="home">Home Living</option><option value="fashion">Fesyen</option><option value="gardening">Gardening</option></select></label>
+                <label className="text-[11px] font-bold text-slate-700">Personaliti Suara<select value={voicePersonality} onChange={(e) => setVoicePersonality(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Ikut gaya dipilih</option><option value="friendly">Mesra macam kawan</option><option value="confident">Yakin</option><option value="calm">Tenang</option><option value="energetic">Bertenaga</option><option value="helpful">Membantu</option><option value="premium">Premium & kemas</option></select></label>
+                <label className="text-[11px] font-bold text-slate-700">Storyboard<select value={storyboard} onChange={(e) => setStoryboard(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto ikut gaya</option><option value="conversation">Sembang presenter</option><option value="problem_demo">Masalah → demo</option><option value="step_by_step">Langkah demi langkah</option><option value="before_after_context">Konteks sebelum/selepas</option><option value="q_and_a">Soalan & jawapan</option><option value="product_showcase">Showcase produk</option></select></label>
+                <label className="text-[11px] font-bold text-slate-700">CTA<select value={callToAction} onChange={(e) => setCallToAction(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto, jika natural</option><option value="spoken_button">Sebut klik butang</option><option value="spoken_bio">Sebut semak bio</option><option value="none">Tanpa CTA</option></select></label>
                 <div className="md:col-span-2">
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">Kawalan Kesopanan Shariah</label>
                   <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-2">
@@ -666,7 +828,7 @@ function VideoFactoryContent() {
                   type="text"
                   value={creativeInstruction}
                   onChange={(e) => setCreativeInstruction(e.target.value)}
-                  placeholder="Contoh: Model pegang produk sambil senyum ke arah cahaya tingkap"
+                  placeholder="Contoh: Tunjuk cara pasang secara langkah demi langkah; jangan ubah label produk"
                   className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>

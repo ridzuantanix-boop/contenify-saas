@@ -9,6 +9,7 @@ import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
 import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
+import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personalization/config';
 
 
 const router = new ProviderRouter();
@@ -73,6 +74,14 @@ export async function POST(req: NextRequest) {
       customPrompt,
       imageKeys = [],
       imageAssetId,
+      avatarId,
+      backgroundId,
+      builtInSceneId,
+      niche,
+      voicePersonality,
+      storyboard,
+      callToAction,
+      creatorPresetId,
     } = body;
 
     // Mandate clientRequestId to prevent accidental non-idempotent job creation
@@ -134,6 +143,53 @@ export async function POST(req: NextRequest) {
 
     if (requestedProvider && requestedProvider !== style.engine && !(isSuperAdmin && requestedProvider === 'mock')) {
       return NextResponse.json({ error: 'Pembekal tidak sepadan dengan gaya yang dipilih.' }, { status: 400 });
+    }
+
+    const personalization = sanitizePersonalizationSettings({
+      styleId: style.id, avatarId, backgroundId, builtInSceneId, niche, voicePersonality,
+      storyboard, callToAction, isMuslimahModest, creativeInstruction,
+    });
+    if (avatarId && !personalization.avatarId) return NextResponse.json({ error: 'Avatar yang dipilih tidak sah.' }, { status: 400 });
+    if (backgroundId && !personalization.backgroundId) return NextResponse.json({ error: 'Latar yang dipilih tidak sah.' }, { status: 400 });
+    if (builtInSceneId && !getBuiltInScene(personalization.builtInSceneId)) return NextResponse.json({ error: 'Pilihan babak tidak sah.' }, { status: 400 });
+    if (personalization.avatarId && (style.category === 'hand_demo' || style.category === 'product_handling' || style.category === 'pov' || style.id.startsWith('RH'))) {
+      return NextResponse.json({ error: 'Gaya tangan/produk ini tidak menggunakan avatar presenter. Pilih Auto Presenter atau gaya presenter.' }, { status: 400 });
+    }
+
+    let verifiedCreatorPresetId: string | null = null;
+    if (creatorPresetId) {
+      if (typeof creatorPresetId !== 'string' || !/^[0-9a-f-]{36}$/i.test(creatorPresetId) || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return NextResponse.json({ error: 'Preset pencipta tidak sah.' }, { status: 400 });
+      }
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/creator_presets?id=eq.${encodeURIComponent(creatorPresetId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (!response.ok) return NextResponse.json({ error: 'Pengesahan preset gagal.' }, { status: 503 });
+      const rows = await response.json() as Array<{ id: string }>;
+      if (!rows.length) return NextResponse.json({ error: 'Preset tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
+      verifiedCreatorPresetId = rows[0].id;
+    }
+
+    let avatarReference: { id: string; name: string; source: string } | null = null;
+    let backgroundReference: { id: string; name: string; source: string } | null = null;
+    if (personalization.avatarId || personalization.backgroundId) {
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'Pengesahan aset personalisasi tidak tersedia.' }, { status: 503 });
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const headers = { apikey: key, Authorization: `Bearer ${key}` };
+      if (personalization.avatarId) {
+        const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/avatars?id=eq.${encodeURIComponent(personalization.avatarId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&consent_confirmed=eq.true&select=id,name,image_r2_key&limit=1`, { headers });
+        if (!response.ok) return NextResponse.json({ error: 'Pengesahan avatar gagal.' }, { status: 503 });
+        const rows = await response.json() as Array<{ id: string; name: string; image_r2_key: string }>;
+        if (!rows.length) return NextResponse.json({ error: 'Avatar tidak ditemui atau keizinan tidak disahkan.' }, { status: 404 });
+        const mime = rows[0].image_r2_key.endsWith('.png') ? 'image/png' : rows[0].image_r2_key.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
+        avatarReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? await privateImageDataUri(rows[0].image_r2_key, mime) : await signPrivateAsset(rows[0].image_r2_key) };
+      }
+      if (personalization.backgroundId) {
+        const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/background_assets?id=eq.${encodeURIComponent(personalization.backgroundId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,name,image_r2_key,mime_type&limit=1`, { headers });
+        if (!response.ok) return NextResponse.json({ error: 'Pengesahan latar gagal.' }, { status: 503 });
+        const rows = await response.json() as Array<{ id: string; name: string; image_r2_key: string; mime_type: string }>;
+        if (!rows.length) return NextResponse.json({ error: 'Latar tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
+        backgroundReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? await privateImageDataUri(rows[0].image_r2_key, rows[0].mime_type) : await signPrivateAsset(rows[0].image_r2_key) };
+      }
     }
 
     if (process.env.NODE_ENV === 'production' && !isSuperAdmin && !publicProviderAvailability()[style.engine]) {
@@ -205,6 +261,13 @@ export async function POST(req: NextRequest) {
     const compiled = DynamicPromptCompiler.compile(productProfile, style, scenePlan, {
       isMuslimahModest,
       creativeInstruction: resolvedCreativeInstruction,
+      callToAction: personalization.callToAction === 'auto' ? undefined : personalization.callToAction,
+      avatarName: avatarReference?.name,
+      backgroundName: backgroundReference?.name,
+      builtInSceneId: personalization.builtInSceneId || undefined,
+      niche: personalization.niche,
+      voicePersonality: personalization.voicePersonality,
+      storyboard: personalization.storyboard,
       providerCreatesDialogue: true,
     });
 
@@ -239,6 +302,16 @@ export async function POST(req: NextRequest) {
         isMuslimahModest,
         imageKeysCount: imageKeys.length,
         imageAssetId: typeof imageAssetId === 'string' ? imageAssetId : null,
+        avatarId: avatarReference?.id || null,
+        avatarName: avatarReference?.name || null,
+        backgroundId: backgroundReference?.id || null,
+        backgroundName: backgroundReference?.name || null,
+        builtInSceneId: personalization.builtInSceneId,
+        niche: personalization.niche,
+        voicePersonality: personalization.voicePersonality,
+        storyboard: personalization.storyboard,
+        callToAction: personalization.callToAction,
+        creatorPresetId: verifiedCreatorPresetId,
       },
     });
 
@@ -269,6 +342,7 @@ export async function POST(req: NextRequest) {
     // 8. Provider API Dispatch (Job is already durably recorded with SUBMITTING status)
     const idempotencyKey = `idem_${jobId}`;
     const mainImage = savedImageUrl || String(imageKeys[0]);
+    const personalizationReferences = [avatarReference?.source, backgroundReference?.source].filter((value): value is string => Boolean(value));
     let submitResult;
     try {
       submitResult = await providerAdapter.submit({
@@ -279,7 +353,7 @@ export async function POST(req: NextRequest) {
         durationSeconds: durationSeconds as any,
         aspectRatio: '9:16',
         mainImageKeyOrUrl: mainImage,
-        referenceImageKeysOrUrls: imageKeys.slice(1),
+        referenceImageKeysOrUrls: personalizationReferences.length > 0 ? personalizationReferences : imageKeys.slice(1, 3),
       });
 
       // Immediately persist providerTaskId and transition status to PROCESSING

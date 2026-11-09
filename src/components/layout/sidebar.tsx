@@ -19,6 +19,8 @@ import {
   Gift,
   BadgePercent,
   X,
+  ImageIcon,
+  BookMarked,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -28,6 +30,8 @@ const NAV_ITEMS = [
   { name: 'Program Affiliate', href: '/affiliate', icon: BadgePercent },
   { name: 'Product Library', href: '/products', icon: ShoppingBag },
   { name: 'Avatar Library', href: '/avatars', icon: Users },
+  { name: 'Background Library', href: '/backgrounds', icon: ImageIcon },
+  { name: 'Preset Library', href: '/presets', icon: BookMarked },
   { name: 'Video Library', href: '/library', icon: Film },
   { name: 'Production Queue', href: '/queue', icon: ListOrdered },
   { name: 'Posting Automation', href: '#', icon: Send, badge: 'Akan Datang', disabled: true },

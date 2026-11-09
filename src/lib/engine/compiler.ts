@@ -10,6 +10,7 @@ import { ProductProfile, ScenePlan, CompiledGenerationPrompt } from './types';
 import { VideoStyle } from '../styles/types';
 import { VoiceoverDirector } from './voiceover-director';
 import { VIDEO_STYLES_REGISTRY } from '../styles/registry';
+import { getBuiltInScene } from '../personalization/config';
 
 export const GEMS_PROMPT_VERSION = 'affimatik-creative-v6.0';
 
@@ -52,6 +53,12 @@ export interface CompilerOptions {
   productionProfile?: 'ugc_creator' | 'studio_commercial';
   /** Keep dialogue generation with the external provider (the production default). */
   providerCreatesDialogue?: boolean;
+  avatarName?: string;
+  backgroundName?: string;
+  builtInSceneId?: string;
+  niche?: string;
+  voicePersonality?: string;
+  storyboard?: string;
 }
 
 export interface PromptPreviewResult {
@@ -373,10 +380,29 @@ export class DynamicPromptCompiler {
       preflight.isValid = false;
     }
 
+    const selectedScene = getBuiltInScene(options.builtInSceneId);
+    const personalizationDirectives = [
+      '[PERSONALIZATION REFERENCES — ORDER AND ROLE LOCK]',
+      'Reference image 1 is always the PRODUCT IDENTITY authority. Use it to preserve the exact product; it is not a mandatory first video frame.',
+      options.avatarName
+        ? `Reference image 2 is the selected PRESENTER IDENTITY reference named "${options.avatarName}". Preserve this adult person's recognizable face, skin tone, body proportions and modest appearance consistently. Do not blend the presenter with the product or copy the avatar image background.`
+        : 'No avatar reference is selected. Create an appropriate adult Malaysian presenter only when the style requires one.',
+      options.backgroundName
+        ? `Reference image ${options.avatarName ? '3' : '2'} is the BACKGROUND/ENVIRONMENT reference named "${options.backgroundName}". Recreate its spatial character and setting only; never turn objects from that image into the product or presenter.`
+        : selectedScene
+          ? `Use this customer-selected textual environment: ${selectedScene.directive}. This is a scene direction, not an image reference.`
+          : 'Choose a believable environment appropriate to the actual product category.',
+      options.niche && options.niche !== 'auto' ? `Customer-selected niche: ${options.niche}. Adapt buyer context and demonstrations to this niche without inventing product facts.` : '',
+      options.voicePersonality && options.voicePersonality !== 'auto' ? `Customer-selected speaking personality: ${options.voicePersonality}. Preserve the style identity while applying this vocal tone.` : '',
+      options.storyboard && options.storyboard !== 'auto' ? `Customer-selected storyboard: ${options.storyboard}. Use it only when physically appropriate to the reference product.` : '',
+      'Never quietly substitute, merge or ignore a selected reference. If a reference conflicts with safety or cannot be followed, keep the product identity authoritative and avoid fabricating substitute identities.',
+    ].filter(Boolean).join(' ');
+
     // Visual Prompt
     const visualPrompt = [
       `One single continuous 15-second shot.`,
       styleSpecificPrompt,
+      personalizationDirectives,
       universalMasterPrompt,
       options.creativeInstruction ? `Creative Directive: ${options.creativeInstruction}` : '',
     ].filter(Boolean).join(' ');
@@ -390,7 +416,11 @@ export class DynamicPromptCompiler {
       'When technical detail is unavailable, use a safe useful ordinary category description tied to an everyday situation. Keep these factual checks internal and never turn them into spoken disclaimers.',
       options.callToAction === 'none'
         ? 'The customer chose no CTA. Do not add a spoken call to action.'
-        : 'Use a brief low-pressure CTA only if it fits this style naturally; complete all speech before second 11.5.',
+        : options.callToAction === 'spoken_button'
+          ? 'End naturally with a brief low-pressure instruction to tap the purchase button, completed before second 11.5.'
+          : options.callToAction === 'spoken_bio'
+            ? 'End naturally with a brief low-pressure instruction to check the bio, completed before second 11.5.'
+            : 'Use a brief low-pressure CTA only if it fits this style naturally; complete all speech before second 11.5.',
       '[FINAL DIALOGUE COMPLIANCE] Create exactly TWO short spoken sentences totalling 16-22 words, begin immediately, and finish completely by second 11.5. If a CTA is used, embed it inside sentence two; never add a third sentence. After sentence two, stop speaking, keep the mouth closed and leave the remaining video silent. Never repeat a sentence, phrase, CTA or outro.',
       'Never say or imply “pilihan terbaik”, “wajib”, personal use, purchase, household routine, testimonial, dosage, when to consume, absorption, symptom relief, energy, focus, wellness or health results. For supplements or health products, only identify the visible product type and clearly readable label facts; never explain what those facts do to the body.',
       'Never describe a product as wireless, rechargeable, battery-powered, portable or cable-free unless that exact fact is legible in the image or supplied by the user. Use Malaysian Malay only; forbidden Indonesian forms include kamu, coba, kesehatan, ianya and banget. Before rendering, silently remove every unsupported claim, superlative, personal-experience statement, repeated phrase and clipped ending. AffiMatik does not provide a script.',

@@ -37,6 +37,8 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00015_customer_dashboard_metrics.sql',
       '00016_verified_video_metadata.sql',
       '00017_refund_credit_integrity.sql',
+      '00018_affiliate_service_role_permissions.sql',
+      '00019_personalization_studio.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -64,6 +66,8 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(tables).toContain('credit_reservations');
     expect(tables).toContain('video_jobs');
     expect(tables).toContain('prompt_presets');
+    expect(tables).toContain('background_assets');
+    expect(tables).toContain('creator_presets');
 
     // Verify required_credits and client_request_id columns exist on video_jobs
     const colRes = await db.query<{ column_name: string }>(

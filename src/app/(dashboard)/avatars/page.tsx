@@ -51,7 +51,7 @@ export default function AvatarsPage() {
   }
 
   return <div className="space-y-6 max-w-5xl">
-    <div><h1 className="text-2xl font-bold">Pustaka Avatar</h1><p className="text-sm text-slate-600 mt-1">Simpan imej avatar peribadi dengan keizinan. Penggunaan avatar sebagai rujukan penjana video belum disahkan oleh API pembekal dan tidak diaktifkan.</p></div>
+    <div><h1 className="text-2xl font-bold">Pustaka Avatar</h1><p className="text-sm text-slate-600 mt-1">Simpan imej presenter dewasa dengan keizinan, kemudian pilih terus dalam Customize di Creator Studio. Keupayaan pengekalan identiti provider tetap dinilai pada setiap ujian sebenar.</p></div>
     {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
     <form onSubmit={upload} className="bg-white border rounded-xl p-5 grid gap-3 sm:grid-cols-2">
       <label className="text-sm">Nama avatar<input required maxLength={100} value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded border p-2" /></label>

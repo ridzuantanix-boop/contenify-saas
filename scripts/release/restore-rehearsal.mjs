@@ -93,7 +93,7 @@ try {
     if (String(restored[key]) !== String(manifest.baseline[key])) throw new Error(`Restore mengubah ${key}: ${restored[key]} vs ${manifest.baseline[key]}`);
   }
   const applied = [];
-  for (let number = 12; number <= 17; number++) {
+  for (let number = 12; number <= 19; number++) {
     const prefix = `000${number}_`;
     const { readdirSync } = await import('node:fs');
     const file = readdirSync('supabase/migrations').find(name => name.startsWith(prefix) && name.endsWith('.sql'));
@@ -105,9 +105,17 @@ try {
   for (const key of Object.keys(manifest.baseline)) {
     if (String(after[key]) !== String(manifest.baseline[key])) throw new Error(`Migration mengubah ${key}: ${after[key]} vs ${manifest.baseline[key]}`);
   }
+  const v7Schema = (await check.query(`SELECT
+    to_regclass('public.background_assets')::text AS backgrounds,
+    to_regclass('public.creator_presets')::text AS presets,
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='video_jobs' AND column_name='background_id') AS job_background,
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='video_jobs' AND column_name='creator_preset_id') AS job_preset`)).rows[0];
+  if (v7Schema.backgrounds !== 'background_assets' || v7Schema.presets !== 'creator_presets' || !v7Schema.job_background || !v7Schema.job_preset) {
+    throw new Error(`Skema V7 tidak lengkap selepas rehearsal: ${JSON.stringify(v7Schema)}`);
+  }
   const receiptOut = { database, sourceBackup: dir, applied, baseline: manifest.baseline, after, verifiedAt: new Date().toISOString() };
   writeFileSync(join(dir, 'restore-rehearsal.json'), JSON.stringify(receiptOut, null, 2));
-  console.log(`Restore dan migrations 00012–00017 lulus pada database terasing ${database}.`);
+  console.log(`Restore dan migrations 00012–00019 lulus pada database terasing ${database}.`);
 } finally { await check.end(); }
 } finally {
   const cleanup = new pg.Client(local);
