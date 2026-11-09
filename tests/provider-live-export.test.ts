@@ -5,13 +5,13 @@ import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function compileFor(name: string, styleId: string) {
+function compileFor(name: string, styleId: string, fact = 'only the purpose supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini') {
   const style = getVideoStyle(styleId)!;
   const product: ProductProfile = {
-    name, category: 'product shown in uploaded image', packagingFormat: 'general', spokenShortName: 'produk ini',
-    coreFunction: 'only the purpose supported by the reference image', usageContext: 'ordinary Malaysian use inferred cautiously from the image',
+    name, category, packagingFormat: 'general', spokenShortName,
+    coreFunction: fact, usageContext: 'ordinary Malaysian use inferred cautiously from the image',
     buyerProblem: 'a grounded problem relevant to the actual product', allowedQaQuestion: 'what this product is actually for',
-    confirmedFeatures: [], prohibitedClaims: ['invented ingredients','certifications','medical outcomes','prices','testimonials'],
+    confirmedFeatures: [fact], prohibitedClaims: ['invented ingredients','certifications','medical outcomes','prices','testimonials'],
     unknownFields: ['ingredients','certifications','performance'], sourceConfidence: 'manual_fallback',
     provenance: 'manual_user_entry', isVisionSupported: false,
   };
@@ -54,18 +54,23 @@ describe('real-provider QA prompt export', () => {
           .map((id) => [id, compileFor('NOVA LAMP', id)])
       );
       writeFileSync(resolve(directory, 'style-sample-prompts.json'), JSON.stringify(styleSamples, null, 2));
-      const health = ['NX17'];
-      const food = ['NX02', 'NX10', 'RH04', 'NX11', 'NX13'];
+      const premiumProducts = {
+        collagen: { productName: 'LUMÉA Collagen Glow Plus', imagePath: 'scripts/release/assets/premium-products/lumea-collagen.png', fact: 'suplemen kecantikan dalam bekas merah jambu', category: 'beauty supplement', spoken: 'Luméa Collagen Glow Plus' },
+        serum: { productName: 'SERIYA Radiance Serum', imagePath: 'scripts/release/assets/premium-products/seriya-serum.png', fact: 'serum wajah dalam botol penitis', category: 'skincare', spoken: 'Seriya Radiance Serum' },
+        omega: { productName: 'NURIVA Omega-3', imagePath: 'scripts/release/assets/premium-products/nuriva-omega3.png', fact: 'suplemen berlabel Omega-3', category: 'wellness supplement', spoken: 'Nuriva Omega-3' },
+        lamp: { productName: 'NOVA LUMI Table Lamp', imagePath: 'scripts/release/assets/premium-products/nova-lumi-lamp.png', fact: 'lampu meja berbentuk kubah', category: 'home lighting', spoken: 'lampu meja Nova Lumi' },
+        mist: { productName: 'AROMAÉ Home Mist', imagePath: 'scripts/release/assets/premium-products/aromae-home-mist.png', fact: 'semburan pewangi untuk ruang rumah', category: 'home fragrance', spoken: 'Aromae Home Mist' },
+        sun: { productName: 'VEILÉ Sun Fluid SPF 50', imagePath: 'scripts/release/assets/premium-products/veile-sun-fluid.png', fact: 'sun fluid berlabel SPF 50', category: 'sun care', spoken: 'Veilé Sun Fluid' },
+        kitchen: { productName: 'POTONGGO Manual Chopper', imagePath: 'scripts/release/assets/premium-products/potonggo-chopper.png', fact: 'pemotong manual untuk bahan dapur', category: 'kitchen', spoken: 'Potonggo' },
+      } as const;
+      const productByStyle: Record<string, keyof typeof premiumProducts> = {
+        NX01: 'collagen', NX02: 'serum', NX03: 'lamp', NX05: 'mist', NX07: 'omega', NX09: 'sun', NX10: 'omega',
+        RH01: 'mist', RH02: 'serum', RH03: 'lamp', RH04: 'sun', RH17: 'lamp', RH19: 'serum',
+        NX11: 'sun', NX12: 'mist', NX13: 'kitchen', NX14: 'lamp', NX15: 'omega', NX16: 'collagen', NX17: 'serum',
+      };
       const manifest = Object.keys(styleSamples).map((styleId) => {
-        const isHealth = health.includes(styleId);
-        const isFood = food.includes(styleId);
-        const productName = isHealth ? 'Del Venus Supa Omega-3' : isFood ? 'Nestle Milo Malt Chocolate Drink' : 'Portable Touch Lamp';
-        const imagePath = isHealth
-          ? 'output/release/journey-ui/health-omega3.png'
-          : isFood
-            ? 'output/release/smoke-test/milo-product.png'
-            : 'output/release/journey-ui/home-portable-lamp.jpg';
-        return { styleId, productName, imagePath, prompt: compileFor(productName, styleId) };
+        const product = premiumProducts[productByStyle[styleId]];
+        return { styleId, ...product, prompt: compileFor(product.productName, styleId, product.fact, product.category, product.spoken) };
       });
       writeFileSync(resolve(directory, 'v6-sample-manifest.json'), JSON.stringify(manifest, null, 2));
     }

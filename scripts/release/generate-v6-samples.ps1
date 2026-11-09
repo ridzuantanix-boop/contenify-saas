@@ -3,14 +3,17 @@ param(
   [int]$PollSeconds = 20,
   [int]$TimeoutMinutes = 35,
   [string[]]$RetryStyles = @(),
-  [string]$AttemptLabel = 'a1'
+  [string]$AttemptLabel = 'a1',
+  [string]$ManifestRelativePath = 'output\provider-qa\v6-sample-manifest.json',
+  [string]$QaRelativePath = 'output\provider-qa\v6-samples',
+  [string]$IdempotencyNamespace = 'affimatik-v6'
 )
 
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $securePath = Join-Path $repo 'output\release\secure\nexabot-api-key.dpapi'
-$manifestPath = Join-Path $repo 'output\provider-qa\v6-sample-manifest.json'
-$qaDir = Join-Path $repo 'output\provider-qa\v6-samples'
+$manifestPath = Join-Path $repo $ManifestRelativePath
+$qaDir = Join-Path $repo $QaRelativePath
 $statePath = Join-Path $qaDir 'generation-state.json'
 $receiptPath = Join-Path $qaDir 'receipt.json'
 
@@ -32,9 +35,16 @@ function Save-Json([string]$Path, $Value) {
 }
 
 function Get-Credits([string]$Key) {
-  $value = Invoke-RestMethod -Uri 'https://nexabot.id/api/v1/credits' -Headers @{ Authorization = "Bearer $Key"; 'X-API-Key' = $Key }
-  if (-not $value.ok) { throw 'Nexabot credit lookup failed.' }
-  return [decimal]$value.credit
+  for ($attempt = 1; $attempt -le 4; $attempt++) {
+    try {
+      $value = Invoke-RestMethod -Uri 'https://nexabot.id/api/v1/credits' -Headers @{ Authorization = "Bearer $Key"; 'X-API-Key' = $Key } -TimeoutSec 45
+      if (-not $value.ok) { throw 'Nexabot credit lookup failed.' }
+      return [decimal]$value.credit
+    } catch {
+      if ($attempt -eq 4) { throw }
+      Start-Sleep -Seconds (2 * $attempt)
+    }
+  }
 }
 
 function Get-Mime([string]$Path) {
@@ -90,10 +100,10 @@ try {
     $media = "$(Get-Mime $imagePath);base64,$([Convert]::ToBase64String($bytes))"
     $media = "data:$media"
     $payload = @{
-      mode = 'i2v'; prompt = [string]$item.prompt; telegram_id = 'web'; media = @($media)
+      mode = 'i2v'; prompt = [string]$item.prompt; telegram_id = 'web'; media = @($media, $media)
       ratio = 2; resolution = 720; duration = 15; use_unlimited = $false
     } | ConvertTo-Json -Depth 8 -Compress
-    $headers = @{ Authorization = "Bearer $key"; 'X-API-Key' = $key; 'X-Idempotency-Key' = "affimatik-v6-$($item.styleId.ToLowerInvariant())-20261108-$AttemptLabel" }
+    $headers = @{ Authorization = "Bearer $key"; 'X-API-Key' = $key; 'X-Idempotency-Key' = "$IdempotencyNamespace-$($item.styleId.ToLowerInvariant())-$AttemptLabel" }
     $response = Invoke-RestMethod -Method Post -Uri 'https://nexabot.id/api/v1/api' -Headers $headers -ContentType 'application/json' -Body $payload
     $taskId = [string]($response.id ?? $response.job_id ?? $response.task_id)
     if (-not $response.ok -or -not $taskId) { throw "Provider rejected $($item.styleId): $($response | ConvertTo-Json -Compress)" }
@@ -151,7 +161,7 @@ try {
   $downloaded = @($state.Values | Where-Object { $_.status -eq 'downloaded' }).Count
   $failed = @($state.Values | Where-Object { $_.status -eq 'failed' }).Count
   $receipt = [ordered]@{
-    generatedAt = [DateTime]::UtcNow.ToString('o'); promptVersion = 'affimatik-creative-v6.0'
+    generatedAt = [DateTime]::UtcNow.ToString('o'); promptVersion = 'affimatik-human-realism-v8.1-reference-lock'
     requested = 20; submittedThisRun = $submitted; downloaded = $downloaded; failed = $failed
     creditsBefore = $creditsBefore; creditsAfter = $creditsAfter; creditsUsed = $creditsBefore - $creditsAfter
     jobs = $state
