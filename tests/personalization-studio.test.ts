@@ -40,7 +40,7 @@ describe('AffiMatik V7 Personalization Studio', () => {
       avatarName: 'Aina Creator', backgroundName: 'Dapur Putih', niche: 'kitchen', voicePersonality: 'friendly',
       storyboard: 'step_by_step', callToAction: 'none', creativeInstruction: 'Demonstrate one safe ordinary action.',
     });
-    expect(compiled.providerPrompt).toContain('Reference image 1 is always the PRODUCT IDENTITY authority');
+    expect(compiled.providerPrompt).toContain('Reference image 1 is the PRODUCT IDENTITY authority');
     expect(compiled.providerPrompt).toContain('Reference image 2 is the selected PRESENTER IDENTITY');
     expect(compiled.providerPrompt).toContain('Reference image 3 is the BACKGROUND/ENVIRONMENT');
     expect(compiled.providerPrompt).toContain('not a mandatory first video frame');
@@ -67,6 +67,21 @@ describe('AffiMatik V7 Personalization Studio', () => {
       jobId: 'job', idempotencyKey: 'idem', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
       aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT', referenceImageKeysOrUrls: ['invalid-reference'],
     })).toThrow('no selected reference was silently omitted');
+  });
+
+  it('uses spare media capacity for a duplicate product without dropping one selected reference', () => {
+    const adapter = new NexabotAdapter({ apiKey: 'test' });
+    const productOnly = adapter.preparePayload({
+      jobId: 'product', idempotencyKey: 'idem-product', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
+      aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT',
+    }) as { media: string[] };
+    const withAvatar = adapter.preparePayload({
+      jobId: 'avatar', idempotencyKey: 'idem-avatar', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
+      aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT',
+      referenceImageKeysOrUrls: ['data:image/png;base64,AVATAR'],
+    }) as { media: string[] };
+    expect(productOnly.media).toEqual(['data:image/png;base64,PRODUCT', 'data:image/png;base64,PRODUCT']);
+    expect(withAvatar.media).toEqual(['data:image/png;base64,PRODUCT', 'data:image/png;base64,PRODUCT', 'data:image/png;base64,AVATAR']);
   });
 
   it('defines additive workspace-scoped migration, RLS and safe rollback', () => {

@@ -21,7 +21,7 @@ import {
   validateHumanScript,
 } from './script-control';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-human-realism-v8.0';
+export const GEMS_PROMPT_VERSION = 'affimatik-human-realism-v8.1-reference-lock';
 
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
   '[MALAYSIAN AFFILIATE VOICE DNA V6]',
@@ -312,6 +312,28 @@ export class DynamicPromptCompiler {
       `Never add a printed volume, size, specification, certification, ingredient, icon or word that is absent from the reference image. If small text is unreadable, leave it indistinct instead of inventing letters or numbers.`,
     ].join(' ');
 
+    const hasAvatarReference = Boolean(options.avatarName);
+    const hasBackgroundReference = Boolean(options.backgroundName);
+    const duplicateProductReference = Number(hasAvatarReference) + Number(hasBackgroundReference) < 2;
+    const avatarReferenceIndex = duplicateProductReference ? 3 : 2;
+    const backgroundReferenceIndex = hasAvatarReference
+      ? (duplicateProductReference ? 3 : 3)
+      : (duplicateProductReference ? 3 : 2);
+    const ingredientReferenceDirectives = [
+      '[INGREDIENT REFERENCE — NEVER FIRST FRAME LOCK]',
+      duplicateProductReference
+        ? 'Reference images 1 and 2 are intentionally IDENTICAL copies of the same product. They are duplicate ingredient/subject identity references only and must be interpreted as one physical product, never two products.'
+        : 'Reference image 1 is the product ingredient/subject identity reference. The remaining reference slots are reserved for the selected presenter and environment.',
+      'Every uploaded reference is guidance for identity or environment only. No reference image is a start frame, opening frame, storyboard frame, background plate, mandatory composition, crop, camera angle or layout template.',
+      'The first generated video frame must be a freshly composed live-action frame. Never reproduce, trace, extend, animate or closely match the product reference as the opening frame.',
+      isHandOnly
+        ? 'From the first instant, show a newly composed real-world scene with the physical product already grounded in the style-specific hand action.'
+        : 'From the first instant, show the presenter already inside a believable real-world location with the physical product naturally held or used according to the selected style.',
+      'The opening background, lighting arrangement, framing, scale, crop, perspective and hand placement must be visibly different from the isolated product reference.',
+      'Never begin with a static product cutout, the reference-image background, a white border, an isolated packaging shot, a zoom-out from the uploaded image, or a still-to-motion transition.',
+      'Natural movement must exist from frame zero: believable breathing or hand tension, a small gaze or wrist adjustment, and restrained handheld camera micro-shake.',
+    ].join(' ');
+
     // 2. ZERO UI / PLATFORM / WATERMARK LOCK
     const zeroUiLockDirectives = [
       `[ZERO UI & WATERMARK LOCK]`,
@@ -352,6 +374,7 @@ export class DynamicPromptCompiler {
 
     const universalMasterPrompt = [
       identityLockDirectives,
+      ingredientReferenceDirectives,
       zeroUiLockDirectives,
       realismDirectives,
       modestyDirectives,
@@ -434,14 +457,21 @@ export class DynamicPromptCompiler {
     }
 
     const selectedScene = getBuiltInScene(options.builtInSceneId);
+    const hasAvatarReference = Boolean(options.avatarName);
+    const hasBackgroundReference = Boolean(options.backgroundName);
+    const duplicateProductReference = Number(hasAvatarReference) + Number(hasBackgroundReference) < 2;
+    const avatarReferenceIndex = duplicateProductReference ? 3 : 2;
+    const backgroundReferenceIndex = hasAvatarReference ? 3 : (duplicateProductReference ? 3 : 2);
     const personalizationDirectives = [
       '[PERSONALIZATION REFERENCES — ORDER AND ROLE LOCK]',
-      'Reference image 1 is always the PRODUCT IDENTITY authority. Use it to preserve the exact product; it is not a mandatory first video frame.',
+      duplicateProductReference
+        ? 'Reference images 1 and 2 are the same PRODUCT IDENTITY authority uploaded twice to reinforce ingredient/subject identity. They represent one product only and neither may become the first video frame.'
+        : 'Reference image 1 is the PRODUCT IDENTITY authority. Use it to preserve the exact product; it is not a mandatory first video frame.',
       options.avatarName
-        ? `Reference image 2 is the selected PRESENTER IDENTITY reference named "${options.avatarName}". Preserve this adult person's recognizable face, skin tone, body proportions and modest appearance consistently. Do not blend the presenter with the product or copy the avatar image background.`
+        ? `Reference image ${avatarReferenceIndex} is the selected PRESENTER IDENTITY reference named "${options.avatarName}". Preserve this adult person's recognizable face, skin tone, body proportions and modest appearance consistently. Do not blend the presenter with the product or copy the avatar image background.`
         : 'No avatar reference is selected. Create an appropriate adult Malaysian presenter only when the style requires one.',
       options.backgroundName
-        ? `Reference image ${options.avatarName ? '3' : '2'} is the BACKGROUND/ENVIRONMENT reference named "${options.backgroundName}". Recreate its spatial character and setting only; never turn objects from that image into the product or presenter.`
+        ? `Reference image ${backgroundReferenceIndex} is the BACKGROUND/ENVIRONMENT reference named "${options.backgroundName}". Recreate its spatial character and setting only; never turn objects from that image into the product or presenter and never use it as a frozen opening frame.`
         : selectedScene
           ? `Use this customer-selected textual environment: ${selectedScene.directive}. This is a scene direction, not an image reference.`
           : 'Choose a believable environment appropriate to the actual product category.',

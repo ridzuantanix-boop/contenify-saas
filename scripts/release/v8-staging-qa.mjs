@@ -132,6 +132,9 @@ async function generate(page, spec, workspaceId) {
     scriptMode: row.input_options?.scriptMode, cta: row.input_options?.callToAction,
     promptHasV8: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('[HUMAN REALISM MASTERPROMPT V8]'),
     promptHasSmartScript: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('[V8 SMART SCRIPT CONTROL]'),
+    promptHasIngredientReferenceLock: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('[INGREDIENT REFERENCE — NEVER FIRST FRAME LOCK]'),
+    promptDeclaresDuplicateProduct: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('Reference images 1 and 2 are intentionally IDENTICAL'),
+    promptRequiresFreshOpening: typeof row.compiled_prompt_snapshot === 'string' && row.compiled_prompt_snapshot.includes('first generated video frame must be a freshly composed live-action frame'),
   };
   evidence.jobs.push(result);
   writeFileSync(resolve(out, 'progress.json'), JSON.stringify(evidence, null, 2));

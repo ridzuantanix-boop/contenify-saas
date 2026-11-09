@@ -4,7 +4,7 @@
 
 - Branch: `codex/human-realism-v8`
 - Staging Worker: `affimatik-launch-lite-staging`
-- Staging version: `671fbe5d-0b64-4f29-9ebd-1011476da4e7`
+- Staging version: `1e3a051f-0676-4d88-ac3c-c7503fdec37f`
 - Production was not deployed or changed.
 - RunningHub and public paid checkout remained off.
 
@@ -49,7 +49,7 @@ The supplement did not add a health efficacy outcome. Product identity remained 
 
 ## Verification
 
-- Automated suite: 37 files, 192/192 tests passed.
+- Automated suite: 37 files, 194/194 tests passed.
 - TypeScript: passed.
 - ESLint: passed.
 - OpenNext Worker build: passed.
@@ -57,3 +57,20 @@ The supplement did not add a health efficacy outcome. Product identity remained 
 - Real CTA generation: two accepted behaviours, one provider limitation.
 
 V8.1 is technically stable on staging, but “TikTok Shop — Beg Kuning” is not verified reliable because Nexabot repeated it on both real attempts. Human realism is therefore not reported as a universal PASS.
+
+## Duplicate ingredient-reference / first-frame lock
+
+All 20 Nexabot styles now compile the same strong reference-role lock: the product image is ingredient/subject identity guidance and must never be reused, traced, extended or animated as the opening frame. The opening must be a freshly composed live-action scene with movement from frame zero. The adapter uses any spare Nexabot media slot to send the exact product image twice:
+
+- Product only: product, duplicate product.
+- Product plus one avatar or background: product, duplicate product, selected reference.
+- Product plus avatar plus background: product, avatar, background. Nexabot's three-image limit prevents a fourth duplicate, and no customer-selected reference is dropped.
+
+Controlled application-path evidence:
+
+- Staging job `3f508821-ea29-4ffe-9615-1570dd74ce76`; provider task `a5db0afa477f1f0a`.
+- NX17 kitchen product, no CTA, completed at 15.04 seconds; provider cost 0.15.
+- The compiled prompt snapshot contains the ingredient lock, the duplicate-product declaration and the freshly composed opening directive.
+- Opening frame is a new kitchen presenter scene, visually different from the isolated product reference. The product enters later and remains recognizable through the ending.
+- Private MP4 persistence passed; full stream HTTP 200 and Range HTTP 206.
+- Isolated wallet: 60 available / 0 reserved → 60 / 10 during processing → 50 / 0 after exactly one settlement.

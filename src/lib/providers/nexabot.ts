@@ -54,6 +54,7 @@ export class NexabotAdapter implements IProviderAdapter {
 
   preparePayload(input: ProviderJobInput): Record<string, unknown> {
     const images: string[] = [];
+    const maxReferenceImages = this.getCapabilities().maxReferenceImages;
     const isValidImage = (src?: string) =>
       src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:image/')) && !src.includes('mock');
 
@@ -63,15 +64,27 @@ export class NexabotAdapter implements IProviderAdapter {
     if (isValidImage(input.mainImageKeyOrUrl)) {
       images.push(input.mainImageKeyOrUrl!);
     }
-    if (input.referenceImageKeysOrUrls) {
-      if (input.referenceImageKeysOrUrls.length > 2) {
+    const additionalReferences = input.referenceImageKeysOrUrls || [];
+    if (additionalReferences.length > 0) {
+      if (additionalReferences.length > maxReferenceImages - 1) {
         throw new Error('Nexabot accepts at most two personalization references after the product image.');
       }
-      for (const img of input.referenceImageKeysOrUrls) {
+      for (const img of additionalReferences) {
         if (!isValidImage(img)) throw new Error('Nexabot personalization reference image is invalid; no selected reference was silently omitted.');
-        images.push(img);
       }
     }
+
+    // A repeated ingredient/subject reference materially reduced start-frame copying
+    // in a controlled real Nexabot i2v test. Use the spare slot to send the exact
+    // product twice, while never dropping a customer-selected avatar/background.
+    if (
+      input.mainImageKeyOrUrl &&
+      images.length + additionalReferences.length < maxReferenceImages &&
+      !additionalReferences.includes(input.mainImageKeyOrUrl)
+    ) {
+      images.push(input.mainImageKeyOrUrl);
+    }
+    images.push(...additionalReferences);
 
     // Determine mode according to Nexabot spec:
     // "t2v" = Text to Video (no image)

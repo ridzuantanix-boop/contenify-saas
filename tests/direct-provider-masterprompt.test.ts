@@ -47,6 +47,9 @@ describe('V8 direct-to-provider masterprompt architecture', () => {
       });
       expect(compiled.preflightValid, style.id).toBe(true);
       expect(compiled.providerPrompt, style.id).toContain('[PRODUCT IDENTITY MAX LOCK]');
+      expect(compiled.providerPrompt, style.id).toContain('[INGREDIENT REFERENCE — NEVER FIRST FRAME LOCK]');
+      expect(compiled.providerPrompt, style.id).toContain('freshly composed live-action frame');
+      expect(compiled.providerPrompt, style.id).toContain('Natural movement must exist from frame zero');
       expect(compiled.providerPrompt, style.id).toContain('[ZERO UI & WATERMARK LOCK]');
       expect(compiled.providerPrompt, style.id).toContain('[REALISTIC UGC PROFILE]');
       expect(compiled.providerPrompt, style.id).toContain('[HUMAN REALISM MASTERPROMPT V8]');
@@ -102,7 +105,31 @@ describe('V8 direct-to-provider masterprompt architecture', () => {
     }) as Record<string, unknown>;
     expect(payload.mode).toBe('i2v');
     expect(payload.prompt).toBe(compiled.providerPrompt);
-    expect(payload.media).toEqual([image]);
+    expect(payload.media).toEqual([image, image]);
+  });
+
+  it('duplicates the product reference for every style without turning it into a start frame', () => {
+    const adapter = new NexabotAdapter({ apiKey: 'test-key' });
+    for (const style of VIDEO_STYLES_REGISTRY) {
+      const compiled = DynamicPromptCompiler.compile(product, style, {
+        ...scene,
+        audioPolicy: style.audioMode,
+        targetDurationSeconds: style.durationSeconds,
+      });
+      const payload = adapter.preparePayload({
+        jobId: `job-${style.id}`,
+        idempotencyKey: `idem-${style.id}`,
+        workspaceId: 'workspace',
+        prompt: compiled.providerPrompt,
+        durationSeconds: 15,
+        aspectRatio: '9:16',
+        mainImageKeyOrUrl: image,
+      }) as { mode: string; media: string[]; prompt: string };
+      expect(payload.mode, style.id).toBe('i2v');
+      expect(payload.media, style.id).toEqual([image, image]);
+      expect(payload.prompt, style.id).toContain('Reference images 1 and 2 are intentionally IDENTICAL');
+      expect(payload.prompt, style.id).not.toMatch(/use reference image \d+ as (?:the )?(?:first|opening) frame|the reference image is (?:the )?(?:first|opening) frame/i);
+    }
   });
 
   it('routes legacy RH identities through Nexabot without changing their IDs', () => {
