@@ -52,3 +52,12 @@ Provider balance moved from 65.35 to 62.35: exactly 3.00 provider credits for 20
 - Automated media checks must confirm all files contain H.264 video, AAC audio, approximately 15-second duration and iPhone-compatible fast-start MP4 structure before deployment.
 - Preview URLs use the cache-busting release query `v8.1-premium-20261109` so browsers do not retain the previous sample set.
 
+## Production deployment evidence
+
+- Production Worker: `affimatik-production-v2`.
+- Worker version: `b89b00a4-97f3-43d0-94f5-88ca13c355f4`.
+- Production URL: `https://affimatik.online`.
+- The deployment uploaded all 20 changed MP4 assets plus the new build identifier.
+- Post-deployment verification fetched every production MP4 independently: 20/20 returned HTTP 200 and matched its approved local artifact byte-for-byte by SHA-256.
+- Nexabot Voice remains enabled. RunningHub, mock providers and public paid checkout remain disabled.
+
