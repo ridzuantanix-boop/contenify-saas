@@ -102,6 +102,7 @@ function VideoFactoryContent() {
   const [selectedPresetId, setSelectedPresetId] = useState('');
   const [assetActionBusy, setAssetActionBusy] = useState(false);
   const defaultPresetApplied = useRef(false);
+  const submitLockRef = useRef(false);
 
   // Status, Wallet & Durable Database Jobs
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -242,6 +243,8 @@ function VideoFactoryContent() {
   }, [searchParams]);
 
   const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
+  const hasActiveSubmission = Boolean(activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'));
+  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || hasActiveSubmission;
 
   // Load account balance from server session
   const refreshAccountBalance = useCallback(async () => {
@@ -283,61 +286,50 @@ function VideoFactoryContent() {
     refreshJobsFromDatabase();
   }, [refreshAccountBalance, refreshJobsFromDatabase]);
 
-  // Polling for active job with honest elapsed time (No fake percentage increments)
+  const syncActiveJobStatus = useCallback(async (jobId: string) => {
+    try {
+      const res = await fetch(`/api/jobs?jobId=${jobId}`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === 'COMPLETED') {
+        setActiveJob((prev) => prev ? { ...prev, status: 'COMPLETED', videoUrl: data.output?.videoUrl || data.videoUrl } : null);
+        await Promise.all([refreshAccountBalance(), refreshJobsFromDatabase()]);
+      } else if (data.status === 'QA_PENDING') {
+        setActiveJob((prev) => prev ? { ...prev, status: 'QA_PENDING' } : null);
+        await refreshJobsFromDatabase();
+      } else if (data.status === 'FAILED' || data.status === 'REJECTED') {
+        setActiveJob((prev) => prev ? {
+          ...prev, status: data.status,
+          errorMessage: data.error || data.errorMessage || data.rawStatus || 'Video tidak dapat diselesaikan.',
+        } : null);
+        await Promise.all([refreshAccountBalance(), refreshJobsFromDatabase()]);
+      } else if (data.status === 'RUNNING' || data.status === 'PROCESSING' || data.status === 'PENDING') {
+        setActiveJob((prev) => prev ? { ...prev, status: 'PROCESSING', rawStatus: data.rawStatus } : null);
+      }
+    } catch {
+      // A transient network issue never fails or duplicates a durable job.
+    }
+  }, [refreshAccountBalance, refreshJobsFromDatabase]);
+
+  // Poll immediately, every ten seconds while visible, and once whenever the
+  // customer returns from a provider/background tab.
   const activeJobId = activeJob?.jobId;
   const activeJobStatus = activeJob?.status;
   useEffect(() => {
-    if (!activeJobId || ['COMPLETED', 'FAILED', 'REJECTED', 'QA_PENDING'].includes(activeJobStatus || '')) {
-      return;
-    }
-
+    if (!activeJobId || ['COMPLETED', 'FAILED', 'REJECTED', 'QA_PENDING'].includes(activeJobStatus || '')) return;
     setPollElapsedTime(0);
-    const timerInterval = setInterval(() => {
-      setPollElapsedTime((prev) => prev + 1);
-    }, 1000);
-
-    const pollInterval = setInterval(async () => {
-      if (document.visibilityState !== 'visible') return;
-      try {
-        const res = await fetch(`/api/jobs?jobId=${activeJobId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-
-        if (data.status === 'COMPLETED') {
-          setActiveJob((prev) => prev ? {
-            ...prev,
-            status: 'COMPLETED',
-            videoUrl: data.output?.videoUrl || data.videoUrl,
-          } : null);
-          refreshAccountBalance();
-          refreshJobsFromDatabase();
-          clearInterval(pollInterval);
-        } else if (data.status === 'QA_PENDING') {
-          setActiveJob((prev) => prev ? { ...prev, status: 'QA_PENDING' } : null);
-          refreshJobsFromDatabase();
-          clearInterval(pollInterval);
-        } else if (data.status === 'FAILED' || data.status === 'REJECTED') {
-          setActiveJob((prev) => prev ? {
-            ...prev,
-            status: data.status,
-            errorMessage: data.error || data.errorMessage || data.rawStatus || 'Video tidak lulus semakan kualiti.',
-          } : null);
-          refreshAccountBalance();
-          refreshJobsFromDatabase();
-          clearInterval(pollInterval);
-        } else if (data.status === 'RUNNING' || data.status === 'PROCESSING') {
-          setActiveJob((prev) => prev ? { ...prev, status: 'PROCESSING', rawStatus: data.rawStatus } : null);
-        }
-      } catch {
-        // Keep job alive; network glitch does not fail the job
-      }
-    }, 10000);
-
+    const timerInterval = setInterval(() => setPollElapsedTime((prev) => prev + 1), 1000);
+    const poll = () => { if (document.visibilityState === 'visible') void syncActiveJobStatus(activeJobId); };
+    const onVisibilityChange = () => { if (document.visibilityState === 'visible') void syncActiveJobStatus(activeJobId); };
+    void syncActiveJobStatus(activeJobId);
+    const pollInterval = setInterval(poll, 10000);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       clearInterval(timerInterval);
       clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [activeJobId, activeJobStatus, refreshAccountBalance, refreshJobsFromDatabase]);
+  }, [activeJobId, activeJobStatus, syncActiveJobStatus]);
 
   // Image upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,6 +343,8 @@ function VideoFactoryContent() {
     }
 
     const reader = new FileReader();
+    setSubmitError(null);
+    setSubmitSuccess(null);
     setIsUploadingImage(true);
     reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
@@ -407,6 +401,8 @@ function VideoFactoryContent() {
       return;
     }
 
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -471,6 +467,7 @@ function VideoFactoryContent() {
       const msg = err instanceof Error ? err.message : String(err);
       setSubmitError(msg);
     } finally {
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -855,15 +852,23 @@ function VideoFactoryContent() {
             <button
               type="button"
               onClick={handleGenerateVideo}
-              disabled={Boolean(!selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
+              disabled={generationBlocked}
+              aria-busy={isUploadingImage || isSubmitting || hasActiveSubmission}
               className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
-                !selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
+                generationBlocked
                   ? 'bg-slate-400 cursor-not-allowed'
                   : 'bg-primary hover:bg-primary/95 active:scale-[0.99]'
               }`}
             >
               {!selectedAvailable ? (
                 <span>Penjanaan Belum Tersedia</span>
+              ) : isUploadingImage ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Menyimpan Imej Produk...</span>
+                </>
+              ) : images.length === 0 ? (
+                <span>Muat Naik Gambar Produk Dahulu</span>
               ) : isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -928,6 +933,16 @@ function VideoFactoryContent() {
                       </div>
                       <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
                         Tugasan selamat disimpan di pangkalan data. Anda boleh muat semula atau tinggalkan halaman ini tanpa kehilangan kerja.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void syncActiveJobStatus(activeJob.jobId)}
+                        className="mx-auto rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100"
+                      >
+                        Semak Status Sekarang
+                      </button>
+                      <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
+                        Status turut diselaraskan apabila anda kembali ke tab ini dan oleh sistem latar belakang.
                       </p>
                     </div>
                   )}
@@ -1131,6 +1146,11 @@ function VideoFactoryContent() {
 
       {/* PERSISTENT MOBILE BOTTOM ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-lg pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {submitError && (
+          <div role="alert" className="max-w-md mx-auto mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-800">
+            {submitError}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
@@ -1149,15 +1169,23 @@ function VideoFactoryContent() {
           <button
             type="button"
             onClick={handleGenerateVideo}
-            disabled={Boolean(!selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING')))}
+            disabled={generationBlocked}
+            aria-busy={isUploadingImage || isSubmitting || hasActiveSubmission}
             className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 ${
-              !selectedAvailable || isSubmitting || (activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'))
+              generationBlocked
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-primary hover:bg-primary/95 active:scale-95'
             }`}
           >
             {!selectedAvailable ? (
               <span>Belum Tersedia</span>
+            ) : isUploadingImage ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Simpan Imej...</span>
+              </>
+            ) : images.length === 0 ? (
+              <span>Muat Naik Produk</span>
             ) : isSubmitting ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

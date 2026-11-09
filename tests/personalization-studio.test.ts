@@ -95,5 +95,13 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(factory).toContain('Beta:');
     expect(factory).toContain('Produk + Avatar + Latar');
     expect(factory).toContain('tiada rujukan dipadam secara senyap');
+    expect(factory).toContain('submitLockRef.current');
+    expect(factory).toContain('isUploadingImage || images.length === 0');
+    expect(factory).toContain('Menyimpan Imej Produk...');
+    expect(factory).toContain('Muat Naik Gambar Produk Dahulu');
+    expect(factory).toContain('role="alert"');
+    expect(factory).toContain('syncActiveJobStatus(activeJobId)');
+    expect(factory).toContain("document.addEventListener('visibilitychange'");
+    expect(factory).toContain('Semak Status Sekarang');
   });
 });
