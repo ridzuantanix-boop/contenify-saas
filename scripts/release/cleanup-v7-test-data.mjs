@@ -17,12 +17,18 @@ let deletedObjects = 0;
 for (const target of targets) {
   const workspaceId = target.default_workspace_id;
   if (!workspaceId) throw new Error('Target QA tiada workspace.');
-  const [productImages, avatars, backgrounds] = await Promise.all([
+  const [productImages, avatars, backgrounds, videos] = await Promise.all([
     request(`/rest/v1/product_images?workspace_id=eq.${workspaceId}&select=r2_key`),
     request(`/rest/v1/avatars?workspace_id=eq.${workspaceId}&select=image_r2_key`),
     request(`/rest/v1/background_assets?workspace_id=eq.${workspaceId}&select=image_r2_key`),
+    request(`/rest/v1/video_jobs?workspace_id=eq.${workspaceId}&result_video_r2_key=not.is.null&select=result_video_r2_key`),
   ]);
-  const paths = [...productImages.map((row) => row.r2_key), ...avatars.map((row) => row.image_r2_key), ...backgrounds.map((row) => row.image_r2_key)];
+  const paths = [
+    ...productImages.map((row) => row.r2_key),
+    ...avatars.map((row) => row.image_r2_key),
+    ...backgrounds.map((row) => row.image_r2_key),
+    ...videos.map((row) => row.result_video_r2_key),
+  ].filter(Boolean);
   for (const objectPath of paths) {
     await request('/storage/v1/object/affimatik-assets', { method: 'DELETE', body: JSON.stringify({ prefixes: [objectPath] }) });
     deletedObjects++;

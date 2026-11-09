@@ -44,7 +44,8 @@ if (topUp > 0) await api('/rest/v1/rpc/admin_adjust_credits_atomic', { method: '
 }) });
 
 const browser = await chromium.launch({ executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true });
-const evidence = { testAccountId: authUser.id, workspaceId, createdAt: new Date().toISOString(), jobs: [], desktop: {}, mobile: {}, library: {}, errors: [] };
+const evidence = { testAccountId: authUser.id, workspaceId, createdAt: new Date().toISOString(), jobs: [], desktop: {}, mobile: {}, posters: {}, library: {}, errors: [] };
+const styleIds = ['NX01','NX02','NX03','NX05','NX07','NX09','NX10','RH01','RH02','RH03','RH04','RH17','RH19','NX11','NX12','NX13','NX14','NX15','NX16','NX17'];
 
 async function unlock(page) {
   await page.goto(`${base}/__stage_access`, { waitUntil: 'domcontentloaded' });
@@ -62,6 +63,16 @@ async function login(page) {
   const response = await responsePromise;
   if (!response.ok()) throw new Error(`Login staging HTTP ${response.status()}: ${JSON.stringify(await response.json().catch(() => ({})))}`);
   await page.waitForURL(/\/dashboard/);
+}
+
+async function loadLazyPosters(page) {
+  const posters = page.locator('img[alt^="Poster gaya"]');
+  for (let index = 0; index < await posters.count(); index += 1) {
+    await posters.nth(index).scrollIntoViewIfNeeded();
+    await posters.nth(index).waitFor({ state: 'visible' });
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(500);
 }
 
 async function wallet(page) {
@@ -126,6 +137,28 @@ async function generate(page, spec) {
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
   const page = await context.newPage(); await unlock(page); await login(page);
+  await page.goto(`${base}/styles`, { waitUntil: 'networkidle' });
+  const posterImages = page.locator('img[alt^="Poster gaya"]');
+  await posterImages.first().waitFor();
+  evidence.posters.desktopCount = await posterImages.count();
+  evidence.posters.urls = {};
+  for (const id of styleIds) {
+    const poster = await page.request.get(`${base}/style-posters/${id}.webp`);
+    const sample = await page.request.get(`${base}/api/style-samples/${id}`, { headers: { Range: 'bytes=0-1023' } });
+    evidence.posters.urls[id] = { posterStatus: poster.status(), posterBytes: (await poster.body()).length, sampleStatus: sample.status(), sampleRange: sample.headers()['content-range'] || null };
+  }
+  const firstMedia = page.getByTestId('style-media-NX01');
+  await firstMedia.hover();
+  await firstMedia.locator('video').waitFor();
+  evidence.posters.desktopHoverVideo = await firstMedia.locator('video').isVisible();
+  await page.locator('h2').hover();
+  evidence.posters.desktopReturnsToPoster = await firstMedia.locator('video').count() === 0;
+  await firstMedia.getByRole('button', { name: /Preview video/ }).click();
+  evidence.posters.desktopModal = await page.getByRole('dialog').isVisible();
+  await page.screenshot({ path: resolve(out, 'desktop-style-preview.png'), fullPage: false });
+  await page.getByRole('button', { name: 'Tutup preview' }).click();
+  await loadLazyPosters(page);
+  await page.screenshot({ path: resolve(out, 'desktop-style-posters.png'), fullPage: true });
   await page.goto(`${base}/factory`, { waitUntil: 'networkidle' });
   evidence.desktop = { quickVisible: await page.getByRole('button', { name: 'Quick Mode' }).isVisible(), customizeVisible: await page.getByRole('button', { name: 'Customize' }).isVisible(), generateVisible: await page.getByRole('button', { name: /Jana Video Sekarang/ }).isVisible() };
   await page.getByRole('button', { name: 'Customize' }).click();
@@ -137,6 +170,7 @@ try {
     await uploadWithDialogs(page, page.locator('label').filter({ hasText: 'Upload Latar Sendiri' }).locator('input[type="file"]'), resolve(input, 'kitchen-background.png'), ['Dapur QA']);
   }
   await page.getByText('Dapur QA', { exact: true }).waitFor();
+  await loadLazyPosters(page);
   await page.screenshot({ path: resolve(out, 'desktop-customize.png'), fullPage: true });
 
   if (process.env.V7_SKIP_PROVIDER !== '1') {
@@ -179,19 +213,36 @@ try {
 
   const videosResult = await page.evaluate(async () => { const r = await fetch('/api/videos'); return { status: r.status, data: await r.json() }; });
   const ownVideos = videosResult.data.videos || [];
-  for (const item of ownVideos.filter((v) => evidence.jobs.some((j) => j.jobId === (v.jobId || v.job_id || v.id)))) {
+  evidence.library.completedCards = ownVideos.length;
+  const generatedIds = new Set(evidence.jobs.map((job) => job.jobId));
+  const mediaToVerify = evidence.jobs.length > 0
+    ? ownVideos.filter((video) => generatedIds.has(video.jobId || video.job_id || video.id))
+    : ownVideos.slice(0, 1);
+  for (const item of mediaToVerify) {
     const id = item.id || item.jobId || item.job_id;
     const full = await page.request.get(`${base}/api/videos/${id}/stream`);
+    const fullBody = await full.body();
+    writeFileSync(resolve(out, `${evidence.jobs.find((job) => job.jobId === (item.jobId || item.job_id || item.id))?.case || id}.mp4`), fullBody);
     const range = await page.request.get(`${base}/api/videos/${id}/stream`, { headers: { Range: 'bytes=0-1023' } });
-    evidence.library[id] = { fullStatus: full.status(), fullBytes: (await full.body()).length, rangeStatus: range.status(), contentRange: range.headers()['content-range'] || null };
+    evidence.library[id] = { fullStatus: full.status(), fullBytes: fullBody.length, rangeStatus: range.status(), contentRange: range.headers()['content-range'] || null };
   }
   await context.close();
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
-  const mobilePage = await mobile.newPage(); await unlock(mobilePage); await login(mobilePage); await mobilePage.goto(`${base}/factory`, { waitUntil: 'networkidle' });
+  const mobilePage = await mobile.newPage(); await unlock(mobilePage); await login(mobilePage);
+  await mobilePage.goto(`${base}/styles`, { waitUntil: 'networkidle' });
+  evidence.posters.mobileCount = await mobilePage.locator('img[alt^="Poster gaya"]').count();
+  await mobilePage.getByTestId('style-media-NX01').getByRole('button', { name: /Preview video/ }).click();
+  evidence.posters.mobileTapModal = await mobilePage.getByRole('dialog').isVisible();
+  await mobilePage.screenshot({ path: resolve(out, 'mobile-style-preview.png'), fullPage: false });
+  await mobilePage.getByRole('button', { name: 'Tutup preview' }).click();
+  await loadLazyPosters(mobilePage);
+  await mobilePage.screenshot({ path: resolve(out, 'mobile-style-posters.png'), fullPage: true });
+  await mobilePage.goto(`${base}/factory`, { waitUntil: 'networkidle' });
   evidence.mobile = { quickVisible: await mobilePage.getByRole('button', { name: 'Quick Mode' }).isVisible(), customizeVisible: await mobilePage.getByRole('button', { name: 'Customize' }).isVisible(), stickyGenerateVisible: await mobilePage.getByRole('button', { name: 'Jana Video', exact: true }).isVisible() };
   await mobilePage.getByRole('button', { name: 'Customize' }).click(); await mobilePage.getByText('Aina Synthetic QA', { exact: true }).scrollIntoViewIfNeeded();
   evidence.mobile.defaultPresetApplied = await mobilePage.getByRole('button', { name: /Aina \+ Dapur QA/ }).count() > 0;
+  await loadLazyPosters(mobilePage);
   await mobilePage.screenshot({ path: resolve(out, 'mobile-customize.png'), fullPage: true }); await mobile.close();
 } catch (error) {
   evidence.errors.push(error instanceof Error ? { message: error.message, stack: error.stack } : { message: String(error) });

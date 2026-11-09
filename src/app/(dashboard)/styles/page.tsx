@@ -14,9 +14,12 @@ import {
   CheckCircle2,
   Heart,
   Layers,
+  X,
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
+import { getStyleMarketingMetadata } from '@/lib/styles/marketing-metadata';
+import { StylePosterMedia } from '@/components/styles/style-poster-media';
 
 export default function VideoStylesPage() {
   const [selectedCategory, setSelectedCategory] = useState<StyleCategory>('all');
@@ -24,6 +27,7 @@ export default function VideoStylesPage() {
   const [durationFilter, setDurationFilter] = useState<'all' | '10' | '15'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [favorites, setFavorites] = useState<string[]>(['NX01']);
+  const [previewStyle, setPreviewStyle] = useState<VideoStyle | null>(null);
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,61 +136,15 @@ export default function VideoStylesPage() {
         {filteredStyles.map((style) => {
           const isFav = favorites.includes(style.id);
           const hasVoice = style.audioMode !== 'no_speech' && style.audioMode !== 'ambient';
+          const metadata = getStyleMarketingMetadata(style.id);
+          if (!metadata) return null;
 
           return (
             <div
               key={style.id}
               className="group bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col overflow-hidden hover:border-indigo-300"
             >
-              {/* Card Media Preview Header */}
-              <div className="relative aspect-[9/12] bg-slate-900 overflow-hidden flex items-center justify-center">
-                {style.previewVideoUrl ? (
-                  <video
-                    src={style.previewVideoUrl}
-                    className="w-full h-full object-cover"
-                    muted
-                    playsInline
-                    controls
-                    preload="metadata"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mb-2 text-indigo-400">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <span className="text-xs font-semibold text-slate-300">{style.name}</span>
-                    <span className="text-[10px] text-slate-500 mt-1">Coming Soon</span>
-                  </div>
-                )}
-
-                {/* Badges on preview */}
-                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-                  <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-indigo-400" />
-                    {style.durationSeconds}s
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded-md backdrop-blur-md text-[10px] font-bold flex items-center gap-1 ${
-                      hasVoice ? 'bg-indigo-600/80 text-white' : 'bg-slate-800/80 text-slate-200'
-                    }`}
-                  >
-                    {hasVoice ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-                    {hasVoice ? 'Spoken BM' : 'No Voice'}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => toggleFavorite(style.id, e)}
-                  className="absolute top-3 right-3 p-1.5 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md transition z-10"
-                >
-                  <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
-                </button>
-
-                <div className="absolute bottom-2 left-2 right-2 px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-md text-[10px] text-slate-200 truncate">
-                  <strong className="text-white">AffiMatik Voice V6</strong> • {style.actionType.replace(/_/g, ' ')}
-                </div>
-              </div>
+              <StylePosterMedia metadata={metadata} onPreview={() => setPreviewStyle(style)} />
 
               {/* Card Body */}
               <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
@@ -195,6 +153,9 @@ export default function VideoStylesPage() {
                     <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase tracking-wider">
                       {style.id}
                     </span>
+                    <button type="button" onClick={(e) => toggleFavorite(style.id, e)} className="rounded-full p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label={`${isFav ? 'Buang' : 'Tambah'} ${metadata.title} daripada kegemaran`}>
+                      <Heart className={`h-4 w-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />
+                    </button>
                     {style.qualityStatus === 'video_tested' ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />
@@ -209,10 +170,11 @@ export default function VideoStylesPage() {
                       </span>
                     )}
                   </div>
-                  <h3 className="font-bold text-slate-900 text-sm mt-1">{style.name}</h3>
+                  <h3 className="font-bold text-slate-900 text-sm mt-1">{metadata.title}</h3>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    {style.benefit}
+                    {metadata.description}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">{metadata.tags.map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{tag}</span>)}</div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
@@ -232,6 +194,23 @@ export default function VideoStylesPage() {
           );
         })}
       </div>
+
+      {previewStyle && (() => {
+        const metadata = getStyleMarketingMetadata(previewStyle.id);
+        if (!metadata) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Preview ${metadata.title}`}>
+            <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-4">
+                <div><h3 className="font-bold text-slate-900">{metadata.title}</h3><p className="mt-1 text-xs text-slate-500">{metadata.tagline}</p></div>
+                <button type="button" onClick={() => setPreviewStyle(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="Tutup preview"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="aspect-[9/16] max-h-[70vh] bg-black"><video src={metadata.previewPath} controls autoPlay playsInline preload="metadata" className="h-full w-full object-contain" /></div>
+              <div className="flex items-center justify-between gap-3 p-4"><button type="button" onClick={() => setPreviewStyle(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700">Tutup</button><Link href={`/factory?styleId=${previewStyle.id}`} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white">Guna Gaya Ini</Link></div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

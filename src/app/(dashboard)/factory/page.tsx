@@ -16,8 +16,6 @@ import {
   Loader2,
   Clock,
   Volume2,
-  VolumeX,
-  Play,
   Download,
   RotateCcw,
   ChevronDown,
@@ -29,6 +27,8 @@ import {
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
+import { getStyleMarketingMetadata } from '@/lib/styles/marketing-metadata';
+import { StylePosterMedia } from '@/components/styles/style-poster-media';
 
 interface UploadedFilePreview {
   id: string;
@@ -79,9 +79,6 @@ function VideoFactoryContent() {
   const [selectedStyleId, setSelectedStyleId] = useState<string>(initialStyleId);
   const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
   const [styleSearch, setStyleSearch] = useState('');
-  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
-  const [unmutedCardStyleId, setUnmutedCardStyleId] = useState<string | null>(null);
-  const [mobilePlayingStyleId, setMobilePlayingStyleId] = useState<string | null>(null);
   const [modalPreviewStyle, setModalPreviewStyle] = useState<VideoStyle | null>(null);
 
   // Step 3: Optional provider direction & safety controls
@@ -628,7 +625,7 @@ function VideoFactoryContent() {
               {STYLE_CATEGORIES_V6.map((item) => <button key={item.id} type="button" onClick={() => setStyleCategoryFilter(item.id)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold ${styleCategoryFilter === item.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'}`}>{item.label}</button>)}
             </div>
 
-            {/* Style Cards Grid (Hover-to-Play Video Gallery with Audio Control) */}
+            {/* Poster-first style gallery; video is requested only on hover/Preview. */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                 <span>Pilih daripada 20 Gaya Video Rasmi V6:</span>
@@ -638,99 +635,35 @@ function VideoFactoryContent() {
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
-                  const isHovered = hoveredStyleId === style.id || mobilePlayingStyleId === style.id;
-                  const isUnmuted = unmutedCardStyleId === style.id;
-                  const hasVerifiedSample = Boolean(style.previewVideoUrl);
+                  const metadata = getStyleMarketingMetadata(style.id);
+                  if (!metadata) return null;
 
                   return (
                     <div
                       key={style.id}
-                      onMouseEnter={() => setHoveredStyleId(style.id)}
-                      onMouseLeave={() => {
-                        setHoveredStyleId(null);
-                        if (unmutedCardStyleId === style.id) setUnmutedCardStyleId(null);
-                      }}
-                      onClick={() => {
-                        setSelectedStyleId(style.id);
-                        // For touch devices, tap toggles play state
-                        setMobilePlayingStyleId(mobilePlayingStyleId === style.id ? null : style.id);
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all relative group flex flex-col justify-between cursor-pointer ${
+                      className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
                         isSelected
                           ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      {/* Video Preview Box (9:16 vertical ratio) */}
-                      {hasVerifiedSample && (
-                        <div className="relative w-full aspect-[9/16] max-h-36 rounded-lg overflow-hidden bg-slate-950 mb-2">
-                          <video
-                            src={style.previewVideoUrl || undefined}
-                            muted={!isUnmuted}
-                            playsInline
-                            loop
-                            preload="none"
-                            ref={(el) => {
-                              if (el) {
-                                el.muted = !isUnmuted;
-                                if (isHovered) {
-                                  el.play().catch(() => {});
-                                } else {
-                                  el.pause();
-                                  el.currentTime = 0;
-                                }
-                              }
-                            }}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
-                            {style.durationSeconds}s • {style.engine === 'nexabot' ? 'Voice' : 'Motion'}
-                          </div>
-
-                          {/* Sound Unmute / Mute Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUnmutedCardStyleId(isUnmuted ? null : style.id);
-                            }}
-                            className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white transition-all z-10"
-                            title={isUnmuted ? 'Senyapkan suara' : 'Dengar suara sampel'}
-                          >
-                            {isUnmuted ? (
-                              <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                              <VolumeX className="w-3.5 h-3.5 text-white/80" />
-                            )}
-                          </button>
-
-                          {/* Center Play Button for Modal Expanded View */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalPreviewStyle(style);
-                            }}
-                            className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-                            title="Tonton pratonton penuh bersuara"
-                          >
-                            <div className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all">
-                              <Play className="w-4 h-4 fill-white" />
-                            </div>
-                          </button>
-                        </div>
-                      )}
+                      <div className="mb-2 overflow-hidden rounded-xl">
+                        <StylePosterMedia metadata={metadata} onPreview={() => setModalPreviewStyle(style)} compact />
+                      </div>
 
                       <div>
                         <div className="flex items-start justify-between gap-1">
-                          <div className="font-bold text-xs text-slate-900">{style.name}</div>
+                          <div className="font-bold text-xs text-slate-900">{metadata.title}</div>
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">
                             {style.durationSeconds}s
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                          {style.benefit}
+                          {metadata.description}
                         </p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {metadata.tags.map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-600">{tag}</span>)}
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 text-[10px]">

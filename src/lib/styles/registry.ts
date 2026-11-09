@@ -1,5 +1,6 @@
 /** AffiMatik Creative V6 — canonical 20-style registry. */
 import { VideoStyle, StyleCategory, StyleFilterOptions, AudioMode } from './types';
+import { getStyleMarketingMetadata } from './marketing-metadata';
 
 const VERSION = 'affimatik-creative-v6.0';
 type Direction = [string, string, string, string, string, string, string];
@@ -11,14 +12,16 @@ type Seed = {
 };
 
 function make(s: Seed): VideoStyle {
+  const marketing = getStyleMarketingMetadata(s.id);
+  if (!marketing) throw new Error(`Missing style marketing metadata for ${s.id}`);
   const [targetViewingExperience, openingStrategy, speakingPersonality, humanBehaviour, sceneContext, productInteraction, expectedEnding] = s.direction;
   return {
-    id: s.id, slug: s.slug, name: s.name, benefit: s.benefit, description: s.description,
+    id: s.id, slug: s.slug, name: marketing.title, benefit: marketing.tagline, description: marketing.description,
     category: s.category, engine: 'nexabot', durationSeconds: 15, audioMode: s.audio ?? 'spoken_bm',
     supportedProductCategories: s.suitable, requiredAssets: ['product_image'], optionalAssets: s.avatar ? ['avatar_reference'] : [],
     actionType: s.action, cameraProfile: s.camera, identityLock: true, realismLock: true, modestyLock: true,
     promptTemplateVersion: VERSION, qualityStatus: 'video_tested', publicationStatus: 'published',
-    previewVideoUrl: `/api/style-samples/${s.id}`, tags: s.tags, legacyAliasId: s.legacyAliasId,
+    previewVideoUrl: marketing.previewPath, tags: [...marketing.tags], legacyAliasId: s.legacyAliasId,
     creativeDirection: { targetViewingExperience, openingStrategy, speakingPersonality, humanBehaviour, sceneContext, productInteraction, expectedEnding },
     actionPlan: {
       primaryAction: productInteraction, startPose: openingStrategy, actionProgression: humanBehaviour,
@@ -71,7 +74,7 @@ export function filterVideoStyles(o: StyleFilterOptions = {}): VideoStyle[] {
 export function getAllVideoStyles(): VideoStyle[] { return VIDEO_STYLES_REGISTRY.filter((s) => s.publicationStatus === 'published'); }
 
 export const STYLE_CATEGORIES_V6: Array<{id: StyleCategory; label: string}> = [
-  {id:'all',label:'Semua Gaya'},{id:'creator_review',label:'Creator Review'},{id:'pov',label:'POV'},
-  {id:'product_handling',label:'Product Handling'},{id:'lifestyle',label:'Lifestyle'},
-  {id:'soft_sell',label:'Soft Sell'},{id:'problem_solution',label:'Masalah & Pilihan'},
+  {id:'all',label:'Semua Gaya'},{id:'creator_review',label:'Review & Creator'},{id:'pov',label:'POV'},
+  {id:'product_handling',label:'Demo & Produk'},{id:'lifestyle',label:'Lifestyle'},
+  {id:'soft_sell',label:'Soft Sell'},{id:'problem_solution',label:'Cerita & Masalah'},
 ];
