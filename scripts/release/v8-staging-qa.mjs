@@ -3,14 +3,15 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, basename } from 'node:path';
 import crypto from 'node:crypto';
 
-const base = 'https://affimatik-launch-lite-staging.nanotiva-garden.workers.dev';
+const base = process.env.V8_QA_BASE || 'https://affimatik-launch-lite-staging.nanotiva-garden.workers.dev';
+const accessControlledStaging = base.includes('affimatik-launch-lite-staging');
 const supabase = 'https://oudxnvazrdmnxdndpgmy.supabase.co';
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const gateKey = process.env.STAGING_GATE_SECRET;
 const email = process.env.V8_QA_EMAIL || 'codex.v8.qa@affimatik.online';
 const password = process.env.V8_QA_PASSWORD;
 const nexabotKey = process.env.NEXABOT_API_KEY;
-if (!serviceKey || !gateKey || !password || !nexabotKey) throw new Error('Rahsia V8 staging QA tidak lengkap.');
+if (!serviceKey || !password || !nexabotKey || (accessControlledStaging && !gateKey)) throw new Error('Rahsia V8 QA tidak lengkap.');
 
 const out = resolve('output/provider-qa', process.env.V8_QA_RUN_NAME || 'v8-journey');
 mkdirSync(out, { recursive: true });
@@ -50,6 +51,10 @@ async function ensureTestAccount() {
 }
 
 async function unlock(page) {
+  if (!accessControlledStaging) {
+    await page.goto(base, { waitUntil: 'domcontentloaded' });
+    return;
+  }
   await page.goto(`${base}/__stage_access`, { waitUntil: 'domcontentloaded' });
   await page.locator('input[name="key"]').fill(gateKey);
   await Promise.all([page.waitForURL(`${base}/`), page.getByRole('button', { name: 'Enter' }).click()]);
@@ -66,6 +71,48 @@ async function login(page) {
 async function wallet(page) {
   const session = await page.evaluate(async () => (await fetch('/api/auth/session', { cache: 'no-store' })).json());
   return session.wallet;
+}
+
+async function authenticatedReadSmoke(page) {
+  return page.evaluate(async () => {
+    const readJson = async (path, init) => {
+      const response = await fetch(path, { cache: 'no-store', ...init });
+      return { status: response.status, data: await response.json().catch(() => ({})) };
+    };
+    const [session, products, videos, styles] = await Promise.all([
+      readJson('/api/auth/session'), readJson('/api/products'), readJson('/api/videos'), readJson('/api/styles'),
+    ]);
+    const firstVideo = videos.data?.videos?.[0];
+    const privateRange = firstVideo?.streamUrl
+      ? await fetch(firstVideo.streamUrl, { headers: { Range: 'bytes=0-1023' }, cache: 'no-store' })
+      : null;
+    const previews = Array.isArray(styles.data?.styles)
+      ? await Promise.all(styles.data.styles.map(async (style) => {
+          const url = style.previewVideoUrl || style.preview_video_url;
+          if (!url) return { id: style.id, status: 0 };
+          const response = await fetch(url, { headers: { Range: 'bytes=0-1023' }, cache: 'no-store' });
+          return { id: style.id, status: response.status };
+        }))
+      : [];
+    const checkout = await fetch('/api/billing/checkout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: 'starter' }),
+    });
+    return {
+      sessionStatus: session.status,
+      authenticated: session.data?.authenticated === true,
+      wallet: session.data?.wallet || null,
+      productsStatus: products.status,
+      productCount: products.data?.assets?.length || 0,
+      videosStatus: videos.status,
+      videoCount: videos.data?.videos?.length || 0,
+      privateRangeStatus: privateRange?.status || null,
+      privateContentRange: privateRange?.headers.get('content-range') || null,
+      styleCount: styles.data?.count || 0,
+      previewPassCount: previews.filter((item) => item.status === 200 || item.status === 206).length,
+      previewResults: previews,
+      checkoutStatus: checkout.status,
+    };
+  });
 }
 
 async function providerCredits() {
@@ -147,6 +194,7 @@ try {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await desktop.newPage();
   await unlock(page); await login(page);
+  evidence.desktop.readSmoke = await authenticatedReadSmoke(page);
   await page.goto(`${base}/factory`, { waitUntil: 'networkidle' });
   evidence.desktop.generatePresent = await page.getByRole('button', { name: /Jana Video Sekarang/ }).count() > 0;
   await page.getByRole('button', { name: 'Customize' }).click();

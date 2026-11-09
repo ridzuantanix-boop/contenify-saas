@@ -5,7 +5,7 @@
 - Branch: `codex/human-realism-v8`
 - Staging Worker: `affimatik-launch-lite-staging`
 - Staging version: `1e3a051f-0676-4d88-ac3c-c7503fdec37f`
-- Production was not deployed or changed.
+- Initial QA was staging-only. Production was later deployed after explicit owner approval; evidence is recorded below.
 - RunningHub and public paid checkout remained off.
 
 ## Dialogue correction
@@ -74,3 +74,14 @@ Controlled application-path evidence:
 - Opening frame is a new kitchen presenter scene, visually different from the isolated product reference. The product enters later and remains recognizable through the ending.
 - Private MP4 persistence passed; full stream HTTP 200 and Range HTTP 206.
 - Isolated wallet: 60 available / 0 reserved → 60 / 10 during processing → 50 / 0 after exactly one settlement.
+
+## Approved production deployment
+
+- Release commit: `38da13c7bfefca38023be6079baeaff0439d2a94`.
+- Production Worker: `affimatik-production-v2`, version `565448f6-3790-4032-bba5-47caef1b5e8e`.
+- Cron Worker: `affimatik-cron-reconciler`, version `e439f5c3-b93c-49d5-a9ed-8c04eb635194`.
+- Encrypted backup: `output/release/backups/2026-11-09T14-03-32-426Z`; database SHA-256 `39e5046994a79f871a6076d7e719c744cfc22b18da61c9754005615ebf9fe069`; 45 Storage objects.
+- Isolated restore and migrations 00012–00019 passed with unchanged identity, wallet and job hashes. Snapshot: 16 users, 16 wallets, total balance 350, reserved 0, 40 jobs.
+- Authenticated production smoke passed: wallet 50/0 unchanged, Product Library HTTP 200 (4 assets), Video Library HTTP 200 (10 videos), private MP4 Range HTTP 206, and all 20 preview videos HTTP 200.
+- Nexabot Voice remains on; RunningHub remains off; public paid checkout returned HTTP 403.
+- Reconciler smoke passed with zero pending, settled or released jobs. Existing Pages deployment `c2b7f82e-ad9f-4572-949b-a138eb1cf501` remains the rollback target.
