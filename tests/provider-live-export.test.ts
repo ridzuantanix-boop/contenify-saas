@@ -42,7 +42,8 @@ describe('real-provider QA prompt export', () => {
       expect(prompt).toContain('If the image and optional user notes do not establish a fact, omit the claim entirely');
       expect(prompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
       expect(prompt).toContain('Keep these factual checks internal');
-      expect(prompt).toContain('before second 11.5');
+      expect(prompt).toContain('before second 11');
+      expect(prompt).toContain('Do not target a mandatory word count');
     }
     expect(prompts.lampMotion).toContain('[PROVIDER-CREATED DIALOGUE');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {

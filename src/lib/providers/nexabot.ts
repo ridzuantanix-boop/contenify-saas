@@ -57,14 +57,19 @@ export class NexabotAdapter implements IProviderAdapter {
     const isValidImage = (src?: string) =>
       src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:image/')) && !src.includes('mock');
 
+    if (input.mainImageKeyOrUrl && !isValidImage(input.mainImageKeyOrUrl)) {
+      throw new Error('Nexabot product reference image is invalid; generation was not submitted.');
+    }
     if (isValidImage(input.mainImageKeyOrUrl)) {
       images.push(input.mainImageKeyOrUrl!);
     }
     if (input.referenceImageKeysOrUrls) {
+      if (input.referenceImageKeysOrUrls.length > 2) {
+        throw new Error('Nexabot accepts at most two personalization references after the product image.');
+      }
       for (const img of input.referenceImageKeysOrUrls) {
-        if (isValidImage(img) && images.length < 3) {
-          images.push(img);
-        }
+        if (!isValidImage(img)) throw new Error('Nexabot personalization reference image is invalid; no selected reference was silently omitted.');
+        images.push(img);
       }
     }
 

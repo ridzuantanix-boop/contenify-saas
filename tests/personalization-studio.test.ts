@@ -50,13 +50,23 @@ describe('AffiMatik V7 Personalization Studio', () => {
   });
 
   it('orders and caps Nexabot media exactly as product, avatar, background', () => {
-    const payload = new NexabotAdapter({ apiKey: 'test' }).preparePayload({
+    const adapter = new NexabotAdapter({ apiKey: 'test' });
+    const payload = adapter.preparePayload({
       jobId: 'job', idempotencyKey: 'idem', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
       aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT',
-      referenceImageKeysOrUrls: ['data:image/png;base64,AVATAR', 'data:image/png;base64,BACKGROUND', 'data:image/png;base64,EXTRA'],
+      referenceImageKeysOrUrls: ['data:image/png;base64,AVATAR', 'data:image/png;base64,BACKGROUND'],
     }) as { mode: string; media: string[] };
     expect(payload.mode).toBe('i2v');
     expect(payload.media).toEqual(['data:image/png;base64,PRODUCT', 'data:image/png;base64,AVATAR', 'data:image/png;base64,BACKGROUND']);
+    expect(() => adapter.preparePayload({
+      jobId: 'job', idempotencyKey: 'idem', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
+      aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT',
+      referenceImageKeysOrUrls: ['data:image/png;base64,AVATAR', 'data:image/png;base64,BACKGROUND', 'data:image/png;base64,EXTRA'],
+    })).toThrow('at most two personalization references');
+    expect(() => adapter.preparePayload({
+      jobId: 'job', idempotencyKey: 'idem', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
+      aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT', referenceImageKeysOrUrls: ['invalid-reference'],
+    })).toThrow('no selected reference was silently omitted');
   });
 
   it('defines additive workspace-scoped migration, RLS and safe rollback', () => {
@@ -80,5 +90,8 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(factory).toContain('backgroundId: backgroundId || undefined');
     expect(factory).toContain('Simpan sebagai Preset');
     expect(factory).toContain('Jana Video Sekarang');
+    expect(factory).toContain('Status Personalisasi Provider');
+    expect(factory).toContain('Produk + Avatar + Latar');
+    expect(factory).toContain('tidak akan digugurkan secara senyap');
   });
 });

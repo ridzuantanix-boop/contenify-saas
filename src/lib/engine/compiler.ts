@@ -17,9 +17,11 @@ export const GEMS_PROMPT_VERSION = 'affimatik-creative-v6.0';
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
   '[MALAYSIAN AFFILIATE VOICE DNA V6]',
   'Create original spoken Bahasa Melayu Malaysia that sounds like a believable local affiliate creator, never formal corporate copy.',
-  'Use short naturally uneven sentence rhythm, meaningful pauses, subtle vocal variation and a product-relevant hook.',
-  'Focus on one supported intended purpose or ordinary category use context and finish comfortably within 15 seconds.',
+  'Use a short naturally uneven sentence rhythm, meaningful pauses, subtle vocal variation and one product-relevant hook that is distinct from the ending.',
+  'Build one compact spoken turn: one distinct hook, one grounded product point, then one concise natural ending. Do not narrate for the full clip merely to fill time.',
+  'Focus on one supported intended purpose or ordinary category use context and finish speech comfortably before the video ends.',
   'Do not repeat a catalogue-wide opening or closing. Match the selected style personality exactly.',
+  'Never repeat or paraphrase the same meaning twice. Each spoken clause must add new information; remove any echoed claim, hook, product point, CTA or outro before rendering.',
   'No Indonesian forms, no English dialogue unless explicitly requested, no filler, no exaggerated presenter performance.',
   'A buyer problem does not prove that this product resolves it. Omit all unsupported benefit and performance claims.',
   'Never claim personal use, purchase, customer reviews, ingredients, certifications, prices, specifications, performance results or medical outcomes unless explicitly supplied by the user or clearly legible in the reference.',
@@ -417,11 +419,11 @@ export class DynamicPromptCompiler {
       options.callToAction === 'none'
         ? 'The customer chose no CTA. Do not add a spoken call to action.'
         : options.callToAction === 'spoken_button'
-          ? 'End naturally with a brief low-pressure instruction to tap the purchase button, completed before second 11.5.'
+          ? 'End naturally with one brief low-pressure instruction to tap the purchase button, completed before second 11.'
           : options.callToAction === 'spoken_bio'
-            ? 'End naturally with a brief low-pressure instruction to check the bio, completed before second 11.5.'
-            : 'Use a brief low-pressure CTA only if it fits this style naturally; complete all speech before second 11.5.',
-      '[FINAL DIALOGUE COMPLIANCE] Create exactly TWO short spoken sentences totalling 16-22 words, begin immediately, and finish completely by second 11.5. If a CTA is used, embed it inside sentence two; never add a third sentence. After sentence two, stop speaking, keep the mouth closed and leave the remaining video silent. Never repeat a sentence, phrase, CTA or outro.',
+            ? 'End naturally with one brief low-pressure instruction to check the bio, completed before second 11.'
+            : 'Use one brief low-pressure CTA only if it fits this style naturally; complete all speech before second 11.',
+      '[FINAL DIALOGUE COMPLIANCE] Create one compact spoken turn, normally one or two short sentences, and finish completely before second 11. Do not target a mandatory word count or fill the full 15 seconds. Say the hook once, make one grounded product point once, then end once. After the ending, stop speaking, keep the mouth closed and leave the remaining video silent. Never repeat or semantically paraphrase a sentence, claim, phrase, CTA or outro.',
       'Never say or imply “pilihan terbaik”, “wajib”, personal use, purchase, household routine, testimonial, dosage, when to consume, absorption, symptom relief, energy, focus, wellness or health results. For supplements or health products, only identify the visible product type and clearly readable label facts; never explain what those facts do to the body.',
       'Never describe a product as wireless, rechargeable, battery-powered, portable or cable-free unless that exact fact is legible in the image or supplied by the user. Use Malaysian Malay only; forbidden Indonesian forms include kamu, coba, kesehatan, ianya and banget. Before rendering, silently remove every unsupported claim, superlative, personal-experience statement, repeated phrase and clipped ending. AffiMatik does not provide a script.',
     ].join(' ');

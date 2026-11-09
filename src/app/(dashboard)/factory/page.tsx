@@ -701,6 +701,21 @@ function VideoFactoryContent() {
                 <button type="button" onClick={savePreset} disabled={assetActionBusy} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[11px] font-bold text-white disabled:opacity-50"><BookmarkPlus className="h-3.5 w-3.5" />Simpan sebagai Preset</button>
               </div>
 
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-700">
+                <div className="font-bold text-slate-900">Status Personalisasi Provider</div>
+                <div className="mt-1"><span className="font-semibold text-emerald-700">Disahkan:</span> produk sahaja serta arahan teks untuk niche, personaliti, storyboard, CTA dan latar terbina dalam.</div>
+                <div><span className="font-semibold text-amber-700">Eksperimen:</span> avatar imej berjaya sekali selepas pemampatan tetapi turut pernah gagal; latar imej dan gabungan avatar + latar belum disahkan stabil.</div>
+                <div>Aset tersimpan kekal selamat. Rujukan imej yang dipilih akan dihantar mengikut peranannya dan tidak akan digugurkan secara senyap.</div>
+              </div>
+
+              {(avatarId || backgroundId) && (
+                <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
+                  <strong>Konfigurasi imej belum disahkan stabil:</strong>{' '}
+                  {avatarId && backgroundId ? 'Produk + Avatar + Latar' : avatarId ? 'Produk + Avatar' : 'Produk + Latar'}.
+                  {' '}Provider tetap akan menerima semua rujukan dalam urutan produk → avatar → latar. Jika provider gagal, tempahan kredit dilepaskan.
+                </div>
+              )}
+
               {presets.length > 0 && <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Preset Tersimpan</label>
                 <div className="flex gap-2 overflow-x-auto pb-1">

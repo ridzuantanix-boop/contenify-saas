@@ -53,7 +53,12 @@ describe('direct-to-provider masterprompt architecture', () => {
       expect(compiled.providerPrompt, style.id).not.toMatch(/approved spoken script|approved script|script to speak|Script: ""|""|\$\{p\.spokenScript\}|\{script_body\}/i);
       expect(style.engine, style.id).toBe('nexabot');
       expect(compiled.providerPrompt, style.id).toContain('external video-generation AI must independently inspect');
-      expect(compiled.providerPrompt, style.id).toContain('before second 11.5');
+      expect(compiled.providerPrompt, style.id).toContain('before second 11');
+      expect(compiled.providerPrompt, style.id).toContain('one distinct hook, one grounded product point');
+      expect(compiled.providerPrompt, style.id).toContain('Never repeat or semantically paraphrase');
+      expect(compiled.providerPrompt, style.id).toContain('Do not target a mandatory word count');
+      expect(compiled.providerPrompt, style.id).not.toContain('exactly TWO short spoken sentences');
+      expect(compiled.providerPrompt, style.id).not.toContain('16-22 words');
       expect(compiled.providerPrompt, style.id).toContain('Omni-Flash provider watermark is permitted');
       expect(compiled.providerPrompt, style.id).toContain('Never invent a special formula');
       expect(compiled.providerPrompt, style.id).toContain('No decorative sparkles, glints, star stickers');
