@@ -43,7 +43,7 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
     const script = buildSmartScript(product(), getVideoStyle('NX17')!, 'none');
     expect(script.split(/\s+/).length).toBeLessThan(38);
     expect(script).toContain('Eh, korang yang tengah cari Lampu Nova');
-    expect(script).toContain('check detail produk dulu');
+    expect(script).toContain('check fungsi yang korang perlukan');
   });
 
   it('supports all approved CTA phrases and exact bounded custom CTA', () => {
@@ -99,7 +99,19 @@ describe('AffiMatik V8 Human Realism Script Control', () => {
   it('keeps product-handling voiceover useful instead of narrating camera action', () => {
     for (const id of ['RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19']) {
       const script = buildSmartScript(product(), getVideoStyle(id)!, 'none');
-      expect(script).not.toMatch(/aku (pusing|sengetkan|angkat|pegang|letak)|bagi nampak bentuk|cahaya siang/i);
+      expect(script).not.toMatch(/aku (pusing|sengetkan|angkat|pegang|letak)|bagi nampak bentuk|cahaya siang|bungkusan|packaging|jangan (terus )?pilih|sesuai tak dengan keperluan/i);
+      expect(script).not.toMatch(/fakta yang disahkan|maklumat yang disahkan|nilai kesesuaiannya|rujuk maklumat yang sah/i);
+    }
+  });
+
+  it('gives the six RH styles distinct buyer-facing scripts and keeps the selected CTA once', () => {
+    const scripts = ['RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19'].map((id) =>
+      buildSmartScript(product('boleh laras arah cahaya'), getVideoStyle(id)!, 'click_button'),
+    );
+    expect(new Set(scripts).size).toBe(6);
+    for (const script of scripts) {
+      expect(script.match(/Klik butang dekat bawah\./g)).toHaveLength(1);
+      expect(script).not.toMatch(/pusing|sengetkan|angkat|pegang|letak produk|rupa bungkusan|packaging/i);
     }
   });
 
