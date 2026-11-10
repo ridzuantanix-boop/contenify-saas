@@ -13,6 +13,13 @@ ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS submission_uncertain BOOL
 ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS submission_started_at TIMESTAMPTZ;
 ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS provider_model_id TEXT;
 ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS provider_dispatched_at TIMESTAMPTZ;
+-- 00022 must remain independently deployable on the production baseline. These
+-- retry-observability columns were introduced by the optional 00021 release,
+-- but the V7.2 queue functions below also use them directly.
+ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMPTZ;
+ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS last_retry_at TIMESTAMPTZ;
+ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS last_provider_error TEXT;
+ALTER TABLE public.video_jobs ADD COLUMN IF NOT EXISTS raw_status TEXT;
 UPDATE public.video_jobs SET queue_sequence=nextval('public.video_job_queue_sequence'),enqueued_at=COALESCE(created_at,now())
 WHERE status='QUEUED' AND queue_sequence IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS video_jobs_queue_sequence_unique ON public.video_jobs(queue_sequence) WHERE queue_sequence IS NOT NULL;
