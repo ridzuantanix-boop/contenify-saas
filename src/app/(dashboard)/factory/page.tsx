@@ -57,6 +57,10 @@ interface ActiveJobDisplay {
   creditRestored?: boolean;
   failureHeadline?: string;
   failureGuidance?: string;
+  retryScheduled?: boolean;
+  retryCount?: number;
+  maxRetries?: number;
+  nextRetryAt?: string;
   createdAt: string;
 }
 
@@ -339,8 +343,10 @@ function VideoFactoryContent() {
           failureGuidance: data.failure?.retryGuidance,
         } : null);
         await Promise.all([refreshAccountBalance(), refreshJobsFromDatabase()]);
-      } else if (data.status === 'RUNNING' || data.status === 'PROCESSING' || data.status === 'PENDING') {
-        setActiveJob((prev) => prev ? { ...prev, status: 'PROCESSING', rawStatus: data.rawStatus } : null);
+      } else if (data.status === 'RUNNING' || data.status === 'PROCESSING' || data.status === 'PENDING' || data.status === 'SUBMITTING') {
+        setActiveJob((prev) => prev ? { ...prev, status: data.status === 'SUBMITTING' ? 'SUBMITTING' : 'PROCESSING',
+          rawStatus: data.rawStatus, retryScheduled: data.retryScheduled === true, retryCount: data.retryCount,
+          maxRetries: data.maxRetries, nextRetryAt: data.nextRetryAt } : null);
       }
     } catch {
       // A transient network issue never fails or duplicates a durable job.
@@ -507,15 +513,21 @@ function VideoFactoryContent() {
         throw new Error(data.error || 'Gagal menghantar tugasan penjanaan video.');
       }
 
-      setSubmitSuccess('Tugasan penjanaan video berjaya didaftarkan. Sistem sedang memproses babak.');
+      setSubmitSuccess(data.retryScheduled
+        ? data.message || 'Pelayan Nexabot sedang terganggu. AffiMatik akan mencuba semula secara automatik dan kredit anda kekal selamat.'
+        : 'Tugasan penjanaan video berjaya didaftarkan. Sistem sedang memproses babak.');
       const newJobDisplay: ActiveJobDisplay = {
         jobId: data.jobId,
         providerTaskId: data.providerTaskId,
         provider: data.provider || selectedStyle.engine,
         styleName: selectedStyle.name,
         durationSeconds: selectedStyle.durationSeconds,
-        status: 'PROCESSING',
+        status: data.status === 'SUBMITTING' ? 'SUBMITTING' : 'PROCESSING',
         requiredCredits,
+        retryScheduled: data.retryScheduled === true,
+        retryCount: data.retryCount,
+        maxRetries: data.maxRetries,
+        nextRetryAt: data.nextRetryAt,
         createdAt: new Date().toISOString(),
       };
 
@@ -1032,11 +1044,18 @@ function VideoFactoryContent() {
                         <Loader2 className="w-7 h-7 animate-spin" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900">Sedang Menjana Video AI</h4>
+                        <h4 className="text-sm font-bold text-slate-900">{activeJob.retryScheduled ? 'Pelayan Nexabot Sedang Pulih' : 'Sedang Menjana Video AI'}</h4>
                         <p className="text-xs text-slate-500 mt-1">
                           Gaya: {activeJob.styleName} ({activeJob.durationSeconds}s)
                         </p>
                       </div>
+                      {activeJob.retryScheduled && (
+                        <div className="mx-auto max-w-sm rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-900">
+                          <p className="font-bold">Ini gangguan pelayan Nexabot—bukan semestinya masalah prompt atau gambar anda.</p>
+                          <p className="mt-1">AffiMatik akan cuba semula secara automatik ({activeJob.retryCount || 1}/{activeJob.maxRetries || 3}). Kredit masih ditempah dan tidak akan dicaj dua kali.</p>
+                          {activeJob.nextRetryAt && <p className="mt-1 text-[11px]">Cubaan seterusnya sekitar {new Date(activeJob.nextRetryAt).toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'})}.</p>}
+                        </div>
+                      )}
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-[11px] font-mono text-slate-600">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Masa berlalu: {pollElapsedTime}s</span>

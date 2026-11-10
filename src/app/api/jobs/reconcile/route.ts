@@ -4,6 +4,7 @@ import { DurableStore } from '@/lib/db/store';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { ProviderRouter } from '@/lib/providers/router';
 import { customerFailureMessage } from '@/lib/jobs/customer-failure';
+import { dispatchDueProviderRetry, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 
 
 const router = new ProviderRouter();
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
       settled: 0,
       released: 0,
       stillProcessing: 0,
+      retryScheduled: 0,
+      retrySubmitted: 0,
     };
 
     const now = Date.now();
@@ -42,12 +45,21 @@ export async function POST(req: NextRequest) {
     const PROVIDER_HARD_TIMEOUT_MS = 45 * 60 * 1000;
 
     for (const job of pendingJobs) {
-      const createdAtMs = new Date(job.createdAt).getTime();
-      const ageMs = now - createdAtMs;
+      const attemptStartedAtMs = new Date(job.lastRetryAt || job.createdAt).getTime();
+      const ageMs = now - attemptStartedAtMs;
       const isOrphanExpired = ageMs > ORPHAN_TIMEOUT_MS;
       const isProviderExpired = ageMs > PROVIDER_HARD_TIMEOUT_MS;
 
       if (!job.providerTaskId) {
+        if (job.nextRetryAt) {
+          if (new Date(job.nextRetryAt).getTime() <= now) {
+            const dispatched = await dispatchDueProviderRetry(job);
+            if (dispatched.submitted) results.retrySubmitted++;
+            else if ('finalized' in dispatched && dispatched.finalized) results.released++;
+            else results.stillProcessing++;
+          } else results.stillProcessing++;
+          continue;
+        }
         if (isOrphanExpired) {
           // Release reservation for orphaned jobs
           await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_timeout_${job.id}`);
@@ -73,22 +85,16 @@ export async function POST(req: NextRequest) {
             }
           }
         } else if (statusRes.normalizedStatus === 'FAILED') {
-          await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_recon_${job.id}`);
-          await DurableStore.updateJobStatus(job.id, {
-            status: 'FAILED',
-            errorMessage: customerFailureMessage(statusRes.errorMessage || statusRes.rawStatus),
-            rawStatus: `${statusRes.rawStatus}${statusRes.errorMessage ? `: ${statusRes.errorMessage}` : ''}`.slice(0, 1000),
-          });
-          results.released++;
+          const retry = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId, statusRes.errorMessage || statusRes.rawStatus);
+          if (retry.retryScheduled) results.retryScheduled++;
+          else if (retry.finalized) results.released++;
+          else results.stillProcessing++;
         } else if (statusRes.normalizedStatus === 'RUNNING' || statusRes.normalizedStatus === 'PENDING') {
           if (isProviderExpired) {
-            await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_hard_timeout_${job.id}`);
-            await DurableStore.updateJobStatus(job.id, {
-              status: 'FAILED',
-              errorMessage: customerFailureMessage('provider remained pending beyond hard timeout'),
-              rawStatus: statusRes.rawStatus,
-            });
-            results.released++;
+            const retry = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId, 'provider remained pending beyond hard timeout');
+            if (retry.retryScheduled) results.retryScheduled++;
+            else if (retry.finalized) results.released++;
+            else results.stillProcessing++;
           } else {
             results.stillProcessing++;
           }
@@ -107,10 +113,11 @@ export async function POST(req: NextRequest) {
       } catch (pollErr: unknown) {
         // Keep transient polling errors credit-safe, but never hold a reservation forever.
         const errMsg = pollErr instanceof Error ? pollErr.message : String(pollErr);
-        if (isProviderExpired) {
-          await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_err_${job.id}`);
-          await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: customerFailureMessage(errMsg) });
-          results.released++;
+        if (!isRetryableProviderFailure(errMsg) || isProviderExpired) {
+          const retry = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId || null, errMsg);
+          if (retry.retryScheduled) results.retryScheduled++;
+          else if (retry.finalized) results.released++;
+          else results.stillProcessing++;
         } else {
           // Transient network error while polling provider: keep processing
           results.stillProcessing++;

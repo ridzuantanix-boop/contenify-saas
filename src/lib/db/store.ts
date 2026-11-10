@@ -59,6 +59,13 @@ export interface VideoJobRecord {
   videoObjectKey?: string;
   errorMessage?: string;
   rawStatus?: string;
+  compiledPromptSnapshot?: string;
+  inputOptions?: Record<string, unknown>;
+  retryCount?: number;
+  maxRetries?: number;
+  nextRetryAt?: string;
+  lastRetryAt?: string;
+  lastProviderError?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -495,6 +502,10 @@ export class DurableStore {
         productName: req.productName,
         productCategory: req.productCategory,
         requiredCredits: req.requiredCredits,
+        compiledPromptSnapshot: req.compiledPrompt,
+        inputOptions: req.inputOptions || {},
+        retryCount: 0,
+        maxRetries: 3,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -834,6 +845,13 @@ export class DurableStore {
       videoObjectKey: row.result_video_r2_key || undefined,
       errorMessage: row.error_message || undefined,
       rawStatus: row.raw_status || undefined,
+      compiledPromptSnapshot: row.compiled_prompt_snapshot || undefined,
+      inputOptions: row.input_options || {},
+      retryCount: Number(row.retry_count || 0),
+      maxRetries: Number(row.max_retries || 3),
+      nextRetryAt: row.next_retry_at || undefined,
+      lastRetryAt: row.last_retry_at || undefined,
+      lastProviderError: row.last_provider_error || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at || row.created_at,
     };
@@ -1068,6 +1086,7 @@ export class DurableStore {
       if (updates.outputHasAudio !== undefined) patchPayload.output_has_audio = updates.outputHasAudio;
       if (updates.outputSizeBytes !== undefined) patchPayload.output_size_bytes = updates.outputSizeBytes;
       if (updates.errorMessage) patchPayload.error_message = updates.errorMessage;
+      if (updates.rawStatus) patchPayload.raw_status = updates.rawStatus;
 
       const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}`;
       const res = await fetch(url, {
@@ -1102,6 +1121,54 @@ export class DurableStore {
 
     Object.assign(job, updates, { updatedAt: new Date().toISOString() });
     return { ...job };
+  }
+
+  static async scheduleProviderRetry(jobId: string, expectedProviderTaskId: string | null, providerError: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) {
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/schedule_video_job_retry_atomic`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ p_job_id: jobId, p_expected_provider_task_id: expectedProviderTaskId, p_provider_error: providerError.slice(0, 1000) }),
+      });
+      if (!response.ok) throw new Error(`Retry schedule HTTP ${response.status}`);
+      return response.json();
+    }
+    const job = localDb.jobs[jobId];
+    if (!job) return { success: false, error: 'JOB_NOT_FOUND' };
+    if ((job.retryCount || 0) >= (job.maxRetries || 3)) return { success: true, retry_exhausted: true, retry_count: job.retryCount || 0 };
+    job.retryCount = (job.retryCount || 0) + 1; job.maxRetries ||= 3; job.status = 'SUBMITTING'; job.providerTaskId = undefined;
+    job.nextRetryAt = new Date(Date.now() + [0, 120000, 300000, 600000][job.retryCount]).toISOString();
+    job.errorMessage = `Pelayan Nexabot sedang terganggu. Cubaan semula automatik ${job.retryCount} daripada ${job.maxRetries} dijadualkan. Kredit masih ditempah dan tidak dicaj dua kali.`;
+    return { success: true, retry_scheduled: true, retry_count: job.retryCount, max_retries: job.maxRetries, next_retry_at: job.nextRetryAt };
+  }
+
+  static async claimProviderRetry(jobId: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) {
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/claim_video_job_retry_atomic`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ p_job_id: jobId }),
+      });
+      if (!response.ok) throw new Error(`Retry claim HTTP ${response.status}`);
+      return response.json();
+    }
+    const job = localDb.jobs[jobId];
+    if (!job || !job.nextRetryAt || new Date(job.nextRetryAt).getTime() > Date.now()) return { success: true, claimed: false };
+    job.lastRetryAt = new Date().toISOString(); job.nextRetryAt = new Date(Date.now() + 900000).toISOString();
+    return { success: true, claimed: true, retry_count: job.retryCount || 0 };
+  }
+
+  static async completeProviderRetryDispatch(jobId: string, providerTaskId: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) {
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/complete_video_job_retry_dispatch_atomic`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ p_job_id: jobId, p_provider_task_id: providerTaskId }),
+      });
+      if (!response.ok) throw new Error(`Retry completion HTTP ${response.status}`);
+      return response.json();
+    }
+    const job = localDb.jobs[jobId];
+    if (!job) return { success: false, error: 'JOB_NOT_FOUND' };
+    job.status = 'PROCESSING'; job.providerTaskId = providerTaskId; job.nextRetryAt = undefined; job.errorMessage = undefined;
+    return { success: true, provider_task_id: providerTaskId };
   }
 
   static async listPendingJobsForReconciliation(): Promise<VideoJobRecord[]> {

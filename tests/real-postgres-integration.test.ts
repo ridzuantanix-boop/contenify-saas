@@ -40,6 +40,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00018_affiliate_service_role_permissions.sql',
       '00019_personalization_studio.sql',
       '00020_qr_express_checkout.sql',
+      '00021_nexabot_provider_retry.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -224,6 +225,27 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     const verified=(await db.query<{result:{success:boolean;payment_state:string}}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-QR-001','owner') AS result`,[order])).rows[0].result;
     expect(verified).toMatchObject({success:true,payment_state:'BANK_PAYMENT_VERIFIED'});
     expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(120);
+  });
+
+  it('schedules, claims and exhausts Nexabot retries without double charging the wallet', async () => {
+    const user='b9999999-9999-4999-8999-999999999991', workspace='a9999999-9999-4999-8999-999999999991', job='c9999999-9999-4999-8999-999999999991';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Retry QA','retry-qa',$2,'active')`,[workspace,user]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'retry@example.test','starter',$2)`,[user,workspace]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,20,10,20,0)`,[workspace]);
+    await db.query(`INSERT INTO video_jobs(id,workspace_id,user_id,preset_id,preset_version,provider,duration_seconds,required_credits,status,provider_task_id,idempotency_key,compiled_prompt_snapshot,input_options) VALUES($1,$2,$3,'NX01',2,'nexabot',15,10,'PROCESSING','task-initial','retry-job','prompt','{"imageAssetId":"d9999999-9999-4999-8999-999999999991"}'::jsonb)`,[job,workspace,user]);
+    await db.query(`INSERT INTO credit_reservations(workspace_id,job_id,amount,status) VALUES($1,$2,10,'PENDING')`,[workspace,job]);
+    const schedule=(task:string)=>db.query<{result:any}>(`SELECT schedule_video_job_retry_atomic($1,$2,'generic provider rejected') AS result`,[job,task]);
+    expect((await schedule('task-initial')).rows[0].result).toMatchObject({success:true,retry_scheduled:true,retry_count:1});
+    expect((await schedule('task-initial')).rows[0].result.stale_observation).toBe(true);
+    for (const [attempt,task] of [[1,'task-retry-1'],[2,'task-retry-2'],[3,'task-retry-3']] as Array<[number,string]>) {
+      await db.query(`UPDATE video_jobs SET next_retry_at=now()-interval '1 second' WHERE id=$1`,[job]);
+      expect((await db.query<{result:any}>(`SELECT claim_video_job_retry_atomic($1) AS result`,[job])).rows[0].result.claimed).toBe(true);
+      expect((await db.query<{result:any}>(`SELECT complete_video_job_retry_dispatch_atomic($1,$2) AS result`,[job,task])).rows[0].result.success).toBe(true);
+      if (attempt<3) expect((await schedule(task)).rows[0].result.retry_count).toBe(attempt+1);
+    }
+    expect((await schedule('task-retry-3')).rows[0].result).toMatchObject({success:true,retry_exhausted:true,retry_count:3});
+    expect((await db.query<{balance:number;reserved_balance:number}>(`SELECT balance,reserved_balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0]).toMatchObject({balance:20,reserved_balance:10});
+    expect((await db.query<{status:string}>(`SELECT status FROM credit_reservations WHERE job_id=$1`,[job])).rows[0].status).toBe('PENDING');
   });
 
   it('registers one product image atomically across retries', async () => {

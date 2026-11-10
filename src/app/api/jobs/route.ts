@@ -12,6 +12,7 @@ import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personalization/config';
 import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
 import { customerFailureMessage, describeCustomerFailure } from '@/lib/jobs/customer-failure';
+import { isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 
 
 const router = new ProviderRouter();
@@ -403,20 +404,20 @@ export async function POST(req: NextRequest) {
         status: 'PROCESSING',
       });
     } catch (submitErr: unknown) {
-      // Safe Rollback: release reserved credits immediately if provider dispatch fails
-      await DurableStore.releaseCredits(workspaceId, jobId, `rel_${idempotencyKey}`);
       const technicalDetail = submitErr instanceof Error ? submitErr.message : String(submitErr);
       const failure = describeCustomerFailure(submitErr);
-      await DurableStore.updateJobStatus(jobId, {
-        status: 'FAILED',
-        errorMessage: customerFailureMessage(submitErr),
-        rawStatus: technicalDetail.slice(0, 1000),
-      });
+      const retry = await scheduleOrFinalizeProviderFailure(jobId, null, submitErr);
       console.error(`[AffiMatik provider dispatch] job=${jobId} provider=${providerAdapter.name} category=${failure.category}: ${technicalDetail.slice(0, 1000)}`);
+      if (retry.retryScheduled) return NextResponse.json({
+        success: true, jobId, provider: providerAdapter.name, styleId: style.id, styleName: style.name,
+        status: 'SUBMITTING', retryScheduled: true, retryCount: retry.retryCount, maxRetries: retry.maxRetries,
+        nextRetryAt: retry.nextRetryAt, reservedCredits: requiredCredits,
+        message: `Pelayan Nexabot sedang terganggu. Cubaan semula automatik ${retry.retryCount} daripada ${retry.maxRetries} telah dijadualkan. Kredit masih ditempah dan tidak dicaj dua kali.`,
+      }, { status: 202 });
       return NextResponse.json({
         error: `${failure.headline}. ${failure.message} ${failure.creditNotice} ${failure.retryGuidance}`,
         failure,
-        creditRestored: true,
+        creditRestored: retry.creditRestored === true,
         jobId,
       }, { status: 503 });
     }
@@ -510,7 +511,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           jobId: job.id,
           status: job.status,
-          rawStatus: 'Menunggu dispatch pembekal...',
+          rawStatus: job.nextRetryAt
+            ? `Gangguan pelayan Nexabot dikesan. Cubaan semula ${job.retryCount || 1}/${job.maxRetries || 3} dijadualkan.`
+            : 'Menunggu dispatch pembekal...',
+          retryScheduled: Boolean(job.nextRetryAt), retryCount: job.retryCount || 0,
+          maxRetries: job.maxRetries || 3, nextRetryAt: job.nextRetryAt,
+          message: job.errorMessage,
         });
       }
 
@@ -537,11 +543,11 @@ export async function GET(req: NextRequest) {
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
         const failure = describeCustomerFailure(statusRes.errorMessage || statusRes.rawStatus);
-        await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_${job.id}`);
-        await DurableStore.updateJobStatus(job.id, {
-          status: 'FAILED',
-          errorMessage: customerFailureMessage(statusRes.errorMessage || statusRes.rawStatus),
-          rawStatus: `${statusRes.rawStatus}${statusRes.errorMessage ? `: ${statusRes.errorMessage}` : ''}`.slice(0, 1000),
+        const retry = await scheduleOrFinalizeProviderFailure(job.id, activeTaskId, statusRes.errorMessage || statusRes.rawStatus);
+        if (retry.retryScheduled || retry.staleObservation) return NextResponse.json({
+          jobId: job.id, provider: job.provider, status: 'SUBMITTING', retryScheduled: true,
+          retryCount: retry.retryCount, maxRetries: retry.maxRetries, nextRetryAt: retry.nextRetryAt,
+          rawStatus: 'Nexabot tidak menyiapkan cubaan ini. AffiMatik akan cuba semula secara automatik; kredit kekal selamat.',
         });
         return NextResponse.json({
           jobId: job.id,
@@ -551,7 +557,7 @@ export async function GET(req: NextRequest) {
           rawStatus: statusRes.rawStatus,
           error: `${failure.headline}. ${failure.message}`,
           failure,
-          creditRestored: true,
+          creditRestored: retry.creditRestored === true,
         });
       }
 
@@ -566,7 +572,14 @@ export async function GET(req: NextRequest) {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      return NextResponse.json({ error: msg }, { status: 500 });
+      if (!isRetryableProviderFailure(msg)) {
+        const final = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId || null, err);
+        return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'FAILED',
+          error: customerFailureMessage(err), creditRestored: final.creditRestored === true }, { status: 503 });
+      }
+      return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'PROCESSING',
+        rawStatus: 'Sambungan status Nexabot terganggu sementara. Sistem latar belakang akan menyemak semula secara automatik.',
+        providerNotice: msg.slice(0, 160) });
     }
   }
 
