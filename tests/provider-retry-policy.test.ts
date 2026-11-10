@@ -16,11 +16,17 @@ describe('Nexabot persistent retry policy',()=>{
     expect(sql).toContain('retry_count >= v_job.max_retries');
     const rollback=fs.readFileSync('supabase/rollback/00021_nexabot_provider_retry.sql','utf8');
     expect(rollback).not.toMatch(/DROP TABLE|DELETE FROM video_jobs/i);
+    const productionRepair=fs.readFileSync('supabase/migrations/00025_restore_provider_retry_scheduler.sql','utf8');
+    expect(productionRepair).toContain('CREATE OR REPLACE FUNCTION public.schedule_video_job_retry_atomic');
+    expect(productionRepair).toContain('FOR UPDATE');
+    expect(productionRepair).not.toMatch(/DROP TABLE|DROP COLUMN|DELETE FROM video_jobs/i);
   });
   it('tells customers this is a provider disruption and protects the single credit reservation',()=>{
     const factory=fs.readFileSync('src/app/(dashboard)/factory/page.tsx','utf8');
     expect(factory).toContain('Ini gangguan pelayan Nexabot—bukan semestinya masalah prompt atau gambar anda.');
     expect(factory).toContain('Kredit masih ditempah dan tidak akan dicaj dua kali.');
+    expect(factory).toContain('Pelayan Gagal · Kredit Selamat');
+    expect(factory).not.toContain("? 'Tidak Lulus'");
     const route=fs.readFileSync('src/app/api/jobs/route.ts','utf8');
     expect(route).toContain('retryScheduled: true');
     expect(route).toContain('{ status: 202 }');

@@ -1037,7 +1037,7 @@ function VideoFactoryContent() {
                     ? 'bg-rose-100 text-rose-800'
                     : 'bg-amber-100 text-amber-800'
                 }`}>
-                  {activeJob.status === 'COMPLETED' ? 'Video Siap' : activeJob.status === 'QA_PENDING' ? 'Menunggu Semakan' : activeJob.status === 'FAILED' || activeJob.status === 'REJECTED' ? 'Tidak Lulus' : 'Sedang Menjana'}
+                  {activeJob.status === 'COMPLETED' ? 'Video Siap' : activeJob.status === 'QA_PENDING' ? 'Menunggu Semakan' : activeJob.status === 'FAILED' || activeJob.status === 'REJECTED' ? 'Gangguan Pelayan' : 'Sedang Menjana'}
                 </span>
               )}
             </div>
@@ -1209,7 +1209,7 @@ function VideoFactoryContent() {
                           ? 'bg-rose-50 text-rose-700'
                           : 'bg-amber-50 text-amber-700'
                       }`}>
-                        {job.status === 'COMPLETED' ? 'Siap' : job.status === 'QA_PENDING' ? 'Menunggu QA' : job.status === 'FAILED' || job.status === 'REJECTED' ? 'Tidak Lulus' : 'Memproses'}
+                        {job.status === 'COMPLETED' ? 'Siap' : job.status === 'QA_PENDING' ? 'Menunggu QA' : job.status === 'FAILED' || job.status === 'REJECTED' ? 'Pelayan Gagal · Kredit Selamat' : job.retryScheduled ? 'Cuba Semula Automatik' : 'Memproses'}
                       </span>
                       {job.videoUrl && (
                         <button
