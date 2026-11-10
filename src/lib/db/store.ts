@@ -51,7 +51,7 @@ export interface VideoJobRecord {
   actualDurationSeconds?: number;
   outputHasAudio?: boolean;
   outputSizeBytes?: number;
-  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'QA_PENDING' | 'COMPLETED' | 'REJECTED' | 'FAILED';
+  status: 'QUEUED' | 'SUBMITTING' | 'PROCESSING' | 'QA_PENDING' | 'COMPLETED' | 'REJECTED' | 'FAILED' | 'CANCELLED';
   productName?: string;
   productCategory?: string;
   requiredCredits: number;
@@ -66,6 +66,16 @@ export interface VideoJobRecord {
   nextRetryAt?: string;
   lastRetryAt?: string;
   lastProviderError?: string;
+  queueSequence?: number;
+  enqueuedAt?: string;
+  nextDispatchAt?: string;
+  dispatchLeaseUntil?: string;
+  dispatchToken?: string;
+  dispatchAttemptCount?: number;
+  submissionUncertain?: boolean;
+  submissionStartedAt?: string;
+  providerModelId?: string;
+  providerDispatchedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -384,7 +394,8 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/admit_video_job_atomic`;
+      const rpcName = req.provider === 'nexabot' ? 'admit_nexabot_job_to_queue_atomic' : 'admit_video_job_atomic';
+      const rpcUrl = `${process.env.SUPABASE_URL}/rest/v1/rpc/${rpcName}`;
       const res = await fetch(rpcUrl, {
         method: 'POST',
         headers: {
@@ -488,7 +499,7 @@ export class DurableStore {
       wallet.updatedAt = new Date().toISOString();
       localDb.wallets[req.workspaceId] = wallet;
 
-      // 5. Insert job record with status SUBMITTING
+      // 5. Nexabot enters the durable global queue before provider dispatch.
       const newJob: VideoJobRecord = {
         id: req.jobId,
         workspaceId: req.workspaceId,
@@ -498,7 +509,7 @@ export class DurableStore {
         styleName: req.styleName,
         provider: req.provider,
         durationSeconds: req.durationSeconds,
-        status: 'SUBMITTING',
+        status: req.provider === 'nexabot' ? 'QUEUED' : 'SUBMITTING',
         productName: req.productName,
         productCategory: req.productCategory,
         requiredCredits: req.requiredCredits,
@@ -506,6 +517,10 @@ export class DurableStore {
         inputOptions: req.inputOptions || {},
         retryCount: 0,
         maxRetries: 3,
+        queueSequence: req.provider === 'nexabot' ? Object.keys(localDb.jobs).length + 1 : undefined,
+        enqueuedAt: req.provider === 'nexabot' ? new Date().toISOString() : undefined,
+        nextDispatchAt: req.provider === 'nexabot' ? new Date().toISOString() : undefined,
+        providerModelId: req.provider === 'nexabot' ? '376' : undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -852,6 +867,16 @@ export class DurableStore {
       nextRetryAt: row.next_retry_at || undefined,
       lastRetryAt: row.last_retry_at || undefined,
       lastProviderError: row.last_provider_error || undefined,
+      queueSequence: row.queue_sequence ? Number(row.queue_sequence) : undefined,
+      enqueuedAt: row.enqueued_at || undefined,
+      nextDispatchAt: row.next_dispatch_at || undefined,
+      dispatchLeaseUntil: row.dispatch_lease_until || undefined,
+      dispatchToken: row.dispatch_token || undefined,
+      dispatchAttemptCount: Number(row.dispatch_attempt_count || 0),
+      submissionUncertain: Boolean(row.submission_uncertain),
+      submissionStartedAt: row.submission_started_at || undefined,
+      providerModelId: row.provider_model_id || undefined,
+      providerDispatchedAt: row.provider_dispatched_at || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at || row.created_at,
     };
@@ -1121,6 +1146,71 @@ export class DurableStore {
 
     Object.assign(job, updates, { updatedAt: new Date().toISOString() });
     return { ...job };
+  }
+
+  private static async queueRpc(name: string, body: Record<string, unknown> = {}): Promise<Record<string, any>> {
+    if (!this.isSupabaseConfigured()) throw new Error('QUEUE_RPC_REQUIRES_DATABASE');
+    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`Queue RPC ${name} HTTP ${response.status}: ${(await response.text()).slice(0,500)}`);
+    return response.json();
+  }
+
+  static async claimNextNexabotJob(maxActive = 3): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('claim_next_nexabot_job_atomic', { p_max_active: Math.min(3, maxActive), p_lease_seconds: 180 });
+    const active = Object.values(localDb.jobs).filter(j => j.provider === 'nexabot' && (j.status === 'PROCESSING' || j.status === 'SUBMITTING')).length;
+    if (active >= 3) return { success: true, claimed: false, capacity_full: true, active_count: active, max_active: 3 };
+    const job = Object.values(localDb.jobs).filter(j => j.provider === 'nexabot' && j.status === 'QUEUED' && (!j.nextDispatchAt || new Date(j.nextDispatchAt).getTime() <= Date.now()))
+      .sort((a,b)=>(a.queueSequence || 0)-(b.queueSequence || 0))[0];
+    if (!job) return { success: true, claimed: false, active_count: active, max_active: 3 };
+    job.status = 'SUBMITTING'; job.dispatchToken = crypto.randomUUID(); job.dispatchAttemptCount = (job.dispatchAttemptCount || 0) + 1;
+    job.dispatchLeaseUntil = new Date(Date.now() + 180000).toISOString(); job.providerDispatchedAt = new Date().toISOString();
+    return { success: true, claimed: true, job_id: job.id, dispatch_token: job.dispatchToken, active_count: active + 1, max_active: 3 };
+  }
+
+  static async completeNexabotDispatch(jobId: string, dispatchToken: string, providerTaskId: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('complete_nexabot_dispatch_atomic', { p_job_id: jobId, p_dispatch_token: dispatchToken, p_provider_task_id: providerTaskId });
+    const job = localDb.jobs[jobId]; if (!job || job.dispatchToken !== dispatchToken) return { success:false,error:'DISPATCH_CLAIM_LOST' };
+    job.status='PROCESSING';job.providerTaskId=providerTaskId;job.dispatchLeaseUntil=undefined;job.submissionUncertain=false;return { success:true };
+  }
+
+  static async markNexabotSubmissionStarted(jobId: string, dispatchToken: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('mark_nexabot_submission_started_atomic', { p_job_id: jobId, p_dispatch_token: dispatchToken });
+    const job=localDb.jobs[jobId];if(!job||job.dispatchToken!==dispatchToken)return{success:false,error:'DISPATCH_CLAIM_LOST'};
+    job.submissionStartedAt=new Date().toISOString();return{success:true};
+  }
+
+  static async recoverExpiredNexabotDispatchLeases(): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('recover_expired_nexabot_dispatch_leases_atomic');
+    return {success:true,safe_requeued:0,marked_uncertain:0};
+  }
+
+  static async failNexabotDispatch(jobId: string, dispatchToken: string, failureClass: 'AMBIGUOUS'|'TRANSIENT'|'TERMINAL', error: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('fail_nexabot_dispatch_atomic', { p_job_id: jobId, p_dispatch_token: dispatchToken, p_failure_class: failureClass, p_error: error.slice(0,1000) });
+    const job=localDb.jobs[jobId];if(!job||job.dispatchToken!==dispatchToken)return {success:false,error:'DISPATCH_CLAIM_LOST'};
+    if(failureClass==='AMBIGUOUS'){job.submissionUncertain=true;job.dispatchLeaseUntil=new Date(Date.now()+2700000).toISOString();return{success:true,submission_uncertain:true};}
+    if(failureClass==='TRANSIENT'){job.status='QUEUED';job.dispatchToken=undefined;job.dispatchLeaseUntil=undefined;job.nextDispatchAt=new Date(Date.now()+60000).toISOString();return{success:true,requeued:true};}
+    return{success:true,finalize_required:true};
+  }
+
+  static async expireUncertainNexabotJobs(): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('expire_uncertain_nexabot_jobs_atomic');
+    return { success:true,expired_count:0 };
+  }
+
+  static async getNexabotQueueMetrics(): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('get_nexabot_queue_metrics');
+    const jobs=Object.values(localDb.jobs).filter(j=>j.provider==='nexabot');
+    return {active:jobs.filter(j=>j.status==='PROCESSING').length,dispatching:jobs.filter(j=>j.status==='SUBMITTING').length,queued:jobs.filter(j=>j.status==='QUEUED').length,completed:jobs.filter(j=>j.status==='COMPLETED').length,failed:jobs.filter(j=>j.status==='FAILED').length};
+  }
+
+  static async cancelQueuedNexabotJob(jobId: string, workspaceId: string): Promise<Record<string, any>> {
+    if (this.isSupabaseConfigured()) return this.queueRpc('cancel_queued_nexabot_job_atomic',{p_job_id:jobId,p_workspace_id:workspaceId});
+    const job=localDb.jobs[jobId];if(!job||job.workspaceId!==workspaceId)return{success:false,error:'JOB_NOT_FOUND'};
+    if(job.status!=='QUEUED')return{success:false,error:'ONLY_WAITING_JOB_CAN_BE_CANCELLED'};
+    await this.releaseCredits(workspaceId,jobId,`rel_queue_cancel_${jobId}`);job.status='CANCELLED';return{success:true,credit_restored:true};
   }
 
   static async scheduleProviderRetry(jobId: string, expectedProviderTaskId: string | null, providerError: string): Promise<Record<string, any>> {

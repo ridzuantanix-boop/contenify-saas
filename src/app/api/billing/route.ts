@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
-import { AUTHORITATIVE_PLANS, GENERATION_COSTS } from '@/lib/billing/plans';
+import { AUTHORITATIVE_PLANS, GENERATION_COSTS, TOP_UP_PACKAGES, FREE_TRIAL } from '@/lib/billing/plans';
 import { listQrOrders, publicQrConfig } from '@/lib/billing/qr-checkout';
 
 
@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
     lifetimeSpent: wallet.lifetimeSpent,
     generationCosts: GENERATION_COSTS,
     authoritativePlans: AUTHORITATIVE_PLANS,
+    topUpPackages: TOP_UP_PACKAGES,
+    freeTrial: FREE_TRIAL,
     publicCheckoutEnabled: process.env.PUBLIC_CHECKOUT_ENABLED === 'true' && qrCheckout.enabled,
     qrCheckout,
     orders,

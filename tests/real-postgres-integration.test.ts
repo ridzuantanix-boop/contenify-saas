@@ -41,6 +41,8 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00019_personalization_studio.sql',
       '00020_qr_express_checkout.sql',
       '00021_nexabot_provider_retry.sql',
+      '00022_smart_nexabot_queue_and_costs.sql',
+      '00023_v72_pricing_and_credit_buckets.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -70,6 +72,8 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(tables).toContain('prompt_presets');
     expect(tables).toContain('background_assets');
     expect(tables).toContain('creator_presets');
+    expect(tables).toContain('provider_cost_registry');
+    expect(tables).toContain('credit_buckets');
 
     // Verify required_credits and client_request_id columns exist on video_jobs
     const colRes = await db.query<{ column_name: string }>(
@@ -204,7 +208,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0].balance).toBe(10);
   });
 
-  it('grants QR provisional credits once, blocks receipt replay and withholds affiliate commission until bank verification', async () => {
+  it('records QR evidence without granting credits, blocks replay and grants only after bank verification', async () => {
     const user='b8888888-8888-4888-8888-888888888881', workspace='a8888888-8888-4888-8888-888888888881';
     const otherUser='b8888888-8888-4888-8888-888888888882', otherWorkspace='a8888888-8888-4888-8888-888888888882';
     const order='d8888888-8888-4888-8888-888888888881', replayOrder='d8888888-8888-4888-8888-888888888882', agencyOrder='d8888888-8888-4888-8888-888888888883';
@@ -215,12 +219,12 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_method) VALUES($1,$2,$3,'plan_starter',49,100,'PENDING','qr_manual','qr'),($4,$5,$6,'plan_starter',49,100,'PENDING','qr_manual','qr'),($7,$2,$3,'plan_agency',399,1000,'PENDING','qr_manual','qr')`,[order,workspace,user,replayOrder,otherWorkspace,otherUser,agencyOrder]);
     const call=(id:string,hash:string)=>db.query<{result:{success:boolean;provisional_granted?:boolean;idempotent_replay?:boolean;error?:string;payment_state?:string}}>(`SELECT provision_qr_order_atomic($1,$2,$3,'image/png',12000) AS result`,[id,hash,`workspaces/test/${id}.png`]);
     const first=(await call(order,'a'.repeat(64))).rows[0].result;
-    expect(first).toMatchObject({success:true,provisional_granted:true,payment_state:'CREDITS_PROVISIONALLY_GRANTED'});
+    expect(first).toMatchObject({success:true,provisional_granted:false,payment_state:'PAYMENT_EVIDENCE_SUBMITTED'});
     expect((await call(order,'a'.repeat(64))).rows[0].result.idempotent_replay).toBe(true);
-    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(120);
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(20);
     expect((await call(replayOrder,'a'.repeat(64))).rows[0].result.error).toBe('RECEIPT_ALREADY_USED');
     const agency=(await call(agencyOrder,'b'.repeat(64))).rows[0].result;
-    expect(agency).toMatchObject({success:true,provisional_granted:false,payment_state:'PAYMENT_UNVERIFIED'});
+    expect(agency).toMatchObject({success:true,provisional_granted:false,payment_state:'PAYMENT_EVIDENCE_SUBMITTED'});
     expect((await db.query(`SELECT id FROM affiliate_commissions WHERE order_id=$1`,[order])).rows).toHaveLength(0);
     const verified=(await db.query<{result:{success:boolean;payment_state:string}}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-QR-001','owner') AS result`,[order])).rows[0].result;
     expect(verified).toMatchObject({success:true,payment_state:'BANK_PAYMENT_VERIFIED'});
@@ -246,6 +250,86 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect((await schedule('task-retry-3')).rows[0].result).toMatchObject({success:true,retry_exhausted:true,retry_count:3});
     expect((await db.query<{balance:number;reserved_balance:number}>(`SELECT balance,reserved_balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0]).toMatchObject({balance:20,reserved_balance:10});
     expect((await db.query<{status:string}>(`SELECT status FROM credit_reservations WHERE job_id=$1`,[job])).rows[0].status).toBe('PENDING');
+  });
+
+  it('enforces three global Nexabot slots and dispatches the fourth queued job when capacity frees', async () => {
+    await db.query(`UPDATE video_jobs SET status='COMPLETED',completed_at=COALESCE(completed_at,now()) WHERE provider='nexabot' AND status IN('PROCESSING','SUBMITTING')`);
+    const ids=[1,2,3,4].map(n=>({ws:`a7200000-0000-4000-8000-00000000000${n}`,user:`b7200000-0000-4000-8000-00000000000${n}`,job:`c7200000-0000-4000-8000-00000000000${n}`}));
+    for(const [index,id] of ids.entries()){
+      await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,$2,$3,$4,'active')`,[id.ws,`Queue ${index}`,`queue-${index}`,id.user]);
+      await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,20,0,20,0)`,[id.ws]);
+      const admitted=(await db.query<{result:any}>(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,$4,'NX01',2,'nexabot',15,10,5,'queue prompt','{}'::jsonb) AS result`,[id.ws,id.user,id.job,`queue-request-${index}`])).rows[0].result;
+      expect(admitted).toMatchObject({success:true,status:'QUEUED'});
+    }
+    const claimed:Array<{job_id:string;dispatch_token:string}>=[];
+    for(let index=0;index<3;index++){
+      const claim=(await db.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+      expect(claim.claimed).toBe(true);claimed.push(claim);
+      expect((await db.query<{result:any}>(`SELECT complete_nexabot_dispatch_atomic($1,$2,$3) AS result`,[claim.job_id,claim.dispatch_token,`provider-${index}`])).rows[0].result.success).toBe(true);
+    }
+    const full=(await db.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+    expect(full).toMatchObject({claimed:false,capacity_full:true,active_count:3});
+    await db.query(`UPDATE video_jobs SET status='COMPLETED',completed_at=now() WHERE id=$1`,[claimed[0].job_id]);
+    const fourth=(await db.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+    expect(fourth).toMatchObject({claimed:true,job_id:ids[3].job});
+    await db.query(`UPDATE video_jobs SET dispatch_lease_until=now()-interval '1 second' WHERE id=$1`,[fourth.job_id]);
+    expect((await db.query<{result:any}>(`SELECT recover_expired_nexabot_dispatch_leases_atomic() AS result`)).rows[0].result.safe_requeued).toBe(1);
+    const recovered=(await db.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+    expect(recovered).toMatchObject({claimed:true,job_id:ids[3].job});
+    expect((await db.query<{result:any}>(`SELECT mark_nexabot_submission_started_atomic($1,$2) AS result`,[recovered.job_id,recovered.dispatch_token])).rows[0].result.success).toBe(true);
+    await db.query(`UPDATE video_jobs SET dispatch_lease_until=now()-interval '1 second' WHERE id=$1`,[recovered.job_id]);
+    expect((await db.query<{result:any}>(`SELECT recover_expired_nexabot_dispatch_leases_atomic() AS result`)).rows[0].result.marked_uncertain).toBe(1);
+    expect((await db.query<{submission_uncertain:boolean}>(`SELECT submission_uncertain FROM video_jobs WHERE id=$1`,[recovered.job_id])).rows[0].submission_uncertain).toBe(true);
+    expect(new Set(claimed.map(x=>x.job_id)).size).toBe(3);
+    const reserved=(await db.query<{total:number}>(`SELECT sum(reserved_balance)::int AS total FROM credit_wallets WHERE workspace_id=ANY($1::uuid[])`,[ids.map(x=>x.ws)])).rows[0].total;
+    expect(reserved).toBe(40);
+  });
+
+  it('stores verified model 376 cost and never treats uploaded QR evidence as payment', async()=>{
+    const cost=(await db.query<{observed_provider_credits:number;provider_cost_per_credit:number;provider_currency:string;verification_status:string}>(`SELECT observed_provider_credits,provider_cost_per_credit,provider_currency,verification_status FROM provider_cost_registry WHERE provider='nexabot' AND model_identifier='376' AND duration_seconds=15`)).rows[0];
+    expect(Number(cost.observed_provider_credits)).toBe(0.15);
+    expect(Number(cost.provider_cost_per_credit)).toBe(1000);
+    expect(cost.provider_currency).toBe('IDR');
+    expect(cost.verification_status).toBe('PARTIAL');
+  });
+
+  it('schedules fairly between workspaces instead of draining one customer first',async()=>{
+    await db.query(`UPDATE video_jobs SET status='COMPLETED',completed_at=COALESCE(completed_at,now()) WHERE provider='nexabot' AND status IN('PROCESSING','SUBMITTING','QUEUED')`);
+    const wa='a7300000-0000-4000-8000-000000000001',ua='b7300000-0000-4000-8000-000000000001',wb='a7300000-0000-4000-8000-000000000002',ub='b7300000-0000-4000-8000-000000000002';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Fair A','fair-a',$2,'active'),($3,'Fair B','fair-b',$4,'active')`,[wa,ua,wb,ub]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,30,0,30,0),($2,20,0,20,0)`,[wa,wb]);
+    const admit=async(ws:string,user:string,job:string,req:string)=>db.query(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,$4,'NX01',2,'nexabot',15,10,5,'prompt','{}'::jsonb)`,[ws,user,job,req]);
+    await admit(wa,ua,'c7300000-0000-4000-8000-000000000001','fair-a-1');await admit(wa,ua,'c7300000-0000-4000-8000-000000000002','fair-a-2');await admit(wb,ub,'c7300000-0000-4000-8000-000000000003','fair-b-1');
+    const first=(await db.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+    expect(first.job_id).toBe('c7300000-0000-4000-8000-000000000001');
+    await db.query(`SELECT complete_nexabot_dispatch_atomic($1,$2,'fair-provider-a')`,[first.job_id,first.dispatch_token]);
+    const second=(await db.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+    expect(second.job_id).toBe('c7300000-0000-4000-8000-000000000003');
+    const cancelled=(await db.query<{result:any}>(`SELECT cancel_queued_nexabot_job_atomic($1,$2) AS result`,['c7300000-0000-4000-8000-000000000002',wa])).rows[0].result;
+    expect(cancelled).toMatchObject({success:true,credit_restored:true});
+    expect((await db.query<{status:string}>(`SELECT status FROM video_jobs WHERE id='c7300000-0000-4000-8000-000000000002'`)).rows[0].status).toBe('CANCELLED');
+  });
+
+  it('grants verified top-up once, creates a 180-day bucket and spends that bucket before legacy credits',async()=>{
+    const ws='a7400000-0000-4000-8000-000000000001',user='b7400000-0000-4000-8000-000000000001',order='d7400000-0000-4000-8000-000000000001',job='c7400000-0000-4000-8000-000000000001';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Topup','topup-v72',$2,'active')`,[ws,user]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'topup-v72@example.test','starter',$2)`,[user,ws]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,20,0,20,0)`,[ws]);
+    await db.query(`INSERT INTO subscriptions(workspace_id,user_id,plan_id,tier,status,current_period_start,current_period_end) VALUES($1,$2,'plan_starter','starter','active',now(),now()+interval '20 days')`,[ws,user]);
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_method,payment_state) VALUES($1,$2,$3,'topup_mini',15,100,'PENDING','qr_manual','qr','PAYMENT_UNVERIFIED')`,[order,ws,user]);
+    const evidence=(await db.query<{result:any}>(`SELECT provision_qr_order_atomic($1,$2,'receipts/topup.png','image/png',1000) AS result`,[order,'c'.repeat(64)])).rows[0].result;
+    expect(evidence).toMatchObject({success:true,provisional_granted:false});
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0].balance).toBe(20);
+    const verified=(await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-TOPUP-1','owner') AS result`,[order])).rows[0].result;
+    expect(verified).toMatchObject({success:true,credits_granted:100,purchase_type:'TOP_UP',balance:120});
+    expect((await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-TOPUP-1','owner') AS result`,[order])).rows[0].result.idempotent_replay).toBe(true);
+    const bucket=(await db.query<{remaining_credits:number;days:number}>(`SELECT remaining_credits,round(extract(epoch FROM(expires_at-created_at))/86400)::int AS days FROM credit_buckets WHERE order_id=$1`,[order])).rows[0];
+    expect(bucket).toMatchObject({remaining_credits:100,days:180});
+    await db.query(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,'topup-spend','NX01',2,'nexabot',15,10,5,'prompt','{}'::jsonb)`,[ws,user,job]);
+    expect((await db.query<{source_type:string;amount:number}>(`SELECT source_type,amount FROM credit_reservation_allocations WHERE job_id=$1`,[job])).rows[0]).toMatchObject({source_type:'TOP_UP',amount:10});
+    expect((await db.query<{result:any}>(`SELECT settle_credits_atomic($1,$2,10,'topup-settle','done') AS result`,[ws,job])).rows[0].result.success).toBe(true);
+    expect((await db.query<{remaining_credits:number}>(`SELECT remaining_credits FROM credit_buckets WHERE order_id=$1`,[order])).rows[0].remaining_credits).toBe(90);
+    expect((await db.query(`SELECT id FROM affiliate_commissions WHERE order_id=$1`,[order])).rows).toHaveLength(0);
   });
 
   it('registers one product image atomically across retries', async () => {

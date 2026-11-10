@@ -341,10 +341,10 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
       expect(walletAfter.reservedBalance).toBe(10);
       expect(walletAfter.balance - walletAfter.reservedBalance).toBe(10);
 
-      // Verify job record is durably recorded with status SUBMITTING
+      // Nexabot is durably queued before any provider network call.
       const recordedJob = await DurableStore.getJob(jobId);
       expect(recordedJob).toBeDefined();
-      expect(recordedJob?.status).toBe('SUBMITTING');
+      expect(recordedJob?.status).toBe('QUEUED');
       expect(recordedJob?.requiredCredits).toBe(10);
 
       // 2. Duplicate submission with same clientRequestId returns existing job and does NOT debit wallet twice

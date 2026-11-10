@@ -5,6 +5,7 @@ import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
 import { ProviderRouter } from '@/lib/providers/router';
 import { customerFailureMessage } from '@/lib/jobs/customer-failure';
 import { dispatchDueProviderRetry, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
+import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
 
 
 const router = new ProviderRouter();
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const leaseRecovery = await DurableStore.recoverExpiredNexabotDispatchLeases();
+    const uncertainExpiry = await DurableStore.expireUncertainNexabotJobs();
+    const queueBefore = await dispatchNexabotQueueCapacity();
     const pendingJobs = await DurableStore.listPendingJobsForReconciliation();
     const results = {
       totalPending: pendingJobs.length,
@@ -38,6 +42,10 @@ export async function POST(req: NextRequest) {
       stillProcessing: 0,
       retryScheduled: 0,
       retrySubmitted: 0,
+      queuedSubmitted: queueBefore.submitted,
+      uncertainReleased: Number(uncertainExpiry.expired_count || 0),
+      safeLeaseRecoveries: Number(leaseRecovery.safe_requeued || 0),
+      ambiguousLeaseRecoveries: Number(leaseRecovery.marked_uncertain || 0),
     };
 
     const now = Date.now();
@@ -91,10 +99,10 @@ export async function POST(req: NextRequest) {
           else results.stillProcessing++;
         } else if (statusRes.normalizedStatus === 'RUNNING' || statusRes.normalizedStatus === 'PENDING') {
           if (isProviderExpired) {
-            const retry = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId, 'provider remained pending beyond hard timeout');
-            if (retry.retryScheduled) results.retryScheduled++;
-            else if (retry.finalized) results.released++;
-            else results.stillProcessing++;
+            // A slow provider task still has a real task id. Keep polling that
+            // same id; never submit a second paid generation due to age alone.
+            await DurableStore.updateJobStatus(job.id,{rawStatus:'PROVIDER_DELAYED_SAME_TASK',errorMessage:'Nexabot mengambil masa lebih lama daripada biasa. Sistem masih menjejak tugasan asal tanpa menghantar video kedua.'});
+            results.stillProcessing++;
           } else {
             results.stillProcessing++;
           }
@@ -124,6 +132,9 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+
+    const queueAfter = await dispatchNexabotQueueCapacity();
+    results.queuedSubmitted += queueAfter.submitted;
 
     return NextResponse.json({
       success: true,

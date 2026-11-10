@@ -191,8 +191,18 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get('view') || 'orders';
 
   if (view === 'metrics') {
-    const metrics = await DurableStore.getSoftLaunchMetrics();
-    return NextResponse.json({ success: true, metrics });
+    const [metrics,nexabotQueue] = await Promise.all([DurableStore.getSoftLaunchMetrics(),DurableStore.getNexabotQueueMetrics()]);
+    if (process.env.NEXABOT_API_KEY) {
+      try {
+        const balanceResponse = await fetch(`${process.env.NEXABOT_BASE_URL || 'https://nexabot.id'}/api/v1/credits`, { headers: { Authorization: `Bearer ${process.env.NEXABOT_API_KEY}`, 'X-API-Key': process.env.NEXABOT_API_KEY }, cache: 'no-store' });
+        if (balanceResponse.ok) {
+          const balance = await balanceResponse.json() as Record<string,unknown>;
+          nexabotQueue.provider_balance = Number(balance.credit ?? balance.credits ?? balance.balance ?? NaN);
+          if (!Number.isFinite(nexabotQueue.provider_balance)) nexabotQueue.provider_balance = null;
+        }
+      } catch { nexabotQueue.provider_balance = null; }
+    }
+    return NextResponse.json({ success: true, metrics: { ...metrics, nexabotQueue } });
   }
 
   if (view === 'lookup') {

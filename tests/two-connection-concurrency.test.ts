@@ -53,7 +53,7 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
       await adminClient.query(stubsSql);
     }
 
-    // Apply migrations 1 through 5
+    // Apply the production migration chain through V7.2.
     const migrationsDir = path.resolve(process.cwd(), 'supabase/migrations');
     const migrationFiles = [
       '00001_initial_schema.sql',
@@ -61,6 +61,13 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
       '00003_secure_financial_rpc_and_job_admission.sql',
       '00004_fix_migration_compatibility_and_concurrency.sql',
       '00005_workspace_status_and_alignment.sql',
+      '00006_billing_affiliates_and_financial_safety.sql','00007_fix_admin_credit_adjustment_uuid.sql',
+      '00008_soft_launch_50_credits.sql','00009_add_whatsapp_to_profiles.sql','00010_fix_welcome_credit_ledger.sql',
+      '00011_affiliate_application_policy.sql','00012_affiliate_ledger_and_assets.sql','00013_verified_account_provisioning.sql',
+      '00014_close_public_data_access.sql','00015_customer_dashboard_metrics.sql','00016_verified_video_metadata.sql',
+      '00017_refund_credit_integrity.sql','00018_affiliate_service_role_permissions.sql','00019_personalization_studio.sql',
+      '00020_qr_express_checkout.sql','00021_nexabot_provider_retry.sql','00022_smart_nexabot_queue_and_costs.sql',
+      '00023_v72_pricing_and_credit_buckets.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -195,5 +202,25 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
     expect(ledgerRes.rows[0].amount).toBe(10);
     expect(ledgerRes.rows[1].event_type).toBe('RESERVE');
     expect(ledgerRes.rows[1].amount).toBe(-10);
+  });
+
+  it('serializes cron/API slot claims globally so four racing claims produce exactly three leases',async()=>{
+    const workspaces=[] as Array<{ws:string;user:string;job:string}>;
+    for(let i=1;i<=4;i++){
+      const row={ws:`a7500000-0000-4000-8000-00000000000${i}`,user:`b7500000-0000-4000-8000-00000000000${i}`,job:`c7500000-0000-4000-8000-00000000000${i}`};workspaces.push(row);
+      await client1.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,$2,$3,$4,'active')`,[row.ws,`Race ${i}`,`race-v72-${i}`,row.user]);
+      await client1.query(`SELECT provision_wallet_atomic($1,20)`,[row.ws]);
+      const admitted=await client1.query<{result:any}>(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,$4,'NX01',2,'nexabot',15,10,5,'prompt','{}'::jsonb) AS result`,[row.ws,row.user,row.job,`race-${i}`]);
+      expect(admitted.rows[0].result.status).toBe('QUEUED');
+    }
+    const claim=async(client:Client)=>(await client.query<{result:any}>(`SELECT claim_next_nexabot_job_atomic(3,180) AS result`)).rows[0].result;
+    const first=await Promise.all([claim(client1),claim(client2)]);
+    const second=await Promise.all([claim(client1),claim(client2)]);
+    const all=[...first,...second];
+    expect(all.filter(x=>x.claimed)).toHaveLength(3);
+    expect(new Set(all.filter(x=>x.claimed).map(x=>x.job_id)).size).toBe(3);
+    expect(all.some(x=>x.capacity_full===true)).toBe(true);
+    const active=await client1.query<{count:number}>(`SELECT count(*)::int AS count FROM video_jobs WHERE provider='nexabot' AND status='SUBMITTING' AND dispatch_lease_until>now()`);
+    expect(active.rows[0].count).toBe(3);
   });
 });

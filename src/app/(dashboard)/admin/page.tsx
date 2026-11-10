@@ -32,6 +32,7 @@ interface Metrics {
   generationPauseReason: string;
   isAvailable?: boolean;
   error?: string;
+  nexabotQueue?: {active:number;dispatching:number;queued:number;completed:number;failed:number;average_duration_seconds?:number;estimated_provider_spend_myr:number;observed_provider_credits:number;estimated_provider_credits:number;outstanding_customer_credits:number;estimated_credit_liability_myr:number;provider_balance?:number|null};
 }
 
 interface RegisteredUser {
@@ -526,6 +527,19 @@ export default function AdminPage() {
           </div>
         </div>
 
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-900">Nexabot Smart Queue & Kos Model 376</h4><span className="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700">Had global 3</span></div>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4 lg:grid-cols-6">
+            <div><p className="text-slate-500">Aktif</p><p className="text-xl font-bold">{metrics?.nexabotQueue?.active??'…'} / 3</p></div>
+            <div><p className="text-slate-500">Dalam giliran</p><p className="text-xl font-bold">{metrics?.nexabotQueue?.queued??'…'}</p></div>
+            <div><p className="text-slate-500">Siap / gagal</p><p className="text-xl font-bold">{metrics?.nexabotQueue?`${metrics.nexabotQueue.completed} / ${metrics.nexabotQueue.failed}`:'…'}</p></div>
+            <div><p className="text-slate-500">Purata provider</p><p className="text-xl font-bold">{metrics?.nexabotQueue?.average_duration_seconds?`${Number(metrics.nexabotQueue.average_duration_seconds).toFixed(1)}s`:'—'}</p></div>
+            <div><p className="text-slate-500">Kredit provider</p><p className="text-xl font-bold">{metrics?.nexabotQueue?.observed_provider_credits??0}</p><p className="text-[10px] text-slate-400">Observed sahaja</p></div>
+            <div><p className="text-slate-500">Anggaran kos</p><p className="text-xl font-bold">RM{Number(metrics?.nexabotQueue?.estimated_provider_spend_myr||0).toFixed(2)}</p><p className="text-[10px] text-amber-600">Anggaran, bukan settled</p></div>
+          </div>
+          <p className="mt-3 border-t pt-3 text-xs text-slate-600">Liabiliti pelanggan: {metrics?.nexabotQueue?.outstanding_customer_credits??0} kredit (anggaran RM{Number(metrics?.nexabotQueue?.estimated_credit_liability_myr||0).toFixed(2)}). Baki provider: {metrics?.nexabotQueue?.provider_balance==null?'endpoint tidak tersedia':metrics.nexabotQueue.provider_balance}.</p>
+        </div>
+
         {/* Emergency Circuit Breaker Banner */}
         <div className={`p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
           metrics?.isGenerationPaused
@@ -904,9 +918,9 @@ export default function AdminPage() {
                         }}
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                       >
-                        <option value="starter">Starter Creator (RM 49 • 100 Kredit)</option>
-                        <option value="pro">Pro Creator (RM 129 • 300 Kredit)</option>
-                        <option value="agency">Agency Studio (RM 399 • 1,000 Kredit)</option>
+                        <option value="starter">Starter Creator (RM 49 • 500 Kredit)</option>
+                        <option value="pro">Pro Creator (RM 129 • 2,000 Kredit)</option>
+                        <option value="agency">Agency Studio (RM 399 • 8,000 Kredit)</option>
                       </select>
                     </div>
                     <div>

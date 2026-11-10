@@ -322,6 +322,14 @@ function VideoFactoryContent() {
     refreshJobsFromDatabase();
   }, [refreshAccountBalance, refreshJobsFromDatabase]);
 
+  async function cancelQueuedJob() {
+    if (!activeJob || activeJob.status !== 'QUEUED') return;
+    const response=await fetch(`/api/jobs?jobId=${encodeURIComponent(activeJob.jobId)}`,{method:'DELETE'});
+    const data=await response.json();
+    if(!response.ok){setSubmitError(data.error||'Tugasan tidak dapat dibatalkan.');return;}
+    setSubmitSuccess(data.message);setActiveJob(null);await Promise.all([refreshAccountBalance(),refreshJobsFromDatabase()]);
+  }
+
   const syncActiveJobStatus = useCallback(async (jobId: string) => {
     try {
       const res = await fetch(`/api/jobs?jobId=${jobId}`, { cache: 'no-store' });
@@ -343,8 +351,8 @@ function VideoFactoryContent() {
           failureGuidance: data.failure?.retryGuidance,
         } : null);
         await Promise.all([refreshAccountBalance(), refreshJobsFromDatabase()]);
-      } else if (data.status === 'RUNNING' || data.status === 'PROCESSING' || data.status === 'PENDING' || data.status === 'SUBMITTING') {
-        setActiveJob((prev) => prev ? { ...prev, status: data.status === 'SUBMITTING' ? 'SUBMITTING' : 'PROCESSING',
+      } else if (data.status === 'RUNNING' || data.status === 'PROCESSING' || data.status === 'PENDING' || data.status === 'SUBMITTING' || data.status === 'QUEUED') {
+        setActiveJob((prev) => prev ? { ...prev, status: data.status === 'QUEUED' ? 'QUEUED' : data.status === 'SUBMITTING' ? 'SUBMITTING' : 'PROCESSING',
           rawStatus: data.rawStatus, retryScheduled: data.retryScheduled === true, retryCount: data.retryCount,
           maxRetries: data.maxRetries, nextRetryAt: data.nextRetryAt } : null);
       }
@@ -513,7 +521,7 @@ function VideoFactoryContent() {
         throw new Error(data.error || 'Gagal menghantar tugasan penjanaan video.');
       }
 
-      setSubmitSuccess(data.retryScheduled
+      setSubmitSuccess(data.queued ? data.message || 'Tugasan selamat dalam giliran Nexabot.' : data.retryScheduled
         ? data.message || 'Pelayan Nexabot sedang terganggu. AffiMatik akan mencuba semula secara automatik dan kredit anda kekal selamat.'
         : 'Tugasan penjanaan video berjaya didaftarkan. Sistem sedang memproses babak.');
       const newJobDisplay: ActiveJobDisplay = {
@@ -522,7 +530,7 @@ function VideoFactoryContent() {
         provider: data.provider || selectedStyle.engine,
         styleName: selectedStyle.name,
         durationSeconds: selectedStyle.durationSeconds,
-        status: data.status === 'SUBMITTING' ? 'SUBMITTING' : 'PROCESSING',
+        status: data.status === 'QUEUED' ? 'QUEUED' : data.status === 'SUBMITTING' ? 'SUBMITTING' : 'PROCESSING',
         requiredCredits,
         retryScheduled: data.retryScheduled === true,
         retryCount: data.retryCount,
@@ -1044,7 +1052,7 @@ function VideoFactoryContent() {
                         <Loader2 className="w-7 h-7 animate-spin" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900">{activeJob.retryScheduled ? 'Pelayan Nexabot Sedang Pulih' : 'Sedang Menjana Video AI'}</h4>
+                        <h4 className="text-sm font-bold text-slate-900">{activeJob.status === 'QUEUED' ? 'Dalam Giliran' : activeJob.retryScheduled ? 'Pelayan Nexabot Sedang Pulih' : 'Sedang Menjana Video AI'}</h4>
                         <p className="text-xs text-slate-500 mt-1">
                           Gaya: {activeJob.styleName} ({activeJob.durationSeconds}s)
                         </p>
@@ -1056,6 +1064,7 @@ function VideoFactoryContent() {
                           {activeJob.nextRetryAt && <p className="mt-1 text-[11px]">Cubaan seterusnya sekitar {new Date(activeJob.nextRetryAt).toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'})}.</p>}
                         </div>
                       )}
+                      {activeJob.status === 'QUEUED' && <div className="mx-auto max-w-sm rounded-xl border border-blue-200 bg-blue-50 p-3 text-left text-xs text-blue-900"><p className="font-bold">Tugasan anda tersimpan dalam giliran global.</p><p className="mt-1">AffiMatik akan menghantarnya apabila salah satu daripada tiga slot Nexabot tersedia. Kredit ditempah sekali sahaja dan anda boleh keluar atau refresh halaman ini.</p><button type="button" onClick={()=>void cancelQueuedJob()} className="mt-3 rounded-lg border border-blue-300 bg-white px-3 py-2 font-bold text-blue-800">Batalkan & Pulangkan Kredit</button></div>}
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-[11px] font-mono text-slate-600">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Masa berlalu: {pollElapsedTime}s</span>

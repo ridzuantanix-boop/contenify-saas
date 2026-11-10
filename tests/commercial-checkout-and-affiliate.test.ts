@@ -45,7 +45,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       const userId = 'user-paid-002';
       await DurableStore.getWallet(workspaceId); // Initial 20 credits
 
-      // 1. Customer initiates checkout for Starter RM49 (100 credits)
+      // 1. Customer initiates checkout for Starter RM49 (500 credits)
       const checkout = await createCheckout({
         workspaceId,
         userId,
@@ -55,7 +55,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
 
       expect(checkout.success).toBe(true);
       expect(checkout.amountMyr).toBe(49);
-      expect(checkout.creditsGranted).toBe(100);
+      expect(checkout.creditsGranted).toBe(500);
       expect(checkout.qrCheckout?.referenceCode).toMatch(/^AFM-/);
 
       // Verify order is PENDING
@@ -67,7 +67,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       const settlement1 = await DurableStore.settleOrder(checkout.orderId, 'FPX-REF-12345');
       expect(settlement1.success).toBe(true);
       expect(settlement1.status).toBe('PAID');
-      expect(settlement1.balance).toBe(120); // 20 initial + 100 purchased
+      expect(settlement1.balance).toBe(520); // 20 initial + 500 purchased
       expect(settlement1.tier).toBe('starter');
 
       // Verify subscription record exists
@@ -79,10 +79,10 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       // 3. Replay webhook (idempotency test)
       const settlementReplay = await DurableStore.settleOrder(checkout.orderId, 'FPX-REF-12345');
       expect(settlementReplay.success).toBe(true);
-      expect(settlementReplay.balance).toBe(120); // Must NOT credit twice!
+      expect(settlementReplay.balance).toBe(520); // Must NOT credit twice!
 
       const wallet = await DurableStore.getWallet(workspaceId);
-      expect(wallet.balance).toBe(120);
+      expect(wallet.balance).toBe(520);
     });
   });
 

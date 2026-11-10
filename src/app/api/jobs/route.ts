@@ -13,6 +13,7 @@ import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personal
 import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
 import { customerFailureMessage, describeCustomerFailure } from '@/lib/jobs/customer-failure';
 import { isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
+import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
 
 
 const router = new ProviderRouter();
@@ -381,7 +382,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: admission.error || 'Ralat pendaftaran tugasan video.' }, { status: 400 });
     }
 
-    // 8. Provider API Dispatch (Job is already durably recorded with SUBMITTING status)
+    // 8. Nexabot always enters the database-backed global queue first.
+    if (providerAdapter.name === 'nexabot') {
+      await dispatchNexabotQueueCapacity();
+      const current = await DurableStore.getJob(jobId);
+      const processing = current?.status === 'PROCESSING' && Boolean(current.providerTaskId);
+      return NextResponse.json({
+        success: true, jobId, providerTaskId: current?.providerTaskId || null,
+        provider: providerAdapter.name, styleId: style.id, styleName: style.name,
+        status: processing ? 'PROCESSING' : current?.status || 'QUEUED', queued: !processing,
+        reservedCredits: requiredCredits,
+        message: processing ? 'Nexabot telah menerima tugasan dan sedang menjana video.'
+          : 'Tugasan anda selamat dalam giliran. Anda boleh meninggalkan halaman ini dan kembali kemudian.',
+      }, { status: processing ? 200 : 202 });
+    }
+
+    // Compatibility path only; RunningHub remains publicly disabled.
     const idempotencyKey = `idem_${jobId}`;
     const mainImage = savedImageUrl || String(imageKeys[0]);
     const personalizationReferences = [avatarReference?.source, backgroundReference?.source].filter((value): value is string => Boolean(value));
@@ -511,9 +527,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           jobId: job.id,
           status: job.status,
-          rawStatus: job.nextRetryAt
-            ? `Gangguan pelayan Nexabot dikesan. Cubaan semula ${job.retryCount || 1}/${job.maxRetries || 3} dijadualkan.`
-            : 'Menunggu dispatch pembekal...',
+          rawStatus: job.status === 'QUEUED'
+            ? 'Dalam giliran Nexabot. Kredit telah ditempah sekali dan tugasan kekal selamat selepas refresh.'
+            : job.submissionUncertain
+              ? 'Status penerimaan Nexabot belum dapat dipastikan. Sistem tidak akan menghantar video berbayar kedua secara automatik.'
+              : job.nextRetryAt
+                ? `Gangguan pelayan Nexabot dikesan. Cubaan semula ${job.retryCount || 1}/${job.maxRetries || 3} dijadualkan.`
+                : 'Menunggu dispatch pembekal...',
+          queued: job.status === 'QUEUED', submissionUncertain: job.submissionUncertain,
           retryScheduled: Boolean(job.nextRetryAt), retryCount: job.retryCount || 0,
           maxRetries: job.maxRetries || 3, nextRetryAt: job.nextRetryAt,
           message: job.errorMessage,
@@ -615,4 +636,16 @@ export async function GET(req: NextRequest) {
       previewVideoUrl: s.previewVideoUrl || null,
     })),
   });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session=await getSessionFromRequest(req);
+  if(!session)return NextResponse.json({error:'Sila log masuk untuk membatalkan tugasan.'},{status:401});
+  const jobId=new URL(req.url).searchParams.get('jobId')||'';
+  if(!/^[0-9a-f-]{36}$/i.test(jobId))return NextResponse.json({error:'ID tugasan tidak sah.'},{status:400});
+  const job=await DurableStore.getJob(jobId);
+  if(!job||job.workspaceId!==session.workspaceId)return NextResponse.json({error:'Tugasan tidak ditemui.'},{status:404});
+  const result=await DurableStore.cancelQueuedNexabotJob(jobId,session.workspaceId);
+  if(!result.success)return NextResponse.json({error:result.error==='ONLY_WAITING_JOB_CAN_BE_CANCELLED'?'Hanya tugasan yang masih dalam giliran boleh dibatalkan.':result.error},{status:409});
+  return NextResponse.json({success:true,jobId,creditRestored:true,message:'Tugasan dibatalkan sebelum dihantar dan kredit telah dipulangkan.'});
 }

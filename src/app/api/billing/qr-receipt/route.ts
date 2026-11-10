@@ -51,9 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true, orderId, paymentState: result.payment_state, provisionalGranted: result.provisional_granted === true,
       creditsGranted: result.credits_granted || 0, walletBalance: result.balance,
-      message: result.provisional_granted === true
-        ? 'Bukti diterima. Kredit provisional telah dimasukkan sementara menunggu rekonsiliasi bank.'
-        : 'Bukti diterima tetapi kredit provisional tidak dikeluarkan kerana had risiko. Pentadbir akan membuat rekonsiliasi bank.',
+      message: 'Bukti pembayaran diterima dan dikaitkan dengan pesanan ini. Kredit akan diberi hanya selepas bayaran bank disahkan secara bebas.',
       reason: result.reason,
     });
   } catch (error) {

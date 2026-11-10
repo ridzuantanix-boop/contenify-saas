@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   getOutputs: vi.fn(),
   getJob: vi.fn(),
   scheduleProviderRetry: vi.fn(),
+  recoverExpiredNexabotDispatchLeases: vi.fn().mockResolvedValue({success:true,safe_requeued:0,marked_uncertain:0}),
+  expireUncertainNexabotJobs: vi.fn().mockResolvedValue({success:true,expired_count:0}),
+  claimNextNexabotJob: vi.fn().mockResolvedValue({success:true,claimed:false}),
 }));
 vi.mock('@/lib/auth/admin-guard', () => ({ verifyAdminAccess: vi.fn().mockResolvedValue({ isAuthorized: false }) }));
 vi.mock('@/lib/db/store', () => ({ DurableStore: mocks }));
@@ -42,7 +45,7 @@ describe('credit-safe reconciliation of completed provider jobs', () => {
     expect(mocks.releaseCredits).not.toHaveBeenCalled();
   });
 
-  it('retries an indefinitely pending provider task after the hard timeout', async () => {
+  it('keeps polling the same provider task after the hard timeout without duplicate submission', async () => {
     process.env.CRON_SECRET = 'test-cron-secret';
     mocks.listPendingJobsForReconciliation.mockResolvedValue([{
       id: 'stuck-job', workspaceId: 'workspace-1', provider: 'nexabot', providerTaskId: 'provider-stuck',
@@ -58,7 +61,8 @@ describe('credit-safe reconciliation of completed provider jobs', () => {
       method: 'POST', headers: { 'x-cron-secret': 'test-cron-secret' },
     }));
     const body = await response.json();
-    expect(body.results.retryScheduled).toBe(1);
+    expect(body.results.stillProcessing).toBe(1);
+    expect(mocks.updateJobStatus).toHaveBeenCalledWith('stuck-job',expect.objectContaining({rawStatus:'PROVIDER_DELAYED_SAME_TASK'}));
     expect(mocks.releaseCredits).not.toHaveBeenCalled();
   });
 });

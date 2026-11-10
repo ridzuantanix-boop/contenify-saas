@@ -29,7 +29,7 @@ async function officialSource(relativePath: string) {
   return officialAssetDataUri(new Request(new URL(relativePath, base), { headers }), relativePath);
 }
 
-async function resolveRetryReferences(job: VideoJobRecord) {
+export async function resolvePersistedProviderReferences(job: VideoJobRecord) {
   const options = job.inputOptions || {};
   const imageAssetId = typeof options.imageAssetId === 'string' ? options.imageAssetId : '';
   if (!/^[0-9a-f-]{36}$/i.test(imageAssetId)) throw new Error('Stored product image reference is unavailable for retry.');
@@ -87,7 +87,7 @@ export async function dispatchDueProviderRetry(job: VideoJobRecord) {
   if (!claim.claimed) return { claimed: false };
   try {
     if (!job.compiledPromptSnapshot) throw new Error('Stored provider prompt is unavailable for retry.');
-    const { mainImage, references } = await resolveRetryReferences(job);
+    const { mainImage, references } = await resolvePersistedProviderReferences(job);
     const adapter = router.resolveProvider(job.durationSeconds as 10|15, job.provider, true);
     const result = await adapter.submit({
       jobId: job.id, workspaceId: job.workspaceId,

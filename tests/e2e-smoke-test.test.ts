@@ -289,7 +289,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
       provisionalExposureCapMyr: 300, maxAutoOrderMyr: 129,
     });
 
-    // Step 3: Create Order for Starter Plan (RM49, 100 credits) via QR
+    // Step 3: Create Order for Starter Plan (RM49, 500 credits) via QR
     const checkoutReq = new NextRequest('http://localhost:3000/api/billing/checkout', {
       method: 'POST',
       headers: {
@@ -308,7 +308,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(orderData.success).toBe(true);
     expect(orderData.orderId).toBeDefined();
     expect(orderData.amountMyr).toBe(49);
-    expect(orderData.creditsGranted).toBe(100);
+    expect(orderData.creditsGranted).toBe(500);
     expect(orderData.qrCheckout.referenceCode).toBeDefined();
 
     // Verify order is initially PENDING in store
@@ -348,7 +348,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(verifyData.success).toBe(true);
     expect(verifyData.settlement.status).toBe('PAID');
     // Balance granted once: initial 20 + 100 = 120 credits
-    expect(verifyData.settlement.balance).toBe(120);
+    expect(verifyData.settlement.balance).toBe(520);
 
     // Step 5: Verify double-credit protection (idempotent replay)
     const duplicateAdminVerifyReq = new NextRequest('http://localhost:3000/api/admin/operations', {
@@ -367,7 +367,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const duplicateVerifyRes = await adminOpsHandler(duplicateAdminVerifyReq);
     expect(duplicateVerifyRes.status).toBe(200);
     const dupData = await duplicateVerifyRes.json();
-    expect(dupData.settlement.balance).toBe(120); // No duplicate grant
+    expect(dupData.settlement.balance).toBe(520); // No duplicate grant
 
     // Step 6: Generate mock video job using acquired customer session
     const clientRequestId = `req_comm_${Date.now()}`;
@@ -418,10 +418,10 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
 
     // Step 8: Verify final customer wallet after complete lifecycle
     const finalWallet = await DurableStore.getWallet(activeWorkspaceId);
-    // 120 minus 10 settled = 110 remaining available credits
-    expect(finalWallet.balance).toBe(110);
+    // 520 minus 10 settled = 510 remaining available credits
+    expect(finalWallet.balance).toBe(510);
     expect(finalWallet.reservedBalance).toBe(0);
-    expect(finalWallet.lifetimeGranted).toBe(120);
+    expect(finalWallet.lifetimeGranted).toBe(520);
     expect(finalWallet.lifetimeSpent).toBe(10);
   });
 

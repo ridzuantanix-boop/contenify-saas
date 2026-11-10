@@ -63,11 +63,12 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
   const costSettings = (await DurableStore.getSystemSettings('provider_unit_costs')) || {};
   const safetySettings = (await DurableStore.getSystemSettings('financial_safety')) || {};
 
-  const nexabotCost = Number(costSettings.nexabot_15s_myr || 1.50);
+  const nexabotCost = Number(costSettings.estimated_myr || 0.045);
+  const nexabotReserveCost = Number(costSettings.conservative_reserve_myr || 0.15);
   const runninghubCost = Number(costSettings.runninghub_15s_myr || 2.00);
   const safetyBuffer = Number(safetySettings.minimum_safety_buffer_myr || 500.00);
   const refundPercent = Number(safetySettings.refund_reserve_percent || 10.0);
-  const costsVerified = Boolean(costSettings.verified_at && costSettings.source && costSettings.nexabot_15s_myr);
+  const costsVerified = costSettings.verification_status === 'OBSERVED' && Boolean(costSettings.source);
 
   // Active customer tiers & MRR estimation
   const customerBreakdown = { free: 0, starter: 0, pro: 0, agency: 0 };
@@ -104,7 +105,7 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
   }
 
   // Cost to fulfill 10 credits = 1x Nexabot video (RM1.50 conservative cost basis)
-  const creditLiability = Math.round(((outstandingCredits / 10) * nexabotCost) * 100) / 100;
+  const creditLiability = Math.round(((outstandingCredits / 10) * nexabotReserveCost) * 100) / 100;
 
   // Provider renewal commitments (Nexabot & RunningHub platform minimums: RM300/mo)
   const providerRenewals = 300.00;
@@ -167,7 +168,7 @@ export async function calculateFinancialSafety(): Promise<FinancialHealthMetrics
     gatewaySettlementVerified: false,
     notes: {
       clearedCashBasis: 'UNAVAILABLE: status PAID dalam aplikasi tidak membuktikan wang telah dijelaskan ke akaun bank.',
-      creditLiabilityBasis: 'Anggaran sementara daripada tetapan kos pembekal; kos sebenar belum disahkan.',
+      creditLiabilityBasis: `Model 376 diperhati pada 0.15 kredit provider/video; rizab konservatif RM${nexabotReserveCost.toFixed(2)}/video digunakan sehingga FX dan settlement disahkan.`,
       safeToWithdrawBasis: 'RM0 sehingga penyelesaian gateway dan kos pembekal disahkan. Anggaran sahaja tidak boleh digunakan untuk pengeluaran pemilik.',
     },
   };

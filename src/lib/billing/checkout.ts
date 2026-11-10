@@ -1,4 +1,4 @@
-import { AUTHORITATIVE_PLANS, PricingPlan } from './plans';
+import { AUTHORITATIVE_PLANS, PricingPlan, TOP_UP_PACKAGES, TopUpPackage } from './plans';
 import { DurableStore, OrderRecord } from '@/lib/db/store';
 import { publicQrConfig } from './qr-checkout';
 
@@ -14,7 +14,7 @@ export interface CheckoutRequest {
 export interface CheckoutResult {
   success: boolean;
   orderId: string;
-  plan: PricingPlan;
+  plan: PricingPlan | TopUpPackage;
   amountMyr: number;
   creditsGranted: number;
   paymentMethod: string;
@@ -36,9 +36,17 @@ export interface CheckoutResult {
  * Does not emit fabricated gateway URLs or unverified hardcoded bank accounts.
  */
 export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResult> {
-  const plan = AUTHORITATIVE_PLANS.find((p) => p.id === req.planId);
+  const subscriptionPlan = AUTHORITATIVE_PLANS.find((p) => p.id === req.planId);
+  const topUp = TOP_UP_PACKAGES.find((p) => p.id === req.planId);
+  const plan = subscriptionPlan || topUp;
   if (!plan) {
     throw new Error(`Pelan langganan "${req.planId}" tidak sah.`);
+  }
+  if (topUp) {
+    const subscription = await DurableStore.getSubscription(req.workspaceId);
+    if (!subscription || subscription.status !== 'active' || new Date(subscription.currentPeriodEnd).getTime() <= Date.now()) {
+      throw new Error('TOPUP_REQUIRES_ACTIVE_PAID_SUBSCRIPTION');
+    }
   }
 
   const orderId = crypto.randomUUID();
@@ -56,7 +64,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     userId: req.userId,
     planId: plan.id,
     amountMyr: plan.priceMyr,
-    creditsGranted: plan.monthlyCredits,
+    creditsGranted: subscriptionPlan ? subscriptionPlan.monthlyCredits : topUp!.credits,
     gatewayProvider: 'qr_manual',
     gatewayReference: referenceCode,
     paymentMethod,
@@ -64,7 +72,9 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     metadata: {
       planName: plan.name,
       referenceCode,
-      voiceVideos: plan.voiceVideoAllowance,
+      voiceVideos: subscriptionPlan ? subscriptionPlan.voiceVideoAllowance : Math.floor(topUp!.credits / 10),
+      purchaseType: topUp ? 'TOP_UP' : 'SUBSCRIPTION',
+      creditValidityDays: topUp ? 180 : null,
       paymentAuthority: 'CUSTOMER_RECEIPT_UNVERIFIED',
       renewalType: 'manual_30_day',
     },
@@ -75,7 +85,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     orderId: order.id,
     plan,
     amountMyr: plan.priceMyr,
-    creditsGranted: plan.monthlyCredits,
+    creditsGranted: subscriptionPlan ? subscriptionPlan.monthlyCredits : topUp!.credits,
     paymentMethod,
     qrCheckout: {
       merchantName: config.merchantName,

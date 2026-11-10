@@ -10,7 +10,7 @@ import { GET as adminSettings } from '../src/app/api/admin/billing-settings/rout
 describe('AffiMatik V8.4 QR Express Checkout',()=>{
   it('locks the approved plan amounts and allocations',()=>{
     expect(AUTHORITATIVE_PLANS.map(p=>[p.id,p.priceMyr,p.monthlyCredits])).toEqual([
-      ['plan_starter',49,100],['plan_pro',129,300],['plan_agency',399,1000],
+      ['plan_starter',49,500],['plan_pro',129,2000],['plan_agency',399,8000],
     ]);
   });
   it('normalizes a strict capped QR configuration',()=>{
@@ -33,12 +33,16 @@ describe('AffiMatik V8.4 QR Express Checkout',()=>{
   });
   it('ships additive atomic anti-replay and affiliate-safe SQL with a non-destructive rollback',()=>{
     const migration=fs.readFileSync('supabase/migrations/00020_qr_express_checkout.sql','utf8');
+    const v72=fs.readFileSync('supabase/migrations/00023_v72_pricing_and_credit_buckets.sql','utf8');
     expect(migration).toContain('provision_qr_order_atomic');
     expect(migration).toContain('pg_advisory_xact_lock');
     expect(migration).toContain('orders_receipt_sha256_once');
     expect(migration).toContain("payment_state='CREDITS_PROVISIONALLY_GRANTED'");
     expect(migration).toContain("payment_state='BANK_PAYMENT_VERIFIED'");
     expect(migration.indexOf('affiliate_commissions')).toBeGreaterThan(migration.indexOf('verify_qr_order_payment_atomic'));
+    expect(v72).toContain('automatic_credit_grant');
+    expect(v72).toContain('requires_bank_verification');
+    expect(v72).not.toContain('QR_PROVISIONAL_CREDITS_GRANTED');
     const rollback=fs.readFileSync('supabase/rollback/00020_qr_express_checkout.sql','utf8');
     expect(rollback).toContain('"autoFulfillEnabled":false');
     expect(rollback).not.toMatch(/DROP TABLE|DROP COLUMN|DELETE FROM orders/i);

@@ -104,7 +104,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
   // 3. Authoritative Plan Enforcement in Manual Activation
   // ---------------------------------------------------------------------------
   describe('P0 Authoritative Plan & Verifiable Payment Enforcement', () => {
-    it('strictly enforces Authoritative Plan pricing: Starter (100 cr @ RM49), Pro (300 cr @ RM129), Agency (1000 cr @ RM399)', async () => {
+    it('strictly enforces V7.2 pricing: Starter (500 cr), Pro (2,000 cr), Agency (8,000 cr)', async () => {
       const workspaceId = crypto.randomUUID();
 
       // Seed customer in local store
@@ -153,7 +153,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       });
 
       expect(starterResult.success).toBe(true);
-      expect(starterResult.balance).toBe(100);
+      expect(starterResult.balance).toBe(500);
       expect(starterResult.tier).toBe('starter');
 
       // 4. Pro plan grants exactly 160 credits for RM129
@@ -178,7 +178,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       });
 
       expect(proResult.success).toBe(true);
-      expect(proResult.balance).toBe(300);
+      expect(proResult.balance).toBe(2000);
       expect(proResult.tier).toBe('pro');
 
       // 5. Agency studio grants exactly 600 credits for RM399
@@ -203,7 +203,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       });
 
       expect(agencyResult.success).toBe(true);
-      expect(agencyResult.balance).toBe(1000);
+      expect(agencyResult.balance).toBe(8000);
       expect(agencyResult.tier).toBe('agency');
     });
   });
