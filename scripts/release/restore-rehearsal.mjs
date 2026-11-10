@@ -93,7 +93,7 @@ try {
     if (String(restored[key]) !== String(manifest.baseline[key])) throw new Error(`Restore mengubah ${key}: ${restored[key]} vs ${manifest.baseline[key]}`);
   }
   const applied = [];
-  for (let number = 12; number <= 23; number++) {
+  for (let number = 12; number <= 24; number++) {
     const prefix = `000${number}_`;
     const { readdirSync } = await import('node:fs');
     const file = readdirSync('supabase/migrations').find(name => name.startsWith(prefix) && name.endsWith('.sql'));
