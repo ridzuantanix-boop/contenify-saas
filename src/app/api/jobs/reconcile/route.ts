@@ -6,9 +6,22 @@ import { ProviderRouter } from '@/lib/providers/router';
 import { customerFailureMessage } from '@/lib/jobs/customer-failure';
 import { dispatchDueProviderRetry, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
+import { dispatchAutoFactoryCapacity, materializeDueDailyRuns } from '@/lib/auto-factory/core';
 
 
 const router = new ProviderRouter();
+
+async function runAutoFactorySafely() {
+  try {
+    const daily = await materializeDueDailyRuns();
+    const dispatch = await dispatchAutoFactoryCapacity(3);
+    return { daily, dispatch, error: null as string | null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('[Auto Factory] Cron subsystem skipped:', message);
+    return { daily: { created: 0, skipped: 0 }, dispatch: { admitted: 0, waiting: 0, failed: 0 }, error: message };
+  }
+}
 
 /**
  * Background Reconciliation Endpoint
@@ -31,6 +44,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const autoBefore = await runAutoFactorySafely();
+    const dailyAuto = autoBefore.daily;
+    const autoFactoryBefore = autoBefore.dispatch;
     const leaseRecovery = await DurableStore.recoverExpiredNexabotDispatchLeases();
     const uncertainExpiry = await DurableStore.expireUncertainNexabotJobs();
     const queueBefore = await dispatchNexabotQueueCapacity();
@@ -46,6 +62,12 @@ export async function POST(req: NextRequest) {
       uncertainReleased: Number(uncertainExpiry.expired_count || 0),
       safeLeaseRecoveries: Number(leaseRecovery.safe_requeued || 0),
       ambiguousLeaseRecoveries: Number(leaseRecovery.marked_uncertain || 0),
+      autoFactoryAdmitted: autoFactoryBefore.admitted,
+      autoFactoryWaiting: autoFactoryBefore.waiting,
+      autoFactoryFailed: autoFactoryBefore.failed,
+      dailyRunsCreated: dailyAuto.created,
+      dailyRunsSkipped: dailyAuto.skipped,
+      autoFactoryError: autoBefore.error,
     };
 
     const now = Date.now();
@@ -135,6 +157,12 @@ export async function POST(req: NextRequest) {
 
     const queueAfter = await dispatchNexabotQueueCapacity();
     results.queuedSubmitted += queueAfter.submitted;
+    const autoFactoryAfterResult = await runAutoFactorySafely();
+    const autoFactoryAfter = autoFactoryAfterResult.dispatch;
+    results.autoFactoryAdmitted += autoFactoryAfter.admitted;
+    results.autoFactoryWaiting += autoFactoryAfter.waiting;
+    results.autoFactoryFailed += autoFactoryAfter.failed;
+    results.autoFactoryError ||= autoFactoryAfterResult.error;
 
     return NextResponse.json({
       success: true,

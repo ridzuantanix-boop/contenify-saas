@@ -21,11 +21,17 @@ import {
   X,
   ImageIcon,
   BookMarked,
+  Cloud,
+  ContactRound,
+  FolderOpen,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Video Factory', href: '/factory', icon: Video, badge: 'Quick / Adv' },
+  { name: 'Cloud Auto Factory', href: '/auto-factory', icon: Cloud, badge: 'V9' },
+  { name: 'Creator Profiles', href: '/creator-profiles', icon: ContactRound },
+  { name: 'Product Folders', href: '/product-folders', icon: FolderOpen },
   { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '20 Gaya' },
   { name: 'Program Affiliate', href: '/affiliate', icon: BadgePercent },
   { name: 'Product Library', href: '/products', icon: ShoppingBag },

@@ -16,8 +16,8 @@ function Read-LocalSecret([string]$Name) {
 
 try {
   $secrets = @{
-    SUPABASE_ANON_KEY = Read-LocalSecret 'supabase-anon-key'
-    SUPABASE_SERVICE_ROLE_KEY = Read-LocalSecret 'supabase-service-role-key'
+    SUPABASE_ANON_KEY = Read-LocalSecret 'supabase-v9-staging-anon-key'
+    SUPABASE_SERVICE_ROLE_KEY = Read-LocalSecret 'supabase-v9-staging-service-role-key'
     SESSION_SECRET = Read-LocalSecret 'staging-session-secret'
     ADMIN_ACCESS_KEY = Read-LocalSecret 'staging-admin-access-key'
     CRON_SECRET = Read-LocalSecret 'staging-cron-secret'

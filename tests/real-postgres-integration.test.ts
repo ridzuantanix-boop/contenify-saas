@@ -44,6 +44,8 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00022_smart_nexabot_queue_and_costs.sql',
       '00023_v72_pricing_and_credit_buckets.sql',
       '00024_instant_qr_full_access.sql',
+      '00025_restore_provider_retry_scheduler.sql',
+      '00026_cloud_auto_factory.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -78,6 +80,12 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(tables).toContain('workspace_payment_controls');
     expect(tables).toContain('provisional_credit_entitlements');
     expect(tables).toContain('customer_notifications');
+    expect(tables).toContain('creator_profiles');
+    expect(tables).toContain('product_folders');
+    expect(tables).toContain('auto_factory_batches');
+    expect(tables).toContain('auto_factory_items');
+    expect(tables).toContain('daily_auto_schedules');
+    expect(tables).toContain('daily_auto_runs');
 
     // Verify required_credits and client_request_id columns exist on video_jobs
     const colRes = await db.query<{ column_name: string }>(
@@ -864,5 +872,25 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(ledger.rows.find((row) => row.event_type === 'RELEASE')?.count).toBe(2);
     const audit = await db.query<{ count: number }>(`SELECT count(*)::int AS count FROM audit_logs WHERE action='VIDEO_QA_REVIEW' AND target_id IN ($1,$2,$3)`,[approvedJob,rejectedJob,expiredJob]);
     expect(audit.rows[0].count).toBe(3);
+  });
+
+  it('creates, snapshots and claims Cloud Auto Factory work atomically and idempotently', async () => {
+    const workspace='a9900000-0000-4000-8000-000000000001',user='b9900000-0000-4000-8000-000000000001';
+    const product='c9900000-0000-4000-8000-000000000001',image='d9900000-0000-4000-8000-000000000001';
+    const profile='e9900000-0000-4000-8000-000000000001',batch='f9900000-0000-4000-8000-000000000001';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Auto Factory','auto-factory-v9',$2,'active')`,[workspace,user]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,100,0,100,0)`,[workspace]);
+    await db.query(`INSERT INTO products(id,workspace_id,name,confirmed_facts) VALUES($1,$2,'Lampu Nova','["Lampu meja"]')`,[product,workspace]);
+    await db.query(`INSERT INTO product_images(id,workspace_id,product_id,r2_key,original_filename,mime_type,size_bytes,is_primary) VALUES($1,$2,$3,'test/nova.jpg','nova.jpg','image/jpeg',1200,true)`,[image,workspace,product]);
+    await db.query(`INSERT INTO creator_profiles(id,workspace_id,name,version,settings,is_default) VALUES($1,$2,'Creator Santai',3,'{"voicePersonality":"friendly","callToAction":"yellow_bag"}',true)`,[profile,workspace]);
+    const items=JSON.stringify([{product_id:product,product_image_id:image,style_id:'NX01',ordinal:1,snapshot:{productName:'Lampu Nova'}}]);
+    const create=()=>db.query<{result:any}>(`SELECT create_auto_factory_batch_atomic($1,$2,$3,'Daily Nova','AUTO_MIX',$4,NULL,'["NX01"]','seed',1,'v9-idempotent',$5::jsonb) AS result`,[workspace,user,batch,profile,items]);
+    expect((await create()).rows[0].result).toMatchObject({success:true,batch_id:batch,total_jobs:1,total_possible_credits:10});
+    expect((await create()).rows[0].result).toMatchObject({success:true,duplicate:true,batch_id:batch});
+    const frozen=await db.query<{immutable_snapshot:any}>(`SELECT immutable_snapshot FROM auto_factory_items WHERE batch_id=$1`,[batch]);
+    expect(frozen.rows[0].immutable_snapshot.creatorProfile).toMatchObject({id:profile,version:3,settings:{voicePersonality:'friendly',callToAction:'yellow_bag'}});
+    await db.query(`UPDATE creator_profiles SET version=4,settings='{"voicePersonality":"energetic"}' WHERE id=$1`,[profile]);
+    expect((await db.query<{result:any}>(`SELECT claim_auto_factory_item_atomic(300) AS result`)).rows[0].result).toMatchObject({success:true,claimed:true,batch_id:batch,workspace_id:workspace});
+    expect((await db.query<{immutable_snapshot:any}>(`SELECT immutable_snapshot FROM auto_factory_items WHERE batch_id=$1`,[batch])).rows[0].immutable_snapshot.creatorProfile.version).toBe(3);
   });
 });

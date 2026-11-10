@@ -70,6 +70,12 @@ export async function POST(req: NextRequest) {
     const name = String(form.get('name') || '').trim().slice(0, 255) || 'Produk tanpa nama';
     const category = String(form.get('category') || '').trim().slice(0, 100) || null;
     const notes = String(form.get('notes') || '').trim().slice(0, 2000) || null;
+    const folderId = String(form.get('folderId') || '').trim();
+    if (folderId && folderId !== 'unfiled') {
+      if (!/^[0-9a-f-]{36}$/i.test(folderId)) return NextResponse.json({ error: 'Folder produk tidak sah.' }, { status: 400 });
+      const folder = await fetch(`${process.env.SUPABASE_URL}/rest/v1/product_folders?id=eq.${folderId}&workspace_id=eq.${session.workspaceId}&select=id&limit=1`, { headers });
+      if (!folder.ok || !(await folder.json() as unknown[]).length) return NextResponse.json({ error: 'Folder produk tidak ditemui.' }, { status: 404 });
+    }
     const path = `workspaces/${session.workspaceId}/inputs/${assetId}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`;
     await uploadPrivateAsset(path, bytes, file.type);
 
@@ -81,6 +87,7 @@ export async function POST(req: NextRequest) {
     });
     if (!registered.ok) { await deletePrivateAsset(path); throw new Error(`Rekod imej tidak dapat disimpan (HTTP ${registered.status}).`); }
     const asset = await registered.json() as { asset_id: string; product_id: string; object_key: string; reused: boolean };
+    if (folderId && folderId !== 'unfiled') await fetch(`${process.env.SUPABASE_URL}/rest/v1/products?id=eq.${asset.product_id}&workspace_id=eq.${session.workspaceId}`, { method:'PATCH', headers, body:JSON.stringify({ folder_id:folderId,updated_at:new Date().toISOString() }) });
     if (asset.reused) await deletePrivateAsset(path);
     return NextResponse.json({ assetId: asset.asset_id, productId: asset.product_id, imageUrl: await signPrivateAsset(asset.object_key), reused: asset.reused }, { status: asset.reused ? 200 : 201 });
   } catch (error) {
@@ -98,9 +105,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Maklumat produk tidak sah.' }, { status: 400 });
   }
   try {
+    const confirmedFacts = body.confirmedFacts === undefined ? undefined : Array.isArray(body.confirmedFacts)
+      ? body.confirmedFacts.map((value: unknown) => String(value).trim()).filter(Boolean).slice(0, 20)
+      : null;
+    if (confirmedFacts === null || confirmedFacts?.some((value: string) => value.length > 300)) return NextResponse.json({ error: 'Fakta disahkan tidak sah.' }, { status: 400 });
     const result = await fetch(`${process.env.SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(body.productId)}&workspace_id=eq.${encodeURIComponent(session.workspaceId)}`, {
       method: 'PATCH', headers: { ...dbHeaders(), Prefer: 'return=representation' },
-      body: JSON.stringify({ name: body.name.trim(), category: body.category.trim() || null, description: body.notes.trim() || null, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ name: body.name.trim(), category: body.category.trim() || null, description: body.notes.trim() || null, ...(confirmedFacts ? { confirmed_facts: confirmedFacts } : {}), updated_at: new Date().toISOString() }),
     });
     if (!result.ok) throw new Error('DB update failed');
     const rows = await result.json() as unknown[];
