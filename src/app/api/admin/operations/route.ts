@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
 import { reconcileOrphanAccounts } from '@/lib/db/reconcile';
+import { qrRpc } from '@/lib/billing/qr-checkout';
 
 
 /**
@@ -91,10 +92,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'ID pesanan dan rujukan bayaran bank/gateway yang disahkan diperlukan.' }, { status: 400 });
       }
 
-      const settlement = await DurableStore.settleOrder(orderId, referenceNote.trim(), {
-        verifiedByAdmin: adminEmail,
-        verifiedAt: new Date().toISOString(),
-      });
+      const order = await DurableStore.getOrder(orderId);
+      if (!order) return NextResponse.json({ error: 'Pesanan tidak ditemui.' }, { status: 404 });
+      // Unit smoke tests use the isolated in-memory store. Real PostgreSQL RPC
+      // behavior (including provisional idempotency) is covered separately.
+      const settlement = order.gatewayProvider === 'qr_manual' && !(process.env.VITEST && !process.env.SUPABASE_URL)
+        ? await qrRpc('verify_qr_order_payment_atomic', { p_order_id: orderId, p_bank_reference: referenceNote.trim(), p_admin: adminEmail })
+        : await DurableStore.settleOrder(orderId, referenceNote.trim(), { verifiedByAdmin: adminEmail, verifiedAt: new Date().toISOString() });
       if (!settlement.success) {
         return NextResponse.json({ error: settlement.error || 'Bayaran tidak dapat disahkan.', settlement }, { status: 409 });
       }
@@ -112,6 +116,16 @@ export async function POST(req: NextRequest) {
         message: 'Pesanan berjaya disahkan dan kredit diperuntukkan.',
         settlement,
       });
+    }
+
+    if (action === 'reject_qr_provisional') {
+      const { orderId, reason } = body;
+      if (typeof orderId !== 'string' || !/^[0-9a-f-]{36}$/i.test(orderId) || typeof reason !== 'string' || reason.trim().length < 8 || reason.length > 500) {
+        return NextResponse.json({ error: 'ID pesanan dan sebab penolakan diperlukan.' }, { status: 400 });
+      }
+      const result = await qrRpc('reject_qr_provisional_order_atomic', { p_order_id: orderId, p_admin: adminEmail, p_reason: reason.trim() });
+      if (result.success !== true) return NextResponse.json({ error: result.error || 'Kredit provisional tidak dapat dibalikkan.' }, { status: 409 });
+      return NextResponse.json(result);
     }
 
     // 2. Adjust Customer Credits (Durable, Transactional & Audited)

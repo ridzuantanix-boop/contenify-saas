@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 import { AUTHORITATIVE_PLANS, GENERATION_COSTS } from '@/lib/billing/plans';
+import { listQrOrders, publicQrConfig } from '@/lib/billing/qr-checkout';
 
 
 export async function GET(req: NextRequest) {
@@ -15,6 +16,9 @@ export async function GET(req: NextRequest) {
 
   const wallet = await DurableStore.getWallet(session.workspaceId);
   const ledgerHistory = await DurableStore.getLedgerHistory(session.workspaceId, 20);
+  const [qrCheckout, orders, subscription] = await Promise.all([
+    publicQrConfig(), listQrOrders(session.workspaceId), DurableStore.getSubscription(session.workspaceId),
+  ]);
 
   return NextResponse.json({
     workspaceId: session.workspaceId,
@@ -24,7 +28,10 @@ export async function GET(req: NextRequest) {
     lifetimeSpent: wallet.lifetimeSpent,
     generationCosts: GENERATION_COSTS,
     authoritativePlans: AUTHORITATIVE_PLANS,
-    publicCheckoutEnabled: process.env.PUBLIC_CHECKOUT_ENABLED === 'true',
+    publicCheckoutEnabled: process.env.PUBLIC_CHECKOUT_ENABLED === 'true' && qrCheckout.enabled,
+    qrCheckout,
+    orders,
+    subscription,
     ledger: ledgerHistory,
   });
 }

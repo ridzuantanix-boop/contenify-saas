@@ -282,7 +282,14 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(sessionCookie.length).toBeGreaterThan(10);
     const activeWorkspaceId = loginData.user.workspaceId;
 
-    // Step 3: Create Order for Starter Plan (RM49, 50 credits) via manual bank transfer
+    await DurableStore.setSystemSettings('qr_checkout_config', {
+      enabled: true, autoFulfillEnabled: true, merchantName: 'AffiMatik Test', bankName: 'Synthetic Bank',
+      recipientInfo: 'SIMULATED-STAGING-ONLY', instructions: 'Synthetic test only',
+      qrObjectKey: 'system/qr/synthetic.png', qrSha256: 'a'.repeat(64), recipientConfirmed: true,
+      provisionalExposureCapMyr: 300, maxAutoOrderMyr: 129,
+    });
+
+    // Step 3: Create Order for Starter Plan (RM49, 100 credits) via QR
     const checkoutReq = new NextRequest('http://localhost:3000/api/billing/checkout', {
       method: 'POST',
       headers: {
@@ -291,7 +298,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
       },
       body: JSON.stringify({
         planId: 'plan_starter',
-        paymentMethod: 'manual_fpx',
+        paymentMethod: 'qr',
       }),
     });
 
@@ -302,7 +309,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(orderData.orderId).toBeDefined();
     expect(orderData.amountMyr).toBe(49);
     expect(orderData.creditsGranted).toBe(100);
-    expect(orderData.manualPaymentDetails.referenceCode).toBeDefined();
+    expect(orderData.qrCheckout.referenceCode).toBeDefined();
 
     // Verify order is initially PENDING in store
     const initialOrder = await DurableStore.getOrder(orderData.orderId);
@@ -340,7 +347,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const verifyData = await verifyRes.json();
     expect(verifyData.success).toBe(true);
     expect(verifyData.settlement.status).toBe('PAID');
-    // Balance granted once: initial 50 + 50 = 100 credits
+    // Balance granted once: initial 20 + 100 = 120 credits
     expect(verifyData.settlement.balance).toBe(120);
 
     // Step 5: Verify double-credit protection (idempotent replay)
@@ -411,7 +418,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
 
     // Step 8: Verify final customer wallet after complete lifecycle
     const finalWallet = await DurableStore.getWallet(activeWorkspaceId);
-    // 100 minus 10 settled = 90 remaining available credits
+    // 120 minus 10 settled = 110 remaining available credits
     expect(finalWallet.balance).toBe(110);
     expect(finalWallet.reservedBalance).toBe(0);
     expect(finalWallet.lifetimeGranted).toBe(120);
@@ -450,6 +457,6 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(checkoutRes.status).toBe(403);
     const data = await checkoutRes.json();
     expect(data.error).toBe('PAYMENTS_COMING_SOON');
-    expect(data.message).toContain('Pelan berbayar belum dibuka untuk umum');
+    expect(data.message).toContain('Checkout QR belum tersedia');
   });
 });

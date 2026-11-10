@@ -1,0 +1,8 @@
+$ErrorActionPreference='Stop'
+$repo=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$secureDir=Join-Path $repo 'output\release\secure'
+$psql=Join-Path $repo 'output\release\tools\pgsql\bin\psql.exe'
+$ca=Join-Path $repo 'output\release\tools\supabase-prod-ca-2021.crt'
+function Read-LocalSecret([string]$Name){$secure=Get-Content -LiteralPath (Join-Path $secureDir "$Name.dpapi") -Raw|ConvertTo-SecureString;$ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure);try{[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)}finally{[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}}
+$snapshot="SELECT count(*)||'|'||coalesce(sum(balance),0)||'|'||coalesce(sum(reserved_balance),0)||'|'||md5(coalesce(string_agg(id::text||'|'||balance::text||'|'||reserved_balance::text||'|'||lifetime_granted::text||'|'||lifetime_spent::text,'~' ORDER BY id),'')) FROM public.credit_wallets;"
+try{$env:PGPASSWORD=Read-LocalSecret 'supabase-db-password';$env:PGSSLMODE='verify-full';$env:PGSSLROOTCERT=$ca;$args=@('-h','aws-0-ap-northeast-1.pooler.supabase.com','-p','5432','-U','postgres.oudxnvazrdmnxdndpgmy','-d','postgres','-v','ON_ERROR_STOP=1','-At');$before=(& $psql @args '-c' $snapshot).Trim();if($LASTEXITCODE-ne 0){throw 'Snapshot wallet gagal.'};& $psql @args '-f' (Join-Path $repo 'supabase\migrations\00020_qr_express_checkout.sql');if($LASTEXITCODE-ne 0){throw 'Migrasi 00020 gagal.'};$after=(& $psql @args '-c' $snapshot).Trim();if($before-ne$after){throw "Integriti wallet berubah: $before -> $after"};Write-Host "Migrasi 00020 lulus; wallet kekal $after"}finally{Remove-Item Env:PGPASSWORD,Env:PGSSLMODE,Env:PGSSLROOTCERT -ErrorAction SilentlyContinue}

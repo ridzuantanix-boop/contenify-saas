@@ -6,8 +6,13 @@ import { AUTHORITATIVE_PLANS } from '../src/lib/billing/plans';
 import { R2StorageService } from '../src/lib/storage/r2';
 
 describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial Protection Suite', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     DurableStore.resetForTesting();
+    await DurableStore.setSystemSettings('qr_checkout_config', {
+      enabled: true, autoFulfillEnabled: true, merchantName: 'Synthetic Merchant', bankName: 'Synthetic Bank',
+      recipientInfo: 'SIMULATED QA RECIPIENT', instructions: 'Synthetic test only', qrObjectKey: 'system/qr-checkout/test.png',
+      qrSha256: 'a'.repeat(64), recipientConfirmed: true, provisionalExposureCapMyr: 300, maxAutoOrderMyr: 129,
+    });
   });
 
   describe('Scenario A: Customer Account Self-Registration & 20 Credit Provisioning', () => {
@@ -45,13 +50,13 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
         workspaceId,
         userId,
         planId: 'plan_starter',
-        paymentMethod: 'manual_fpx',
+        paymentMethod: 'qr',
       });
 
       expect(checkout.success).toBe(true);
       expect(checkout.amountMyr).toBe(49);
       expect(checkout.creditsGranted).toBe(100);
-      expect(checkout.manualPaymentDetails?.referenceCode).toMatch(/^AFM-/);
+      expect(checkout.qrCheckout?.referenceCode).toMatch(/^AFM-/);
 
       // Verify order is PENDING
       const pendingOrder = await DurableStore.getOrder(checkout.orderId);
@@ -129,7 +134,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
         userId: 'user-fin-1',
         planId: 'plan_pro',
         amountMyr: 129,
-        creditsGranted: 160,
+        creditsGranted: 300,
         referralCode: 'REF1',
       });
       await DurableStore.settleOrder(o1.id, 'REF-PAY-1');
@@ -139,7 +144,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
         userId: 'user-fin-2',
         planId: 'plan_agency',
         amountMyr: 399,
-        creditsGranted: 600,
+        creditsGranted: 1000,
       });
       await DurableStore.settleOrder(o2.id, 'REF-PAY-2');
 

@@ -1,11 +1,12 @@
 import { AUTHORITATIVE_PLANS, PricingPlan } from './plans';
 import { DurableStore, OrderRecord } from '@/lib/db/store';
+import { publicQrConfig } from './qr-checkout';
 
 export interface CheckoutRequest {
   workspaceId: string;
   userId: string;
   planId: string;
-  paymentMethod?: 'fpx' | 'card' | 'qr' | 'manual_fpx';
+  paymentMethod?: 'qr';
   referralCode?: string;
   callbackUrl?: string;
 }
@@ -18,12 +19,14 @@ export interface CheckoutResult {
   creditsGranted: number;
   paymentMethod: string;
   checkoutUrl?: string;
-  manualPaymentDetails?: {
+  qrCheckout?: {
+    merchantName: string;
     bankName: string;
-    accountNumber: string;
-    accountHolder: string;
+    recipientInfo: string;
+    qrImageUrl: string;
+    qrDownloadUrl: string;
     referenceCode: string;
-    instructions: string[];
+    instructions: string;
   };
   error?: string;
 }
@@ -39,12 +42,9 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
   }
 
   const orderId = crypto.randomUUID();
-  const paymentMethod = req.paymentMethod || 'manual_fpx';
-
-  // 1. Check if a genuine automated gateway is configured
-  let checkoutUrl: string | undefined;
-  // If an active gateway is integrated with real credentials, create real gateway session here.
-  // Otherwise, fallback honestly to manual bank-transfer payments verified by administrator.
+  const paymentMethod = 'qr';
+  const config = await publicQrConfig();
+  if (!config.enabled) throw new Error('QR_CHECKOUT_NOT_CONFIGURED');
 
   // 2. Generate a stable, verifiable reference code for this order
   const referenceCode = `AFM-${orderId.substring(0, 8).toUpperCase()}`;
@@ -57,7 +57,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     planId: plan.id,
     amountMyr: plan.priceMyr,
     creditsGranted: plan.monthlyCredits,
-    gatewayProvider: checkoutUrl ? 'gateway_redirect' : 'manual_fpx',
+    gatewayProvider: 'qr_manual',
     gatewayReference: referenceCode,
     paymentMethod,
     referralCode: req.referralCode,
@@ -65,14 +65,10 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
       planName: plan.name,
       referenceCode,
       voiceVideos: plan.voiceVideoAllowance,
+      paymentAuthority: 'CUSTOMER_RECEIPT_UNVERIFIED',
+      renewalType: 'manual_30_day',
     },
   });
-
-  // 4. Resolve bank details from environment or system settings (never hardcoded unverified accounts)
-  const bankSettings = (await DurableStore.getSystemSettings('bank_transfer_details')) || {};
-  const bankName = process.env.MANUAL_PAYMENT_BANK_NAME || bankSettings.bankName || 'Akaun Rasmi Pawarna / AffiMatik';
-  const accountNumber = process.env.MANUAL_PAYMENT_ACCOUNT_NUMBER || bankSettings.accountNumber || 'Sila rujuk pentadbir akaun';
-  const accountHolder = process.env.MANUAL_PAYMENT_ACCOUNT_HOLDER || bankSettings.accountHolder || 'Pengurusan Pawarna Media Resources';
 
   return {
     success: true,
@@ -81,18 +77,14 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     amountMyr: plan.priceMyr,
     creditsGranted: plan.monthlyCredits,
     paymentMethod,
-    checkoutUrl,
-    manualPaymentDetails: {
-      bankName,
-      accountNumber,
-      accountHolder,
+    qrCheckout: {
+      merchantName: config.merchantName,
+      bankName: config.bankName,
+      recipientInfo: config.recipientInfo,
+      qrImageUrl: config.qrImageUrl,
+      qrDownloadUrl: config.qrDownloadUrl,
       referenceCode,
-      instructions: [
-        `Lakukan pemindahan perbankan dalam talian / FPX berjumlah RM ${plan.priceMyr}.00`,
-        `WAJIB masukkan Kod Rujukan "${referenceCode}" di ruangan Catatan / Recipient Reference.`,
-        'Selepas pembayaran dibuat, kemukakan rujukan pesanan anda kepada pentadbir untuk pengesahan.',
-        'Kredit akan dimasukkan serta-merta selepas bayaran disahkan diterima dalam akaun.',
-      ],
+      instructions: config.instructions,
     },
   };
 }

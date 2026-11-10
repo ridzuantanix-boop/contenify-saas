@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { createCheckout } from '@/lib/billing/checkout';
 import { DurableStore } from '@/lib/db/store';
+import { enforceCheckoutRateLimit, getQrConfig } from '@/lib/billing/qr-checkout';
 
 
 /**
@@ -19,13 +20,14 @@ export async function POST(req: NextRequest) {
 
   try {
     // Authoritative Server-Controlled Public Checkout Feature Flag
-    const isPublicCheckoutEnabled = process.env.PUBLIC_CHECKOUT_ENABLED === 'true';
+    const qrConfig = await getQrConfig();
+    const isPublicCheckoutEnabled = process.env.PUBLIC_CHECKOUT_ENABLED === 'true' && qrConfig.enabled && qrConfig.recipientConfirmed && Boolean(qrConfig.qrObjectKey);
     if (!isPublicCheckoutEnabled) {
       return NextResponse.json(
         {
           error: 'PAYMENTS_COMING_SOON',
           code: 'PAYMENTS_COMING_SOON',
-          message: 'Pelan berbayar belum dibuka untuk umum. Akaun baharu menerima 20 kredit percuma untuk mencuba penjanaan video.',
+          message: 'Checkout QR belum tersedia. Akaun baharu masih menerima 20 kredit percuma.',
           status: 'COMING_SOON',
         },
         { status: 403 }
@@ -38,6 +40,8 @@ export async function POST(req: NextRequest) {
     if (!planId) {
       return NextResponse.json({ error: 'Sila pilih pelan langganan.' }, { status: 400 });
     }
+    if (paymentMethod !== undefined && paymentMethod !== 'qr') return NextResponse.json({ error: 'Hanya pembayaran QR manual tersedia.' }, { status: 400 });
+    await enforceCheckoutRateLimit(session.userId);
 
     // Check referral cookie if not supplied in body
     const cookieRef = req.cookies.get('affimatik_ref')?.value;
@@ -71,13 +75,14 @@ export async function POST(req: NextRequest) {
       workspaceId: session.workspaceId,
       userId: session.userId,
       planId,
-      paymentMethod,
+      paymentMethod: 'qr',
       referralCode: finalReferral,
     });
 
     return NextResponse.json(result);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    if (msg === 'CHECKOUT_RATE_LIMIT') return NextResponse.json({ error: 'Terlalu banyak checkout dibuat. Sila tunggu 10 minit.', code: msg }, { status: 429 });
+    return NextResponse.json({ error: msg === 'QR_CHECKOUT_NOT_CONFIGURED' ? 'Checkout QR belum dikonfigurasi.' : msg }, { status: 500 });
   }
 }

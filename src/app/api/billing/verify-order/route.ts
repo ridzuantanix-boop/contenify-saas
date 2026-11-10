@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
+import { listQrOrders } from '@/lib/billing/qr-checkout';
 
 
 /**
@@ -31,6 +32,8 @@ export async function GET(req: NextRequest) {
   }
 
   const wallet = await DurableStore.getWallet(order.workspaceId);
+  const qrOrder = order.gatewayProvider === 'qr_manual' ? (await listQrOrders(order.workspaceId, 100)).find(item => item.id === order.id) : null;
+  const subscription = await DurableStore.getSubscription(order.workspaceId);
 
   return NextResponse.json({
     orderId: order.id,
@@ -39,6 +42,12 @@ export async function GET(req: NextRequest) {
     amountMyr: order.amountMyr,
     creditsGranted: order.creditsGranted,
     paidAt: order.paidAt,
+    paymentState: qrOrder?.paymentState || (order.status === 'PAID' ? 'BANK_PAYMENT_VERIFIED' : 'PAYMENT_UNVERIFIED'),
+    evidenceSubmittedAt: qrOrder?.evidenceSubmittedAt,
+    provisionalGrantedAt: qrOrder?.provisionalGrantedAt,
+    bankVerifiedAt: qrOrder?.bankVerifiedAt,
+    renewalDate: subscription?.currentPeriodEnd,
+    renewalType: 'manual',
     walletBalance: wallet.balance,
   });
 }

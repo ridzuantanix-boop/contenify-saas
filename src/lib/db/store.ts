@@ -78,6 +78,12 @@ export interface OrderRecord {
   paidAt?: string;
   createdAt: string;
   metadata?: Record<string, unknown>;
+  paymentState?: 'PAYMENT_EVIDENCE_SUBMITTED' | 'PAYMENT_UNVERIFIED' | 'CREDITS_PROVISIONALLY_GRANTED' | 'BANK_PAYMENT_VERIFIED';
+  evidenceSubmittedAt?: string;
+  provisionalGrantedAt?: string;
+  bankVerifiedAt?: string;
+  receiptSha256?: string;
+  receiptObjectKey?: string;
 }
 
 export interface SubscriptionRecord {
@@ -1252,6 +1258,12 @@ export class DurableStore {
         paidAt: r.paid_at,
         createdAt: r.created_at,
         metadata: r.metadata,
+        paymentState: r.payment_state,
+        evidenceSubmittedAt: r.evidence_submitted_at,
+        provisionalGrantedAt: r.provisional_granted_at,
+        bankVerifiedAt: r.bank_verified_at,
+        receiptSha256: r.receipt_sha256,
+        receiptObjectKey: r.receipt_object_key,
       };
     }
 
@@ -1297,6 +1309,12 @@ export class DurableStore {
         paidAt: r.paid_at,
         createdAt: r.created_at,
         metadata: r.metadata,
+        paymentState: r.payment_state,
+        evidenceSubmittedAt: r.evidence_submitted_at,
+        provisionalGrantedAt: r.provisional_granted_at,
+        bankVerifiedAt: r.bank_verified_at,
+        receiptSha256: r.receipt_sha256,
+        receiptObjectKey: r.receipt_object_key,
       };
     }
 
@@ -1343,6 +1361,12 @@ export class DurableStore {
         paidAt: r.paid_at,
         createdAt: r.created_at,
         metadata: r.metadata,
+        paymentState: r.payment_state,
+        evidenceSubmittedAt: r.evidence_submitted_at,
+        provisionalGrantedAt: r.provisional_granted_at,
+        bankVerifiedAt: r.bank_verified_at,
+        receiptSha256: r.receipt_sha256,
+        receiptObjectKey: r.receipt_object_key,
       }));
     }
 
@@ -1871,6 +1895,10 @@ export class DurableStore {
         body: JSON.stringify({
           admin_email: adminEmail,
           action,
+          // The original immutable audit schema requires resource_*; the
+          // later compatibility columns use target_* for admin reporting.
+          resource_type: targetType,
+          resource_id: targetId,
           target_type: targetType,
           target_id: targetId,
           details: details || {},
