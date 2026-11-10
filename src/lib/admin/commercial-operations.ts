@@ -17,8 +17,8 @@ export function summarizeCommercialOperations(input:CommercialOperationsInput){
  const sales:{starter:{orders:number;revenueMyr:number};pro:{orders:number;revenueMyr:number};agency:{orders:number;revenueMyr:number};topUp:{orders:number;revenueMyr:number}}={starter:{orders:0,revenueMyr:0},pro:{orders:0,revenueMyr:0},agency:{orders:0,revenueMyr:0},topUp:{orders:0,revenueMyr:0}};
  for(const order of confirmed){const key=order.plan_id.startsWith('topup_')?'topUp':order.plan_id==='plan_agency'?'agency':order.plan_id==='plan_pro'?'pro':'starter';sales[key].orders++;sales[key].revenueMyr=money(sales[key].revenueMyr+number(order.amount_myr));}
  const completedNexabot=input.jobs.filter(job=>job.provider==='nexabot'&&job.status==='COMPLETED');
- const completedIds=new Set(completedNexabot.map(job=>job.id));
- const completedCosts=input.costs.filter(cost=>completedIds.has(cost.job_id));
+ const model376Ids=new Set(completedNexabot.filter(job=>String(job.provider_model_id||'')==='376').map(job=>job.id));
+ const completedCosts=input.costs.filter(cost=>model376Ids.has(cost.job_id));
  const estimatedProviderCostMyr=money(completedCosts.reduce((sum,cost)=>sum+number(cost.estimated_myr_cost),0));
  const observedProviderCredits=money(completedCosts.reduce((sum,cost)=>sum+number(cost.observed_provider_credits),0));
  const storageBytes=[...input.products,...input.backgrounds].reduce((sum,row)=>sum+number(row.size_bytes),0)+input.jobs.reduce((sum,row)=>sum+number(row.output_size_bytes),0);
@@ -41,7 +41,7 @@ export function summarizeCommercialOperations(input:CommercialOperationsInput){
  if(recentFailures.length>=3||failureRate>=0.25&&recentProviderJobs.length>=4)alerts.push({severity:'warning',code:'UNUSUAL_FAILURE_RATE',message:'Kadar kegagalan Nexabot 24 jam lebih tinggi daripada biasa.',count:recentFailures.length});
  return{
   revenue:{confirmedMyr:confirmedRevenue,provisionalMyr:money(provisional.reduce((sum,order)=>sum+number(order.amount_myr),0)),provisionalOrders:provisional.length,payingCustomers:new Set(confirmed.map(order=>order.workspace_id)).size,sales},
-  costs:{actualNexabotGenerationVolume:completedNexabot.length,estimatedNexabotCostMyr:estimatedProviderCostMyr,observedProviderCredits,providerCostBasis:'ESTIMATED_FROM_MODEL_376_JOB_RECORDS',storageTrackedBytes:storageBytes,storageEstimatedCostMyr:storageCost,storageCostBasis:storageRate>0?`CONFIGURED_RM_${storageRate}_PER_GB_MONTH`:'UNCONFIGURED_RATE',fixedOperatingCostMyr:operatingCost,operatingCostBasis:operatingCost>0?'CONFIGURED_ESTIMATE':'UNCONFIGURED'},
+  costs:{actualNexabotGenerationVolume:completedNexabot.length,estimatedNexabotCostMyr:estimatedProviderCostMyr,observedProviderCredits,providerCostBasis:'MODEL_376_ONLY_ESTIMATED_FROM_JOB_RECORDS',storageTrackedBytes:storageBytes,storageEstimatedCostMyr:storageCost,storageCostBasis:storageRate>0?`CONFIGURED_RM_${storageRate}_PER_GB_MONTH`:'UNCONFIGURED_RATE',fixedOperatingCostMyr:operatingCost,operatingCostBasis:operatingCost>0?'CONFIGURED_ESTIMATE':'UNCONFIGURED'},
   liabilities:{affiliateCommissionMyr:affiliateLiability,outstandingCredits,estimatedCreditLiabilityMyr:estimatedCreditLiability},
   margin:{estimatedContributionMyr:money(confirmedRevenue-estimatedProviderCostMyr-storageCost-operatingCost-affiliateLiability),basis:'ESTIMATE_NOT_SETTLED_CASH',safeToWithdrawMyr:0},
   queue:{maxActive:3,active:input.jobs.filter(job=>job.provider==='nexabot'&&job.status==='PROCESSING').length,dispatching:input.jobs.filter(job=>job.provider==='nexabot'&&job.status==='SUBMITTING').length,queued:input.jobs.filter(job=>job.provider==='nexabot'&&job.status==='QUEUED').length,stuck:stuck.length,recentFailures:recentFailures.length,failureRate24h:Math.round(failureRate*1000)/10,alerts},
