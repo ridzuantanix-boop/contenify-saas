@@ -4,7 +4,7 @@ import { isTutorialGuestSession } from '@/lib/auth/tutorial-guest';
 import { DurableStore } from '@/lib/db/store';
 import { getQrConfig, inspectEvidence, qrRpc, sha256Hex } from '@/lib/billing/qr-checkout';
 import { deletePrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
-import { sendPaymentStatusEmail } from '@/lib/billing/payment-control';
+import { sendPaymentEventEmail } from '@/lib/billing/payment-control';
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req);
@@ -51,7 +51,10 @@ export async function POST(req: NextRequest) {
       const code = String(result.error || 'PAYMENT_EVIDENCE_REJECTED');
       return NextResponse.json({ error: code === 'RECEIPT_ALREADY_USED' ? 'Bukti pembayaran ini telah digunakan pada pesanan lain.' : 'Bukti pembayaran tidak dapat diproses.', code }, { status: 409 });
     }
-    if(result.provisional_granted===true)await sendPaymentStatusEmail({to:session.email,subject:'Kredit AffiMatik anda telah diaktifkan',message:'Terima kasih! Kredit pakej anda telah diaktifkan dan boleh digunakan sekarang. Pembayaran anda masih dalam proses pengesahan.',orderId,notificationType:'PAYMENT_PROVISIONAL_ACTIVE'}).catch(()=>undefined);
+    if(result.provisional_granted===true)await Promise.allSettled([
+      sendPaymentEventEmail({to:session.email,event:'PAYMENT_DECLARATION_RECEIVED',orderId,amountMyr:order.amountMyr}),
+      sendPaymentEventEmail({to:session.email,event:'PAYMENT_PROVISIONAL_ACTIVE',orderId,credits:Number(result.credits_granted||order.creditsGranted)}),
+    ]);
     return NextResponse.json({
       success: true, orderId, paymentState: result.payment_state, provisionalGranted: result.provisional_granted === true,
       creditsGranted: result.credits_granted || 0, walletBalance: result.balance,
