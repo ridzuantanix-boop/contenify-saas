@@ -3,7 +3,7 @@ import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
 import { reconcileOrphanAccounts } from '@/lib/db/reconcile';
 import { qrRpc } from '@/lib/billing/qr-checkout';
-import { getProfileEmail, listProvisionalExposure, sendPaymentStatusEmail } from '@/lib/billing/payment-control';
+import { getProfileEmail, getWorkspaceOwnerEmail, getWorkspacePaymentControl, listProvisionalExposure, sendPaymentEventEmail } from '@/lib/billing/payment-control';
 import { signPrivateAsset } from '@/lib/storage/supabase-assets';
 
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       if (!settlement.success) {
         return NextResponse.json({ error: settlement.error || 'Bayaran tidak dapat disahkan.', settlement }, { status: 409 });
       }
-      const customerEmail=await getProfileEmail(order.userId).catch(()=>'');await sendPaymentStatusEmail({to:customerEmail,subject:'Pembayaran AffiMatik disahkan',message:'Pembayaran anda telah disahkan. Akaun dan kredit anda kekal aktif.',orderId,notificationType:'PAYMENT_CONFIRMED'}).catch(()=>undefined);
+      const customerEmail=await getProfileEmail(order.userId).catch(()=>'');await sendPaymentEventEmail({to:customerEmail,event:'PAYMENT_CONFIRMED',orderId}).catch(()=>undefined);
 
       await DurableStore.recordAuditLog(
         adminEmail,
@@ -128,13 +128,13 @@ export async function POST(req: NextRequest) {
       }
       const result = await qrRpc('reject_qr_provisional_order_atomic', { p_order_id: orderId, p_admin: adminEmail, p_reason: reason.trim() });
       if (result.success !== true) return NextResponse.json({ error: result.error || 'Kredit provisional tidak dapat dibalikkan.' }, { status: 409 });
-      const order=await DurableStore.getOrder(orderId);if(order){const customerEmail=await getProfileEmail(order.userId).catch(()=>'');await sendPaymentStatusEmail({to:customerEmail,subject:'Semakan pembayaran AffiMatik diperlukan',message:'Pembayaran anda belum dapat disahkan. Penggunaan kredit akaun anda telah dibekukan sementara. Sila hubungi sokongan atau kemukakan maklumat pembayaran yang betul untuk menyelesaikan masalah ini.',orderId,notificationType:'PAYMENT_REJECTED'}).catch(()=>undefined);}
+      const order=await DurableStore.getOrder(orderId);if(order){const customerEmail=await getProfileEmail(order.userId).catch(()=>'');await sendPaymentEventEmail({to:customerEmail,event:'PAYMENT_REJECTED',orderId}).catch(()=>undefined);}
       return NextResponse.json(result);
     }
 
     if(action==='reactivate_payment_hold'){
       const{workspaceId,reason}=body;if(typeof workspaceId!=='string'||!/^[0-9a-f-]{36}$/i.test(workspaceId)||typeof reason!=='string'||reason.trim().length<8)return NextResponse.json({error:'Workspace dan sebab reaktivasi diperlukan.'},{status:400});
-      const result=await qrRpc('reactivate_workspace_payment_atomic',{p_workspace_id:workspaceId,p_admin:adminEmail,p_reason:reason.trim()});if(result.success!==true)return NextResponse.json({error:result.error||'Akaun tidak dapat diaktifkan semula.'},{status:409});return NextResponse.json(result);
+      const control=await getWorkspacePaymentControl(workspaceId).catch(()=>({paymentHold:true,holdOrderId:undefined}));const result=await qrRpc('reactivate_workspace_payment_atomic',{p_workspace_id:workspaceId,p_admin:adminEmail,p_reason:reason.trim()});if(result.success!==true)return NextResponse.json({error:result.error||'Akaun tidak dapat diaktifkan semula.'},{status:409});const customerEmail=await getWorkspaceOwnerEmail(workspaceId).catch(()=>'');await sendPaymentEventEmail({to:customerEmail,event:'PAYMENT_HOLD_RELEASED',orderId:control.holdOrderId}).catch(()=>undefined);return NextResponse.json(result);
     }
 
     // 2. Adjust Customer Credits (Durable, Transactional & Audited)
@@ -239,7 +239,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ orders });
   }
   if(view==='payment_reviews'){
-    const rows=await listProvisionalExposure();const reviews:Array<Record<string,unknown>>=await Promise.all((rows as Array<Record<string,unknown>>).map(async row=>({...row,receiptUrl:row.receipt_object_key?await signPrivateAsset(String(row.receipt_object_key),900):''})));return NextResponse.json({reviews,pendingCount:reviews.filter(row=>row.state==='PROVISIONALLY_ACTIVE').length});
+    const rows=await listProvisionalExposure();const reviews:Array<Record<string,unknown>>=await Promise.all((rows as Array<Record<string,unknown>>).map(async row=>({...row,receiptUrl:row.receipt_object_key?await signPrivateAsset(String(row.receipt_object_key),900):''})));const pending=reviews.filter(row=>row.state==='PROVISIONALLY_ACTIVE');return NextResponse.json({reviews,pendingCount:pending.length,pendingAmountMyr:Math.round(pending.reduce((sum,row)=>sum+Number(row.amount_myr||0),0)*100)/100});
   }
 
   if (view === 'affiliates') {

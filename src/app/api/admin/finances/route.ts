@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { calculateFinancialSafety } from '@/lib/admin/finance-calculator';
+import { getCommercialOperationsMetrics } from '@/lib/admin/commercial-operations';
 
 
 /**
@@ -17,11 +18,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const metrics = await calculateFinancialSafety();
+    const [metrics,commercial] = await Promise.all([calculateFinancialSafety(),getCommercialOperationsMetrics()]);
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       finances: metrics,
+      commercial,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
