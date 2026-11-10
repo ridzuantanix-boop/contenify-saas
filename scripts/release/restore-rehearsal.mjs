@@ -115,7 +115,7 @@ try {
   }
   const receiptOut = { database, sourceBackup: dir, applied, baseline: manifest.baseline, after, verifiedAt: new Date().toISOString() };
   writeFileSync(join(dir, 'restore-rehearsal.json'), JSON.stringify(receiptOut, null, 2));
-  console.log(`Restore dan migrations 00012–00023 lulus pada database terasing ${database}.`);
+  console.log(`Restore dan migrations 00012–00024 lulus pada database terasing ${database}.`);
 } finally { await check.end(); }
 } finally {
   const cleanup = new pg.Client(local);

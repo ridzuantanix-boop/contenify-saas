@@ -68,6 +68,7 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
       '00017_refund_credit_integrity.sql','00018_affiliate_service_role_permissions.sql','00019_personalization_studio.sql',
       '00020_qr_express_checkout.sql','00021_nexabot_provider_retry.sql','00022_smart_nexabot_queue_and_costs.sql',
       '00023_v72_pricing_and_credit_buckets.sql',
+      '00024_instant_qr_full_access.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -222,5 +223,24 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
     expect(all.some(x=>x.capacity_full===true)).toBe(true);
     const active=await client1.query<{count:number}>(`SELECT count(*)::int AS count FROM video_jobs WHERE provider='nexabot' AND status='SUBMITTING' AND dispatch_lease_until>now()`);
     expect(active.rows[0].count).toBe(3);
+  });
+
+  it('serializes simultaneous receipt submissions so a provisional order grants credits exactly once',async()=>{
+    const ws='a7600000-0000-4000-8000-000000000001',user='b7600000-0000-4000-8000-000000000001',order='d7600000-0000-4000-8000-000000000001';
+    await client1.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'QR Race','qr-race-v1',$2,'active')`,[ws,user]);
+    await client1.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'qr-race@example.test','free',$2)`,[user,ws]);
+    await client1.query(`SELECT provision_wallet_atomic($1,20)`,[ws]);
+    const created=(await client1.query<{result:any}>(`SELECT create_qr_order_atomic($1,$2,$3,'plan_starter',NULL) AS result`,[ws,user,order])).rows[0].result;
+    expect(created.success).toBe(true);
+    const submit=(client:Client)=>(client.query<{result:any}>(`SELECT provision_qr_order_atomic($1,$2,$3,'image/png',12000) AS result`,[order,'d'.repeat(64),`workspaces/${ws}/payment-evidence/${order}.png`]));
+    const [a,b]=await Promise.all([submit(client1),submit(client2)]);
+    const results=[a.rows[0].result,b.rows[0].result];
+    expect(results.every(result=>result.success===true)).toBe(true);
+    expect(results.filter(result=>result.credits_granted===500)).toHaveLength(1);
+    expect(results.filter(result=>result.idempotent_replay===true)).toHaveLength(1);
+    const wallet=await client1.query<{balance:number;lifetime_granted:number}>(`SELECT balance,lifetime_granted FROM credit_wallets WHERE workspace_id=$1`,[ws]);
+    expect(wallet.rows[0]).toMatchObject({balance:520,lifetime_granted:520});
+    const grants=await client1.query<{count:number}>(`SELECT count(*)::int AS count FROM credit_ledger WHERE reference_id=$1 AND event_type='GRANT'`,[order]);
+    expect(grants.rows[0].count).toBe(1);
   });
 });

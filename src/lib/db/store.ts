@@ -95,7 +95,7 @@ export interface OrderRecord {
   paidAt?: string;
   createdAt: string;
   metadata?: Record<string, unknown>;
-  paymentState?: 'PAYMENT_EVIDENCE_SUBMITTED' | 'PAYMENT_UNVERIFIED' | 'CREDITS_PROVISIONALLY_GRANTED' | 'BANK_PAYMENT_VERIFIED';
+  paymentState?: 'PAYMENT_EVIDENCE_SUBMITTED' | 'PAYMENT_UNVERIFIED' | 'CREDITS_PROVISIONALLY_GRANTED' | 'BANK_PAYMENT_VERIFIED' | 'PROVISIONALLY_ACTIVE' | 'PAYMENT_CONFIRMED' | 'PAYMENT_REJECTED';
   evidenceSubmittedAt?: string;
   provisionalGrantedAt?: string;
   bankVerifiedAt?: string;

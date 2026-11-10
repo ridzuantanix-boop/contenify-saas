@@ -1,6 +1,6 @@
 import { AUTHORITATIVE_PLANS, PricingPlan, TOP_UP_PACKAGES, TopUpPackage } from './plans';
 import { DurableStore, OrderRecord } from '@/lib/db/store';
-import { publicQrConfig } from './qr-checkout';
+import { createQrOrderAtomic, publicQrConfig } from './qr-checkout';
 
 export interface CheckoutRequest {
   workspaceId: string;
@@ -58,31 +58,17 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
   const referenceCode = `AFM-${orderId.substring(0, 8).toUpperCase()}`;
 
   // 3. Persist order record in database
-  const order = await DurableStore.createOrder({
-    id: orderId,
-    workspaceId: req.workspaceId,
-    userId: req.userId,
-    planId: plan.id,
-    amountMyr: plan.priceMyr,
-    creditsGranted: subscriptionPlan ? subscriptionPlan.monthlyCredits : topUp!.credits,
-    gatewayProvider: 'qr_manual',
-    gatewayReference: referenceCode,
-    paymentMethod,
-    referralCode: req.referralCode,
-    metadata: {
-      planName: plan.name,
-      referenceCode,
-      voiceVideos: subscriptionPlan ? subscriptionPlan.voiceVideoAllowance : Math.floor(topUp!.credits / 10),
-      purchaseType: topUp ? 'TOP_UP' : 'SUBSCRIPTION',
-      creditValidityDays: topUp ? 180 : null,
-      paymentAuthority: 'CUSTOMER_RECEIPT_UNVERIFIED',
-      renewalType: 'manual_30_day',
-    },
-  });
+  let persistedOrderId=orderId;
+  if(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY&&!process.env.VITEST){
+    const created=await createQrOrderAtomic({workspaceId:req.workspaceId,userId:req.userId,orderId,planId:plan.id,referralCode:req.referralCode});
+    if(created.success!==true)throw new Error(String(created.error||'QR_ORDER_CREATE_FAILED'));
+  }else{
+    const order=await DurableStore.createOrder({id:orderId,workspaceId:req.workspaceId,userId:req.userId,planId:plan.id,amountMyr:plan.priceMyr,creditsGranted:subscriptionPlan?subscriptionPlan.monthlyCredits:topUp!.credits,gatewayProvider:'qr_manual',gatewayReference:referenceCode,paymentMethod,referralCode:req.referralCode,metadata:{planName:plan.name,referenceCode,voiceVideos:subscriptionPlan?subscriptionPlan.voiceVideoAllowance:Math.floor(topUp!.credits/10),purchaseType:topUp?'TOP_UP':'SUBSCRIPTION',creditValidityDays:topUp?180:null,paymentAuthority:'CUSTOMER_RECEIPT_UNVERIFIED',renewalType:'manual_30_day'}});persistedOrderId=order.id;
+  }
 
   return {
     success: true,
-    orderId: order.id,
+    orderId: persistedOrderId,
     plan,
     amountMyr: plan.priceMyr,
     creditsGranted: subscriptionPlan ? subscriptionPlan.monthlyCredits : topUp!.credits,

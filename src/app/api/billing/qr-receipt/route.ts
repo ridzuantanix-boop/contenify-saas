@@ -3,6 +3,7 @@ import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
 import { getQrConfig, inspectEvidence, qrRpc, sha256Hex } from '@/lib/billing/qr-checkout';
 import { deletePrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
+import { sendPaymentStatusEmail } from '@/lib/billing/payment-control';
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req);
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
   let uploaded = false;
   try {
     const config = await getQrConfig();
-    if (process.env.PUBLIC_CHECKOUT_ENABLED !== 'true' || !config.enabled || !config.recipientConfirmed) return NextResponse.json({ error: 'Checkout QR belum dibuka.' }, { status: 403 });
+    if (process.env.PUBLIC_CHECKOUT_ENABLED !== 'true' || !config.enabled || !config.autoFulfillEnabled || !config.instantFullAccessEnabled || !config.recipientConfirmed) return NextResponse.json({ error: 'Checkout QR belum dibuka.' }, { status: 403 });
     const form = await req.formData();
     const orderId = String(form.get('orderId') || '');
     if (!/^[0-9a-f-]{36}$/i.test(orderId)) return NextResponse.json({ error: 'ID pesanan tidak sah.' }, { status: 400 });
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
         idempotentReplay: true,
         orderId,
         paymentState: order.paymentState,
-        provisionalGranted: order.paymentState === 'CREDITS_PROVISIONALLY_GRANTED',
+        provisionalGranted: order.paymentState === 'CREDITS_PROVISIONALLY_GRANTED' || order.paymentState === 'PROVISIONALLY_ACTIVE',
         creditsGranted: 0,
         message: 'Bukti untuk pesanan ini telah diterima sebelum ini. Tiada kredit tambahan diberikan.',
       });
@@ -48,10 +49,11 @@ export async function POST(req: NextRequest) {
       const code = String(result.error || 'PAYMENT_EVIDENCE_REJECTED');
       return NextResponse.json({ error: code === 'RECEIPT_ALREADY_USED' ? 'Bukti pembayaran ini telah digunakan pada pesanan lain.' : 'Bukti pembayaran tidak dapat diproses.', code }, { status: 409 });
     }
+    if(result.provisional_granted===true)await sendPaymentStatusEmail({to:session.email,subject:'Kredit AffiMatik anda telah diaktifkan',message:'Terima kasih! Kredit pakej anda telah diaktifkan dan boleh digunakan sekarang. Pembayaran anda masih dalam proses pengesahan.',orderId,notificationType:'PAYMENT_PROVISIONAL_ACTIVE'}).catch(()=>undefined);
     return NextResponse.json({
       success: true, orderId, paymentState: result.payment_state, provisionalGranted: result.provisional_granted === true,
       creditsGranted: result.credits_granted || 0, walletBalance: result.balance,
-      message: 'Bukti pembayaran diterima dan dikaitkan dengan pesanan ini. Kredit akan diberi hanya selepas bayaran bank disahkan secara bebas.',
+      message: result.provisional_granted===true?'Terima kasih! Kredit pakej anda telah diaktifkan dan boleh digunakan sekarang. Pembayaran anda masih dalam proses pengesahan.':'Bukti pembayaran diterima dan sedang disemak.',
       reason: result.reason,
     });
   } catch (error) {

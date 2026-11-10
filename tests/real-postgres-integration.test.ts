@@ -43,6 +43,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00021_nexabot_provider_retry.sql',
       '00022_smart_nexabot_queue_and_costs.sql',
       '00023_v72_pricing_and_credit_buckets.sql',
+      '00024_instant_qr_full_access.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -74,6 +75,9 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(tables).toContain('creator_presets');
     expect(tables).toContain('provider_cost_registry');
     expect(tables).toContain('credit_buckets');
+    expect(tables).toContain('workspace_payment_controls');
+    expect(tables).toContain('provisional_credit_entitlements');
+    expect(tables).toContain('customer_notifications');
 
     // Verify required_credits and client_request_id columns exist on video_jobs
     const colRes = await db.query<{ column_name: string }>(
@@ -208,27 +212,46 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0].balance).toBe(10);
   });
 
-  it('records QR evidence without granting credits, blocks replay and grants only after bank verification', async () => {
+  it('grants full provisional QR credits once, confirms without regrant, and blocks receipt replay', async () => {
     const user='b8888888-8888-4888-8888-888888888881', workspace='a8888888-8888-4888-8888-888888888881';
     const otherUser='b8888888-8888-4888-8888-888888888882', otherWorkspace='a8888888-8888-4888-8888-888888888882';
-    const order='d8888888-8888-4888-8888-888888888881', replayOrder='d8888888-8888-4888-8888-888888888882', agencyOrder='d8888888-8888-4888-8888-888888888883';
+    const order='d8888888-8888-4888-8888-888888888881', replayOrder='d8888888-8888-4888-8888-888888888882';
     await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'QR Buyer','qr-buyer',$2,'active'),($3,'QR Other','qr-other',$4,'active')`,[workspace,user,otherWorkspace,otherUser]);
     await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'qr@example.test','free',$2),($3,'qr2@example.test','free',$4)`,[user,workspace,otherUser,otherWorkspace]);
     await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,20,0,20,0),($2,20,0,20,0)`,[workspace,otherWorkspace]);
-    await db.query(`UPDATE system_settings SET value='{"enabled":true,"autoFulfillEnabled":true,"merchantName":"Synthetic","recipientInfo":"QA","qrObjectKey":"test.png","recipientConfirmed":true,"provisionalExposureCapMyr":300,"maxAutoOrderMyr":129}'::jsonb WHERE key='qr_checkout_config'`);
-    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_method) VALUES($1,$2,$3,'plan_starter',49,100,'PENDING','qr_manual','qr'),($4,$5,$6,'plan_starter',49,100,'PENDING','qr_manual','qr'),($7,$2,$3,'plan_agency',399,1000,'PENDING','qr_manual','qr')`,[order,workspace,user,replayOrder,otherWorkspace,otherUser,agencyOrder]);
-    const call=(id:string,hash:string)=>db.query<{result:{success:boolean;provisional_granted?:boolean;idempotent_replay?:boolean;error?:string;payment_state?:string}}>(`SELECT provision_qr_order_atomic($1,$2,$3,'image/png',12000) AS result`,[id,hash,`workspaces/test/${id}.png`]);
-    const first=(await call(order,'a'.repeat(64))).rows[0].result;
-    expect(first).toMatchObject({success:true,provisional_granted:false,payment_state:'PAYMENT_EVIDENCE_SUBMITTED'});
-    expect((await call(order,'a'.repeat(64))).rows[0].result.idempotent_replay).toBe(true);
-    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(20);
-    expect((await call(replayOrder,'a'.repeat(64))).rows[0].result.error).toBe('RECEIPT_ALREADY_USED');
-    const agency=(await call(agencyOrder,'b'.repeat(64))).rows[0].result;
-    expect(agency).toMatchObject({success:true,provisional_granted:false,payment_state:'PAYMENT_EVIDENCE_SUBMITTED'});
+    const created=(await db.query<{result:any}>(`SELECT create_qr_order_atomic($1,$2,$3,'plan_starter',NULL) AS result`,[workspace,user,order])).rows[0].result;
+    expect(created).toMatchObject({success:true,amount_myr:49,credits_granted:500});
+    const call=(id:string,hash:string)=>db.query<{result:any}>(`SELECT provision_qr_order_atomic($1,$2,$3,'image/png',12000) AS result`,[id,hash,`workspaces/test/${id}.png`]);
+    expect((await call(order,'a'.repeat(64))).rows[0].result).toMatchObject({success:true,provisional_granted:true,payment_state:'PROVISIONALLY_ACTIVE',credits_granted:500,balance:520});
+    expect((await call(order,'a'.repeat(64))).rows[0].result).toMatchObject({success:true,idempotent_replay:true,credits_granted:0,balance:520});
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(520);
     expect((await db.query(`SELECT id FROM affiliate_commissions WHERE order_id=$1`,[order])).rows).toHaveLength(0);
-    const verified=(await db.query<{result:{success:boolean;payment_state:string}}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-QR-001','owner') AS result`,[order])).rows[0].result;
-    expect(verified).toMatchObject({success:true,payment_state:'BANK_PAYMENT_VERIFIED'});
-    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(120);
+    expect((await db.query<{result:any}>(`SELECT create_qr_order_atomic($1,$2,gen_random_uuid(),'plan_pro',NULL) AS result`,[workspace,user])).rows[0].result.error).toBe('UNRESOLVED_QR_ORDER_EXISTS');
+
+    expect((await db.query<{result:any}>(`SELECT create_qr_order_atomic($1,$2,$3,'plan_starter',NULL) AS result`,[otherWorkspace,otherUser,replayOrder])).rows[0].result.success).toBe(true);
+    expect((await call(replayOrder,'a'.repeat(64))).rows[0].result.error).toBe('RECEIPT_ALREADY_USED');
+
+    expect((await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-QR-001','owner@example.test') AS result`,[order])).rows[0].result).toMatchObject({success:true,payment_state:'PAYMENT_CONFIRMED',credits_granted:0,balance:520});
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(520);
+    expect((await db.query<{state:string}>(`SELECT state FROM provisional_credit_entitlements WHERE order_id=$1`,[order])).rows[0].state).toBe('PAYMENT_CONFIRMED');
+  });
+
+  it('freezes all spending on rejection, releases queued reservations, preserves balances, and reactivates safely',async()=>{
+    const ws='a8899999-8888-4888-8888-888888888881',user='b8899999-8888-4888-8888-888888888881';
+    const order='d8899999-8888-4888-8888-888888888881',job='c8899999-8888-4888-8888-888888888881',blocked='c8899999-8888-4888-8888-888888888882';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Rejected QR','rejected-qr',$2,'active')`,[ws,user]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'rejected@example.test','free',$2)`,[user,ws]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,70,0,70,0)`,[ws]);
+    await db.query(`SELECT create_qr_order_atomic($1,$2,$3,'plan_starter',NULL)`,[ws,user,order]);
+    expect((await db.query<{result:any}>(`SELECT provision_qr_order_atomic($1,$2,$3,'image/png',12000) AS result`,[order,'b'.repeat(64),`workspaces/test/${order}.png`])).rows[0].result.balance).toBe(570);
+    expect((await db.query<{result:any}>(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,'reject-queued','NX01',2,'nexabot',15,10,5,'prompt','{}'::jsonb) AS result`,[ws,user,job])).rows[0].result.status).toBe('QUEUED');
+    expect((await db.query<{result:any}>(`SELECT reject_qr_provisional_order_atomic($1,'owner@example.test','Bayaran tidak ditemui dalam rekod bank') AS result`,[order])).rows[0].result).toMatchObject({success:true,payment_hold:true,queued_jobs_cancelled:1,credits_revoked:0});
+    expect((await db.query<{balance:number;reserved_balance:number}>(`SELECT balance,reserved_balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0]).toMatchObject({balance:570,reserved_balance:0});
+    expect((await db.query<{status:string}>(`SELECT status FROM video_jobs WHERE id=$1`,[job])).rows[0].status).toBe('CANCELLED');
+    expect((await db.query<{result:any}>(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,'blocked-by-hold','NX01',2,'nexabot',15,10,5,'prompt','{}'::jsonb) AS result`,[ws,user,blocked])).rows[0].result).toMatchObject({success:false,payment_hold:true});
+    expect((await db.query<{result:any}>(`SELECT reactivate_workspace_payment_atomic($1,'owner@example.test','Bayaran diselesaikan melalui sokongan') AS result`,[ws])).rows[0].result.payment_hold).toBe(false);
+    expect((await db.query<{result:any}>(`SELECT admit_nexabot_job_to_queue_atomic($1,$2,$3,'after-reactivation','NX01',2,'nexabot',15,10,5,'prompt','{}'::jsonb) AS result`,[ws,user,blocked])).rows[0].result.status).toBe('QUEUED');
+    await db.query(`SELECT cancel_queued_nexabot_job_atomic($1,$2)`,[blocked,ws]);
   });
 
   it('schedules, claims and exhausts Nexabot retries without double charging the wallet', async () => {
@@ -310,7 +333,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect((await db.query<{status:string}>(`SELECT status FROM video_jobs WHERE id='c7300000-0000-4000-8000-000000000002'`)).rows[0].status).toBe('CANCELLED');
   });
 
-  it('grants verified top-up once, creates a 180-day bucket and spends that bucket before legacy credits',async()=>{
+  it('grants provisional top-up once, confirms without a second grant, and spends the 180-day bucket first',async()=>{
     const ws='a7400000-0000-4000-8000-000000000001',user='b7400000-0000-4000-8000-000000000001',order='d7400000-0000-4000-8000-000000000001',job='c7400000-0000-4000-8000-000000000001';
     await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Topup','topup-v72',$2,'active')`,[ws,user]);
     await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'topup-v72@example.test','starter',$2)`,[user,ws]);
@@ -318,10 +341,10 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     await db.query(`INSERT INTO subscriptions(workspace_id,user_id,plan_id,tier,status,current_period_start,current_period_end) VALUES($1,$2,'plan_starter','starter','active',now(),now()+interval '20 days')`,[ws,user]);
     await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_method,payment_state) VALUES($1,$2,$3,'topup_mini',15,100,'PENDING','qr_manual','qr','PAYMENT_UNVERIFIED')`,[order,ws,user]);
     const evidence=(await db.query<{result:any}>(`SELECT provision_qr_order_atomic($1,$2,'receipts/topup.png','image/png',1000) AS result`,[order,'c'.repeat(64)])).rows[0].result;
-    expect(evidence).toMatchObject({success:true,provisional_granted:false});
-    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0].balance).toBe(20);
+    expect(evidence).toMatchObject({success:true,provisional_granted:true,credits_granted:100,balance:120});
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[ws])).rows[0].balance).toBe(120);
     const verified=(await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-TOPUP-1','owner') AS result`,[order])).rows[0].result;
-    expect(verified).toMatchObject({success:true,credits_granted:100,purchase_type:'TOP_UP',balance:120});
+    expect(verified).toMatchObject({success:true,credits_granted:0,payment_state:'PAYMENT_CONFIRMED',balance:120});
     expect((await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-TOPUP-1','owner') AS result`,[order])).rows[0].result.idempotent_replay).toBe(true);
     const bucket=(await db.query<{remaining_credits:number;days:number}>(`SELECT remaining_credits,round(extract(epoch FROM(expires_at-created_at))/86400)::int AS days FROM credit_buckets WHERE order_id=$1`,[order])).rows[0];
     expect(bucket).toMatchObject({remaining_credits:100,days:180});

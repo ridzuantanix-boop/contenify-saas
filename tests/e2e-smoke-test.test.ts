@@ -283,7 +283,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const activeWorkspaceId = loginData.user.workspaceId;
 
     await DurableStore.setSystemSettings('qr_checkout_config', {
-      enabled: true, autoFulfillEnabled: true, merchantName: 'AffiMatik Test', bankName: 'Synthetic Bank',
+      enabled: true, autoFulfillEnabled: true, instantFullAccessEnabled: true, merchantName: 'AffiMatik Test', bankName: 'Synthetic Bank',
       recipientInfo: 'SIMULATED-STAGING-ONLY', instructions: 'Synthetic test only',
       qrObjectKey: 'system/qr/synthetic.png', qrSha256: 'a'.repeat(64), recipientConfirmed: true,
       provisionalExposureCapMyr: 300, maxAutoOrderMyr: 129,

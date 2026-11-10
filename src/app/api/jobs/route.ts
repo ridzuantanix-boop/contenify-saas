@@ -14,6 +14,7 @@ import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from
 import { customerFailureMessage, describeCustomerFailure } from '@/lib/jobs/customer-failure';
 import { isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
+import { getWorkspacePaymentControl } from '@/lib/billing/payment-control';
 
 
 const router = new ProviderRouter();
@@ -54,6 +55,8 @@ export async function POST(req: NextRequest) {
 
     const workspaceId = session.workspaceId;
     const isSuperAdmin = session.role === 'superadmin';
+    const paymentControl=await getWorkspacePaymentControl(workspaceId);
+    if(paymentControl.paymentHold&&!isSuperAdmin)return NextResponse.json({error:'Pembayaran anda belum dapat disahkan. Penggunaan kredit akaun telah dibekukan sementara. Sila hubungi sokongan untuk menyelesaikan semakan pembayaran.',code:'ACCOUNT_PAYMENT_HOLD'},{status:403});
 
     // 3. Emergency Generation Pause / Circuit Breaker Check
     const genSettings = await DurableStore.getSystemSettings('generation_status');

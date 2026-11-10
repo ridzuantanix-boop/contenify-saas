@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       instructions: form.get('instructions'),
       provisionalExposureCapMyr: Number(form.get('provisionalExposureCapMyr')),
       maxAutoOrderMyr: Number(form.get('maxAutoOrderMyr')),
+      instantFullAccessEnabled: form.get('instantFullAccessEnabled') === 'true',
       updatedAt: new Date().toISOString(),
       updatedBy: admin,
     });
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
       bankName: candidate.bankName, recipientInfo: candidate.recipientInfo, qrSha256: candidate.qrSha256,
       recipientConfirmed: candidate.recipientConfirmed, provisionalExposureCapMyr: candidate.provisionalExposureCapMyr,
       maxAutoOrderMyr: candidate.maxAutoOrderMyr,
+      instantFullAccessEnabled: candidate.instantFullAccessEnabled,
     });
     if (uploadedKey && current.qrObjectKey && current.qrObjectKey !== uploadedKey) await deletePrivateAsset(current.qrObjectKey);
     return NextResponse.json({ success: true, config: { ...candidate, qrImageUrl: candidate.qrObjectKey ? await signPrivateAsset(candidate.qrObjectKey, 900) : '' } });

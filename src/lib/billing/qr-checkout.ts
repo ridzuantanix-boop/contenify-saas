@@ -4,7 +4,7 @@ import { signPrivateAsset } from '@/lib/storage/supabase-assets';
 export const QR_CONFIG_KEY = 'qr_checkout_config';
 export const MAX_PAYMENT_EVIDENCE_BYTES = 5 * 1024 * 1024;
 
-export type QrPaymentState = 'PAYMENT_EVIDENCE_SUBMITTED' | 'PAYMENT_UNVERIFIED' | 'CREDITS_PROVISIONALLY_GRANTED' | 'BANK_PAYMENT_VERIFIED';
+export type QrPaymentState = 'PAYMENT_EVIDENCE_SUBMITTED' | 'PAYMENT_UNVERIFIED' | 'CREDITS_PROVISIONALLY_GRANTED' | 'BANK_PAYMENT_VERIFIED' | 'PROVISIONALLY_ACTIVE' | 'PAYMENT_CONFIRMED' | 'PAYMENT_REJECTED';
 
 export interface QrCheckoutConfig {
   enabled: boolean;
@@ -18,6 +18,7 @@ export interface QrCheckoutConfig {
   recipientConfirmed: boolean;
   provisionalExposureCapMyr: number;
   maxAutoOrderMyr: number;
+  instantFullAccessEnabled: boolean;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -34,6 +35,7 @@ export const DEFAULT_QR_CONFIG: QrCheckoutConfig = {
   recipientConfirmed: false,
   provisionalExposureCapMyr: 300,
   maxAutoOrderMyr: 129,
+  instantFullAccessEnabled: false,
 };
 
 function cleanText(value: unknown, max: number) {
@@ -55,7 +57,8 @@ export function normalizeQrConfig(value: unknown): QrCheckoutConfig {
     qrSha256: cleanText(raw.qrSha256, 64),
     recipientConfirmed: raw.recipientConfirmed === true,
     provisionalExposureCapMyr: Number.isFinite(cap) && cap >= 49 && cap <= 5000 ? cap : DEFAULT_QR_CONFIG.provisionalExposureCapMyr,
-    maxAutoOrderMyr: Number.isFinite(maxOrder) && [49, 129].includes(maxOrder) ? maxOrder : DEFAULT_QR_CONFIG.maxAutoOrderMyr,
+    maxAutoOrderMyr: Number.isFinite(maxOrder) && [49,129,399].includes(maxOrder) ? maxOrder : DEFAULT_QR_CONFIG.maxAutoOrderMyr,
+    instantFullAccessEnabled: raw.instantFullAccessEnabled === true,
     updatedAt: cleanText(raw.updatedAt, 40) || undefined,
     updatedBy: cleanText(raw.updatedBy, 255) || undefined,
   };
@@ -71,6 +74,7 @@ export async function publicQrConfig() {
   return {
     enabled: ready,
     autoFulfillEnabled: ready && config.autoFulfillEnabled,
+    instantFullAccessEnabled: ready && config.autoFulfillEnabled && config.instantFullAccessEnabled,
     merchantName: ready ? config.merchantName : '',
     bankName: ready ? config.bankName : '',
     recipientInfo: ready ? config.recipientInfo : '',
@@ -107,12 +111,16 @@ function database() {
   return { base: process.env.SUPABASE_URL.replace(/\/$/, ''), headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' } };
 }
 
-export async function qrRpc(name: 'provision_qr_order_atomic' | 'verify_qr_order_payment_atomic' | 'reject_qr_provisional_order_atomic', body: Record<string, unknown>) {
+export async function qrRpc(name: 'create_qr_order_atomic' | 'provision_qr_order_atomic' | 'verify_qr_order_payment_atomic' | 'reject_qr_provisional_order_atomic' | 'reactivate_workspace_payment_atomic', body: Record<string, unknown>) {
   const { base, headers } = database();
   const response = await fetch(`${base}/rest/v1/rpc/${name}`, { method: 'POST', headers, body: JSON.stringify(body) });
   const result = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (!response.ok) throw new Error(`QR RPC ${name} HTTP ${response.status}`);
   return result;
+}
+
+export async function createQrOrderAtomic(input:{workspaceId:string;userId:string;orderId:string;planId:string;referralCode?:string}){
+  return qrRpc('create_qr_order_atomic',{p_workspace_id:input.workspaceId,p_user_id:input.userId,p_order_id:input.orderId,p_plan_id:input.planId,p_referral_code:input.referralCode||null});
 }
 
 export async function listQrOrders(workspaceId: string, limit = 30): Promise<Array<OrderRecord & { paymentState: QrPaymentState; evidenceSubmittedAt?: string; provisionalGrantedAt?: string; bankVerifiedAt?: string }>> {

@@ -1,5 +1,8 @@
 import { describe,expect,it } from 'vitest';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
+import sharp from 'sharp';
+import jsQR from 'jsqr';
 import { NextRequest } from 'next/server';
 import { AUTHORITATIVE_PLANS } from '../src/lib/billing/plans';
 import { inspectEvidence,normalizeQrConfig } from '../src/lib/billing/qr-checkout';
@@ -13,11 +16,12 @@ describe('AffiMatik V8.4 QR Express Checkout',()=>{
       ['plan_starter',49,500],['plan_pro',129,2000],['plan_agency',399,8000],
     ]);
   });
-  it('normalizes a strict capped QR configuration',()=>{
-    const config=normalizeQrConfig({enabled:true,autoFulfillEnabled:true,merchantName:' Merchant ',recipientInfo:' Recipient ',qrObjectKey:'qr.png',recipientConfirmed:true,provisionalExposureCapMyr:999999,maxAutoOrderMyr:399});
+  it('normalizes the owner-approved full-access QR configuration',()=>{
+    const config=normalizeQrConfig({enabled:true,autoFulfillEnabled:true,instantFullAccessEnabled:true,merchantName:' Merchant ',recipientInfo:' Recipient ',qrObjectKey:'qr.png',recipientConfirmed:true,provisionalExposureCapMyr:999999,maxAutoOrderMyr:399});
     expect(config.merchantName).toBe('Merchant');
     expect(config.provisionalExposureCapMyr).toBe(300);
-    expect(config.maxAutoOrderMyr).toBe(129);
+    expect(config.maxAutoOrderMyr).toBe(399);
+    expect(config.instantFullAccessEnabled).toBe(true);
   });
   it('checks actual receipt magic instead of trusting the MIME header',()=>{
     const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]).buffer;
@@ -25,6 +29,16 @@ describe('AffiMatik V8.4 QR Express Checkout',()=>{
     expect(()=>inspectEvidence(png,'image/jpeg')).toThrow(/JPEG, PNG, WebP atau PDF/);
     const pdf=new TextEncoder().encode('%PDF-1.7 synthetic').buffer;
     expect(inspectEvidence(pdf,'application/pdf').extension).toBe('pdf');
+  });
+  it('ships a professional black QR asset whose decoded payment payload is unchanged',async()=>{
+    const asset='release-assets/qr/affimatik-tng-duitnow-black.png';
+    const image=sharp(asset).ensureAlpha();
+    const {data,info}=await image.raw().toBuffer({resolveWithObject:true});
+    const decoded=jsQR(new Uint8ClampedArray(data),info.width,info.height);
+    expect(decoded).not.toBeNull();
+    expect(crypto.createHash('sha256').update(decoded!.data).digest('hex')).toBe('a5861dab97ce3008100111dabc84e8b160553ee3f849c6a8491aa4c7197a6aa8');
+    expect(info.width).toBe(1024);
+    expect(info.height).toBe(1024);
   });
   it('fails closed for unauthenticated checkout, receipt and admin settings',async()=>{
     expect((await checkout(new NextRequest('https://affimatik.test/api/billing/checkout',{method:'POST',body:'{}'}))).status).toBe(401);
@@ -43,6 +57,12 @@ describe('AffiMatik V8.4 QR Express Checkout',()=>{
     expect(v72).toContain('automatic_credit_grant');
     expect(v72).toContain('requires_bank_verification');
     expect(v72).not.toContain('QR_PROVISIONAL_CREDITS_GRANTED');
+    const instant=fs.readFileSync('supabase/migrations/00024_instant_qr_full_access.sql','utf8');
+    expect(instant).toContain('PROVISIONALLY_ACTIVE');
+    expect(instant).toContain('UNRESOLVED_QR_ORDER_EXISTS');
+    expect(instant).toContain('PAYMENT_HOLD');
+    expect(instant).toContain("credits_regranted',false");
+    expect(instant.indexOf("payment_state='PAYMENT_CONFIRMED'")).toBeLessThan(instant.indexOf('affiliate_commissions'));
     const rollback=fs.readFileSync('supabase/rollback/00020_qr_express_checkout.sql','utf8');
     expect(rollback).toContain('"autoFulfillEnabled":false');
     expect(rollback).not.toMatch(/DROP TABLE|DROP COLUMN|DELETE FROM orders/i);
