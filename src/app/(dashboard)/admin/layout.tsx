@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, ShieldCheck, Lock, Key, ArrowRight, LogOut } from 'lucide-react';
+import { AdminPwaControl } from '@/components/admin/admin-pwa-control';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -125,6 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="space-y-6">
+      <AdminPwaControl />
       <div className="bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs text-amber-900">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />

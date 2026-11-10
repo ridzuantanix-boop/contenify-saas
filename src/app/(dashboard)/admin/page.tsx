@@ -104,6 +104,12 @@ export default function AdminPage() {
   const [isActivating, setIsActivating] = useState(false);
   const [activationFeedback, setActivationFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
+  function selectAdminTab(tab:'overview'|'users'|'activation'){
+    setAdminTab(tab);
+    const url=new URL(window.location.href);if(tab==='overview')url.searchParams.delete('tab');else url.searchParams.set('tab',tab);window.history.replaceState({},'',`${url.pathname}${url.search}`);
+    if(tab==='users')void loadUsers(userSearchQuery);
+  }
+
   // Honest system status without fabricated latency numbers
   const providers = [
     { name: 'Nexabot Provider Adapter', type: 'AffiMatik Voice; status sebenar memerlukan ujian API', status: 'BELUM DISAHKAN' },
@@ -205,7 +211,11 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    const requested=new URLSearchParams(window.location.search).get('tab');
+    if(requested==='users'||requested==='activation')selectAdminTab(requested);
     loadMetrics();
+    // Query state is read only once at launch, including PWA shortcuts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleTogglePause() {
@@ -379,7 +389,7 @@ export default function AdminPage() {
       <div className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Admin Control Center</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Admin & CRM Control Center</h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
               Soft Launch V1.0
             </span>
@@ -426,7 +436,7 @@ export default function AdminPage() {
       <div className="flex border-b border-slate-200 gap-2 overflow-x-auto">
         <button
           type="button"
-          onClick={() => setAdminTab('overview')}
+          onClick={() => selectAdminTab('overview')}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap min-h-[44px] ${
             adminTab === 'overview'
               ? 'border-indigo-600 text-indigo-700'
@@ -438,8 +448,7 @@ export default function AdminPage() {
         <button
           type="button"
           onClick={() => {
-            setAdminTab('users');
-            loadUsers(userSearchQuery);
+            selectAdminTab('users');
           }}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap min-h-[44px] flex items-center gap-1.5 ${
             adminTab === 'users'
@@ -447,14 +456,14 @@ export default function AdminPage() {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <span>Pengguna Berdaftar</span>
+          <span>CRM Pelanggan</span>
           <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
             {usersTotal}
           </span>
         </button>
         <button
           type="button"
-          onClick={() => setAdminTab('activation')}
+          onClick={() => selectAdminTab('activation')}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap min-h-[44px] ${
             adminTab === 'activation'
               ? 'border-indigo-600 text-indigo-700'
