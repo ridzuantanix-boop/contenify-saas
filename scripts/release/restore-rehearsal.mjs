@@ -93,7 +93,11 @@ try {
     if (String(restored[key]) !== String(manifest.baseline[key])) throw new Error(`Restore mengubah ${key}: ${restored[key]} vs ${manifest.baseline[key]}`);
   }
   const applied = [];
-  for (let number = 12; number <= 24; number++) {
+  const requestedMigrations = process.env.AFFIMATIK_REHEARSAL_MIGRATIONS
+    ? process.env.AFFIMATIK_REHEARSAL_MIGRATIONS.split(',').map(value => Number(value.trim())).filter(Number.isInteger)
+    : Array.from({ length: 13 }, (_, index) => index + 12);
+  if (!requestedMigrations.length) throw new Error('Senarai migration rehearsal kosong.');
+  for (const number of requestedMigrations) {
     const prefix = `000${number}_`;
     const { readdirSync } = await import('node:fs');
     const file = readdirSync('supabase/migrations').find(name => name.startsWith(prefix) && name.endsWith('.sql'));
@@ -115,7 +119,7 @@ try {
   }
   const receiptOut = { database, sourceBackup: dir, applied, baseline: manifest.baseline, after, verifiedAt: new Date().toISOString() };
   writeFileSync(join(dir, 'restore-rehearsal.json'), JSON.stringify(receiptOut, null, 2));
-  console.log(`Restore dan migrations 00012–00024 lulus pada database terasing ${database}.`);
+  console.log(`Restore dan migrations ${applied.join(', ')} lulus pada database terasing ${database}.`);
 } finally { await check.end(); }
 } finally {
   const cleanup = new pg.Client(local);
