@@ -30,7 +30,7 @@ describe('Commercial Launch Operations V1',()=>{
    ],
    wallets:[{balance:500},{balance:100}],commissions:[{amount_myr:4.9,status:'PENDING'},{amount_myr:8,status:'REVERSED'}],
    jobs:[
-    {id:'j1',status:'COMPLETED',provider:'nexabot',created_at:'2026-11-10T10:00:00Z',updated_at:'2026-11-10T10:02:00Z',output_size_bytes:1000},
+    {id:'j1',status:'COMPLETED',provider:'nexabot',provider_model_id:'376',created_at:'2026-11-10T10:00:00Z',updated_at:'2026-11-10T10:02:00Z',output_size_bytes:1000},
     {id:'j2',status:'SUBMITTING',provider:'nexabot',created_at:'2026-11-10T10:00:00Z',updated_at:'2026-11-10T10:05:00Z',submission_uncertain:true},
     {id:'j3',status:'FAILED',provider:'nexabot',created_at:'2026-11-10T11:00:00Z',updated_at:'2026-11-10T11:01:00Z',error_message:'provider insufficient credit balance'},
    ],
