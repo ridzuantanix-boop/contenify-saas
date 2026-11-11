@@ -3,6 +3,7 @@ import { getSessionFromRequest } from '@/lib/auth/session';
 import { createCheckout } from '@/lib/billing/checkout';
 import { DurableStore } from '@/lib/db/store';
 import { enforceCheckoutRateLimit, getQrConfig } from '@/lib/billing/qr-checkout';
+import { isTutorialGuestSession } from '@/lib/auth/tutorial-guest';
 
 
 /**
@@ -16,6 +17,9 @@ export async function POST(req: NextRequest) {
       { error: 'Akses Ditolak: Anda mesti log masuk untuk memulakan langganan.' },
       { status: 401 }
     );
+  }
+  if (isTutorialGuestSession(session)) {
+    return NextResponse.json({ error: 'Checkout tidak tersedia dalam workspace tutorial.' }, { status: 403 });
   }
 
   try {

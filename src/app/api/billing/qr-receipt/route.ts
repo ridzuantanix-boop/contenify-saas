@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
+import { isTutorialGuestSession } from '@/lib/auth/tutorial-guest';
 import { DurableStore } from '@/lib/db/store';
 import { getQrConfig, inspectEvidence, qrRpc, sha256Hex } from '@/lib/billing/qr-checkout';
 import { deletePrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
@@ -8,6 +9,7 @@ import { sendPaymentStatusEmail } from '@/lib/billing/payment-control';
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Sila log masuk.' }, { status: 401 });
+  if (isTutorialGuestSession(session)) return NextResponse.json({ error: 'Pembayaran tidak tersedia dalam workspace tutorial.' }, { status: 403 });
   let objectKey = '';
   let uploaded = false;
   try {
