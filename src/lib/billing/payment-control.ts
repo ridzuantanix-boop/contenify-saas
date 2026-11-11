@@ -1,6 +1,10 @@
 type PaymentControl={paymentHold:boolean;holdReason?:string;holdOrderId?:string};
 export type PaymentEmailEvent='PAYMENT_DECLARATION_RECEIVED'|'PAYMENT_PROVISIONAL_ACTIVE'|'PAYMENT_CONFIRMED'|'PAYMENT_REJECTED'|'PAYMENT_HOLD_RELEASED';
 
+export function paymentEmailConfiguration(){
+ return{configured:Boolean(process.env.RESEND_API_KEY),sender:process.env.PAYMENT_EMAIL_FROM||'AffiMatik <noreply@affimatik.online>',provider:'Resend'};
+}
+
 function db(){if(!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw new Error('Pangkalan data tidak tersedia.');const key=process.env.SUPABASE_SERVICE_ROLE_KEY;return{base:process.env.SUPABASE_URL.replace(/\/$/,''),headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'}};}
 const escapeHtml=(value:string)=>value.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]||char));
 

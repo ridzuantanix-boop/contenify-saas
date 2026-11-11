@@ -1,6 +1,6 @@
 import { describe,expect,it } from 'vitest';
 import fs from 'node:fs';
-import { buildPaymentEmail } from '../src/lib/billing/payment-control';
+import { buildPaymentEmail, paymentEmailConfiguration } from '../src/lib/billing/payment-control';
 import { summarizeCommercialOperations } from '../src/lib/admin/commercial-operations';
 
 describe('Commercial Launch Operations V1',()=>{
@@ -17,6 +17,7 @@ describe('Commercial Launch Operations V1',()=>{
   expect(rejected.text).not.toMatch(/penipu|fraud|menipu/i);
   expect(reactivated.text).toMatch(/Sekatan sementara telah dilepaskan/i);
   for(const email of [declaration,provisional,confirmed,rejected,reactivated])expect(email.html).toContain('AffiMatik by Pawarna');
+  expect(paymentEmailConfiguration()).toMatchObject({configured:false,provider:'Resend'});
  });
 
  it('separates confirmed cash, provisional exposure, liabilities and estimated costs',()=>{
