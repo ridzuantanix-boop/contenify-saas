@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     userId,
     workspaceId,
     email: TUTORIAL_GUEST_EMAIL,
-    fullName: 'Gemini Tutorial Guest',
+    fullName: 'Aiman Hakimi',
     role: 'owner',
     tier: 'free',
   }, remainingSeconds);
