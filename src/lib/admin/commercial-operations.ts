@@ -14,8 +14,8 @@ export function summarizeCommercialOperations(input:CommercialOperationsInput){
  const now=input.now||new Date(),dayAgo=now.getTime()-86400000,stuckBefore=now.getTime()-15*60000;
  const confirmed=input.orders.filter(order=>order.status==='PAID'&&['PAYMENT_CONFIRMED','BANK_PAYMENT_VERIFIED'].includes(order.payment_state||'')&&order.metadata?.qa_simulation!==true);
  const provisional=input.orders.filter(order=>order.status==='PENDING'&&order.payment_state==='PROVISIONALLY_ACTIVE');
- const sales:{starter:{orders:number;revenueMyr:number};pro:{orders:number;revenueMyr:number};agency:{orders:number;revenueMyr:number};topUp:{orders:number;revenueMyr:number}}={starter:{orders:0,revenueMyr:0},pro:{orders:0,revenueMyr:0},agency:{orders:0,revenueMyr:0},topUp:{orders:0,revenueMyr:0}};
- for(const order of confirmed){const key=order.plan_id.startsWith('topup_')?'topUp':order.plan_id==='plan_agency'?'agency':order.plan_id==='plan_pro'?'pro':'starter';sales[key].orders++;sales[key].revenueMyr=money(sales[key].revenueMyr+number(order.amount_myr));}
+ const sales:{starter:{orders:number;revenueMyr:number};pro:{orders:number;revenueMyr:number};agency:{orders:number;revenueMyr:number};launchPack:{orders:number;revenueMyr:number};topUp:{orders:number;revenueMyr:number}}={starter:{orders:0,revenueMyr:0},pro:{orders:0,revenueMyr:0},agency:{orders:0,revenueMyr:0},launchPack:{orders:0,revenueMyr:0},topUp:{orders:0,revenueMyr:0}};
+ for(const order of confirmed){const key=order.plan_id.startsWith('topup_')?'topUp':order.plan_id==='launch_pack'?'launchPack':order.plan_id==='plan_agency'?'agency':order.plan_id==='plan_pro'?'pro':'starter';sales[key].orders++;sales[key].revenueMyr=money(sales[key].revenueMyr+number(order.amount_myr));}
  const completedNexabot=input.jobs.filter(job=>job.provider==='nexabot'&&job.status==='COMPLETED');
  const model376Ids=new Set(completedNexabot.filter(job=>String(job.provider_model_id||'')==='376').map(job=>job.id));
  const completedCosts=input.costs.filter(cost=>model376Ids.has(cost.job_id));

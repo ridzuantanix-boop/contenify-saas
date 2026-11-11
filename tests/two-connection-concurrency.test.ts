@@ -69,6 +69,7 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
       '00020_qr_express_checkout.sql','00021_nexabot_provider_retry.sql','00022_smart_nexabot_queue_and_costs.sql',
       '00023_v72_pricing_and_credit_buckets.sql',
       '00024_instant_qr_full_access.sql',
+      '00027_launch_pack_rm19.sql',
     ];
 
     for (const file of migrationFiles) {

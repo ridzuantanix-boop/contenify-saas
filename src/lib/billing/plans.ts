@@ -26,6 +26,11 @@ export interface TopUpPackage {
   effectiveMyrPerVideo: number;
 }
 
+export interface LaunchPackage extends TopUpPackage {
+  oneTime: true;
+  requiresPaidSubscription: false;
+}
+
 export const GENERATION_COSTS = {
   VOICE_NEXABOT: 10, // 10 wallet credits for Nexabot Voice; independent of duration
   TEN_SECONDS_NEXABOT: 10, // Legacy alias for historical records
@@ -84,6 +89,18 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
 ];
 
 export const FREE_TRIAL = { id: 'free_trial', name: 'Free Trial', priceMyr: 0, credits: 20, videos: 2, oneTime: true } as const;
+
+export const LAUNCH_PACK: LaunchPackage = {
+  id: 'launch_pack',
+  name: 'Launch Pack',
+  priceMyr: 19,
+  priceFormatted: 'RM 19',
+  credits: 150,
+  validityDays: 180,
+  effectiveMyrPerVideo: 1.27,
+  oneTime: true,
+  requiresPaidSubscription: false,
+};
 
 export const TOP_UP_PACKAGES: TopUpPackage[] = [
   { id: 'topup_mini', name: 'Mini', priceMyr: 15, priceFormatted: 'RM 15', credits: 100, validityDays: 180, effectiveMyrPerVideo: 1.5 },

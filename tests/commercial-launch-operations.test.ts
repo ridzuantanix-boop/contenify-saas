@@ -28,6 +28,7 @@ describe('Commercial Launch Operations V1',()=>{
     {id:'o2',workspace_id:'w1',plan_id:'topup_plus',amount_myr:34,status:'PAID',payment_state:'BANK_PAYMENT_VERIFIED'},
     {id:'o3',workspace_id:'w2',plan_id:'plan_agency',amount_myr:399,status:'PENDING',payment_state:'PROVISIONALLY_ACTIVE'},
     {id:'o4',workspace_id:'qa',plan_id:'plan_pro',amount_myr:129,status:'PAID',payment_state:'PAYMENT_CONFIRMED',metadata:{qa_simulation:true}},
+    {id:'o5',workspace_id:'w3',plan_id:'launch_pack',amount_myr:19,status:'PAID',payment_state:'PAYMENT_CONFIRMED'},
    ],
    wallets:[{balance:500},{balance:100}],commissions:[{amount_myr:4.9,status:'PENDING'},{amount_myr:8,status:'REVERSED'}],
    jobs:[
@@ -37,11 +38,12 @@ describe('Commercial Launch Operations V1',()=>{
    ],
    costs:[{job_id:'j1',estimated_myr_cost:0.04,observed_provider_credits:0.15}],products:[{size_bytes:2000}],backgrounds:[{size_bytes:3000}],fixedOperatingCostMyr:10,storageCostPerGbMyr:1,creditReservePerVideoMyr:0.15,
   });
-  expect(metrics.revenue.confirmedMyr).toBe(83);
+  expect(metrics.revenue.confirmedMyr).toBe(102);
   expect(metrics.revenue.provisionalMyr).toBe(399);
-  expect(metrics.revenue.payingCustomers).toBe(1);
+  expect(metrics.revenue.payingCustomers).toBe(2);
   expect(metrics.revenue.sales.starter).toEqual({orders:1,revenueMyr:49});
   expect(metrics.revenue.sales.topUp).toEqual({orders:1,revenueMyr:34});
+  expect(metrics.revenue.sales.launchPack).toEqual({orders:1,revenueMyr:19});
   expect(metrics.costs.actualNexabotGenerationVolume).toBe(1);
   expect(metrics.costs.estimatedNexabotCostMyr).toBe(0.04);
   expect(metrics.liabilities.affiliateCommissionMyr).toBe(4.9);

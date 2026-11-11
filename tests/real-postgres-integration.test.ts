@@ -46,6 +46,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00024_instant_qr_full_access.sql',
       '00025_restore_provider_retry_scheduler.sql',
       '00026_cloud_auto_factory.sql',
+      '00027_launch_pack_rm19.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -242,6 +243,23 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect((await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-QR-001','owner@example.test') AS result`,[order])).rows[0].result).toMatchObject({success:true,payment_state:'PAYMENT_CONFIRMED',credits_granted:0,balance:520});
     expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(520);
     expect((await db.query<{state:string}>(`SELECT state FROM provisional_credit_entitlements WHERE order_id=$1`,[order])).rows[0].state).toBe('PAYMENT_CONFIRMED');
+  });
+
+  it('grants the RM19 Launch Pack once to a free customer without creating a subscription', async () => {
+    const user='b8888888-8888-4888-8888-888888888891',workspace='a8888888-8888-4888-8888-888888888891';
+    const order='d8888888-8888-4888-8888-888888888891';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Launch Buyer','launch-buyer',$2,'active')`,[workspace,user]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'launch@example.test','free',$2)`,[user,workspace]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,20,0,20,0)`,[workspace]);
+    expect((await db.query<{result:any}>(`SELECT create_qr_order_atomic($1,$2,$3,'launch_pack',NULL) AS result`,[workspace,user,order])).rows[0].result).toMatchObject({success:true,amount_myr:19,credits_granted:150,purchase_type:'LAUNCH_PACK'});
+    expect((await db.query<{result:any}>(`SELECT provision_qr_order_atomic($1,$2,'receipts/launch.png','image/png',1200) AS result`,[order,'e'.repeat(64)])).rows[0].result).toMatchObject({success:true,credits_granted:150,balance:170});
+    expect((await db.query<{balance:number}>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0].balance).toBe(170);
+    const bucket=(await db.query<{remaining_credits:number;days:number;source_type:string}>(`SELECT remaining_credits,round(extract(epoch FROM(expires_at-created_at))/86400)::int AS days,source_type FROM credit_buckets WHERE order_id=$1`,[order])).rows[0];
+    expect(bucket).toMatchObject({remaining_credits:150,days:180,source_type:'TOP_UP'});
+    expect((await db.query(`SELECT id FROM subscriptions WHERE workspace_id=$1`,[workspace])).rows).toHaveLength(0);
+    expect((await db.query<{result:any}>(`SELECT create_qr_order_atomic($1,$2,gen_random_uuid(),'launch_pack',NULL) AS result`,[workspace,user])).rows[0].result.error).toBe('LAUNCH_PACK_ALREADY_PURCHASED');
+    const confirmed=(await db.query<{result:any}>(`SELECT verify_qr_order_payment_atomic($1,'BANK-LAUNCH-1','owner') AS result`,[order])).rows[0].result;
+    expect(confirmed).toMatchObject({success:true,credits_granted:0,payment_state:'PAYMENT_CONFIRMED',balance:170});
   });
 
   it('freezes all spending on rejection, releases queued reservations, preserves balances, and reactivates safely',async()=>{

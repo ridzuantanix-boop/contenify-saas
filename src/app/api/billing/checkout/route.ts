@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg === 'CHECKOUT_RATE_LIMIT') return NextResponse.json({ error: 'Terlalu banyak checkout dibuat. Sila tunggu 10 minit.', code: msg }, { status: 429 });
     if (msg === 'TOPUP_REQUIRES_ACTIVE_PAID_SUBSCRIPTION') return NextResponse.json({ error: 'Top-up hanya tersedia untuk pelanggan dengan langganan berbayar yang masih aktif.', code: msg }, { status: 403 });
+    if (msg === 'LAUNCH_PACK_ALREADY_PURCHASED') return NextResponse.json({ error: 'Launch Pack hanya boleh dibeli sekali bagi setiap pelanggan.', code: msg }, { status: 409 });
     if (msg === 'UNRESOLVED_QR_ORDER_EXISTS') return NextResponse.json({ error: 'Selesaikan pesanan QR sedia ada dahulu sebelum membuat pesanan baharu.', code: msg }, { status: 409 });
     if (msg === 'ACCOUNT_PAYMENT_HOLD') return NextResponse.json({ error: 'Checkout dibekukan sementara kerana akaun sedang melalui semakan pembayaran.', code: msg }, { status: 403 });
     return NextResponse.json({ error: msg === 'QR_CHECKOUT_NOT_CONFIGURED' ? 'Checkout QR belum dikonfigurasi.' : msg }, { status: 500 });

@@ -1,4 +1,4 @@
-import { AUTHORITATIVE_PLANS, PricingPlan, TOP_UP_PACKAGES, TopUpPackage } from './plans';
+import { AUTHORITATIVE_PLANS, LAUNCH_PACK, LaunchPackage, PricingPlan, TOP_UP_PACKAGES, TopUpPackage } from './plans';
 import { DurableStore, OrderRecord } from '@/lib/db/store';
 import { createQrOrderAtomic, publicQrConfig } from './qr-checkout';
 
@@ -14,7 +14,7 @@ export interface CheckoutRequest {
 export interface CheckoutResult {
   success: boolean;
   orderId: string;
-  plan: PricingPlan | TopUpPackage;
+  plan: PricingPlan | TopUpPackage | LaunchPackage;
   amountMyr: number;
   creditsGranted: number;
   paymentMethod: string;
@@ -38,7 +38,8 @@ export interface CheckoutResult {
 export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResult> {
   const subscriptionPlan = AUTHORITATIVE_PLANS.find((p) => p.id === req.planId);
   const topUp = TOP_UP_PACKAGES.find((p) => p.id === req.planId);
-  const plan = subscriptionPlan || topUp;
+  const launchPack = req.planId === LAUNCH_PACK.id ? LAUNCH_PACK : undefined;
+  const plan = subscriptionPlan || topUp || launchPack;
   if (!plan) {
     throw new Error(`Pelan langganan "${req.planId}" tidak sah.`);
   }
@@ -48,6 +49,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
       throw new Error('TOPUP_REQUIRES_ACTIVE_PAID_SUBSCRIPTION');
     }
   }
+  const creditsGranted = subscriptionPlan ? subscriptionPlan.monthlyCredits : launchPack ? launchPack.credits : topUp!.credits;
 
   const orderId = crypto.randomUUID();
   const paymentMethod = 'qr';
@@ -63,7 +65,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     const created=await createQrOrderAtomic({workspaceId:req.workspaceId,userId:req.userId,orderId,planId:plan.id,referralCode:req.referralCode});
     if(created.success!==true)throw new Error(String(created.error||'QR_ORDER_CREATE_FAILED'));
   }else{
-    const order=await DurableStore.createOrder({id:orderId,workspaceId:req.workspaceId,userId:req.userId,planId:plan.id,amountMyr:plan.priceMyr,creditsGranted:subscriptionPlan?subscriptionPlan.monthlyCredits:topUp!.credits,gatewayProvider:'qr_manual',gatewayReference:referenceCode,paymentMethod,referralCode:req.referralCode,metadata:{planName:plan.name,referenceCode,voiceVideos:subscriptionPlan?subscriptionPlan.voiceVideoAllowance:Math.floor(topUp!.credits/10),purchaseType:topUp?'TOP_UP':'SUBSCRIPTION',creditValidityDays:topUp?180:null,paymentAuthority:'CUSTOMER_RECEIPT_UNVERIFIED',renewalType:'manual_30_day'}});persistedOrderId=order.id;
+    const order=await DurableStore.createOrder({id:orderId,workspaceId:req.workspaceId,userId:req.userId,planId:plan.id,amountMyr:plan.priceMyr,creditsGranted,gatewayProvider:'qr_manual',gatewayReference:referenceCode,paymentMethod,referralCode:req.referralCode,metadata:{planName:plan.name,referenceCode,voiceVideos:subscriptionPlan?subscriptionPlan.voiceVideoAllowance:Math.floor(creditsGranted/10),purchaseType:launchPack?'LAUNCH_PACK':topUp?'TOP_UP':'SUBSCRIPTION',creditValidityDays:subscriptionPlan?null:180,paymentAuthority:'CUSTOMER_RECEIPT_UNVERIFIED',renewalType:subscriptionPlan?'manual_30_day':'none'}});persistedOrderId=order.id;
   }
 
   return {
@@ -71,7 +73,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     orderId: persistedOrderId,
     plan,
     amountMyr: plan.priceMyr,
-    creditsGranted: subscriptionPlan ? subscriptionPlan.monthlyCredits : topUp!.credits,
+    creditsGranted,
     paymentMethod,
     qrCheckout: {
       merchantName: config.merchantName,

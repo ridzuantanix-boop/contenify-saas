@@ -20,7 +20,8 @@ $files=@(
  '00016_verified_video_metadata.sql','00017_refund_credit_integrity.sql','00018_affiliate_service_role_permissions.sql',
  '00019_personalization_studio.sql','00020_qr_express_checkout.sql','00020_seed_creative_v6_prompt_presets.sql',
  '00021_nexabot_provider_retry.sql','00022_smart_nexabot_queue_and_costs.sql','00023_v72_pricing_and_credit_buckets.sql',
- '00024_instant_qr_full_access.sql','00025_restore_provider_retry_scheduler.sql','00026_cloud_auto_factory.sql'
+ '00024_instant_qr_full_access.sql','00025_restore_provider_retry_scheduler.sql','00026_cloud_auto_factory.sql',
+ '00027_launch_pack_rm19.sql'
 )
 if($StartAt -lt 1 -or $StartAt -gt $files.Count){throw 'StartAt di luar julat migrasi.'}
 $files=$files|Select-Object -Skip ($StartAt-1)
