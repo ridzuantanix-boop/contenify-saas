@@ -46,4 +46,15 @@ describe('staging Worker access gate', () => {
     expect((await worker.fetch(request('/api/auth/session', { headers: { Cookie: cookie.split(';')[0] } }), env, {})).status).toBe(200);
     expect((await worker.fetch(request('/', { headers: { Cookie: `${cookie.split(';')[0]}tampered` } }), env, {})).status).toBe(404);
   });
+
+  it('accepts a short-lived signed owner test link without exposing the gate key', async () => {
+    const login = await worker.fetch(request('/__stage_access', { method: 'POST', body: new URLSearchParams({ key: secret }) }), env, {});
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const token = cookie.split('=')[1];
+    const linked = await worker.fetch(request(`/__stage_access?token=${encodeURIComponent(token)}`), env, {});
+    expect(linked.status).toBe(303);
+    expect(linked.headers.get('location')).toBe('/login');
+    expect(linked.headers.get('set-cookie')).toContain('HttpOnly');
+    expect(linked.headers.get('set-cookie')).not.toContain(secret);
+  });
 });

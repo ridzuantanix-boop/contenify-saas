@@ -31,19 +31,30 @@ function response(body, status = 200, headers = {}) {
   return new Response(body, { status, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', ...headers } });
 }
 
+async function stageCookie(secret, expiry) {
+  return `${COOKIE}=${expiry}.${await signature(secret, expiry)}; Path=/; Max-Age=${Math.max(0, Math.floor((expiry - Date.now()) / 1000))}; Secure; HttpOnly; SameSite=Lax`;
+}
+
 export function createStagingWorker(app) { return {
   async fetch(request, env, ctx) {
     const secret = env.STAGING_GATE_SECRET;
     if (typeof secret !== 'string' || secret.length < 32) return response('Staging unavailable', 503);
     const url = new URL(request.url);
     if (url.pathname === ACCESS_PATH && request.method === 'GET') {
+      const token = url.searchParams.get('token');
+      if (token) {
+        const tokenRequest = new Request(request.url, { headers: { cookie: `${COOKIE}=${token}` } });
+        if (!(await authorized(tokenRequest, secret))) return response('Access link expired or invalid', 403);
+        const expiry = Number(token.split('.')[0]);
+        return response(null, 303, { Location: '/login', 'Set-Cookie': await stageCookie(secret, expiry) });
+      }
       return response('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>AffiMatik Staging</title><form method="post"><label>Staging access key <input name="key" type="password" required autocomplete="off"></label><button>Enter</button></form>', 200, { 'Content-Type': 'text/html; charset=utf-8' });
     }
     if (url.pathname === ACCESS_PATH && request.method === 'POST') {
       const body = await request.text();
       if (body.length > 512 || !equal(new URLSearchParams(body).get('key'), secret)) return response('Access denied', 403);
       const expiry = Date.now() + MAX_AGE * 1000;
-      const cookie = `${COOKIE}=${expiry}.${await signature(secret, expiry)}; Path=/; Max-Age=${MAX_AGE}; Secure; HttpOnly; SameSite=Lax`;
+      const cookie = await stageCookie(secret, expiry);
       return response(null, 303, { Location: '/', 'Set-Cookie': cookie });
     }
     if (!(await authorized(request, secret))) return response('Not found', 404);
