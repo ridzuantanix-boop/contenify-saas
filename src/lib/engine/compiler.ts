@@ -17,7 +17,16 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.0';
+export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.1';
+
+export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
+  '[PRIORITY 0 SPOKEN OUTPUT CONTRACT — APPLY BEFORE ALL CREATIVE DETAIL]',
+  'Nexabot independently writes the dialogue; AffiMatik supplies no spoken script.',
+  'Use one compact natural Malaysian Malay turn of two, or at most three, short clauses: a style-specific hook, one image-grounded category purpose or customer-confirmed fact, then a concise ending or selected CTA.',
+  'Finish every spoken word by second 11.5, then continue natural physical action. Never restart, repeat, paraphrase or stretch the final clause to fill the clip.',
+  'Visible shape does not prove performance. Never infer touch operation, flexibility, brightness, eye comfort, battery life, efficacy or another result unless that exact fact is customer-confirmed or clearly readable in the reference.',
+  'Silently delete any uncertain benefit or performance statement before rendering; do not replace it with compliance wording or filler.',
+].join(' ');
 
 export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
   '[PAWARNA MASTERPROMPT DIRECTOR V10 — PRIORITY SYSTEM]',
@@ -561,7 +570,12 @@ export class DynamicPromptCompiler {
           'Finish speech naturally before the clip ends. Do not fill time through repetition, dragged-out words or a generic fallback. If speech ends earlier, continue meaningful physical interaction and never freeze the subject.',
           commonTruthfulness,
         ].filter(Boolean).join(' ');
-    const fullPayload = `${visualPrompt} ${providerDialogueDirective}`;
+    // Put the short, test-derived speech contract first. A controlled real
+    // provider comparison showed that burying these rules after the long visual
+    // locks allowed unsupported performance claims and a repeated cut-off ending.
+    const fullPayload = audioTreatment === 'voiceover'
+      ? `${NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10} ${visualPrompt} ${providerDialogueDirective}`
+      : `${visualPrompt} ${providerDialogueDirective}`;
 
     return {
       provider: 'nexabot',

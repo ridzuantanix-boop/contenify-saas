@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { DynamicPromptCompiler, GEMS_PROMPT_VERSION, HUMAN_REALISM_MASTERPROMPT_V8 } from '../src/lib/engine/compiler';
+import { DynamicPromptCompiler, GEMS_PROMPT_VERSION, HUMAN_REALISM_MASTERPROMPT_V8, NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 } from '../src/lib/engine/compiler';
 import { AICreativeDirector } from '../src/lib/engine/creative-director';
 import { getVideoStyle, VIDEO_STYLES_REGISTRY } from '../src/lib/styles/registry';
 import { sanitizePersonalizationSettings } from '../src/lib/personalization/config';
@@ -30,6 +30,9 @@ describe('V10 Pawarna Masterprompt Director', () => {
       expect(compiled.providerPrompt, style.id).toContain('[HUMAN REALISM MASTERPROMPT V8]');
       expect(compiled.providerPrompt, style.id).toContain('[SHARIAH MODESTY LOCK');
       expect(compiled.providerPrompt, style.id).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
+      expect(compiled.providerPrompt, style.id).toMatch(/^\[PRIORITY 0 SPOKEN OUTPUT CONTRACT/);
+      expect(compiled.providerPrompt, style.id).toContain('Finish every spoken word by second 11.5');
+      expect(compiled.providerPrompt, style.id).toContain('Never infer touch operation, flexibility, brightness, eye comfort, battery life, efficacy');
       expect(compiled.providerPrompt, style.id).not.toMatch(/Script: ""|\$\{p\.spokenScript\}|\{script_body\}|V8 SMART SCRIPT CONTROL/i);
       return compiled.providerPrompt;
     });
@@ -43,6 +46,14 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(compiled.providerPrompt).not.toContain(marker);
     expect(compiled.providerPrompt).not.toContain('kalau memang tengah survey produk ini, tengok yang ni dulu');
     expect(compiled.providerPrompt).toContain('never use a generic placeholder');
+  });
+
+  it('front-loads the provider-owned speech contract without hardcoding dialogue', () => {
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Nexabot independently writes the dialogue');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Silently delete any uncertain benefit');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toMatch(/[“”"](?:korang|saya|aku|produk)/i);
+    const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene);
+    expect(compiled.providerPrompt.indexOf('[PRIORITY 0 SPOKEN OUTPUT CONTRACT')).toBeLessThan(compiled.providerPrompt.indexOf('[STYLE NX02'));
   });
 
   it('normalizes historical personalization script settings to inert values', () => {
