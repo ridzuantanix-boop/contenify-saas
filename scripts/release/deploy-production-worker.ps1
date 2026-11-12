@@ -24,6 +24,7 @@ try {
     ADMIN_ACCESS_KEY = Read-LocalSecret 'worker-admin-access-key'
     CRON_SECRET = Read-LocalSecret 'worker-cron-secret'
     NEXABOT_API_KEY = Read-LocalSecret 'nexabot-api-key'
+    TUTORIAL_GUEST_ACCESS_TOKEN = Read-LocalSecret 'tutorial-guest-access-token'
   }
   [IO.File]::WriteAllText($tempFile, ($secrets | ConvertTo-Json -Compress), [Text.UTF8Encoding]::new($false))
   $wrangler = Join-Path $repo 'node_modules\.bin\wrangler.cmd'

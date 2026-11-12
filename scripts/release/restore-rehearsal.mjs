@@ -93,10 +93,13 @@ try {
     if (String(restored[key]) !== String(manifest.baseline[key])) throw new Error(`Restore mengubah ${key}: ${restored[key]} vs ${manifest.baseline[key]}`);
   }
   const applied = [];
-  const requestedMigrations = process.env.AFFIMATIK_REHEARSAL_MIGRATIONS
+  const migrationSelection = process.env.AFFIMATIK_REHEARSAL_MIGRATIONS?.trim().toLowerCase();
+  const requestedMigrations = migrationSelection === 'none'
+    ? []
+    : process.env.AFFIMATIK_REHEARSAL_MIGRATIONS
     ? process.env.AFFIMATIK_REHEARSAL_MIGRATIONS.split(',').map(value => Number(value.trim())).filter(Number.isInteger)
     : Array.from({ length: 13 }, (_, index) => index + 12);
-  if (!requestedMigrations.length) throw new Error('Senarai migration rehearsal kosong.');
+  if (!requestedMigrations.length && migrationSelection !== 'none') throw new Error('Senarai migration rehearsal kosong.');
   for (const number of requestedMigrations) {
     const prefix = `000${number}_`;
     const { readdirSync } = await import('node:fs');
@@ -116,6 +119,14 @@ try {
     EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='video_jobs' AND column_name='creator_preset_id') AS job_preset`)).rows[0];
   if (v7Schema.backgrounds !== 'background_assets' || v7Schema.presets !== 'creator_presets' || !v7Schema.job_background || !v7Schema.job_preset) {
     throw new Error(`Skema V7 tidak lengkap selepas rehearsal: ${JSON.stringify(v7Schema)}`);
+  }
+  const v9Schema = (await check.query(`SELECT
+    to_regclass('public.creator_profiles')::text AS creator_profiles,
+    to_regclass('public.product_folders')::text AS product_folders,
+    to_regclass('public.auto_factory_batches')::text AS auto_factory_batches,
+    to_regclass('public.daily_auto_schedules')::text AS daily_auto_schedules`)).rows[0];
+  if (!v9Schema.creator_profiles || !v9Schema.product_folders || !v9Schema.auto_factory_batches || !v9Schema.daily_auto_schedules) {
+    throw new Error(`Skema V9 tidak lengkap selepas rehearsal: ${JSON.stringify(v9Schema)}`);
   }
   const receiptOut = { database, sourceBackup: dir, applied, baseline: manifest.baseline, after, verifiedAt: new Date().toISOString() };
   writeFileSync(join(dir, 'restore-rehearsal.json'), JSON.stringify(receiptOut, null, 2));
