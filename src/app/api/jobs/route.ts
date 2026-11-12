@@ -88,10 +88,7 @@ export async function POST(req: NextRequest) {
       voicePersonality,
       storyboard,
       callToAction,
-      scriptMode,
-      scriptVariant,
       audioTreatment,
-      customScript,
       customCta,
       productFact,
       creatorPresetId,
@@ -160,7 +157,7 @@ export async function POST(req: NextRequest) {
 
     const personalization = sanitizePersonalizationSettings({
       styleId: style.id, avatarId, backgroundId, builtInSceneId, niche, voicePersonality,
-      storyboard, callToAction, scriptMode, scriptVariant, audioTreatment, customScript, customCta, productFact,
+      storyboard, callToAction, audioTreatment, customCta, productFact,
       isMuslimahModest, creativeInstruction,
     });
     if (avatarId && !personalization.avatarId) return NextResponse.json({ error: 'Avatar yang dipilih tidak sah.' }, { status: 400 });
@@ -294,8 +291,6 @@ export async function POST(req: NextRequest) {
       isMuslimahModest,
       creativeInstruction: resolvedCreativeInstruction,
       callToAction: personalization.callToAction,
-      scriptMode: personalization.scriptMode,
-      customScript: personalization.customScript,
       customCta: personalization.customCta,
       avatarName: avatarReference?.name,
       backgroundName: backgroundReference?.name,
@@ -303,7 +298,6 @@ export async function POST(req: NextRequest) {
       niche: personalization.niche,
       voicePersonality: personalization.voicePersonality,
       storyboard: personalization.storyboard,
-      scriptVariant: personalization.scriptVariant,
       audioTreatment: personalization.audioTreatment,
     });
 
@@ -351,12 +345,11 @@ export async function POST(req: NextRequest) {
         voicePersonality: personalization.voicePersonality,
         storyboard: personalization.storyboard,
         callToAction: personalization.callToAction,
-        scriptMode: personalization.scriptMode,
-        scriptVariant: personalization.scriptVariant,
         audioTreatment: personalization.audioTreatment,
-        customScript: personalization.scriptMode === 'custom' ? personalization.customScript : null,
         customCta: personalization.callToAction === 'custom' ? personalization.customCta : null,
         productFact: personalization.productFact || null,
+        promptArchitecture: 'pawarna-masterprompt-director-v10',
+        legacyScriptFieldsIgnored: true,
         creatorPresetId: verifiedCreatorPresetId,
       },
     });
@@ -456,7 +449,6 @@ export async function POST(req: NextRequest) {
 
     if (isSuperAdmin) {
       baseResponse.compiledPrompt = compiled.providerPrompt;
-      baseResponse.spokenScript = compiled.spokenScript || null;
       baseResponse.audioDirective = compiled.audioDirective;
     }
 

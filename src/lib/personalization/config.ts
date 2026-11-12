@@ -1,5 +1,10 @@
 import { findOfficialAvatar, findOfficialBackground } from './official-assets';
-import { CTA_MODES, SCRIPT_MODES, SCRIPT_VARIANTS, CtaMode, ScriptMode, ScriptVariant } from '../engine/script-control';
+import { CTA_MODES, CtaMode } from '../engine/cta-control';
+
+// Read-only compatibility for historical preset rows. New V10 jobs always
+// normalize these fields to provider-owned dialogue and never execute them.
+type LegacyScriptMode = 'smart' | 'custom' | 'provider_auto';
+type LegacyScriptVariant = 'style' | 'direct' | 'helpful' | 'short' | 'story';
 
 export const BUILT_IN_SCENES = [
   { id: 'scene:home', name: 'Rumah', directive: 'an ordinary bright Malaysian home with lived-in details' },
@@ -28,8 +33,8 @@ export type PersonalizationSettings = {
   voicePersonality: typeof VOICE_PERSONALITIES[number];
   storyboard: typeof STORYBOARD_OPTIONS[number];
   callToAction: CtaMode;
-  scriptMode: ScriptMode;
-  scriptVariant: ScriptVariant;
+  scriptMode: LegacyScriptMode;
+  scriptVariant: LegacyScriptVariant;
   audioTreatment: typeof AUDIO_TREATMENTS[number];
   customScript: string;
   customCta: string;
@@ -61,10 +66,12 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
     voicePersonality: oneOf(input.voicePersonality, VOICE_PERSONALITIES, 'auto'),
     storyboard: oneOf(input.storyboard, STORYBOARD_OPTIONS, 'auto'),
     callToAction: oneOf(legacyCta, CTA_OPTIONS, 'none'),
-    scriptMode: oneOf(input.scriptMode, SCRIPT_MODES, 'smart'),
-    scriptVariant: oneOf(input.scriptVariant, SCRIPT_VARIANTS, 'style'),
+    // Historical fields remain readable for stored presets, but V10 always
+    // normalizes new generations to provider-owned dialogue.
+    scriptMode: 'provider_auto',
+    scriptVariant: 'style',
     audioTreatment: oneOf(input.audioTreatment, AUDIO_TREATMENTS, 'voiceover'),
-    customScript: typeof input.customScript === 'string' ? input.customScript.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 600) : '',
+    customScript: '',
     customCta: typeof input.customCta === 'string' ? input.customCta.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 80) : '',
     productFact: typeof input.productFact === 'string' ? input.productFact.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 180) : '',
     isMuslimahModest: input.isMuslimahModest !== false,

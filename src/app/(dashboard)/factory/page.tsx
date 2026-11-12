@@ -29,8 +29,7 @@ import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles, STYLE_CATEGORI
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
 import { getStyleMarketingMetadata } from '@/lib/styles/marketing-metadata';
 import { StylePosterMedia } from '@/components/styles/style-poster-media';
-import { buildSmartScript, type ScriptVariant } from '@/lib/engine/script-control';
-import type { ProductProfile } from '@/lib/engine/types';
+import { downloadPrivateMp4 } from '@/lib/download/client-download';
 
 interface UploadedFilePreview {
   id: string;
@@ -69,7 +68,7 @@ interface BackgroundOption { id: string; name: string; imageUrl: string; thumbna
 interface BuiltInSceneOption { id: string; name: string; directive: string }
 interface CreatorPreset {
   id: string; name: string; isDefault: boolean;
-  settings: { styleId: string; avatarId: string | null; backgroundId: string | null; builtInSceneId: string | null; niche: string; voicePersonality: string; storyboard: string; callToAction: string; scriptMode: string; scriptVariant?: ScriptVariant; audioTreatment?: string; customScript: string; customCta: string; productFact: string; isMuslimahModest: boolean; creativeInstruction: string };
+  settings: { styleId: string; avatarId: string | null; backgroundId: string | null; builtInSceneId: string | null; niche: string; voicePersonality: string; storyboard: string; callToAction: string; audioTreatment?: string; customCta: string; isMuslimahModest: boolean; creativeInstruction: string };
 }
 
 function VideoFactoryContent() {
@@ -100,12 +99,8 @@ function VideoFactoryContent() {
   const [voicePersonality, setVoicePersonality] = useState('auto');
   const [storyboard, setStoryboard] = useState('auto');
   const [callToAction, setCallToAction] = useState('none');
-  const [scriptMode, setScriptMode] = useState('smart');
-  const [scriptVariant, setScriptVariant] = useState<ScriptVariant>('style');
   const [audioTreatment, setAudioTreatment] = useState('voiceover');
-  const [customScript, setCustomScript] = useState('');
   const [customCta, setCustomCta] = useState('');
-  const [productFact, setProductFact] = useState('');
   const [avatars, setAvatars] = useState<AvatarOption[]>([]);
   const [officialAvatars, setOfficialAvatars] = useState<AvatarOption[]>([]);
   const [backgrounds, setBackgrounds] = useState<BackgroundOption[]>([]);
@@ -134,15 +129,6 @@ function VideoFactoryContent() {
   const selectedStyle = useMemo(() => {
     return getVideoStyle(selectedStyleId) || VIDEO_STYLES_REGISTRY[0];
   }, [selectedStyleId]);
-  const smartScriptPreview = useMemo(() => {
-    const profile: ProductProfile = {
-      name: productName.trim() || 'produk ini', category: niche !== 'auto' ? niche : images[0]?.category || 'general',
-      packagingFormat: 'general', confirmedFeatures: productFact.trim() ? [productFact.trim()] : [],
-      verifiedBenefits: [], verifiedFacts: [], unknownFields: [], prohibitedClaims: [],
-      sourceConfidence: productFact.trim() ? 'verified_user' : 'manual_fallback', provenance: 'manual_user_entry', isVisionSupported: false,
-    };
-    return buildSmartScript(profile, selectedStyle, callToAction as Parameters<typeof buildSmartScript>[2], customCta, scriptVariant);
-  }, [callToAction, customCta, images, niche, productFact, productName, scriptVariant, selectedStyle]);
   const selectedAvailable = publicAvailability[selectedStyle.engine];
   const supportsSoundOnly = ['NX09', 'NX10', 'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19', 'NX11'].includes(selectedStyle.id);
   const filteredOfficialAvatars = useMemo(() => officialAvatars.filter((item) =>
@@ -163,9 +149,8 @@ function VideoFactoryContent() {
     setAvatarId(settings.avatarId || ''); setBackgroundId(settings.backgroundId || '');
     setBuiltInSceneId(settings.builtInSceneId || ''); setNiche(settings.niche || 'auto');
     setVoicePersonality(settings.voicePersonality || 'auto'); setStoryboard(settings.storyboard || 'auto');
-    setCallToAction(settings.callToAction || 'none'); setScriptMode(settings.scriptMode === 'custom' ? 'smart' : settings.scriptMode || 'smart');
-    setScriptVariant(settings.scriptVariant || 'style'); setAudioTreatment(settings.audioTreatment || 'voiceover');
-    setCustomScript(''); setCustomCta(settings.customCta || ''); setProductFact('');
+    setCallToAction(settings.callToAction || 'none'); setAudioTreatment(settings.audioTreatment || 'voiceover');
+    setCustomCta(settings.customCta || '');
     setIsMuslimahModest(settings.isMuslimahModest !== false);
     setCreativeInstruction(settings.creativeInstruction || '');
     setSubmitSuccess(`Preset “${preset.name}” digunakan. Pilih produk dan jana bila sedia.`);
@@ -174,8 +159,8 @@ function VideoFactoryContent() {
   const currentPersonalizationSettings = () => ({
     styleId: selectedStyleId, avatarId: avatarId || null, backgroundId: backgroundId || null,
     builtInSceneId: backgroundId ? null : builtInSceneId || null, niche, voicePersonality,
-    storyboard, callToAction, scriptMode, scriptVariant, audioTreatment, customScript: '', customCta: customCta.trim(),
-    productFact: '', isMuslimahModest, creativeInstruction: creativeInstruction.trim(),
+    storyboard, callToAction, audioTreatment, customCta: customCta.trim(),
+    isMuslimahModest, creativeInstruction: creativeInstruction.trim(),
   });
 
   const savePreset = async () => {
@@ -441,16 +426,6 @@ function VideoFactoryContent() {
       return;
     }
 
-    if (scriptMode === 'custom' && !customScript.trim()) {
-      setSubmitError('Masukkan dialog untuk mod Custom Script.');
-      openCustomize();
-      return;
-    }
-    if (scriptMode === 'custom' && customScript.trim().split(/\s+/).length > 48) {
-      setSubmitError('Custom Script terlalu panjang. Gunakan maksimum 48 perkataan untuk video 15 saat.');
-      openCustomize();
-      return;
-    }
     if (callToAction === 'custom' && !customCta.trim()) {
       setSubmitError('Masukkan ayat Custom CTA.');
       openCustomize();
@@ -500,12 +475,8 @@ function VideoFactoryContent() {
         voicePersonality,
         storyboard,
         callToAction,
-        scriptMode,
-        scriptVariant,
         audioTreatment,
-        customScript: scriptMode === 'custom' ? customScript.trim() : undefined,
         customCta: callToAction === 'custom' ? customCta.trim() : undefined,
-        productFact: productFact.trim() || undefined,
         creatorPresetId: selectedPresetId || undefined,
       };
 
@@ -791,16 +762,15 @@ function VideoFactoryContent() {
             </div>
           </div>
 
-          {/* STEP 4: SCRIPT & CTA REVIEW */}
+          {/* STEP 4: NEXABOT NATIVE CREATIVE DIRECTION */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-            <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">4</span><div><h3 className="text-sm font-bold text-slate-900">Semak Skrip & CTA</h3><p className="text-[11px] text-slate-500">Draf berdasarkan gaya, kategori dan fakta yang korang sahkan.</p></div></div>
-            {scriptMode === 'smart' ? <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs leading-relaxed text-slate-800">“{smartScriptPreview}”</div> : <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">{scriptMode === 'custom' ? customScript || 'Buka Customize untuk masukkan skrip sendiri.' : 'Provider akan cipta dialog berdasarkan produk dan gaya.'}</div>}
-            {scriptMode === 'smart' && <div className="grid grid-cols-3 gap-2">{([['style','Ikut Gaya'],['direct','Terus'],['helpful','Membantu']] as const).map(([value,label]) => <button key={value} type="button" onClick={() => setScriptVariant(value)} className={`rounded-lg border px-2 py-2 text-[10px] font-bold ${scriptVariant === value ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-600'}`}>{label}</button>)}</div>}
+            <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">4</span><div><h3 className="text-sm font-bold text-slate-900">Arah Kreatif & CTA</h3><p className="text-[11px] text-slate-500">AffiMatik mengarah gaya dan keselamatan. Nexabot memahami produk lalu mencipta dialog sendiri.</p></div></div>
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs leading-relaxed text-slate-700"><strong>Tiada skrip automatik:</strong> dialog tidak dijana atau dipratonton oleh AffiMatik. Produk, gaya dan arahan pilihan dihantar terus sebagai masterprompt.</div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-[11px] font-bold text-slate-700">CTA<select value={callToAction} onChange={(event) => setCallToAction(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="tiktok_shop">TikTok Shop — Beg Kuning</option><option value="click_button">Klik Butang Di Bawah</option><option value="tap_button">Tekan Butang Di Bawah</option><option value="check_bio">Semak Bio</option><option value="dm_info">DM Untuk Info</option><option value="none">Tanpa CTA</option><option value="custom">Custom CTA</option></select></label>
               {supportsSoundOnly && <label className="text-[11px] font-bold text-slate-700">Audio<select value={audioTreatment} onChange={(event) => setAudioTreatment(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="voiceover">Suara Malaysia</option><option value="ambient">Ambient — Eksperimental</option><option value="asmr">ASMR Produk — Eksperimental</option></select></label>}
             </div>
-            <div className="flex justify-end"><button type="button" onClick={openCustomize} className="text-[11px] font-bold text-primary">Edit fakta, skrip atau personaliti →</button></div>
+            <div className="flex justify-end"><button type="button" onClick={openCustomize} className="text-[11px] font-bold text-primary">Customize personaliti atau arahan kreatif →</button></div>
           </div>
 
           {/* OPTIONAL PERSONALIZATION STUDIO */}
@@ -888,21 +858,11 @@ function VideoFactoryContent() {
                 </div>
               </div>
 
-              <section className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4" aria-labelledby="script-control-title">
+              <section className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4" aria-labelledby="masterprompt-director-title">
                 <div>
-                  <div id="script-control-title" className="text-[11px] font-bold text-slate-800">Real Malaysian Script Control V8.3</div>
-                  <p className="mt-1 text-[10px] leading-relaxed text-slate-600">Nexabot akan menerima arahan skrip ini. Ketepatan setiap perkataan dan lip-sync bergantung pada hasil provider dan tidak dijamin sempurna.</p>
+                  <div id="masterprompt-director-title" className="text-[11px] font-bold text-slate-800">Pawarna Masterprompt Director™</div>
+                  <p className="mt-1 text-[10px] leading-relaxed text-slate-600">Nexabot meneliti imej produk dan mencipta konsep serta dialog Bahasa Melayu Malaysia sendiri. AffiMatik tidak menulis atau menyuntik skrip automatik.</p>
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {[
-                    ['smart', 'Smart Script', 'Corak manusia ikut gaya + fakta disahkan'],
-                    ['custom', 'Custom Script', 'Ayat anda sendiri'],
-                    ['provider_auto', 'Provider Auto', 'Dialog automatik legacy'],
-                  ].map(([value, label, help]) => <button key={value} type="button" onClick={() => setScriptMode(value)} className={`rounded-xl border p-3 text-left ${scriptMode === value ? 'border-primary bg-white text-primary ring-2 ring-primary/10' : 'border-slate-200 bg-white text-slate-700'}`}><span className="block text-[11px] font-bold">{label}</span><span className="mt-1 block text-[10px] font-normal text-slate-500">{help}</span></button>)}
-                </div>
-                {scriptMode === 'smart' && <div className="space-y-3"><label className="block text-[11px] font-bold text-slate-700">Satu Fakta Produk Yang Disahkan <span className="font-normal text-slate-400">(Pilihan)</span><input type="text" maxLength={180} value={productFact} onChange={(event) => setProductFact(event.target.value)} placeholder="Contoh: mempunyai tiga tahap kecerahan (hanya jika benar)" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal" /><span className="mt-1 block text-[10px] font-normal text-slate-500">Jika kosong, draf kekal neutral dan tidak meneka manfaat.</span></label><div className="rounded-xl border border-white bg-white p-3 text-xs leading-relaxed text-slate-800"><span className="mb-1 block text-[10px] font-bold uppercase text-indigo-500">Draf Semasa</span>“{smartScriptPreview}”</div></div>}
-                {scriptMode === 'custom' && <label className="block text-[11px] font-bold text-slate-700">Skrip Tepat Anda<textarea maxLength={600} rows={4} value={customScript} onChange={(event) => setCustomScript(event.target.value)} placeholder="Tulis atau tampal dialog Bahasa Melayu Malaysia di sini..." className="mt-1 w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal" /><span className="mt-1 block text-[10px] font-normal text-slate-500">Maksimum 600 aksara / 48 perkataan. Provider mungkin sesekali menyimpang daripada ayat tepat.</span></label>}
-                {scriptMode === 'provider_auto' && <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] leading-relaxed text-slate-600">Provider mencipta dialog sendiri berdasarkan imej, gaya dan fakta yang anda beri. Mod ini mengekalkan aliran V7.1 sebagai pilihan legacy.</div>}
                 {callToAction === 'custom' && <label className="block text-[11px] font-bold text-slate-700">Ayat Custom CTA<input type="text" maxLength={80} value={customCta} onChange={(event) => setCustomCta(event.target.value)} placeholder="Contoh: DM saya kalau nak info lanjut." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal" /><span className="mt-1 block text-[10px] font-normal text-slate-500">Maksimum 80 aksara. Ayat dihantar seperti ditaip, tertakluk pada semakan keselamatan.</span></label>}
               </section>
 
@@ -910,13 +870,15 @@ function VideoFactoryContent() {
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
                   Arahan Kreatif Tambahan <span className="text-slate-400 font-normal">(Pilihan)</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
+                  rows={3}
+                  maxLength={1000}
                   value={creativeInstruction}
                   onChange={(e) => setCreativeInstruction(e.target.value)}
-                  placeholder="Contoh: Tunjuk cara pasang secara langkah demi langkah; jangan ubah label produk"
-                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  placeholder="Contoh: Presenter lelaki, suara santai Utara, lokasi garaj rumah, fokus pengguna kereta. Jika anda mahu ayat tertentu, tulis sendiri di sini."
+                  className="w-full resize-y text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
+                <p className="mt-1 text-[10px] text-slate-500">Pilihan. AffiMatik tidak akan menulis semula, melengkapkan atau memparafrasa arahan anda.</p>
               </div>
             </div>
           )}
@@ -1106,16 +1068,17 @@ function VideoFactoryContent() {
 
                       <div className="flex items-center gap-2 pt-2">
                         {activeJob.videoUrl && (
-                          <a
-                            href={activeJob.videoUrl}
-                            download={`affimatik-${selectedStyle.slug}-${activeJob.jobId.slice(0, 8)}.mp4`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => void downloadPrivateMp4(
+                              activeJob.videoUrl!,
+                              `affimatik-${selectedStyle.slug}-${activeJob.jobId.slice(0, 8)}.mp4`,
+                            ).catch((error) => setSubmitError(error instanceof Error ? error.message : 'Video tidak dapat dimuat turun.'))}
                             className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
                           >
                             <Download className="w-3.5 h-3.5" />
                             <span>Muat Turun MP4</span>
-                          </a>
+                          </button>
                         )}
 
                         <button

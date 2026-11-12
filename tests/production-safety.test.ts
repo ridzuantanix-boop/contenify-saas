@@ -646,7 +646,7 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
       expect(res.errors.length).toBe(0);
     });
 
-    it('DynamicPromptCompiler applies validation to all scripts and prevents duplicate CTAs', () => {
+    it('DynamicPromptCompiler ignores legacy scripts and keeps CTA intent once', () => {
       const style = getVideoStyle('NX01')!;
       const product = {
         name: 'Serum Pencerah',
@@ -659,20 +659,21 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
 
       const scenePlan = AICreativeDirector.createScenePlan(product, style);
 
-      // Custom script with Indonesian word
+      // Historical customer scripts are inert in V10 and never reach Nexabot.
       const compiledBad = DynamicPromptCompiler.compile(product, style, scenePlan, {
         scriptMode: 'custom',
         customScript: 'Kalian wajib cobain serum ini!',
       });
-      expect(compiledBad.preflightValid).toBe(false);
-      expect(compiledBad.validationErrors.some((e) => e.includes('Bahasa Melayu Malaysia'))).toBe(true);
+      expect(compiledBad.preflightValid).toBe(true);
+      expect(compiledBad.spokenScript).toBeUndefined();
+      expect(compiledBad.providerPrompt).not.toContain('Kalian wajib cobain serum ini!');
 
       // Compliant script
       const compiledGood = DynamicPromptCompiler.compile(product, style, scenePlan, {
         callToAction: 'click_button',
       });
       expect(compiledGood.preflightValid).toBe(true);
-      expect(compiledGood.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
+      expect(compiledGood.providerPrompt).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
     });
   });
 

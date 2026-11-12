@@ -46,7 +46,8 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(compiled.providerPrompt).toContain('not a mandatory first video frame');
     expect(compiled.providerPrompt).toContain('Customer-selected storyboard: step_by_step');
     expect(compiled.providerPrompt).toContain('Do not add a spoken call to action');
-    expect(compiled.spokenScript).toBeTruthy();
+    expect(compiled.spokenScript).toBeUndefined();
+    expect(compiled.providerPrompt).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
   });
 
   it('orders and caps Nexabot media exactly as product, avatar, background', () => {
@@ -119,8 +120,9 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(factory).toContain("document.addEventListener('visibilitychange'");
     expect(factory).toContain('Semak Status Sekarang');
     expect(factory).toContain('Auto / Tanpa Preset');
-    expect(factory).toContain('Semak Skrip & CTA');
+    expect(factory).toContain('Arah Kreatif & CTA');
     expect(factory).toContain('Ambient — Eksperimental');
-    expect(factory).toContain("setProductFact('')");
+    expect(factory).not.toContain('Smart Script');
+    expect(factory).not.toContain('Custom Script');
   });
 });

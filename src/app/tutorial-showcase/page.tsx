@@ -127,7 +127,7 @@ export default function TutorialShowcasePage() {
             </article>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="grid gap-4 sm:grid-cols-2">
-                {['Nama profil: Aina · Lifestyle Santai', 'Voice: Mesra & natural', 'Script: Smart Script · Relatable', 'CTA: Klik butang', 'Audio: Voice', 'Gaya default: NX01, NX09, NX17'].map((x) => <div key={x} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold">{x}</div>)}
+                {['Nama profil: Aina · Lifestyle Santai', 'Voice: Mesra & natural', 'Dialog: Nexabot cipta ikut produk', 'CTA: Klik butang', 'Audio: Voice', 'Gaya default: NX01, NX09, NX17'].map((x) => <div key={x} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold">{x}</div>)}
               </div>
               <div className="mt-5 flex flex-wrap gap-2"><DemoButton>Edit</DemoButton><DemoButton>Duplicate</DemoButton><DemoButton primary>Simpan Profil</DemoButton></div>
             </div>

@@ -64,6 +64,7 @@ export interface CompiledGenerationPrompt {
   provider: EngineType;
   providerPrompt: string; // The complete payload string submitted to the provider
   visualPrompt: string;
+  /** @deprecated V10 direct-provider jobs never populate this field. */
   spokenScript?: string;
   continuityAnchor?: string;
   audioDirective: string;

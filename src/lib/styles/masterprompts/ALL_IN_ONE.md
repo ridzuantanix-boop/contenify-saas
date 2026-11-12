@@ -940,8 +940,8 @@ Relevant existing files at time of authored pack: `src/lib/styles/registry.ts`, 
 - **Do not rename style IDs or change 10s / 15s engine routing.** Registry metadata can keep customer style labels; NX10 copy should clarify usefulness first.
 - Replace generic `scriptTemplate` priority: scripts come from Product Brain + style's own hook/flow. Never let a `registry.ts` packaging statement overwrite confirmed product benefit.
 - Build a `styleScriptStrategy[styleId]`, `styleVisualChoreography[styleId]` versioned at `affimatik-gems-masterprompts-v5.0`. If internal architecture needs TypeScript data rather than raw MD parsing, translate each instruction exactly and keep MD as auditable canonical source.
-- Video job records should snapshot `styleId`, `promptVersion`, canonical product-fact provenance, final `spokenScript` (NX), final `providerPrompt`, source image role and mode, and any user overrides.
-- Enforce server-side `customScript` (Voice) vs `creativeInstruction` (visual). Preserve approved user script word-for-word; preview script identical to payload. Avoid `customPrompt` legacy confusion.
+- Video job records should snapshot `styleId`, `promptVersion`, canonical product-fact provenance, final `providerPrompt`, source image role and mode, CTA intent, and customer-authored creative direction.
+- V10 never compiles or previews an AffiMatik-authored spoken script. Historical script fields remain storage-compatible but are ignored for new generations; Nexabot owns product understanding, dialogue and delivery.
 - If user only uploads image, run configured real vision and official info retrieval if available. **No claimed research when no API call**; offer one-field fallback if no useful facts.
 - Use provider-specific compact prompts, not entire MD dumped into provider. Respect provider length/format/asset limits; preserve mandatory locks and exact style action, prune redundant prose rather than core constraints.
 - RH has no speech; don't turn it into Voice or add captions to communicate benefit. Use use-context + physical action.

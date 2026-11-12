@@ -232,7 +232,7 @@ export default function StyleTestingLabPage() {
             </div>
 
             <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
-              <strong>Dialog:</strong> V8 menyokong Smart Script, Custom Script dan Provider Auto. Provider merender pertuturan dan mungkin sesekali menyimpang daripada perkataan tepat.
+              <strong>Dialog:</strong> V10 menghantar masterprompt lengkap dan rujukan produk. Nexabot memahami produk serta mencipta dialog Bahasa Melayu Malaysia mengikut identiti gaya; AffiMatik tidak menjana skrip dalaman.
             </div>
           </div>
         </div>

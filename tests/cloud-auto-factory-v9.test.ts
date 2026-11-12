@@ -42,10 +42,10 @@ describe('AffiMatik V9 Cloud Auto Factory',()=>{
   const core=read('src/lib/auto-factory/core.ts');
   expect(migration).toContain("'creatorProfile'");
   expect(migration).toContain("'legacyPreset'");
-  for(const field of ['workspaceId','productId','imageId','creatorProfileVersion','styleId','audioMode','scriptMode','cta','providerPrompt','creditCharge','batchId']){
+  for(const field of ['workspaceId','productId','imageId','creatorProfileVersion','styleId','audioMode','cta','providerPrompt','creditCharge','batchId','promptArchitecture','legacyScriptFieldsIgnored']){
    expect(core).toContain(field);
   }
-  expect(core).toContain('CUSTOM_SCRIPT_NOT_ALLOWED_FOR_MIXED_BULK');
+  expect(core).not.toContain('customScript:settings.customScript');
  });
 
  it('continues in the cloud from cron and never relies on a browser loop',()=>{

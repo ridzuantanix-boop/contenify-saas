@@ -17,10 +17,10 @@ describe('AFFIMATIK V8 — creative quality regression', () => {
       const profile = AICreativeDirector.extractProductProfile({ productName: name, productCategory: category });
       const compiled = DynamicPromptCompiler.compile(profile, style, AICreativeDirector.createScenePlan(profile, style));
       expect(compiled.provider).toBe('nexabot');
-      expect(compiled.spokenScript).toBeTruthy();
-      expect(compiled.providerPrompt).toContain('[V8 SMART SCRIPT CONTROL]');
+      expect(compiled.spokenScript).toBeUndefined();
+      expect(compiled.providerPrompt).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
       expect(compiled.visualPrompt).toContain('9:16 aspect ratio');
-      expect(compiled.visualPrompt).toContain('5500K');
+      expect(compiled.visualPrompt).toContain('neutral daylight');
       expect(compiled.visualPrompt).toContain('NO phone UI overlays');
       expect(compiled.visualPrompt).toContain('Modesty Guardrail');
     }
@@ -33,8 +33,8 @@ describe('AFFIMATIK V8 — creative quality regression', () => {
     expect(preview.provider).toBe('nexabot');
     expect(preview.durationSeconds).toBe(15);
     expect(preview.creditCost).toBe(10);
-    expect(preview.spokenScript).toContain('Lampu Nova');
-    expect(preview.audioDirective).toContain('skrip V8');
+    expect(preview.spokenScript).toBeNull();
+    expect(preview.audioDirective).toContain('Nexabot');
   });
 
   it('does not treat a legacy customScript field as Custom Script without explicit mode', () => {

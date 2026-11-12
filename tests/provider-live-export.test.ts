@@ -41,10 +41,10 @@ describe('real-provider QA prompt export', () => {
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
       expect(prompt).toContain('If the image and customer-confirmed facts do not establish a claim, omit it entirely');
       expect(prompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
-      expect(prompt).toContain('natural 10 to 13 seconds of speech');
+      expect(prompt).toContain('finish speech comfortably before the video ends');
       expect(prompt).not.toContain('before second 11');
     }
-    expect(prompts.lampMotion).toContain('[V8 SMART SCRIPT CONTROL]');
+    expect(prompts.lampMotion).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {
       const directory = resolve(process.cwd(), 'output', 'provider-qa');
       mkdirSync(directory, { recursive: true });
