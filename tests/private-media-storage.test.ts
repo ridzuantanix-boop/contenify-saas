@@ -82,7 +82,7 @@ describe('Private provider media ingestion', () => {
       .mockResolvedValueOnce(new Response('{}', { status: 200 }))
       .mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }));
     vi.stubGlobal('fetch', request);
-    const result = await ingestProviderMp4('nexabot', 'https://iosrygyeustxztewibzq.supabase.co/storage/v1/object/public/storage/media/2026/11/output.mp4', 'ws-1', 'job-1');
+    const result = await ingestProviderMp4('nexabot', 'https://gvhsnjldhfczmylcagxe.supabase.co/storage/v1/object/public/storage/media/2026/11/output.mp4', 'ws-1', 'job-1');
     expect(result.sizeBytes).toBe(mp4.length);
     expect(request).toHaveBeenCalledTimes(3);
   });
@@ -94,6 +94,8 @@ describe('Private provider media ingestion', () => {
       'https://iosrygyeustxztewibzq.supabase.co/storage/v1/object/public/other/file.mp4',
       'https://sub.iosrygyeustxztewibzq.supabase.co/storage/v1/object/public/storage/media/a.mp4',
       'https://iosrygyeustxztewibzq.supabase.co.attacker.test/storage/v1/object/public/storage/media/a.mp4',
+      'https://sub.gvhsnjldhfczmylcagxe.supabase.co/storage/v1/object/public/storage/media/a.mp4',
+      'https://gvhsnjldhfczmylcagxe.supabase.co.attacker.test/storage/v1/object/public/storage/media/a.mp4',
     ]) {
       await expect(ingestProviderMp4('nexabot', url, 'ws-1', 'job-1')).rejects.toThrow(/tidak dibenarkan/);
     }
