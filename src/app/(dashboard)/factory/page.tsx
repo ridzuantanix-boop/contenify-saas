@@ -543,7 +543,7 @@ function VideoFactoryContent() {
               AffiMatik Creator Studio
             </h1>
             <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">
-              Creative V8.3
+              Masterprompt V10.1
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -687,7 +687,7 @@ function VideoFactoryContent() {
 
             <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900 flex items-center gap-2">
               <Volume2 className="w-4 h-4 text-primary shrink-0" />
-              <span><strong>AffiMatik Voice V8.3 · Nexabot 15s</strong> — 20 personaliti kreatif BM Malaysia, 10 kredit setiap video.</span>
+              <span><strong>AffiMatik Voice V10.1 · Nexabot 15s</strong> — 20 personaliti kreatif BM Malaysia, 10 kredit setiap video.</span>
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1">
