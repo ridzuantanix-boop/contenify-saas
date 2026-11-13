@@ -139,7 +139,7 @@ export function Header({
               className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
             >
               <Gift className="w-3.5 h-3.5 text-amber-300" />
-              <span>Daftar (20 Kredit)</span>
+              <span>Daftar Akaun</span>
             </Link>
           </div>
         )}

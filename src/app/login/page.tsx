@@ -109,7 +109,7 @@ export default function LoginPage() {
           <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
             Belum ada akaun?{' '}
             <Link href="/register" className="font-bold text-indigo-600 hover:text-indigo-700">
-              Daftar sekarang (Percuma 20 Kredit)
+              Cipta akaun & lihat pakej
             </Link>
           </div>
         </div>

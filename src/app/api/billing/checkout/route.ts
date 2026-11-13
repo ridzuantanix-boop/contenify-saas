@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         {
           error: 'PAYMENTS_COMING_SOON',
           code: 'PAYMENTS_COMING_SOON',
-          message: 'Checkout QR belum tersedia. Akaun baharu masih menerima 20 kredit percuma.',
+          message: 'Checkout QR belum tersedia buat sementara waktu. Sila cuba lagi kemudian.',
           status: 'COMING_SOON',
         },
         { status: 403 }

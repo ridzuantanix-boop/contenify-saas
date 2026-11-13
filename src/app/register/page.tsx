@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Gift, ArrowRight, AlertCircle, CheckCircle2, Lock, Mail } from 'lucide-react';
+import { Sparkles, ArrowRight, AlertCircle, CheckCircle2, Mail, Zap } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function RegisterPage() {
         return;
       }
 
-      setSuccessMsg('Tahniah! Akaun anda berjaya dicipta dengan 20 Kredit Percuma. Sedang membawa anda ke Dashboard...');
+      setSuccessMsg('Akaun anda berjaya dicipta. Sedang membawa anda ke Dashboard...');
       setTimeout(() => {
         router.push('/dashboard');
       }, 1200);
@@ -82,10 +82,10 @@ export default function RegisterPage() {
           <span className="font-extrabold text-slate-900 tracking-tight text-xl">AffiMatik</span>
         </Link>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-          Daftar Akaun Percuma
+          Cipta Akaun AffiMatik
         </h2>
         <p className="text-xs text-slate-500">
-          Mulakan penjanaan video affiliate AI anda sekarang dengan 20 kredit percuma.
+          Daftar dahulu, kemudian dapatkan Launch Pack 15 video pada RM19.
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default function RegisterPage() {
                   {registeredEmail}
                 </div>
                 <p className="text-[11px] text-slate-500 pt-2 leading-relaxed">
-                  Jika ini akaun baharu, semak Inbox dan Spam lalu sahkan emel untuk menuntut <strong>20 Kredit Percuma</strong>. Jika anda pernah mendaftar, terus log masuk dengan akaun sedia ada.
+                  Jika ini akaun baharu, semak Inbox dan Spam lalu sahkan emel. Selepas log masuk, anda boleh mendapatkan <strong>Launch Pack RM19</strong>. Jika anda pernah mendaftar, terus log masuk dengan akaun sedia ada.
                 </p>
               </div>
 
@@ -127,12 +127,11 @@ export default function RegisterPage() {
             </div>
           ) : (
             <>
-              {/* New-account trial allowance */}
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-900">
-                <Gift className="w-5 h-5 text-amber-600 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-violet-50 border border-violet-200 flex items-center gap-3 text-xs text-violet-900">
+                <Zap className="w-5 h-5 text-violet-600 shrink-0" />
                 <div>
-                  <span className="font-bold">20 Kredit Percuma Terus Dimasukkan!</span>
-                  <p className="text-[11px] text-amber-700 mt-0.5">Tiada kad bank diperlukan. Tiada caj tersembunyi.</p>
+                  <span className="font-bold">Launch Pack: RM19 untuk 15 video</span>
+                  <p className="text-[11px] text-violet-700 mt-0.5">150 kredit, bayaran sekali sahaja dan sah selama 180 hari.</p>
                 </div>
               </div>
 
@@ -230,7 +229,7 @@ export default function RegisterPage() {
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>{isLoading ? 'Mendaftar Akaun...' : 'Daftar & Tebus 20 Kredit'}</span>
+              <span>{isLoading ? 'Mendaftar Akaun...' : 'Cipta Akaun & Grab Launch Pack'}</span>
             </button>
           </form>
 

@@ -180,7 +180,7 @@ export function Sidebar() {
           <div className="space-y-2 text-center">
             <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-700">
               <Gift className="w-3.5 h-3.5 text-amber-500" />
-              <span>20 Kredit Percuma</span>
+              <span>Launch Pack RM19</span>
             </div>
             <p className="text-[10px] text-slate-500 leading-tight">
               Daftar akaun sekarang untuk mula jana video secara automatik.
@@ -189,7 +189,7 @@ export function Sidebar() {
               href="/register"
               className="block w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold text-center transition shadow-2xs"
             >
-              Daftar Percuma
+              Cipta Akaun
             </Link>
           </div>
         )}
@@ -365,7 +365,7 @@ export function MobileSidebarDrawer({
               onClick={onClose}
               className="block w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold text-center transition min-h-[44px] flex items-center justify-center"
             >
-              Daftar Percuma (20 Kredit)
+              Cipta Akaun AffiMatik
             </Link>
           )}
         </div>

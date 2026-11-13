@@ -15,24 +15,24 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
     });
   });
 
-  describe('Scenario A: Customer Account Self-Registration & 20 Credit Provisioning', () => {
-    it('provisions workspace, free tier, and exactly one 20-credit grant idempotently', async () => {
+  describe('Scenario A: Customer Account Self-Registration Without Free Trial', () => {
+    it('provisions an empty workspace wallet idempotently without a welcome-credit grant', async () => {
       const workspaceId = 'ws-test-customer-001';
 
       // 1. First initial wallet provisioning
       const initialWallet = await DurableStore.getWallet(workspaceId);
-      expect(initialWallet.balance).toBe(20);
+      expect(initialWallet.balance).toBe(0);
       expect(initialWallet.reservedBalance).toBe(0);
 
       // 2. Verify exactly 1 GRANT ledger record
       const ledger1 = await DurableStore.getLedgerHistory(workspaceId);
       expect(ledger1).toHaveLength(1);
       expect(ledger1[0].eventType).toBe('GRANT');
-      expect(ledger1[0].amount).toBe(20);
+      expect(ledger1[0].amount).toBe(0);
 
       // 3. Second call (re-login or repeated access) must be strictly idempotent
       const secondWallet = await DurableStore.getWallet(workspaceId);
-      expect(secondWallet.balance).toBe(20);
+      expect(secondWallet.balance).toBe(0);
 
       const ledger2 = await DurableStore.getLedgerHistory(workspaceId);
       expect(ledger2).toHaveLength(1); // No double-credit grant!
@@ -43,7 +43,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
     it('creates an order, provides Malaysian FPX / DuitNow QR reference, and settles credits once', async () => {
       const workspaceId = 'ws-paid-customer-002';
       const userId = 'user-paid-002';
-      await DurableStore.getWallet(workspaceId); // Initial 20 credits
+      await DurableStore.getWallet(workspaceId); // Empty wallet; Free Trial is disabled.
 
       // 1. Customer initiates checkout for Starter RM49 (500 credits)
       const checkout = await createCheckout({
@@ -67,7 +67,7 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       const settlement1 = await DurableStore.settleOrder(checkout.orderId, 'FPX-REF-12345');
       expect(settlement1.success).toBe(true);
       expect(settlement1.status).toBe('PAID');
-      expect(settlement1.balance).toBe(520); // 20 initial + 500 purchased
+      expect(settlement1.balance).toBe(500);
       expect(settlement1.tier).toBe('starter');
 
       // Verify subscription record exists
@@ -79,10 +79,10 @@ describe('AffiMatik V3.0 — Master Commercial Billing, Affiliates & Financial P
       // 3. Replay webhook (idempotency test)
       const settlementReplay = await DurableStore.settleOrder(checkout.orderId, 'FPX-REF-12345');
       expect(settlementReplay.success).toBe(true);
-      expect(settlementReplay.balance).toBe(520); // Must NOT credit twice!
+      expect(settlementReplay.balance).toBe(500); // Must NOT credit twice!
 
       const wallet = await DurableStore.getWallet(workspaceId);
-      expect(wallet.balance).toBe(520);
+      expect(wallet.balance).toBe(500);
     });
   });
 

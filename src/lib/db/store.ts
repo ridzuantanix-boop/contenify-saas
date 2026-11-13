@@ -323,7 +323,7 @@ export class DurableStore {
         };
       }
 
-      // Auto-provision initial wallet with 20 free trial credits atomically (wallet + GRANT ledger entry in single transaction)
+      // Auto-provision an empty wallet. Free-trial grants are disabled; existing wallets remain untouched.
       const rpcRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_wallet_atomic`, {
         method: 'POST',
         headers: {
@@ -333,7 +333,7 @@ export class DurableStore {
         },
         body: JSON.stringify({
           p_workspace_id: workspaceId,
-          p_initial_balance: 20,
+          p_initial_balance: 0,
         }),
       });
 
@@ -362,9 +362,9 @@ export class DurableStore {
     if (!localDb.wallets[workspaceId]) {
       localDb.wallets[workspaceId] = {
         workspaceId,
-        balance: 20,
+        balance: 0,
         reservedBalance: 0,
-        lifetimeGranted: 20,
+        lifetimeGranted: 0,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -373,12 +373,12 @@ export class DurableStore {
       localDb.ledger[grantKey] = {
         id: grantKey,
         workspaceId,
-        amount: 20,
+        amount: 0,
         eventType: 'GRANT',
         referenceType: 'SUBSCRIPTION',
         referenceId: workspaceId,
         idempotencyKey: grantKey,
-        description: 'Pemberian baki permulaan akaun AffiMatik (20 kredit percuma)',
+        description: 'Pembukaan dompet kredit akaun AffiMatik',
         timestamp: new Date().toISOString(),
       };
     }
@@ -478,9 +478,9 @@ export class DurableStore {
       // 3. Balance verification
       const wallet = localDb.wallets[req.workspaceId] || {
         workspaceId: req.workspaceId,
-        balance: 20,
+        balance: 0,
         reservedBalance: 0,
-        lifetimeGranted: 20,
+        lifetimeGranted: 0,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -611,9 +611,9 @@ export class DurableStore {
 
       const wallet = localDb.wallets[workspaceId] || {
         workspaceId,
-        balance: 20,
+        balance: 0,
         reservedBalance: 0,
-        lifetimeGranted: 20,
+        lifetimeGranted: 0,
         lifetimeSpent: 0,
         updatedAt: new Date().toISOString(),
       };
@@ -1626,9 +1626,9 @@ export class DurableStore {
     // Grant credits
     const wallet = localDb.wallets[order.workspaceId] || {
       workspaceId: order.workspaceId,
-      balance: 20,
+      balance: 0,
       reservedBalance: 0,
-      lifetimeGranted: 20,
+      lifetimeGranted: 0,
       lifetimeSpent: 0,
       updatedAt: new Date().toISOString(),
     };
@@ -1985,9 +1985,9 @@ export class DurableStore {
 
     const wallet = localDb.wallets[workspaceId] || {
       workspaceId,
-      balance: 20,
+      balance: 0,
       reservedBalance: 0,
-      lifetimeGranted: 20,
+      lifetimeGranted: 0,
       lifetimeSpent: 0,
       updatedAt: new Date().toISOString(),
     };

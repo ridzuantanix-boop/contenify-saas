@@ -37,7 +37,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     expect(data.user.email).toBe(testEmail);
     expect(data.user.tier).toBe('starter'); // Authoritative starter/free tier
     expect(data.user.role).toBe('owner');
-    expect(data.wallet.balance).toBe(20); // 20 initial credits provisioned
+    expect(data.wallet.balance).toBe(0); // Free Trial is disabled for new accounts.
 
     // Check session cookie
     const cookieHeader = res.headers.get('set-cookie');
@@ -48,15 +48,15 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const wsId = 'ws_smoke_test_provision_01';
     const wallet = await DurableStore.getWallet(wsId);
 
-    expect(wallet.balance).toBe(20);
+    expect(wallet.balance).toBe(0);
     expect(wallet.reservedBalance).toBe(0);
-    expect(wallet.lifetimeGranted).toBe(20);
+    expect(wallet.lifetimeGranted).toBe(0);
 
     // Verify ledger has GRANT record
     const ledger = await DurableStore.getLedgerHistory(wsId);
     expect(ledger.length).toBe(1);
     expect(ledger[0].eventType).toBe('GRANT');
-    expect(ledger[0].amount).toBe(20);
+    expect(ledger[0].amount).toBe(0);
   });
 
   it('3. verifies credit reservation, atomic job admission, and queue persistence', async () => {
@@ -66,6 +66,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
 
     // Provision wallet
     await DurableStore.getWallet(wsId);
+    await DurableStore.adjustCredits(wsId, 20, 'Purchased-credit test fixture', 'qa@affimatik.local');
 
     // Admit job
     const admitRes = await DurableStore.admitJobAtomic({
@@ -100,6 +101,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const clientRequestId = `req_idem_${Date.now()}`;
 
     await DurableStore.getWallet(wsId);
+    await DurableStore.adjustCredits(wsId, 20, 'Purchased-credit test fixture', 'qa@affimatik.local');
 
     // First submission
     const res1 = await DurableStore.admitJobAtomic({
@@ -149,6 +151,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const jobId = '44444444-5555-6666-7777-888888888888';
 
     await DurableStore.getWallet(wsId);
+    await DurableStore.adjustCredits(wsId, 20, 'Purchased-credit test fixture', 'qa@affimatik.local');
     await DurableStore.admitJobAtomic({
       workspaceId: wsId,
       userId: 'usr_settle_04',
@@ -188,6 +191,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const jobId = '55555555-6666-7777-8888-999999999999';
 
     await DurableStore.getWallet(wsId);
+    await DurableStore.adjustCredits(wsId, 20, 'Purchased-credit test fixture', 'qa@affimatik.local');
     // Create job with timestamp > 30 minutes ago
     await DurableStore.saveJob({
       id: jobId,
@@ -260,7 +264,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const regData = await regRes.json();
     expect(regData.success).toBe(true);
     expect(regData.user.email).toBe('commercial.creator@affimatik.io');
-    expect(regData.wallet.balance).toBe(20); // Initial 20 credits provisioned
+    expect(regData.wallet.balance).toBe(0);
 
     // Step 2: Login to acquire valid session cookie
     const loginReq = new NextRequest('http://localhost:3000/api/auth/session', {
@@ -347,8 +351,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const verifyData = await verifyRes.json();
     expect(verifyData.success).toBe(true);
     expect(verifyData.settlement.status).toBe('PAID');
-    // Balance granted once: initial 20 + 100 = 120 credits
-    expect(verifyData.settlement.balance).toBe(520);
+    expect(verifyData.settlement.balance).toBe(500);
 
     // Step 5: Verify double-credit protection (idempotent replay)
     const duplicateAdminVerifyReq = new NextRequest('http://localhost:3000/api/admin/operations', {
@@ -367,7 +370,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
     const duplicateVerifyRes = await adminOpsHandler(duplicateAdminVerifyReq);
     expect(duplicateVerifyRes.status).toBe(200);
     const dupData = await duplicateVerifyRes.json();
-    expect(dupData.settlement.balance).toBe(520); // No duplicate grant
+    expect(dupData.settlement.balance).toBe(500); // No duplicate grant
 
     // Step 6: Generate mock video job using acquired customer session
     const clientRequestId = `req_comm_${Date.now()}`;
@@ -418,10 +421,10 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
 
     // Step 8: Verify final customer wallet after complete lifecycle
     const finalWallet = await DurableStore.getWallet(activeWorkspaceId);
-    // 520 minus 10 settled = 510 remaining available credits
-    expect(finalWallet.balance).toBe(510);
+    // 500 purchased minus 10 settled = 490 remaining credits.
+    expect(finalWallet.balance).toBe(490);
     expect(finalWallet.reservedBalance).toBe(0);
-    expect(finalWallet.lifetimeGranted).toBe(520);
+    expect(finalWallet.lifetimeGranted).toBe(500);
     expect(finalWallet.lifetimeSpent).toBe(10);
   });
 

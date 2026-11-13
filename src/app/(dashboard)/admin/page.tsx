@@ -395,7 +395,7 @@ export default function AdminPage() {
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Pemantauan bajet percubaan 20 kredit untuk akaun baharu, pengaktifan manual pelanggan, dan kawalan penutupan checkout.
+            Pemantauan akaun, kredit, kos provider dan kawalan checkout. Pemberian Free Trial baharu telah ditutup.
           </p>
         </div>
 
@@ -485,18 +485,18 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-              <span>Pendaftaran Baru Percuma</span>
+              <span>Jumlah Pendaftaran</span>
               <Users className="w-4 h-4 text-indigo-500" />
             </div>
             <div className="text-2xl font-bold text-slate-900 mt-2">
               {metrics ? metrics.totalRegistrations : '...'}
             </div>
-            <div className="text-[11px] text-emerald-600 mt-1">Akaun Baharu Layak 20 Kredit</div>
+            <div className="text-[11px] text-slate-500 mt-1">Free Trial baharu ditutup</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-              <span>Kredit Percuma Dikeluarkan</span>
+              <span>Kredit Promosi Sejarah</span>
               <Sparkles className="w-4 h-4 text-amber-500" />
             </div>
             <div className="text-2xl font-bold text-slate-900 mt-2">
@@ -639,7 +639,7 @@ export default function AdminPage() {
                 <span>Senarai Pengguna Berdaftar ({usersTotal})</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Pengguna yang mendaftar akaun dengan nombor WhatsApp dan kelayakan 20 kredit percuma bagi akaun baharu.
+                Pengguna berdaftar dengan nombor WhatsApp. Akaun baharu tidak lagi menerima kredit Free Trial.
               </p>
             </div>
 

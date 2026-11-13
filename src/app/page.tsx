@@ -1,308 +1,119 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
-import {
-  Sparkles,
-  Video,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  Gift,
-  Zap,
-  Play,
-  Heart,
-  HelpCircle,
-  Lock,
-} from 'lucide-react';
-import { AUTHORITATIVE_PLANS, GENERATION_COSTS } from '@/lib/billing/plans';
+import { ArrowRight, Bot, CheckCircle2, Clock3, Download, Layers3, Play, ShieldCheck, Sparkles, Upload, WandSparkles, Zap } from 'lucide-react';
+import { AUTHORITATIVE_PLANS, LAUNCH_PACK, effectiveMyrPerVideo } from '@/lib/billing/plans';
+
+const demos = [
+  { id: 'NX17', title: 'Recommend Secara Spontan', copy: 'Gaya creator yang nampak natural dan terus kepada sebab produk itu relevan.' },
+  { id: 'NX01', title: 'Sembang Kawan Santai', copy: 'Penyampaian Bahasa Melayu Malaysia yang mesra dan tidak kedengaran terlalu menjual.' },
+  { id: 'RH03', title: 'Ambient Product ASMR', copy: 'Visual produk yang bersih untuk kandungan tanpa dialog dan variasi feed.' },
+];
+
+const benefits = [
+  { icon: Upload, title: 'Upload gambar sahaja', copy: 'Tak perlu rakam diri, susun studio atau belajar menulis prompt yang panjang.' },
+  { icon: WandSparkles, title: '20 gaya siap pilih', copy: 'Daripada soft sell dan creator review hingga product handling dan visual ASMR.' },
+  { icon: Bot, title: 'AI bina video lengkap', copy: 'Nexabot mentafsir produk, merancang adegan dan mencipta dialog mengikut gaya pilihan.' },
+  { icon: Download, title: 'Terus dapat MP4', copy: 'Video siap disimpan dalam Video Library dan boleh dimuat turun untuk kegunaan anda.' },
+  { icon: Layers3, title: 'Bulk & Auto Mix', copy: 'Pilih banyak produk dan biarkan AffiMatik mengurus batch melalui cloud queue.' },
+  { icon: Clock3, title: 'Daily Auto Run', copy: 'Jadualkan penghasilan video harian tanpa browser atau komputer perlu sentiasa terbuka.' },
+];
 
 export default function LandingPage() {
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('ref');
-    const campaign = new URLSearchParams(window.location.search).get('campaign');
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('ref');
+    const campaign = params.get('campaign');
     if (code && /^[A-Za-z0-9_-]{4,50}$/.test(code)) {
       fetch(`/api/affiliate/visit?code=${encodeURIComponent(code)}${campaign ? `&campaign=${encodeURIComponent(campaign.slice(0, 64))}` : ''}`, { cache: 'no-store' }).catch(() => {});
     }
   }, []);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
-      {/* Top Navigation */}
-      <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 px-6 sm:px-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
-              A
-            </div>
-            <div>
-              <span className="font-extrabold text-slate-900 tracking-tight text-base sm:text-lg">AffiMatik</span>
-              <span className="text-[10px] text-indigo-600 font-semibold ml-1.5 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 hidden sm:inline-block">
-                by Pawarna
-              </span>
-            </div>
+    <div className="min-h-screen bg-[#f7f7fb] text-slate-950 selection:bg-violet-600 selection:text-white">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-sm font-black text-white shadow-lg shadow-violet-200">A</span>
+            <span className="text-lg font-black tracking-tight">AffiMatik</span>
+            <span className="hidden rounded-full bg-violet-50 px-2 py-1 text-[10px] font-bold text-violet-700 sm:inline">by Pawarna</span>
           </Link>
-        </div>
-
-        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
-          <Link href="#styles" className="hover:text-indigo-600 transition">Gaya Video</Link>
-          <Link href="#how-it-works" className="hover:text-indigo-600 transition">Cara Guna</Link>
-          <Link href="#pricing" className="hover:text-indigo-600 transition">Pelan (Coming Soon)</Link>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition"
-          >
-            Log Masuk
-          </Link>
-          <Link
-            href="/register"
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-          >
-            <Gift className="w-3.5 h-3.5 text-amber-300" />
-            <span>Daftar FREE (20 Kredit)</span>
-          </Link>
+          <nav className="hidden items-center gap-7 text-xs font-bold text-slate-600 md:flex">
+            <Link href="#demo" className="hover:text-violet-700">Lihat Demo</Link>
+            <Link href="#features" className="hover:text-violet-700">Apa Anda Dapat</Link>
+            <Link href="#pricing" className="hover:text-violet-700">Harga</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Link href="/login" className="px-3 py-2 text-xs font-bold text-slate-700">Log Masuk</Link>
+            <Link href="/register" className="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-violet-700">Grab RM19</Link>
+          </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1">
-        <section className="py-16 sm:py-24 px-6 sm:px-10 max-w-5xl mx-auto text-center space-y-6">
-          {/* Trial Highlight Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-50 via-purple-50 to-amber-50 border border-indigo-200 text-indigo-800 text-xs font-bold shadow-xs">
-            <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-            <span>Daftar FREE & Dapat 20 Kredit Percuma</span>
-          </div>
-
-          {/* Main Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-950 leading-[1.15]">
-            Video Affiliate Jadi Mudah Dengan AffiMatik
-          </h1>
-
-          {/* Supporting Text */}
-          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Tak pandai shoot? Tak reti edit? Tak pandai tulis prompt? Upload gambar produk, pilih gaya dan biar AffiMatik bantu jana video.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-            <Link
-              href="/register"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-extrabold transition shadow-md hover:shadow-indigo-500/20 flex items-center justify-center gap-2"
-            >
-              <span>Cuba AffiMatik FREE</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/factory"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 text-sm font-bold transition shadow-xs flex items-center justify-center gap-2"
-            >
-              <Video className="w-4 h-4 text-indigo-600" />
-              <span>Lihat Studio Video Factory</span>
-            </Link>
-          </div>
-
-          {/* Trust Note */}
-          <p className="text-xs text-slate-400 font-medium pt-1">
-            ✨ Tak perlu kad bank. Tak perlu langgan. Cuba dulu.
-          </p>
-        </section>
-
-        {/* Engine Showcase Section */}
-        <section id="styles" className="py-12 bg-white border-y border-slate-200 px-6 sm:px-10">
-          <div className="max-w-5xl mx-auto space-y-8">
-            <div className="text-center space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                AffiMatik Creative V6
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-                20 Gaya Affiliate Malaysia Yang Berbeza
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-                Setiap video dijana mengikut format vertikal 9:16 siap sedia untuk TikTok, Reels, dan Shorts.
-              </p>
+      <main>
+        <section className="relative overflow-hidden px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20">
+          <div className="absolute inset-x-0 top-0 -z-10 h-[540px] bg-[radial-gradient(circle_at_50%_0%,rgba(124,58,237,0.17),transparent_64%)]" />
+          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
+            <div>
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-1.5 text-xs font-extrabold text-violet-700 shadow-sm"><Sparkles className="h-4 w-4" /> Launch Pack: 15 video hanya RM19</div>
+              <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-[-0.04em] sm:text-6xl">Dari gambar produk kepada video affiliate—<span className="bg-gradient-to-r from-violet-700 to-indigo-600 bg-clip-text text-transparent"> tanpa shoot, edit atau pening fikir skrip.</span></h1>
+              <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Upload gambar, pilih gaya dan tekan Jana. AffiMatik mengurus dialog, visual, cloud queue dan MP4 anda—sesuai untuk affiliate yang perlu hasilkan content dengan konsisten.</p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/register" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-violet-600 px-7 text-sm font-black text-white shadow-xl shadow-violet-200 transition hover:-translate-y-0.5 hover:bg-violet-700">Dapatkan 15 Video — RM19 <ArrowRight className="h-4 w-4" /></Link>
+                <Link href="#demo" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-800 shadow-sm"><Play className="h-4 w-4 fill-violet-600 text-violet-600" /> Tengok Hasil Dulu</Link>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-500">
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> 150 kredit</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Sah 180 hari</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Bayaran sekali sahaja</span>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Voice Card */}
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-indigo-600 bg-indigo-100/60 px-2.5 py-0.5 rounded-md">
-                      15 Saat • 10 Kredit
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-medium">Creator · POV · Soft Sell</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mt-3">AffiMatik Voice</h3>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Dialog BM Malaysia yang santai dengan personaliti, hook dan gerakan berbeza bagi setiap gaya. Provider mencipta dialog terus daripada imej produk.
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>2 video Voice dengan 20 kredit percuma</span>
-                  <Link href="/factory?engine=nexabot" className="text-indigo-600 hover:text-indigo-700">Pilih Gaya &rarr;</Link>
-                </div>
-              </div>
-
-              {/* Handling and lifestyle card */}
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-purple-600 bg-purple-100/60 px-2.5 py-0.5 rounded-md">
-                      15 Saat • 10 Kredit
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-medium">Handling · Lifestyle · VO</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mt-3">Product Handling V6</h3>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Enam identiti RH lama kini menggunakan Nexabot dengan gerakan tangan realistik dan suara latar BM ringkas. RunningHub kekal dimatikan.
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>20 gaya rasmi dalam satu katalog</span>
-                  <Link href="/factory" className="text-purple-600 hover:text-purple-700">Pilih Gaya &rarr;</Link>
-                </div>
-              </div>
+            <div className="relative mx-auto w-full max-w-lg">
+              <div className="absolute -inset-5 -z-10 rounded-[36px] bg-gradient-to-br from-violet-200/60 to-indigo-100/40 blur-2xl" />
+              <div className="overflow-hidden rounded-[28px] border border-white bg-slate-950 p-2 shadow-2xl"><video className="aspect-[9/12] w-full rounded-[22px] object-cover" src="/api/style-samples/NX17" poster="/style-posters/NX17.webp" controls playsInline preload="metadata" /></div>
+              <div className="absolute -bottom-5 left-4 right-4 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl backdrop-blur sm:left-8 sm:right-8"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black">Recommend Secara Spontan</p><p className="mt-0.5 text-xs text-slate-500">15 saat · Voice · MP4</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-extrabold text-emerald-700">Demo sebenar</span></div></div>
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section id="how-it-works" className="py-16 px-6 sm:px-10 max-w-5xl mx-auto space-y-10">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-              Hanya 3 Langkah Mudah
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Affiliate jadi automatik tanpa perlu peralatan studio mahal.
-            </p>
-          </div>
+        <section className="border-y border-slate-200 bg-white px-5 py-8 sm:px-8"><div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 text-center sm:grid-cols-4">{[['20','Gaya video'],['15s','Setiap video'],['9:16','Format vertikal'],['Cloud','Terus berjalan']].map(([value,label]) => <div key={label}><p className="text-2xl font-black text-violet-700 sm:text-3xl">{value}</p><p className="mt-1 text-xs font-bold text-slate-500">{label}</p></div>)}</div></section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-extrabold text-sm flex items-center justify-center mx-auto">
-                1
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">Upload Gambar Produk</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Muat naik gambar produk sebagai rujukan identiti. Enjin video akan mentafsir imej dan mengolah adegan mengikut gaya pilihan.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-extrabold text-sm flex items-center justify-center mx-auto">
-                2
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">Pilih Gaya Video</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Teroka 20 identiti Creative V6: creator review, POV, product handling, lifestyle, masalah & pilihan, dan soft sell.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-extrabold text-sm flex items-center justify-center mx-auto">
-                3
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">Jana & Download MP4</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Tekan Jana Video. Enjin awan memproses tugasan secara latar belakang. Siap terus tonton dan muat turun fail MP4 berkualiti tinggi.
-              </p>
-            </div>
+        <section id="demo" className="px-5 py-16 sm:px-8 sm:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-violet-700">Tekan play. Nilai sendiri.</p><h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Bukan template kosong. Ini contoh video AffiMatik.</h2><p className="mt-4 text-sm leading-6 text-slate-600">Hasil AI boleh berbeza mengikut produk dan gaya. Tiga demo ini menunjukkan pilihan penyampaian yang tersedia dalam studio.</p></div>
+            <div className="mt-10 grid gap-6 md:grid-cols-3">{demos.map(demo => <article key={demo.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><video className="aspect-[9/12] w-full bg-slate-950 object-cover" src={`/api/style-samples/${demo.id}`} poster={`/style-posters/${demo.id}.webp`} controls playsInline preload="metadata" /><div className="p-5"><p className="text-[11px] font-black text-violet-700">{demo.id} · 15 SAAT</p><h3 className="mt-1 text-lg font-black">{demo.title}</h3><p className="mt-2 text-xs leading-5 text-slate-600">{demo.copy}</p></div></article>)}</div>
           </div>
         </section>
 
-        {/* Pricing Coming Soon Section */}
-        <section id="pricing" className="py-16 bg-slate-100/60 border-t border-slate-200 px-6 sm:px-10">
-          <div className="max-w-5xl mx-auto space-y-8">
-            {/* Soft Launch Notice */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border-2 border-amber-300 text-slate-800 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-3xl">😂</span>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-amber-950">
-                    Duit korang simpan dulu. Kami belum nak ambil lagi. 😂
-                  </h3>
-                </div>
-                <span className="self-start sm:self-auto text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-200/80 px-3 py-1 rounded-full border border-amber-300">
-                  Pelan Berbayar — Coming Soon
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed max-w-3xl">
-                Kami bagi 20 kredit percuma untuk mencuba video AffiMatik. Pelan berbayar belum dibuka untuk umum.
-              </p>
-              <div className="pt-2 flex flex-wrap items-center gap-4">
-                <Link
-                  href="/register"
-                  className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm inline-flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Cuba FREE — Dapat 20 Kredit</span>
-                </Link>
-                <a
-                  href="mailto:support@affimatik.online?subject=Pertanyaan%20Akses%20Awal%20AffiMatik"
-                  className="text-xs font-semibold text-amber-900 hover:text-amber-950 underline decoration-amber-400 hover:decoration-amber-700 transition"
-                >
-                  Dah tak sabar nak upgrade? Hubungi team AffiMatik untuk akses awal.
-                </a>
-              </div>
-            </div>
+        <section id="features" className="bg-slate-950 px-5 py-16 text-white sm:px-8 sm:py-24">
+          <div className="mx-auto max-w-7xl"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr]">
+            <div><p className="text-xs font-black uppercase tracking-[0.2em] text-violet-300">Satu sistem, bukan satu video sahaja</p><h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Content factory yang terus bekerja walaupun browser ditutup.</h2><p className="mt-5 text-sm leading-7 text-slate-300">Buat satu video secara pantas, atau susun banyak produk dalam folder dan jalankan batch melalui cloud. Kerja kekal tersimpan dan video siap masuk ke library anda.</p><Link href="/register" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950">Mula dengan Launch Pack <ArrowRight className="h-4 w-4" /></Link></div>
+            <div className="grid gap-4 sm:grid-cols-2">{benefits.map(({ icon: Icon, title, copy }) => <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-5"><Icon className="h-5 w-5 text-violet-300" /><h3 className="mt-4 text-sm font-black">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-400">{copy}</p></div>)}</div>
+          </div></div>
+        </section>
 
-            {/* Plans Grid with Coming Soon Buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {AUTHORITATIVE_PLANS.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between"
-                >
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
-                    <div className="mt-3 flex items-baseline">
-                      <span className="text-3xl font-extrabold text-slate-900">{plan.priceFormatted}</span>
-                      <span className="text-xs text-slate-500 ml-1">{plan.billingPeriod}</span>
-                    </div>
-                    <p className="text-xs font-semibold text-indigo-600 mt-2">
-                      {plan.monthlyCredits} Kredit Sebulan
-                    </p>
+        <section className="px-5 py-16 sm:px-8 sm:py-24"><div className="mx-auto max-w-6xl"><div className="text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-violet-700">Cara paling ringkas</p><h2 className="mt-3 text-3xl font-black">Upload. Pilih. Jana.</h2></div><div className="mt-10 grid gap-5 md:grid-cols-3">{[
+          ['01','Masukkan produk','Upload gambar produk atau susun banyak produk dalam Product Folder.'],
+          ['02','Pilih cara content','Gunakan Quick Create, avatar sendiri, preset, Quick Bulk atau Auto Mix.'],
+          ['03','Biarkan cloud bekerja','Semak kredit, tekan Jana dan kembali bila MP4 sudah tersedia dalam Video Library.'],
+        ].map(([number,title,copy]) => <div key={number} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><span className="text-3xl font-black text-violet-200">{number}</span><h3 className="mt-5 text-lg font-black">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-600">{copy}</p></div>)}</div></div></section>
 
-                    <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-slate-100 space-y-2 text-center">
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
-                    >
-                      Coming Soon — Simpan Duit Dulu 😆
-                    </button>
-                    <p className="text-[10px] text-slate-500 leading-tight">
-                      Langganan belum dibuka untuk umum. Sementara tu, korang boleh cuba AffiMatik secara percuma.
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <section id="pricing" className="border-y border-violet-200 bg-gradient-to-b from-violet-50 to-white px-5 py-16 sm:px-8 sm:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-violet-700">Mula kecil. Naik taraf bila perlu.</p><h2 className="mt-3 text-3xl font-black sm:text-4xl">Grab 15 video pertama pada RM1.27/video</h2><p className="mt-4 text-sm text-slate-600">Launch Pack tidak mengaktifkan langganan bulanan. Kredit sah selama 180 hari.</p></div>
+            <div className="mx-auto mt-10 max-w-3xl rounded-[30px] border-2 border-violet-500 bg-white p-7 shadow-xl shadow-violet-100 sm:p-9"><div className="flex flex-col justify-between gap-7 sm:flex-row sm:items-center">
+              <div><span className="rounded-full bg-violet-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">Pilihan mula</span><h3 className="mt-4 text-2xl font-black">{LAUNCH_PACK.name}</h3><p className="mt-2 text-sm text-slate-600">{LAUNCH_PACK.credits} kredit · 15 video · sah {LAUNCH_PACK.validityDays} hari</p><ul className="mt-5 space-y-2 text-xs font-semibold text-slate-700"><li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Semua 20 gaya video</li><li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Personalization dan Cloud Auto Factory</li><li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Bayaran sekali sahaja</li></ul></div>
+              <div className="sm:text-right"><p className="text-5xl font-black">{LAUNCH_PACK.priceFormatted}</p><p className="mt-1 text-xs font-bold text-emerald-700">RM{LAUNCH_PACK.effectiveMyrPerVideo.toFixed(2)} / video</p><Link href="/register" className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 text-sm font-black text-white sm:w-auto">Grab Launch Pack <Zap className="h-4 w-4" /></Link></div>
+            </div></div>
+            <div className="mt-8 grid gap-5 md:grid-cols-3">{AUTHORITATIVE_PLANS.map(plan => <article key={plan.id} className={`rounded-3xl border bg-white p-6 ${plan.isPopular ? 'border-violet-500 shadow-lg shadow-violet-100' : 'border-slate-200'}`}>{plan.isPopular && <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-black text-violet-700">PALING POPULAR</span>}<h3 className="mt-3 text-lg font-black">{plan.name}</h3><p className="mt-3 text-3xl font-black">{plan.priceFormatted}<span className="text-xs font-semibold text-slate-500"> {plan.billingPeriod}</span></p><p className="mt-2 text-xs font-bold text-violet-700">{plan.monthlyCredits.toLocaleString()} kredit · hingga {plan.voiceVideoAllowance} video</p><p className="mt-1 text-[11px] text-emerald-700">± RM{effectiveMyrPerVideo(plan).toFixed(2)} / video</p><Link href="/register" className="mt-6 flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-black text-slate-800">Daftar & Pilih Pelan</Link></article>)}</div>
           </div>
         </section>
+
+        <section className="px-5 py-16 sm:px-8 sm:py-24"><div className="mx-auto max-w-4xl rounded-[32px] bg-gradient-to-br from-violet-700 to-indigo-700 px-6 py-12 text-center text-white shadow-2xl shadow-violet-200 sm:px-12"><ShieldCheck className="mx-auto h-9 w-9 text-violet-200" /><h2 className="mt-4 text-3xl font-black">Produk dah ada. Sekarang masa hasilkan content.</h2><p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-violet-100">Daftar akaun, dapatkan Launch Pack dan mula bina video affiliate pertama anda dalam AffiMatik.</p><Link href="/register" className="mt-7 inline-flex min-h-13 items-center gap-2 rounded-2xl bg-white px-7 text-sm font-black text-violet-700">Grab 15 Video — RM19 <ArrowRight className="h-4 w-4" /></Link></div></section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-8 px-6 sm:px-10 text-center text-xs text-slate-500 space-y-2">
-        <p className="font-semibold text-slate-700">
-          AffiMatik by Pawarna Studio &copy; 2026. Hak Cipta Terpelihara.
-        </p>
-        <p className="text-[11px] text-slate-400">
-          Platform penjanaan video AI berorientasikan affiliate pasaran Malaysia. Gaya Voice menggunakan dialog Bahasa Melayu Malaysia; hasil tertakluk kepada semakan kualiti pembekal.
-        </p>
-      </footer>
+      <footer className="border-t border-slate-200 bg-white px-5 py-9 text-center text-xs text-slate-500"><p className="font-bold text-slate-700">AffiMatik by Pawarna Studio © 2026</p><p className="mx-auto mt-2 max-w-2xl text-[11px] leading-5">Hasil video AI boleh berbeza mengikut imej, arahan dan keadaan provider. Semak kandungan sebelum diterbitkan. RunningHub kekal tidak aktif.</p></footer>
     </div>
   );
 }

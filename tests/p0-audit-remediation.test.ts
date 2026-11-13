@@ -230,7 +230,7 @@ describe('P0 Production Reliability & Security Audit Remediation Suite', () => {
       expect(user).toBeDefined();
       expect(user?.emailMasked).toBe('s***h@gmail.com');
       expect(user?.whatsapp).toBe('+60123456789');
-      expect(user?.balance).toBe(20);
+      expect(user?.balance).toBe(0);
       expect(user?.provisionStatus).toBe('provisioned');
     });
   });

@@ -60,6 +60,7 @@ describe('Scheduled Reconciliation Worker & Job Recovery Suite', () => {
     // 1. Setup a test workspace and wallet
     const wsId = 'rec-ws-001';
     await DurableStore.getWallet(wsId);
+    await DurableStore.adjustCredits(wsId, 20, 'Purchased-credit test fixture', 'qa@affimatik.local');
 
     // 2. Setup an expired orphaned job without provider task id
     const expiredJobId = 'job_expired_orphan_99';

@@ -88,7 +88,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
   },
 ];
 
-export const FREE_TRIAL = { id: 'free_trial', name: 'Free Trial', priceMyr: 0, credits: 20, videos: 2, oneTime: true } as const;
+export const FREE_TRIAL = { id: 'free_trial', name: 'Free Trial (Ditutup)', priceMyr: 0, credits: 0, videos: 0, oneTime: true, enabled: false } as const;
 
 export const LAUNCH_PACK: LaunchPackage = {
   id: 'launch_pack',
