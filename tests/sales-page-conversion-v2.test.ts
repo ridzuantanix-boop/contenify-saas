@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { NextRequest } from 'next/server';
 import { CLIENT_CONVERSION_EVENTS, CONVERSION_EVENTS } from '../src/lib/analytics/conversion';
+import { POST as recordConversion } from '../src/app/api/analytics/conversion/route';
 
 const root = process.cwd();
 const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -71,6 +73,41 @@ describe('AffiMatik Sales Page Conversion V2', () => {
     const route = read('src/app/api/analytics/conversion/route.ts');
     expect(route).not.toMatch(/password|whatsapp|receipt_object|email_address/i);
     expect(read('supabase/migrations/00028_conversion_events.sql')).toContain('UNIQUE(event_name, dedupe_key)');
+  });
+
+  it('keeps analytics fail-open and rejects client-forged financial events', async () => {
+    const originalUrl = process.env.SUPABASE_URL;
+    const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      const failOpen = await recordConversion(new NextRequest('https://affimatik.online/api/analytics/conversion', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', referer: 'https://affimatik.online/' },
+        body: JSON.stringify({ eventName: 'landing_view', dedupeKey: 'release-check' }),
+      }));
+      expect(failOpen.status).toBe(202);
+      expect(await failOpen.json()).toEqual({ recorded: false });
+
+      const forgedFinancial = await recordConversion(new NextRequest('https://affimatik.online/api/analytics/conversion', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ eventName: 'payment_bank_verified', dedupeKey: 'forged' }),
+      }));
+      expect(forgedFinancial.status).toBe(400);
+    } finally {
+      if (originalUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = originalUrl;
+      if (originalKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey;
+    }
+  });
+
+  it('locks analytics behind service-role access and two independent idempotency keys', () => {
+    const migration = read('supabase/migrations/00028_conversion_events.sql');
+    expect(migration).toContain('ALTER TABLE public.conversion_events ENABLE ROW LEVEL SECURITY');
+    expect(migration).toContain('REVOKE ALL ON TABLE public.conversion_events FROM anon, authenticated');
+    expect(migration).toContain('GRANT SELECT, INSERT ON TABLE public.conversion_events TO service_role');
+    expect(migration).toContain('event_id UUID NOT NULL UNIQUE');
+    expect(migration).toContain('UNIQUE(event_name, dedupe_key)');
   });
 
   it('removes stale V6 SEO metadata while preserving the admin manifest', () => {
