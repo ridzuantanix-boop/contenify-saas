@@ -3,17 +3,17 @@
 > **STATUS: DRAF UNTUK SEMAKAN PEMILIK DAN PENASIHAT UNDANG-UNDANG — BELUM BERKUAT KUASA DAN JANGAN DITERBITKAN.** Medan `[SEMAKAN PEMILIK]` mesti dilengkapkan. Jadual retensi dan mekanisme pemindahan rentas sempadan mesti diluluskan serta dilaksanakan sebelum notis ini dijadikan notis awam.
 
 Tarikh audit aliran data: **14 November 2026**<br>
-Tarikh kuat kuasa dicadangkan: **[SEMAKAN PEMILIK: TARIKH]**
+Tarikh kuat kuasa dicadangkan: **14 November 2026** (jika diterbitkan kemudian, gunakan tarikh penerbitan sebenar dan jangan backdate)
 
 ## Bahasa Melayu
 
 ### 1. Siapa yang mengendalikan AffiMatik
 
-AffiMatik dikendalikan secara individu oleh **[SEMAKAN PEMILIK: NAMA PENUH SAH]** ("pengendali", "kami"). **Pawarna Studio** ialah nama jenama sahaja dan bukan syarikat atau enterprise berdaftar. Pada tarikh draf ini, tiada nombor pendaftaran SSM untuk perniagaan tersebut.
+AffiMatik dikendalikan secara individu oleh **Muhammad Ridzuan bin Ramli** ("pengendali", "kami"). **Pawarna Studio** ialah nama jenama sahaja dan bukan syarikat atau enterprise berdaftar. Pada tarikh draf ini, tiada nombor pendaftaran SSM untuk perniagaan tersebut.
 
-Alamat perniagaan: **[SEMAKAN PEMILIK: ALAMAT PERNIAGAAN SEBENAR]**<br>
+Alamat perniagaan: **TTGU, Tasek Gelugor, Pulau Pinang, Malaysia**<br>
 E-mel sokongan dan privasi: **support@affimatik.online**<br>
-Telefon sokongan: **[SEMAKAN PEMILIK: NO. TELEFON]**
+Telefon sokongan: **019-521 6867**
 
 Jangan masukkan nombor MyKad atau nombor dokumen identiti dalam notis ini.
 
@@ -95,11 +95,11 @@ AffiMatik menggunakan cookie/storan yang perlu bagi sesi, keselamatan, niat pemb
 
 ### 9. Hak dan pilihan anda
 
-Tertakluk kepada undang-undang, anda boleh meminta akses atau pembetulan data peribadi, menarik balik persetujuan yang berkaitan, menghentikan direct marketing, atau meminta penjelasan/pemadaman yang sesuai melalui **support@affimatik.online** atau **[SEMAKAN PEMILIK: NO. TELEFON]**. Kami mungkin perlu mengesahkan identiti tanpa meminta kata laluan. Rekod transaksi, keselamatan dan audit tertentu mungkin perlu dikekalkan.
+Tertakluk kepada undang-undang, anda boleh meminta akses atau pembetulan data peribadi, menarik balik persetujuan yang berkaitan, menghentikan direct marketing, atau meminta penjelasan/pemadaman yang sesuai melalui **support@affimatik.online** atau **019-521 6867**. Kami mungkin perlu mengesahkan identiti tanpa meminta kata laluan. Rekod transaksi, keselamatan dan audit tertentu mungkin perlu dikekalkan.
 
 ### 10. Kanak-kanak, insiden dan perubahan
 
-**[SEMAKAN PEMILIK: tetapkan umur minimum/kelayakan akaun.]** AffiMatik tidak sepatutnya menerima data kanak-kanak dengan sengaja tanpa asas dan perlindungan yang sesuai.
+Umur minimum akaun ialah **12 tahun**. Pengguna berumur 12 hingga 17 tahun hanya boleh menggunakan AffiMatik dengan pengetahuan dan kebenaran ibu bapa atau penjaga yang sah; ibu bapa/penjaga mesti menyemak Terma dan membenarkan sebarang pembelian. AffiMatik boleh meminta pengesahan penjaga atau mengehadkan akaun jika kebenaran tidak dapat disahkan. Pengguna bawah 12 tahun tidak dibenarkan membuka akaun.
 
 Insiden akan dinilai dan diurus menurut undang-undang serta garis panduan pemberitahuan pelanggaran data yang terpakai. Perubahan material akan dipaparkan bersama tarikh kuat kuasa baharu.
 
@@ -109,11 +109,11 @@ Insiden akan dinilai dan diurus menurut undang-undang serta garis panduan pember
 
 ### 1. Who operates AffiMatik
 
-AffiMatik is operated by **[OWNER REVIEW: FULL LEGAL NAME]** as an individual (the "operator", "we", "us"). **Pawarna Studio** is a brand name only and is not a registered company or enterprise. As at the date of this draft, the business has no SSM registration number.
+AffiMatik is operated by **Muhammad Ridzuan bin Ramli** as an individual (the "operator", "we", "us"). **Pawarna Studio** is a brand name only and is not a registered company or enterprise. As at the date of this draft, the business has no SSM registration number.
 
-Business address: **[OWNER REVIEW: ACTUAL BUSINESS ADDRESS]**<br>
+Business address: **TTGU, Tasek Gelugor, Penang, Malaysia**<br>
 Support and privacy email: **support@affimatik.online**<br>
-Support telephone: **[OWNER REVIEW: TELEPHONE NUMBER]**
+Support telephone: **019-521 6867**
 
 No national identity-card or identity-document number should be published in this notice.
 
@@ -169,11 +169,11 @@ Necessary cookies/storage support sessions, security, purchase intent, referrals
 
 ### 9. Your rights and choices
 
-Subject to applicable law, you may request access or correction, withdraw relevant consent, stop direct marketing, or request an appropriate explanation/deletion by contacting **support@affimatik.online** or **[OWNER REVIEW: TELEPHONE]**. We may verify identity without asking for a password. Certain transaction, security and audit records may need to be retained.
+Subject to applicable law, you may request access or correction, withdraw relevant consent, stop direct marketing, or request an appropriate explanation/deletion by contacting **support@affimatik.online** or **019-521 6867**. We may verify identity without asking for a password. Certain transaction, security and audit records may need to be retained.
 
 ### 10. Children, incidents and updates
 
-**[OWNER REVIEW: set the minimum account age/eligibility.]** AffiMatik should not knowingly collect children's data without an appropriate basis and safeguards.
+The minimum account age is **12**. Users aged 12 to 17 may use AffiMatik only with the knowledge and permission of a parent or legal guardian, who must review the Terms and authorize purchases. AffiMatik may request guardian confirmation or restrict an account if permission cannot be verified. Users under 12 may not open an account.
 
 Incidents will be assessed and handled under applicable law and data-breach-notification guidance. Material changes will be published with a new effective date.
 

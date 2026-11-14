@@ -4,18 +4,18 @@
 
 ## A. Owner identity and seller-information checklist
 
-- [ ] Full legal name: **[OWNER TO COMPLETE]**
-- [ ] Actual principal business address suitable for lawful customer disclosure: **[OWNER TO COMPLETE]**
-- [ ] Support telephone reachable by customers: **[OWNER TO COMPLETE]**
+- [x] Full legal name: **Muhammad Ridzuan bin Ramli**
+- [x] Owner-supplied business address: **TTGU, Tasek Gelugor, Pulau Pinang, Malaysia**
+- [x] Support telephone: **019-521 6867**
 - [x] Support email: `support@affimatik.online`
 - [x] Brand: `Pawarna Studio / AffiMatik`
 - [x] Current status: individual operator; no registered SSM entity or registration number
-- [ ] Principal operating location/state: **[OWNER TO COMPLETE: Peninsular Malaysia / Labuan / Sabah / Sarawak]**
+- [x] Principal operating state: **Pulau Pinang, Peninsular Malaysia**
 - [ ] Business commencement date: **[OWNER TO COMPLETE]**
-- [ ] Legal-documents effective date: **[OWNER TO COMPLETE]**
-- [ ] Minimum customer age/account eligibility: **[OWNER TO DECIDE]**
-- [ ] Approve or amend the proposed cancellation/refund policy
-- [ ] Decide whether the public disclosure should say “individual operator” or display only the legal name plus brand, subject to legal advice
+- [x] Requested effective date: **immediately**; use **14 November 2026** only if published on that date, otherwise use the actual publication date
+- [x] Minimum account age: **12**; ages 12–17 require parent/legal-guardian permission and purchase authorization
+- [x] Refund request window approved: **7 calendar days** for a verified payment where credits remain unused and no provider cost occurred
+- [x] Public disclosure model selected: display the legal name as individual operator together with the Pawarna Studio/AffiMatik brand, without implying a registered entity
 
 Do not publish a MyKad number, passport number, personal banking credential or identity-document image.
 
@@ -33,15 +33,15 @@ Sources:
 - Registration of Businesses Act 1956, section 5: https://www.ssm.com.my/acts/fscommand/a0197s0005.htm
 - SSM confirmation that the Act is not applicable to Sabah/Sarawak: https://annualreport.ssm.com.my/AR2024/index.html
 
-**Release blocker:** principal operating state and the relevant registration/licensing next action remain unverified.
+**Registration next action:** Pulau Pinang falls within Peninsular Malaysia. The owner should register the sole proprietorship/trade name through SSM EzBiz promptly and obtain advice on any local-authority licence that applies. Until registration is completed, public materials must continue to say that Pawarna Studio is an unregistered brand and must not display a fabricated registration number.
 
 ## C. Proposed seller disclosure for sales page and checkout
 
 > **Penyedia perkhidmatan**<br>
-> AffiMatik dikendalikan oleh **[FULL LEGAL NAME]** secara individu di bawah jenama **Pawarna Studio**. Pawarna Studio bukan syarikat atau enterprise berdaftar pada tarikh ini dan tiada nombor pendaftaran SSM untuk dipaparkan.<br>
-> Alamat perniagaan: **[ACTUAL BUSINESS ADDRESS]**<br>
+> AffiMatik dikendalikan oleh **Muhammad Ridzuan bin Ramli** secara individu di bawah jenama **Pawarna Studio**. Pawarna Studio bukan syarikat atau enterprise berdaftar pada tarikh ini dan tiada nombor pendaftaran SSM untuk dipaparkan.<br>
+> Alamat perniagaan: **TTGU, Tasek Gelugor, Pulau Pinang, Malaysia**<br>
 > E-mel: **support@affimatik.online**<br>
-> Telefon: **[SUPPORT TELEPHONE]**<br>
+> Telefon: **019-521 6867**<br>
 > Perkhidmatan: platform cloud untuk menghasilkan video affiliate menggunakan provider AI.<br>
 > Launch Pack: **RM19, 150 kredit, sehingga 15 generation pada kadar semasa, sah 180 hari, bayaran sekali dan tiada pembaharuan automatik.**<br>
 > Bayaran: QR manual kepada penerima yang dipaparkan semasa checkout. Bukti pembayaran yang dimuat naik belum bermaksud bayaran telah disahkan oleh bank.<br>
@@ -50,21 +50,21 @@ Sources:
 
 Do not publish this block until the name, address, telephone and effective legal documents are complete.
 
-## D. Proposed cancellation/refund policy
+## D. Owner-selected cancellation/refund policy pending legal review
 
 The proposal is incorporated in section 8 of `TERMS_OF_SERVICE_DRAFT_MS.md`. Owner decisions still required:
 
-1. Approve/change the proposed 7-calendar-day request window for a verified payment where no credits were used and no provider cost occurred.
-2. Approve a transparent pro-rata method for unused credits after partial use.
-3. Decide how confirmed duplicate/overpayments are returned and whether only actual irreversible transfer fees may be deducted.
-4. Assign who reviews requests and the response/escalation workflow; do not promise support hours until resourced.
-5. Confirm how account closure interacts with unused credits, pending jobs, provisional payment holds and mandatory records.
+1. **Approved:** seven-calendar-day request window for a verified payment where no credits were used and no provider cost occurred.
+2. **Selected:** after partial use, any approved refund for unused credits is calculated pro-rata using the original package unit value.
+3. **Selected:** confirmed duplicate/overpayments are returned or reallocated with customer agreement. No invented administration fee; only an actual irreversible transaction cost may be considered if lawful and disclosed.
+4. Owner will initially review requests through `support@affimatik.online`; no support-hours promise is made.
+5. Account closure, pending jobs and payment holds remain subject to an operational runbook and mandatory record retention.
 
 Mandatory consumer rights remain unaffected regardless of the selected commercial policy.
 
 ## E. Proposed data-retention schedule
 
-> **NOT IMPLEMENTED.** The current application has no general purge scheduler. These periods are proposed starting points for legal/security review and must not be promised publicly until deletion/anonymisation jobs, backup rotation and exception holds are implemented and tested.
+> **OWNER-SELECTED POLICY, NOT YET TECHNICALLY IMPLEMENTED.** These periods are now the intended retention policy. They must not be promised publicly until deletion/anonymisation jobs, backup rotation and exception holds are implemented and tested.
 
 | Data category | Current technical state | Proposed normal retention | Exceptions / required implementation |
 | --- | --- | --- | --- |
@@ -98,20 +98,18 @@ Legal holds, charge/payment disputes, fraud/security investigations and statutor
 - [ ] Obtain Nexabot privacy terms/DPA, processor identity, processing/storage countries, subprocessors, retention/deletion terms and security contact. **Publication blocker.**
 - [ ] Confirm whether Supabase Auth SMTP currently uses Resend or another provider.
 - [ ] If Resend is used, confirm sender domain, DPA, subprocessors, retention and processing locations.
-- [ ] Document the applicable section 129 condition and transfer assessment for every overseas transfer.
+- [ ] Document the applicable section 129 condition and transfer assessment for every overseas transfer. **Proposed basis for legal review:** transfers to Supabase, Cloudflare and Nexabot that are objectively required to operate the account, store customer content and fulfil a user-requested generation may rely on necessity for performance of the customer contract; optional marketing/email processing and any processing beyond what is necessary need a separately verified condition. Do not treat this proposal as a completed assessment or blanket consent.
 
 ## G. Exact legal-release blockers
 
-1. Full legal name not supplied for publication.
-2. Actual business address not supplied.
-3. Support telephone not supplied.
-4. Principal operating state and applicable registration/licensing action not confirmed.
-5. Effective date and minimum age/account eligibility not decided.
-6. Refund/cancellation policy not approved.
-7. Retention schedule is not approved or technically implemented.
-8. Nexabot processor identity, locations, subprocessors, safeguards and retention remain unverified.
-9. Active email provider and its processing details remain unverified.
-10. Cross-border transfer assessment/condition under section 129 has not been documented.
-11. Liability wording requires Malaysian legal review.
+1. The address supplied as “TTGU, Tasek Gelugor” may not be a complete postal/business address; confirm unit/lot, street/locality and postcode before publication.
+2. Business commencement date is still needed for the SSM registration record and compliance assessment.
+3. SSM sole-proprietorship/trade-name registration has not been completed; no registration number may be displayed.
+4. The selected retention schedule is not yet technically implemented or covered by a deletion/backup-rotation runbook.
+5. Nexabot processor identity, locations, subprocessors, safeguards and retention remain unverified.
+6. Active Supabase Auth email/SMTP provider and its processing details remain unverified.
+7. Cross-border transfer assessment/condition under section 129 has not been documented.
+8. The app does not currently collect age or guardian attestation; the selected 12–17 policy is not technically enforced.
+9. Liability wording and the under-18 account/payment flow require Malaysian legal review.
 
 Until these items are resolved, keep the drafts internal and do not deploy legal links or Sales Page V2 on the assumption that the disclosures are complete.

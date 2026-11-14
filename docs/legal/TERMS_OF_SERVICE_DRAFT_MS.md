@@ -2,16 +2,16 @@
 
 > **STATUS: DRAF UNTUK SEMAKAN PEMILIK DAN PENASIHAT UNDANG-UNDANG — BELUM BERKUAT KUASA DAN JANGAN DITERBITKAN.** Terma ini tidak menjamin refund, hasil kreatif, jualan atau ketersediaan tanpa gangguan.
 
-Tarikh kuat kuasa: **[SEMAKAN PEMILIK: TARIKH]**<br>
-Penyedia individu: **[SEMAKAN PEMILIK: NAMA PENUH SAH]**<br>
+Tarikh kuat kuasa dicadangkan: **14 November 2026** (gunakan tarikh penerbitan sebenar jika diterbitkan kemudian)<br>
+Penyedia individu: **Muhammad Ridzuan bin Ramli**<br>
 Jenama: **Pawarna Studio / AffiMatik** — nama jenama sahaja, bukan syarikat atau enterprise berdaftar<br>
 Status pendaftaran: **Tiada nombor pendaftaran SSM pada tarikh draf ini**<br>
-Alamat perniagaan: **[SEMAKAN PEMILIK: ALAMAT SEBENAR]**<br>
-Sokongan: **support@affimatik.online** / **[SEMAKAN PEMILIK: NO. TELEFON]**
+Alamat perniagaan: **TTGU, Tasek Gelugor, Pulau Pinang, Malaysia**<br>
+Sokongan: **support@affimatik.online** / **019-521 6867**
 
 ## 1. Persetujuan dan kelayakan
 
-Dengan membuka akaun atau menggunakan AffiMatik, anda bersetuju dengan Terma ini dan Notis Privasi yang berkuat kuasa. Anda mesti mempunyai keupayaan sah untuk membuat kontrak serta hak/kebenaran bagi kandungan yang dimuat naik. **[SEMAKAN PEMILIK: tetapkan umur minimum dan sama ada akaun hanya untuk aktiviti perniagaan.]**
+Dengan membuka akaun atau menggunakan AffiMatik, anda bersetuju dengan Terma ini dan Notis Privasi yang berkuat kuasa. Umur minimum akaun ialah **12 tahun**. Pengguna berumur 12 hingga 17 tahun mesti mendapat kebenaran ibu bapa atau penjaga yang sah, dan penjaga tersebut mesti menyemak Terma serta membenarkan sebarang pembelian. Pengguna juga mesti mempunyai hak/kebenaran bagi kandungan yang dimuat naik. Oleh sebab keupayaan kontrak orang bawah umur adalah terhad di bawah undang-undang Malaysia, AffiMatik boleh meminta pengesahan penjaga atau mengehadkan pembelian/akaun jika kebenaran tidak dapat disahkan.
 
 ## 2. Akaun dan keselamatan
 
@@ -61,15 +61,15 @@ Mengikut polisi checkout semasa:
 
 Komisen affiliate hanya boleh menjadi layak selepas pembayaran pertama yang berkaitan benar-benar disahkan dan tertakluk kepada polisi affiliate.
 
-## 8. Pembetulan pesanan, pembatalan dan refund — cadangan untuk kelulusan
+## 8. Pembetulan pesanan, pembatalan dan refund — polisi dipilih untuk semakan undang-undang
 
-> **BELUM BERKUAT KUASA.** Polisi berikut ialah cadangan yang adil untuk semakan owner/penasihat. Owner mesti memilih dan meluluskan versi akhir sebelum diterbitkan.
+> **BELUM BERKUAT KUASA.** Owner telah memilih polisi komersial berikut. Ia masih memerlukan semakan undang-undang dan hanya berkuat kuasa apabila Terma akhir diterbitkan.
 
 - **Sebelum bayaran atau bukti dihantar:** pelanggan boleh meninggalkan/membatalkan pesanan yang belum dibayar tanpa caj AffiMatik.
 - **Bukti dihantar tetapi wang belum dipindahkan:** pelanggan hendaklah memaklumkan sokongan supaya pesanan provisional boleh ditutup. Kredit provisional yang belum disahkan boleh dibekukan/dilaraskan melalui proses audit tanpa memadam ledger.
 - **Bayaran berganda, jumlah salah atau penerima salah:** semakan dibuat terhadap rekod bank sebenar dan rujukan pesanan. Bayaran lebihan/berganda yang disahkan patut dipulangkan atau diperuntukkan semula dengan persetujuan pelanggan.
-- **Bayaran disahkan tetapi kredit belum digunakan dan tiada kos provider berlaku:** cadangan ialah membenarkan permintaan pembatalan dalam **7 hari kalendar** dari pengesahan, tertakluk kepada semakan identiti, transaksi dan hak pengguna. **[SEMAKAN PEMILIK: lulus/tukar tempoh 7 hari.]**
-- **Sebahagian kredit telah digunakan:** tiada refund automatik bagi kredit yang sudah digunakan atau kos provider yang sudah berlaku. Owner patut menilai refund baki yang belum digunakan secara adil dan telus, tanpa menafikan hak mandatori pengguna. **[SEMAKAN UNDANG-UNDANG: kaedah pro-rata dan apa-apa fi sebenar.]**
+- **Bayaran disahkan tetapi kredit belum digunakan dan tiada kos provider berlaku:** pelanggan boleh meminta pembatalan dan refund penuh dalam **7 hari kalendar** dari pengesahan, tertakluk kepada semakan identiti, transaksi dan hak pengguna.
+- **Sebahagian kredit telah digunakan:** tiada refund automatik bagi kredit yang sudah digunakan atau kos provider yang sudah berlaku. Jika refund diluluskan, bahagian kredit belum digunakan dikira secara pro-rata berdasarkan nilai seunit pakej asal. Tiada fi pentadbiran rekaan boleh ditolak; hanya kos transaksi yang benar-benar tidak boleh dipulangkan boleh dipertimbangkan jika sah dan dimaklumkan dengan jelas.
 - **Kegagalan teknikal generation:** reservation kredit dilepaskan/dipulangkan mengikut mekanisme sistem. Ini ialah pemulihan kredit, bukan refund tunai automatik. Jika perkhidmatan gagal secara berterusan dan kredit berbayar tidak boleh digunakan, pelanggan boleh meminta penyelesaian atau refund yang munasabah.
 - **Ketidakpuasan kreatif semata-mata:** variasi atau kecacatan kreatif biasa output AI tidak menjamin refund, tetapi aduan salah caj, fail tidak boleh diakses atau kegagalan teknikal akan disiasat.
 - **Cara memohon:** e-mel **support@affimatik.online** dengan rujukan pesanan, sebab dan bukti yang relevan; jangan hantar kata laluan, PIN atau TAC. Keputusan dan alasan hendaklah direkodkan serta dimaklumkan.
@@ -104,7 +104,7 @@ Setakat yang dibenarkan undang-undang, pengguna bertanggungjawab terhadap keputu
 
 ## 14. Undang-undang, aduan dan perubahan
 
-Terma ini ditadbir undang-undang Malaysia. Pertanyaan atau aduan boleh dihantar kepada **support@affimatik.online** atau **[SEMAKAN PEMILIK: NO. TELEFON]**. Perubahan material akan dipaparkan dengan tarikh kuat kuasa baharu. Perubahan tidak boleh digunakan secara retrospektif untuk menghapuskan hak yang telah terakru.
+Terma ini ditadbir undang-undang Malaysia. Pertanyaan atau aduan boleh dihantar kepada **support@affimatik.online** atau **019-521 6867**. Perubahan material akan dipaparkan dengan tarikh kuat kuasa baharu. Perubahan tidak boleh digunakan secara retrospektif untuk menghapuskan hak yang telah terakru.
 
 ## Rujukan semakan
 
