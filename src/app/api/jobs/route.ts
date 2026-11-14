@@ -246,18 +246,14 @@ export async function POST(req: NextRequest) {
     const legacyFacts = Array.isArray(productFacts)
       ? productFacts.filter((fact): fact is string => typeof fact === 'string' && fact.trim().length > 0).map((fact) => fact.trim())
       : [];
-    const userFacts = [personalization.productFact, ...legacyFacts].filter(Boolean).slice(0, 1);
+    const userFacts = [personalization.productFact, ...legacyFacts].filter(Boolean).slice(0, 10);
     const productProfile: ProductProfile = {
       name: typeof productName === 'string' && productName.trim() ? productName.trim() : 'the uploaded product image',
       category: typeof productCategory === 'string' && productCategory.trim() ? productCategory.trim() : personalization.niche !== 'auto' ? personalization.niche : 'the product shown in the reference image',
       packagingFormat: 'general',
       spokenShortName: 'produk ini',
-      coreFunction: 'the actual purpose supported by the uploaded image and optional user notes only',
-      usageContext: 'a cautious, ordinary context inferred from the uploaded image',
-      buyerProblem: 'a relevant buyer problem grounded in the product image; if unclear, use cautious wording',
-      allowedQaQuestion: 'what this product is actually for, only when supported by visible evidence',
       confirmedFeatures: userFacts,
-      verifiedBenefits: userFacts,
+      verifiedBenefits: [],
       verifiedFacts: userFacts,
       unknownFields: ['ingredients', 'certifications', 'medical outcomes', 'personal-use results', 'prices', 'testimonials'],
       prohibitedClaims: ['invented ingredients', 'unverified certifications', 'medical outcomes', 'personal-use claims', 'prices', 'testimonials'],

@@ -66,6 +66,27 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(compiled.providerPrompt).not.toContain('JANGAN HANTAR');
     expect(compiled.providerPrompt).toContain('Gunakan suasana meja belajar yang tenang.');
     expect(compiled.providerPrompt.match(/DM untuk info lanjut\./g)).toHaveLength(1);
+    expect(compiled.providerPrompt).toContain('This CTA must be the final spoken utterance');
+    expect(compiled.providerPrompt).toContain('generate zero additional speech or speech-like syllables');
+  });
+
+  it('separates image identity, category, physical observations, customer facts and unsupported claims', () => {
+    const grounded: ProductProfile = {
+      ...product,
+      name:'POTONGGO Manual Chopper',
+      category:'manual kitchen chopper',
+      observedPhysicalFacts:['clear container with turquoise lid and visible internal blades'],
+      confirmedFeatures:['customer confirms the pull handle is manually operated'],
+      unknownFields:['capacity','blade material'],
+    };
+    const prompt=DynamicPromptCompiler.compile(grounded,getVideoStyle('NX17')!,scene,{callToAction:'custom',customCta:'Tekan butang di bawah.'}).providerPrompt;
+    expect(prompt).toContain('[PRODUCT EVIDENCE CONTRACT — KEEP SOURCES SEPARATE]');
+    expect(prompt).toContain('A category never proves efficacy, suitability, quality or a buyer outcome');
+    expect(prompt).toContain('Image-observable physical facts:');
+    expect(prompt).toContain('Customer-confirmed facts:');
+    expect(prompt).toContain('Treat them as factual context only, never as prewritten dialogue');
+    expect(prompt).toContain('Unsupported or unresolved claims:');
+    expect(prompt).not.toContain('customer confirms the pull handle is manually operated” as dialogue');
   });
 
   it('sends full prompt and duplicated identity references without making them the first frame', () => {
@@ -76,6 +97,8 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(payload.media).toEqual([image,image]);
     expect(payload.prompt).toContain('Reference images 1 and 2 are intentionally IDENTICAL');
     expect(payload.prompt).toContain('neither may become the first video frame');
+    expect(payload.prompt).toContain('exclude its source composition');
+    expect(payload.prompt).toContain('do not copy the original surface, decorative props, lighting pattern');
   });
 
   it('has one complete authoritative director specification for every official style', () => {
@@ -100,6 +123,9 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(compiled.providerPrompt).toContain('without assuming a kitchen, desk, bedroom, bathroom');
     const profile = AICreativeDirector.extractProductProfile({ productName:'Produk Tidak Dikenali' });
     expect(profile.usageContext).toBeUndefined();
+    expect(profile.coreFunction).toBeUndefined();
+    expect(profile.buyerProblem).toBeUndefined();
+    expect(profile.verifiedBenefits).toEqual([]);
     const planned = AICreativeDirector.createScenePlan(profile, getVideoStyle('NX01')!);
     expect(planned.location).toContain('jangan andaikan dapur, meja kerja, bilik tidur, bilik air atau vanity tanpa bukti');
   });

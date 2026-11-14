@@ -5,13 +5,13 @@ import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function compileFor(name: string, styleId: string, fact = 'only the purpose supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini', options: { audioTreatment?: 'voiceover' | 'ambient' | 'asmr'; voicePersonality?: string; callToAction?: 'tiktok_shop' | 'click_button' | 'tap_button' | 'check_bio' | 'dm_info' | 'none' | 'custom'; customCta?: string; buyerProblem?: string; packagingFormat?: ProductProfile['packagingFormat']; usageContext?: string | null } = {}) {
+function compileFor(name: string, styleId: string, fact = 'only the physical identity supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini', options: { audioTreatment?: 'voiceover' | 'ambient' | 'asmr'; voicePersonality?: string; callToAction?: 'tiktok_shop' | 'click_button' | 'tap_button' | 'check_bio' | 'dm_info' | 'none' | 'custom'; customCta?: string; buyerProblem?: string; packagingFormat?: ProductProfile['packagingFormat']; usageContext?: string | null; confirmedFacts?: string[] } = {}) {
   const style = getVideoStyle(styleId)!;
   const product: ProductProfile = {
     name, category, packagingFormat: options.packagingFormat || 'general', spokenShortName,
-    coreFunction: fact, usageContext: options.usageContext === null ? undefined : options.usageContext || 'ordinary Malaysian use inferred cautiously from the image',
-    buyerProblem: options.buyerProblem || 'a grounded problem relevant to the actual product', allowedQaQuestion: 'what this product is actually for',
-    confirmedFeatures: [fact], prohibitedClaims: ['invented ingredients','certifications','medical outcomes','prices','testimonials'],
+    observedPhysicalFacts: [fact], usageContext: options.usageContext === null ? undefined : options.usageContext,
+    buyerProblem: options.buyerProblem,
+    confirmedFeatures: options.confirmedFacts || [], prohibitedClaims: ['invented ingredients','certifications','medical outcomes','prices','testimonials','unverified performance or suitability'],
     unknownFields: ['ingredients','certifications','performance'], sourceConfidence: 'manual_fallback',
     provenance: 'manual_user_entry', isVisionSupported: false,
   };
@@ -113,6 +113,40 @@ describe('real-provider QA prompt export', () => {
         }),
       }));
       writeFileSync(resolve(directory, 'emergency-sales-demo-manifest.json'), JSON.stringify(emergencySalesDemos, null, 2));
+      const recoverySalesDemos = [
+        {
+          styleId: 'NX01', productName: 'SERIYA Radiance Serum', spoken: 'Seriya Radiance Serum',
+          imagePath: 'scripts/release/assets/premium-products/seriya-serum.png', category: 'skincare serum',
+          fact: 'small frosted dropper bottle with a separate matching box; both visibly read SERIYA Radiance Serum',
+          cta: 'tiktok_shop' as const, packagingFormat: 'bottle' as const,
+          usageContext: 'owner-authorized skincare comparison in a neutral lived-in room, with composition independent from the source image',
+        },
+        {
+          styleId: 'NX17', productName: 'POTONGGO Manual Chopper', spoken: 'Potonggo',
+          imagePath: 'scripts/release/assets/premium-products/potonggo-chopper.png', category: 'manual kitchen chopper',
+          fact: 'clear container, turquoise lid, white pull handle and visible internal blades; the lid visibly reads POTONGGO',
+          cta: 'custom' as const, customCta: 'Tekan butang di bawah.', packagingFormat: 'general' as const,
+          usageContext: 'owner-authorized ordinary food-preparation counter with adult hands and a standard bowl as scale anchors',
+        },
+        {
+          styleId: 'NX09', productName: 'AROMAÉ Home Mist', spoken: 'Aromae Home Mist',
+          imagePath: 'scripts/release/assets/premium-products/aromae-home-mist.png', category: 'home fragrance spray',
+          fact: 'amber trigger-spray bottle with a separate floral box; both visibly read AROMAÉ Home Mist',
+          cta: 'dm_info' as const, packagingFormat: 'bottle' as const,
+          usageContext: 'owner-authorized home entryway shelf, excluding the source image counter, flowers, box arrangement and lighting composition',
+        },
+      ].map((item) => ({
+        ...item,
+        confirmedFacts: [] as string[],
+        prompt: compileFor(item.productName, item.styleId, item.fact, item.category, item.spoken, {
+          callToAction: item.cta,
+          customCta: item.customCta,
+          packagingFormat: item.packagingFormat,
+          usageContext: item.usageContext,
+          confirmedFacts: [],
+        }),
+      }));
+      writeFileSync(resolve(directory, 'sales-demo-recovery-manifest.json'), JSON.stringify(recoverySalesDemos, null, 2));
     }
   });
 });

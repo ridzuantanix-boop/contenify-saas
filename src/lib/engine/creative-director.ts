@@ -7,7 +7,7 @@
  * 2. Distinguish visible facts from inferences.
  * 3. Preserve unknown information explicitly as unknown.
  * 4. Transparent fallback when image-understanding service is not configured.
- * 5. Authors concise, natural spoken aliases and grounded category functions.
+ * 5. Keeps identity/category separate from customer-confirmed facts and claims.
  */
 
 import { ProductProfile, ScenePlan, ProductVisualAttributes } from './types';
@@ -179,61 +179,13 @@ export class AICreativeDirector {
       inferredAttributes.push('Format peranti elektronik / perkakasan');
     }
 
-    // Safe Core Function & Usage Context Grounding (Table 5 of 01_PRODUCT_AND_SCRIPT_BRAIN.md)
-    let coreFunction = 'kegunaan dan keperluan seharian';
-    // Never manufacture a physical location. An absent context remains absent
-    // so the provider can choose from the recognizable category and style.
-    let usageContext = input.usageContext;
-    let buyerProblem = input.buyerProblem || 'mencari pilihan praktikal untuk keperluan harian';
-    let allowedQaQuestion = '';
-
-    if (isWearableOrFashion || packagingFormat === 'apparel') {
-      coreFunction = 'dipakai dan digayakan untuk penampilan kemas serta selesa';
-      buyerProblem = input.buyerProblem || 'tudung sukar dibentuk atau kurang selesa dipakai lama';
-      allowedQaQuestion = 'Tudung ni senang dibentuk dan selesa ke?';
-    } else if (packagingFormat === 'jar' || packagingFormat === 'pouch' || lowerCat.includes('makan') || lowerCat.includes('masak')) {
-      coreFunction = 'dihidang sebagai pelengkap hidangan bersama sajian utama';
-      buyerProblem = input.buyerProblem || 'perlukan sajian ringkas dan cepat untuk hidangan makan';
-      allowedQaQuestion = 'Sajian ni sedia dimakan terus ke?';
-    } else if (packagingFormat === 'bottle' || lowerCat.includes('skin') || lowerCat.includes('cantik') || lowerCat.includes('diri')) {
-      coreFunction = 'digunakan dalam rutin membersih atau melembapkan diri mengikut keperluan';
-      buyerProblem = input.buyerProblem || 'kulit perlukan kelembapan dan penjagaan yang konsisten';
-      allowedQaQuestion = 'Produk ni sesuai untuk kegunaan harian ke?';
-    } else if (packagingFormat === 'gadget' || lowerCat.includes('gadget') || lowerCat.includes('elektronik')) {
-      if (lowerName.includes('lampu')) {
-        coreFunction = 'menerangi ruang meja belajar atau meja kerja';
-        buyerProblem = input.buyerProblem || 'meja belajar perlukan pencahayaan yang sesuai';
-        allowedQaQuestion = 'Lampu ni boleh ubah tahap cahaya ke?';
-      } else if (lowerName.includes('powerbank')) {
-        coreFunction = 'mengecas peranti bila berada di luar atau travel';
-        buyerProblem = input.buyerProblem || 'bateri peranti cepat habis waktu travel';
-        allowedQaQuestion = 'Powerbank ni menyokong pengecasan pantas ke?';
-      } else {
-        coreFunction = 'melaksanakan fungsi teknikal untuk memudahkan urusan harian';
-        buyerProblem = input.buyerProblem || 'perlukan peranti yang praktikal dan mudah dikendalikan';
-        allowedQaQuestion = 'Peranti ni praktikal untuk kegunaan kerja ke?';
-      }
-    } else if (lowerCat.includes('rumah') || lowerCat.includes('home')) {
-      coreFunction = 'kegunaan dan kemudahan praktikal di rumah';
-      buyerProblem = input.buyerProblem || 'urusan rumah perlukan penyelesaian yang lebih memudahkan';
-      allowedQaQuestion = 'Barang ni memudahkan urusan di rumah ke?';
-    }
-
-    // Dynamic Q&A question specialization if a specific confirmed feature is available
-    if (confirmedFeatures.length > 0) {
-      const topFeature = confirmedFeatures[0];
-      if (/tahap kecerahan|mod|cahaya/i.test(topFeature)) {
-        allowedQaQuestion = 'Lampu ni boleh ubah tahap cahaya ke?';
-      } else if (/pedas|rangup|bilis/i.test(topFeature)) {
-        allowedQaQuestion = 'Sambal ni sedap dan rangup ke?';
-      } else if (/bentuk|kain|voile/i.test(topFeature)) {
-        allowedQaQuestion = 'Tudung ni senang bentuk ke?';
-      } else if (/cas|charging|pantas/i.test(topFeature)) {
-        allowedQaQuestion = 'Powerbank ni cas laju ke?';
-      } else if (/lembap|hydrat/i.test(topFeature)) {
-        allowedQaQuestion = 'Serum ni membantu melembapkan kulit ke?';
-      }
-    }
+    // Product identity/category may guide scene selection, but neither proves a
+    // function, buyer problem or benefit. Only preserve customer-authored
+    // context here; confirmed facts are carried in their own evidence bucket.
+    const coreFunction = undefined;
+    const usageContext = input.usageContext;
+    const buyerProblem = input.buyerProblem;
+    const allowedQaQuestion = undefined;
 
     // Record explicit unknown fields to prevent hallucinated sales claims
     if (confirmedFeatures.length === 0) {
@@ -272,12 +224,12 @@ export class AICreativeDirector {
       usageContext,
       allowedQaQuestion,
       confirmedFeatures,
-      verifiedBenefits: confirmedFeatures,
+      verifiedBenefits: [],
       verifiedFacts: confirmedFeatures,
       inferredAttributes,
       unknownFields,
       intendedAudience: input.intendedAudience || 'Pengguna umum Malaysia',
-      approvedClaims: confirmedFeatures,
+      approvedClaims: [],
       prohibitedClaims: [
         'Penyembuh 100% penyakit kronik',
         'Kesan serta merta tanpa usaha',

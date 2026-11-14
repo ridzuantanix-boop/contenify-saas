@@ -29,6 +29,7 @@ export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   'Nexabot independently writes the dialogue; AffiMatik supplies no spoken script.',
   'Use one compact natural Malaysian Malay turn of two, or at most three, short clauses: a style-specific hook, one image-grounded category purpose or customer-confirmed fact, then a concise ending or selected CTA.',
   'Finish every spoken word by second 11.5, then continue natural physical action. Never restart, repeat, paraphrase or stretch the final clause to fill the clip.',
+  'When a CTA is selected, it is the final spoken utterance. After the CTA ends, generate no new word, phoneme, outro, repetition or verbal filler; continue only silent natural physical action and ordinary room sound.',
   'Visible shape does not prove performance. Never infer touch operation, flexibility, brightness, eye comfort, battery life, efficacy or another result unless that exact fact is customer-confirmed or clearly readable in the reference.',
   'Silently delete any uncertain benefit or performance statement before rendering; do not replace it with compliance wording or filler.',
 ].join(' ');
@@ -192,7 +193,8 @@ export class DynamicPromptCompiler {
 
     if (style.engine === 'nexabot') {
       if (options?.callToAction === 'custom') errors.push(...validateCustomCta(options?.customCta || ''));
-      if (product.confirmedFeatures?.[0]) errors.push(...validateCustomerFact(product.confirmedFeatures[0]));
+      for (const fact of product.confirmedFeatures || []) errors.push(...validateCustomerFact(fact));
+      for (const fact of product.observedPhysicalFacts || []) errors.push(...validateCustomerFact(fact));
     }
 
     return {
@@ -408,6 +410,24 @@ export class DynamicPromptCompiler {
     const productContextDirective = product.usageContext?.trim()
       ? `Customer-confirmed usage context: ${product.usageContext.trim()}. Use it only when physically compatible with the selected style.`
       : 'No customer-confirmed usage context was supplied. Infer a physically and culturally relevant Malaysian setting cautiously from the recognizable product category and selected style. If category evidence is insufficient, use a neutral lived-in interior or neutral clean surface without assuming a kitchen, desk, bedroom, bathroom or other product-specific location.';
+    const observedPhysicalFacts = (product.observedPhysicalFacts || []).map((fact) => fact.trim()).filter(Boolean).slice(0, 10);
+    const customerConfirmedFacts = (product.confirmedFeatures || []).map((fact) => fact.trim()).filter(Boolean).slice(0, 10);
+    const unsupportedClaims = [...(product.unknownFields || []), ...(product.prohibitedClaims || [])].map((fact) => fact.trim()).filter(Boolean).slice(0, 20);
+    const productEvidenceContract = [
+      '[PRODUCT EVIDENCE CONTRACT — KEEP SOURCES SEPARATE]',
+      `Product identity metadata to verify against the uploaded image: “${product.name}”. The image remains the identity authority; a name is not evidence of a benefit.`,
+      `Reasonably identifiable category: “${product.category}”. Use this only to understand what kind of object it is and to choose a plausible scene. A category never proves efficacy, suitability, quality or a buyer outcome.`,
+      observedPhysicalFacts.length
+        ? `Image-observable physical facts: ${observedPhysicalFacts.map((fact) => `“${fact}”`).join('; ')}. These facts describe visible construction or packaging only and must not be converted into performance claims.`
+        : 'No image-observable physical fact was supplied as trusted context. Inspect conservatively and do not invent one.',
+      customerConfirmedFacts.length
+        ? `Customer-confirmed facts: ${customerConfirmedFacts.map((fact) => `“${fact}”`).join('; ')}. Treat them as factual context only, never as prewritten dialogue, a testimonial or permission to infer another benefit.`
+        : 'No customer-confirmed functional or benefit fact was supplied. Do not invent an appealing benefit to make the dialogue sell harder.',
+      unsupportedClaims.length
+        ? `Unsupported or unresolved claims: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Omit them entirely.`
+        : 'Any claim not supported by the uploaded identity/category or a customer-confirmed fact is unsupported and must be omitted.',
+      'Never convert a buyer problem, intended audience, recognizable category, packaging appearance or plausible marketing idea into proof that this product solves a problem.',
+    ].join(' ');
 
     const selectedScene = getBuiltInScene(options.builtInSceneId);
     const hasAvatarReference = Boolean(options.avatarName);
@@ -432,6 +452,8 @@ export class DynamicPromptCompiler {
       options.voicePersonality && options.voicePersonality !== 'auto' ? `Customer-selected speaking personality: ${options.voicePersonality}. ${VOICE_PERSONALITY_DIRECTIONS[options.voicePersonality] || ''} Preserve the style identity while applying this vocal performance.` : '',
       options.storyboard && options.storyboard !== 'auto' ? `Customer-selected storyboard: ${options.storyboard}. Use it only when physically appropriate to the reference product.` : '',
       'Never quietly substitute, merge or ignore a selected reference. If a reference conflicts with safety or cannot be followed, keep the product identity authoritative and avoid fabricating substitute identities.',
+      'For every PRODUCT reference, preserve the physical product identity but exclude its source composition: do not copy the original surface, decorative props, lighting pattern, shadows, camera crop, perspective or object arrangement. Marketplace UI, prices, ratings, buttons and seller decoration are never scene elements.',
+      'Build a visibly independent live-action scene from the selected style and grounded category. Do not animate, extend or reconstruct the uploaded product screenshot as the opening shot.',
     ].filter(Boolean).join(' ');
 
     const commonTruthfulness = [
@@ -457,7 +479,7 @@ export class DynamicPromptCompiler {
           'AffiMatik has not supplied, generated, previewed or approved spoken sentences. Inspect the uploaded product reference and independently write original natural Malaysian Malay dialogue and lip-sync.',
           `Follow the unique ${style.id} scene purpose, opening, buyer problem, product interaction, speaking personality, camera direction and ending. Create one distinct product-specific hook, one grounded practical point and one concise ending.`,
           'Never narrate camera framing, bottle rotation, hand movement, label visibility, product colour or packaging appearance.',
-          selectedCta ? `Customer-selected CTA intent: ${ctaMode}. The intended target is “${selectedCta}”. Integrate that action naturally once in your own product-specific conversation; never add CTA graphics or repeat it.` : 'The customer selected Tanpa CTA. Do not add a spoken call to action.',
+          selectedCta ? `Customer-selected CTA intent: ${ctaMode}. The intended target is “${selectedCta}”. Integrate that action naturally once in your own product-specific conversation; never add CTA graphics or repeat it. This CTA must be the final spoken utterance. Once its last word is complete, close the speaking turn: no new word, syllable, phoneme, tagline, thanks, outro or verbal filler may follow.` : 'The customer selected Tanpa CTA. Do not add a spoken call to action.',
           options.creativeInstruction ? 'The customer-authored Creative Directive may include their own requested wording. Preserve it as direction without AffiMatik rewriting, completing or paraphrasing it.' : '',
           'Finish speech naturally before the clip ends. Do not fill time through repetition, dragged-out words or a generic fallback. If speech ends earlier, continue meaningful physical interaction and never freeze the subject.',
         ].filter(Boolean).join(' ');
@@ -474,6 +496,7 @@ export class DynamicPromptCompiler {
     const productAndContext = [
       '[3. PRODUCT UNDERSTANDING AND CONTEXT]',
       promptModules.productUnderstanding,
+      productEvidenceContract,
       productContextDirective,
       personalizationDirectives,
       options.creativeInstruction ? `Customer Creative Directive: ${options.creativeInstruction}` : '',
@@ -481,7 +504,9 @@ export class DynamicPromptCompiler {
     const humanPerformance = `[4. HUMAN PERFORMANCE AND SCENE BEHAVIOUR] ${promptModules.humanPerformance}`;
     const necessaryLocks = `[6. NECESSARY SAFETY AND VISUAL LOCKS] ${promptModules.safetyLocks} ${commonTruthfulness}`;
     const endingRequirements = hasSpeech
-      ? '[7. ENDING REQUIREMENTS] Finish every spoken word by second 11.5, complete the meaning once, then continue a natural style-specific physical action until the clip ends. Never freeze, restart, repeat, paraphrase or cut off the final clause.'
+      ? selectedCta
+        ? '[7. ENDING REQUIREMENTS] The selected CTA is the final spoken utterance and must finish by second 11.5. After its last word, generate zero additional speech or speech-like syllables. Continue only silent natural style-specific physical action with ordinary non-verbal ambience until the clip ends. Never freeze, restart, repeat, paraphrase or add an outro.'
+        : '[7. ENDING REQUIREMENTS] Finish every spoken word by second 11.5, complete the meaning once, then continue a natural style-specific physical action until the clip ends. Never freeze, restart, repeat, paraphrase or cut off the final clause.'
       : '[7. ENDING REQUIREMENTS] Complete the style-specific physical action, let grip, gravity, contact and ambient sound settle naturally, and never freeze or end with an abrupt cut.';
     const visualPrompt = [
       criticalContract,

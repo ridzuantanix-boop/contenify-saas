@@ -23,12 +23,14 @@ export interface ProductProfile {
   shapeDescription?: string;
   dominantColors?: string[];
   visualAttributes?: ProductVisualAttributes;
+  /** Physical characteristics directly visible in an owner-authorized reference. Not benefit claims. */
+  observedPhysicalFacts?: string[];
   targetBuyer?: string;
   buyerProblem?: string; // Relatable buyer pain point / situation for hook
   coreFunction?: string; // Safe, honest literal category function (never fabricated)
   usageContext?: string; // e.g. "ruang belajar", "dapur", "rutin harian"
   allowedQaQuestion?: string; // Derived common question for NX07
-  confirmedFeatures?: string[]; // User-confirmed product benefits/specs only
+  confirmedFeatures?: string[]; // Customer-confirmed facts supplied as context, never prewritten dialogue
   verifiedBenefits?: string[]; // Verified buyer benefit propositions
   verifiedFacts?: string[]; // Backward compatibility alias
   inferredAttributes?: string[]; // Visually inferred attributes labeled clearly as inferences
