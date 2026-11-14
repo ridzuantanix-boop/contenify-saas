@@ -132,7 +132,7 @@ describe('real-provider QA prompt export', () => {
           styleId: 'NX09', productName: 'AROMAÉ Home Mist', spoken: 'Aromae Home Mist',
           imagePath: 'scripts/release/assets/premium-products/aromae-home-mist.png', category: 'home fragrance spray',
           fact: 'amber trigger-spray bottle with a separate floral box; both visibly read AROMAÉ Home Mist',
-          cta: 'dm_info' as const, packagingFormat: 'bottle' as const,
+          cta: 'custom' as const, customCta: 'Tengok detail dekat beg kuning.', packagingFormat: 'bottle' as const,
           usageContext: 'owner-authorized home entryway shelf, excluding the source image counter, flowers, box arrangement and lighting composition',
         },
       ].map((item) => ({

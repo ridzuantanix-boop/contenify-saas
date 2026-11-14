@@ -41,7 +41,7 @@ Prompt instructions reduce risk but do not guarantee provider compliance. No aut
 |---|---|---|---|---|---|
 | NX01 | SERIYA Radiance Serum / skincare | Small frosted dropper bottle with matching box; both visibly read SERIYA Radiance Serum | None | Spoken presenter | Beg Kuning |
 | NX17 | POTONGGO Manual Chopper / kitchen tool | Clear container, turquoise lid, white pull handle and visible blades; lid visibly reads POTONGGO | None | Spoken presenter | Tekan butang di bawah |
-| NX09 | AROMAÉ Home Mist / home fragrance spray | Amber trigger-spray bottle with floral box; both visibly read AROMAÉ Home Mist | None | Off-camera voiceover | DM for information |
+| NX09 | AROMAÉ Home Mist / home fragrance spray | Amber trigger-spray bottle with floral box; both visibly read AROMAÉ Home Mist | None | Off-camera voiceover | Tengok detail dekat beg kuning |
 
 The supplement was replaced with the lower-risk POTONGGO physical kitchen tool. The lamp is absent.
 

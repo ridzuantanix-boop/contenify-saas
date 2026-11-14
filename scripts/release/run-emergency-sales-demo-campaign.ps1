@@ -1,6 +1,7 @@
 param(
   [string]$ManifestRelativePath = 'output\provider-qa\emergency-sales-demo-manifest.json',
   [string]$OutputRelativePath = 'output\provider-qa\emergency-sales-demo-v10-2',
+  [string]$CampaignLabel = 'emergency-sales-demo-v10-2',
   [decimal]$ExpectedCostPerJob = 0.30,
   [decimal]$MaximumCostPerJob = 0.35,
   [int]$PollSeconds = 12,
@@ -83,6 +84,8 @@ try {
     if (-not (Test-Path -LiteralPath $imagePath)) { throw "Reference image missing for $styleId." }
     $imageBytes = [IO.File]::ReadAllBytes($imagePath)
     $imageHash = (Get-FileHash -LiteralPath $imagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $promptBytes = [Text.Encoding]::UTF8.GetBytes([string]$item.prompt)
+    $promptHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($promptBytes)).ToLowerInvariant()
     $headers = @{ Authorization = "Bearer $key"; 'X-API-Key' = $key }
 
     if (-not $entry.taskId) {
@@ -92,7 +95,8 @@ try {
         mode = 'i2v'; prompt = [string]$item.prompt; telegram_id = 'web'; media = @($media, $media)
         ratio = 2; resolution = 720; duration = 15; use_unlimited = $false
       } | ConvertTo-Json -Depth 8 -Compress
-      $idempotency = "affimatik-v102-sales-$($styleId.ToLowerInvariant())-$($imageHash.Substring(0,12))"
+      $safeCampaignLabel = ($CampaignLabel.ToLowerInvariant() -replace '[^a-z0-9-]', '-').Trim('-')
+      $idempotency = "affimatik-$safeCampaignLabel-$($styleId.ToLowerInvariant())-$($promptHash.Substring(0,12))"
       $submittedAt = [DateTime]::UtcNow.ToString('o')
       $response = Invoke-RestMethod -Method Post -Uri 'https://nexabot.id/api/v1/api' -Headers ($headers + @{ 'X-Idempotency-Key' = $idempotency }) -ContentType 'application/json' -Body $payload -TimeoutSec 90
       $taskId = [string]($response.id ?? $response.job_id ?? $response.task_id)
@@ -100,7 +104,7 @@ try {
       $entry = @{
         styleId = $styleId; productName = [string]$item.productName; taskId = $taskId; status = 'submitted'
         submittedAt = $submittedAt; idempotencyKey = $idempotency; referenceSha256 = $imageHash
-        referenceBytes = $imageBytes.Length; promptLength = ([string]$item.prompt).Length
+        referenceBytes = $imageBytes.Length; promptLength = ([string]$item.prompt).Length; promptSha256 = $promptHash
         supplierCreditBefore = $before; pollHistory = @()
       }
       $state[$styleId] = $entry
@@ -157,6 +161,7 @@ try {
   $receipt = [ordered]@{
     createdAt = [DateTime]::UtcNow.ToString('o')
     promptVersion = 'pawarna-masterprompt-director-v10.2-quality-audit'
+    campaignLabel = $CampaignLabel
     boundedPaidSubmissionLimit = 3
     supplierCreditBefore = $campaignOpeningCredit
     supplierCreditAfter = $campaignClosingCredit

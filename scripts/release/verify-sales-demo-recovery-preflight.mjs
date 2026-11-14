@@ -8,7 +8,7 @@ const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 const expected = {
   NX01: { product: 'SERIYA Radiance Serum', audio: 'SPOKEN PRESENTER', cta: 'Beg Kuning' },
   NX17: { product: 'POTONGGO Manual Chopper', audio: 'SPOKEN PRESENTER', cta: 'Tekan butang di bawah.' },
-  NX09: { product: 'AROMAÉ Home Mist', audio: 'OFF-CAMERA VOICEOVER', cta: 'Kalau nak tanya lagi, boleh DM.' },
+  NX09: { product: 'AROMAÉ Home Mist', audio: 'OFF-CAMERA VOICEOVER', cta: 'Tengok detail dekat beg kuning.' },
 };
 
 if (!Array.isArray(manifest) || manifest.length !== 3) throw new Error('Expected exactly three recovery candidates.');
