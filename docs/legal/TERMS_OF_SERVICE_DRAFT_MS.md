@@ -1,83 +1,114 @@
 # DRAF TERMA PERKHIDMATAN AFFIMATIK
 
-> **Status: UNTUK SEMAKAN PEMILIK DAN PENASIHAT UNDANG-UNDANG — BELUM BERKUAT KUASA.** Lengkapkan semua medan dalam kurungan siku sebelum diterbitkan. Draf ini tidak menjanjikan refund atau hasil kreatif/jualan.
+> **STATUS: DRAF UNTUK SEMAKAN PEMILIK DAN PENASIHAT UNDANG-UNDANG — BELUM BERKUAT KUASA DAN JANGAN DITERBITKAN.** Terma ini tidak menjamin refund, hasil kreatif, jualan atau ketersediaan tanpa gangguan.
 
-Tarikh kuat kuasa: **[TARIKH]**  
-Penyedia: **[NAMA SAH PEMILIK/ENTITI]**, no. pendaftaran **[JIKA ADA]**  
-Alamat perniagaan: **[ALAMAT]**  
-Sokongan: **support@affimatik.online** / **[NO. TELEFON]**
+Tarikh kuat kuasa: **[SEMAKAN PEMILIK: TARIKH]**<br>
+Penyedia individu: **[SEMAKAN PEMILIK: NAMA PENUH SAH]**<br>
+Jenama: **Pawarna Studio / AffiMatik** — nama jenama sahaja, bukan syarikat atau enterprise berdaftar<br>
+Status pendaftaran: **Tiada nombor pendaftaran SSM pada tarikh draf ini**<br>
+Alamat perniagaan: **[SEMAKAN PEMILIK: ALAMAT SEBENAR]**<br>
+Sokongan: **support@affimatik.online** / **[SEMAKAN PEMILIK: NO. TELEFON]**
 
 ## 1. Persetujuan dan kelayakan
 
-Dengan membuka akaun atau menggunakan AffiMatik, anda bersetuju dengan Terma ini dan Notis Privasi. Anda mesti mempunyai keupayaan sah untuk membuat kontrak dan kuasa untuk menggunakan kandungan yang dimuat naik. **[Pemilik perlu mengesahkan had umur/kelayakan perniagaan sebelum penerbitan.]**
+Dengan membuka akaun atau menggunakan AffiMatik, anda bersetuju dengan Terma ini dan Notis Privasi yang berkuat kuasa. Anda mesti mempunyai keupayaan sah untuk membuat kontrak serta hak/kebenaran bagi kandungan yang dimuat naik. **[SEMAKAN PEMILIK: tetapkan umur minimum dan sama ada akaun hanya untuk aktiviti perniagaan.]**
 
 ## 2. Akaun dan keselamatan
 
-Anda bertanggungjawab memberikan maklumat yang tepat, menjaga akses akaun dan memaklumkan kami jika berlaku penggunaan tanpa izin. Akaun dan workspace tidak boleh digunakan untuk menyamar, mengganggu perkhidmatan atau memintas kawalan keselamatan, queue, kredit atau provider.
+Anda mesti memberikan maklumat yang tepat, menjaga akses akaun, tidak berkongsi kelayakan secara tidak selamat dan memaklumkan kami jika terdapat penggunaan tanpa izin. Akaun atau workspace tidak boleh digunakan untuk menyamar, mengganggu perkhidmatan, memintas keselamatan/queue/kredit, atau mengakses data pengguna lain.
 
-## 3. Perkhidmatan
+## 3. Perkhidmatan dan output AI
 
-AffiMatik membantu pengguna memuat naik rujukan produk, memilih gaya dan mengarahkan provider AI untuk menghasilkan video. Ia turut menyediakan Product/Video Library, personalization, Creator Profiles, bulk generation, Auto Mix, Daily Auto Run dan queue berasaskan cloud mengikut fungsi yang tersedia pada akaun.
+AffiMatik membolehkan pengguna memuat naik rujukan produk, memilih gaya dan menghantar arahan kepada provider AI untuk menghasilkan video. Fungsi boleh termasuk Product/Video Library, personalization, Creator Profiles, preset, Quick Bulk, Auto Mix, Daily Auto Run dan queue cloud mengikut ketersediaan akaun.
 
-Output AI boleh berbeza, mengandungi kecacatan kreatif, salah sebut atau tafsiran yang tidak tepat. AffiMatik tidak menjamin output tertentu, jualan, conversion, ketersediaan tanpa gangguan atau penerimaan kandungan oleh TikTok Shop/platform lain. Anda mesti menyemak video, fakta produk, tuntutan, hak cipta dan pematuhan platform sebelum menerbitkannya.
+Provider AI, bukan AffiMatik, mentafsir produk dan menghasilkan dialog/video. Output boleh mengandungi kecacatan kreatif, salah sebut, identiti produk yang kurang tepat atau kandungan yang perlu diperbetulkan. AffiMatik tidak menjamin hasil tertentu, jualan, conversion, penerimaan TikTok Shop/platform lain, atau operasi tanpa gangguan. Pengguna bertanggungjawab menyemak fakta produk, tuntutan, hak cipta, wajah/identiti, peraturan platform dan kesesuaian video sebelum diterbitkan.
 
 ## 4. Kandungan pengguna dan lesen operasi
 
-Anda mengekalkan hak yang anda miliki pada imej, arahan, avatar, latar dan kandungan lain. Anda memberi kami lesen terhad, tidak eksklusif dan hanya selama perlu untuk menyimpan, memproses, menghantar kepada provider yang berkaitan, menghasilkan output dan menyampaikan perkhidmatan. Anda menjamin bahawa anda mempunyai hak/kebenaran yang perlu, termasuk bagi wajah, jenama dan bahan pihak ketiga.
+Anda mengekalkan hak yang anda miliki pada kandungan. Anda memberi penyedia lesen terhad, tidak eksklusif dan hanya selama perlu untuk menyimpan, memproses, menghantar kandungan kepada provider yang dinyatakan dalam Notis Privasi, menghasilkan output, mengendalikan job dan menyampaikan perkhidmatan.
 
-Jangan muat naik kandungan yang menyalahi undang-undang, melanggar hak orang lain, memperdaya, mengeksploitasi individu, atau cuba menghasilkan tuntutan produk palsu/berbahaya. Kami boleh menyekat job atau akaun apabila perlu untuk keselamatan, pematuhan atau integriti pembayaran.
+Anda menjamin bahawa anda mempunyai hak/kebenaran bagi imej produk, jenama, wajah, avatar, latar, arahan dan bahan pihak ketiga. Jangan muat naik kandungan yang menyalahi undang-undang, melanggar hak orang lain, memperdaya, mengeksploitasi individu atau meminta tuntutan produk palsu/berbahaya.
 
-## 5. Kredit dan penjanaan
+## 5. Kredit, queue dan penjanaan
 
-- Satu video Nexabot 15 saat pada masa ini menggunakan **10 kredit AffiMatik**.
-- Kredit ditempah apabila job diterima ke aliran queue dan diselesaikan sekali sahaja apabila video yang sah disimpan secara kekal.
-- Kegagalan teknikal yang muktamad melepaskan tempahan kredit mengikut mekanisme sistem. Gangguan sementara boleh dicuba semula secara terhad menggunakan task/provider state yang sama untuk mengelakkan caj berganda.
-- Job yang telah diterima provider mungkin tidak boleh dibatalkan. Kedudukan queue, masa siap dan hasil kreatif tidak dijamin.
-- Baki, tempoh sah dan aturan penggunaan kredit mengikut pakej yang dipaparkan ketika pembelian. Kredit sejarah tidak ditukar secara senyap.
+- Satu video Nexabot 15 saat pada kadar semasa menggunakan **10 kredit AffiMatik**.
+- Harga dan kadar kredit yang dipaparkan oleh server ketika checkout/generation adalah muktamad untuk transaksi itu.
+- Kredit ditempah secara atomik apabila job diterima untuk dispatch dan diselesaikan sekali sahaja apabila output video yang sah disimpan secara kekal.
+- Kegagalan teknikal muktamad melepaskan reservation sekali. Gangguan sementara boleh dicuba semula secara terhad dengan task/provider state yang sama untuk mengurangkan risiko generation atau caj berganda.
+- Job yang sudah diterima provider mungkin tidak boleh dibatalkan. Pelanggan boleh meninggalkan halaman; job dan queue disimpan di cloud.
+- Masa siap, kedudukan queue dan hasil kreatif tidak dijamin.
+- Kecacatan kreatif biasa yang masih menghasilkan fail video bukan dengan sendirinya kegagalan teknikal.
 
-## 6. Launch Pack dan pelan lain
+## 6. Launch Pack dan pakej lain
 
-Launch Pack ialah **RM19**, memberi **150 kredit**, sah **180 hari**, boleh dibeli sekali oleh pelanggan yang layak, dan tidak mengaktifkan langganan atau pembaharuan automatik. Ia membolehkan sehingga 15 generation pada kadar semasa 10 kredit setiap video.
+**Launch Pack** berharga **RM19** dan memberikan **150 kredit**, sah **180 hari**, untuk satu pembelian bagi pelanggan yang layak. Ia tidak mengaktifkan langganan atau pembaharuan automatik. Pada kadar semasa 10 kredit setiap video, 150 kredit membolehkan sehingga 15 generation, tertakluk kepada baki, queue dan provider.
 
-Pelan Starter, Pro dan Agency menggunakan pembaharuan manual berdasarkan terma yang dipaparkan semasa checkout. Top-up hanya tersedia mengikut kelayakan akaun dan sah 180 hari. Harga penuh, kredit, tempoh dan kaedah bayaran mesti dipaparkan sebelum pesanan disahkan.
+Pelan Starter, Pro dan Agency menggunakan pembaharuan manual mengikut tawaran yang dipaparkan semasa checkout. Top-up hanya tersedia mengikut kelayakan akaun dan kredit top-up sah 180 hari. Kredit lama tidak boleh dipadam atau diklasifikasikan semula secara senyap. Tempoh sah kredit tidak sama dengan tempoh simpanan data.
 
-## 7. Bayaran QR dan status provisional
+## 7. Pembayaran QR dan kredit provisional
 
-Pesanan mempunyai rujukan unik. Pelanggan hendaklah membayar jumlah yang dipaparkan dan memuat naik bukti yang sah. Muat naik bukti **bukan** pengesahan bahawa bank telah menerima bayaran.
+Server menentukan plan, jumlah dan rujukan pesanan. Pelanggan hendaklah membayar jumlah tepat kepada penerima yang dipaparkan dan memuat naik bukti pembayaran. AffiMatik menyemak format/hash serta pemilikan pesanan, tetapi imej atau PDF resit **bukan bukti muktamad bahawa bank telah menerima bayaran**.
 
-Di bawah polisi checkout semasa, kredit boleh diaktifkan secara provisional sebelum semakan bank. Pesanan kekal `PROVISIONALLY_ACTIVE` sehingga admin mengesahkan atau menolak bukti. Pengesahan tidak memberi kredit kali kedua. Jika bayaran tidak dapat disahkan, akaun boleh dikenakan payment hold: perbelanjaan kredit dan job baharu dibekukan, job queue yang belum dihantar dibatalkan dengan selamat, dan rekod/media sedia ada dikekalkan. Pelanggan boleh menghubungi sokongan untuk semakan dan pengaktifan semula. Hanya satu pesanan provisional yang belum selesai dibenarkan bagi satu workspace.
+Mengikut polisi checkout semasa:
 
-Komisen affiliate hanya boleh menjadi layak selepas bayaran pertama yang berkaitan benar-benar disahkan, tertakluk kepada peraturan program affiliate.
+1. kredit penuh pakej boleh diaktifkan secara provisional selepas bukti dihantar;
+2. pesanan kekal `PROVISIONALLY_ACTIVE` dan bukan revenue disahkan sehingga admin mengesahkan penerimaan sebenar;
+3. hanya satu pesanan provisional yang belum selesai dibenarkan bagi satu workspace;
+4. pengesahan admin menukar status tanpa memberikan kredit kali kedua;
+5. jika pembayaran tidak dapat disahkan, payment hold boleh membekukan semua perbelanjaan kredit dan job baharu tanpa memadam baki sejarah;
+6. job queue yang belum dihantar boleh dibatalkan dengan reservation dilepaskan, manakala job yang telah diterima provider akan direkonsiliasi; dan
+7. pelanggan boleh menghubungi sokongan untuk semakan dan pengaktifan semula.
 
-## 8. Pembetulan pesanan, pembatalan dan refund
+Komisen affiliate hanya boleh menjadi layak selepas pembayaran pertama yang berkaitan benar-benar disahkan dan tertakluk kepada polisi affiliate.
 
-Jika butiran pesanan salah, hubungi **support@affimatik.online** dengan rujukan pesanan secepat mungkin. Sistem memberikan pengakuterimaan dan status pesanan dalam Dashboard.
+## 8. Pembetulan pesanan, pembatalan dan refund — cadangan untuk kelulusan
 
-Terma ini tidak menjanjikan refund automatik atau tanpa syarat. Permintaan pembatalan/refund akan dinilai berdasarkan status pesanan, penggunaan kredit, kos provider yang telah berlaku dan hak pengguna di bawah undang-undang Malaysia. Tiada peruntukan dalam Terma ini mengehadkan hak mandatori yang tidak boleh diketepikan oleh undang-undang. **[Pemilik/penasihat perlu meluluskan polisi refund terperinci sebelum penerbitan.]**
+> **BELUM BERKUAT KUASA.** Polisi berikut ialah cadangan yang adil untuk semakan owner/penasihat. Owner mesti memilih dan meluluskan versi akhir sebelum diterbitkan.
 
-## 9. Ketersediaan, provider dan automasi
+- **Sebelum bayaran atau bukti dihantar:** pelanggan boleh meninggalkan/membatalkan pesanan yang belum dibayar tanpa caj AffiMatik.
+- **Bukti dihantar tetapi wang belum dipindahkan:** pelanggan hendaklah memaklumkan sokongan supaya pesanan provisional boleh ditutup. Kredit provisional yang belum disahkan boleh dibekukan/dilaraskan melalui proses audit tanpa memadam ledger.
+- **Bayaran berganda, jumlah salah atau penerima salah:** semakan dibuat terhadap rekod bank sebenar dan rujukan pesanan. Bayaran lebihan/berganda yang disahkan patut dipulangkan atau diperuntukkan semula dengan persetujuan pelanggan.
+- **Bayaran disahkan tetapi kredit belum digunakan dan tiada kos provider berlaku:** cadangan ialah membenarkan permintaan pembatalan dalam **7 hari kalendar** dari pengesahan, tertakluk kepada semakan identiti, transaksi dan hak pengguna. **[SEMAKAN PEMILIK: lulus/tukar tempoh 7 hari.]**
+- **Sebahagian kredit telah digunakan:** tiada refund automatik bagi kredit yang sudah digunakan atau kos provider yang sudah berlaku. Owner patut menilai refund baki yang belum digunakan secara adil dan telus, tanpa menafikan hak mandatori pengguna. **[SEMAKAN UNDANG-UNDANG: kaedah pro-rata dan apa-apa fi sebenar.]**
+- **Kegagalan teknikal generation:** reservation kredit dilepaskan/dipulangkan mengikut mekanisme sistem. Ini ialah pemulihan kredit, bukan refund tunai automatik. Jika perkhidmatan gagal secara berterusan dan kredit berbayar tidak boleh digunakan, pelanggan boleh meminta penyelesaian atau refund yang munasabah.
+- **Ketidakpuasan kreatif semata-mata:** variasi atau kecacatan kreatif biasa output AI tidak menjamin refund, tetapi aduan salah caj, fail tidak boleh diakses atau kegagalan teknikal akan disiasat.
+- **Cara memohon:** e-mel **support@affimatik.online** dengan rujukan pesanan, sebab dan bukti yang relevan; jangan hantar kata laluan, PIN atau TAC. Keputusan dan alasan hendaklah direkodkan serta dimaklumkan.
 
-Nexabot ialah provider aktif semasa; RunningHub tidak aktif. Provider boleh menolak, melambatkan atau gagal memproses job. AffiMatik menggunakan queue, retry terhad dan rekonsiliasi task untuk mengurangkan kehilangan dan caj berganda, tetapi tidak menjamin masa siap. Daily Auto Run berhenti atau tidak mengenakan caj bagi item yang tidak layak, wallet tidak mencukupi, jadual dihentikan atau konfigurasi tidak disokong seperti yang diterangkan dalam UI.
+Tiada apa-apa dalam polisi ini mengehadkan hak pengguna atau remedi mandatori yang tidak boleh diketepikan di bawah undang-undang Malaysia.
 
-## 10. Harta intelek AffiMatik
+## 9. Provider, gangguan dan automasi
+
+Nexabot ialah provider generation aktif dan RunningHub tidak aktif dalam production. Provider boleh menolak, melambatkan atau gagal memproses job. AffiMatik menggunakan concurrency limit, queue persisten, retry terhad, cooldown dan reconciliation untuk mengurangkan kehilangan serta duplicate charging, tetapi tidak menjamin masa siap.
+
+Daily Auto Run memerlukan opt-in, boleh dijeda/dibatalkan bagi kerja yang belum dihantar, dan tidak patut mengenakan kredit apabila tiada produk layak, wallet tidak mencukupi, jadual dihentikan atau konfigurasi tidak disokong. Pembatalan tidak dijamin bagi task yang telah diterima provider.
+
+## 10. Data, privasi dan media
+
+Pemprosesan data tertakluk kepada Notis Privasi yang berkuat kuasa. Media pelanggan disimpan secara private dan diberikan melalui URL/endpoint berizin. Ketersediaan sejarah boleh terjejas oleh kegagalan provider, storage atau pautan lama. Rekod job boleh dikekalkan walaupun media sejarah tidak lagi tersedia, tertakluk kepada jadual retensi yang diluluskan.
+
+## 11. Harta intelek AffiMatik
 
 Perisian, reka bentuk, jenama, poster, masterprompt dan bahan AffiMatik kekal milik penyedia atau pemberi lesennya. Terma ini tidak memindahkan hak tersebut. Anda tidak boleh mengekstrak rahsia sistem, memintas kawalan atau menjual semula akses tanpa kebenaran.
 
-## 11. Penggantungan dan penamatan
+## 12. Penggantungan dan penamatan
 
-Kami boleh mengehadkan atau menggantung akses apabila terdapat risiko keselamatan, pelanggaran Terma, penyalahgunaan provider, pertikaian pembayaran atau kewajipan undang-undang. Jika boleh dan sesuai, kami akan memaparkan sebab umum serta saluran penyelesaian. Penamatan tidak memadamkan rekod transaksi/audit yang perlu dikekalkan.
+Kami boleh mengehadkan atau menggantung akses apabila terdapat risiko keselamatan, pelanggaran Terma, penyalahgunaan provider, pertikaian pembayaran atau kewajipan undang-undang. Jika sesuai, Dashboard/notifikasi akan memberi sebab umum dan saluran penyelesaian. Penggantungan tidak memadamkan media selesai atau rekod transaksi/audit yang perlu dikekalkan.
 
-## 12. Had tanggungjawab
+**[SEMAKAN PEMILIK/TEKNIKAL: proses penutupan akaun dan eksport/pemadaman data belum tersedia sebagai self-service; jangan menjanjikannya sebelum runbook diluluskan.]**
 
-Setakat yang dibenarkan undang-undang, AffiMatik tidak bertanggungjawab atas kerugian tidak langsung atau keputusan perniagaan berdasarkan output AI. Tiada apa-apa dalam Terma ini mengecualikan tanggungjawab atau hak pengguna yang tidak boleh diketepikan di bawah undang-undang Malaysia. **[Penasihat undang-undang perlu menyemak formula had liabiliti sebelum penerbitan.]**
+## 13. Had tanggungjawab
 
-## 13. Undang-undang dan perubahan
+Setakat yang dibenarkan undang-undang, pengguna bertanggungjawab terhadap keputusan penerbitan dan perniagaan berdasarkan output AI. AffiMatik tidak menjamin keuntungan, jualan, conversion atau ketersediaan tanpa gangguan. Tiada apa-apa dalam Terma ini mengecualikan tanggungjawab atau hak pengguna yang tidak boleh diketepikan oleh undang-undang Malaysia.
 
-Terma ini ditadbir undang-undang Malaysia. Perubahan material akan dipaparkan dengan tarikh kuat kuasa baharu; penggunaan selepas tarikh itu menandakan penerimaan setakat yang dibenarkan undang-undang. Pertanyaan atau aduan boleh dihantar kepada sokongan di atas.
+**[SEMAKAN PENASIHAT UNDANG-UNDANG: tentukan sama ada formula had liabiliti diperlukan dan pastikan ia adil serta boleh dikuatkuasakan.]**
+
+## 14. Undang-undang, aduan dan perubahan
+
+Terma ini ditadbir undang-undang Malaysia. Pertanyaan atau aduan boleh dihantar kepada **support@affimatik.online** atau **[SEMAKAN PEMILIK: NO. TELEFON]**. Perubahan material akan dipaparkan dengan tarikh kuat kuasa baharu. Perubahan tidak boleh digunakan secara retrospektif untuk menghapuskan hak yang telah terakru.
 
 ## Rujukan semakan
 
 - Peraturan-Peraturan Perlindungan Pengguna (Urus Niaga Perdagangan Elektronik) 2024: https://repositori.kpdn.gov.my/bitstream/123456789/5299/1/PERATURAN%20URUSNIAGA%20PERDAGANGAN%20DALAM%20ELEKTRONIK%202024.pdf
-- Akta Perdagangan Elektronik 2006: https://lom.agc.gov.my/ilims/upload/portal/akta/outputaktap/1700451_BM/Akta%20658%20Reprint%202012.pdf
 - Akta Perlindungan Pengguna 1999: https://lom.agc.gov.my/
-
+- Akta Perdagangan Elektronik 2006: https://lom.agc.gov.my/ilims/upload/portal/akta/outputaktap/1700451_BM/Akta%20658%20Reprint%202012.pdf
+- Akta Pendaftaran Perniagaan 1956 dan panduan SSM: https://www.ssm.com.my/Pages/Legal_Framework/Registration-of-Business-Act.aspx
