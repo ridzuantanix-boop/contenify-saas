@@ -43,6 +43,13 @@ describe('AffiMatik V8.4 QR Express Checkout',()=>{
     expect(migration).toContain('orders_receipt_size_check');
     expect(migration).not.toMatch(/UPDATE\s+(credit_wallets|orders)|INSERT\s+INTO\s+credit_ledger/i);
   });
+  it('restores an unresolved QR checkout after refresh so customers can retry the same order',()=>{
+    const page=fs.readFileSync('src/app/(dashboard)/billing/page.tsx','utf8');
+    expect(page).toContain("order.paymentState==='PAYMENT_UNVERIFIED'");
+    expect(page).toContain('pending.gatewayReference');
+    expect(page).toContain('Pesanan sedia ada dipulihkan');
+    expect(page).toContain('tak perlu buat pesanan baharu');
+  });
   it('ships a professional black QR asset whose decoded payment payload is unchanged',async()=>{
     const asset='release-assets/qr/affimatik-tng-duitnow-black.png';
     const image=sharp(asset).ensureAlpha();
