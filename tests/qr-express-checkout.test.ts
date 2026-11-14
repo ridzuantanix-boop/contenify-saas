@@ -23,12 +23,25 @@ describe('AffiMatik V8.4 QR Express Checkout',()=>{
     expect(config.maxAutoOrderMyr).toBe(399);
     expect(config.instantFullAccessEnabled).toBe(true);
   });
-  it('checks actual receipt magic instead of trusting the MIME header',()=>{
+  it('accepts common mobile receipt formats by actual magic instead of trusting the MIME header',()=>{
     const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]).buffer;
     expect(inspectEvidence(png,'image/png').extension).toBe('png');
-    expect(()=>inspectEvidence(png,'image/jpeg')).toThrow(/JPEG, PNG, WebP atau PDF/);
+    expect(inspectEvidence(png,'image/jpeg').mimeType).toBe('image/png');
     const pdf=new TextEncoder().encode('%PDF-1.7 synthetic').buffer;
     expect(inspectEvidence(pdf,'application/pdf').extension).toBe('pdf');
+    const heic=new Uint8Array([0,0,0,24,102,116,121,112,104,101,105,99,0,0,0,0]).buffer;
+    expect(inspectEvidence(heic,'application/octet-stream')).toEqual({mimeType:'image/heic',extension:'heic'});
+    const gif=new TextEncoder().encode('GIF89a synthetic').buffer;
+    expect(inspectEvidence(gif,'application/octet-stream').extension).toBe('gif');
+    expect(()=>inspectEvidence(new TextEncoder().encode('<html>bad</html>').buffer,'text/html')).toThrow(/fail gambar sebenar/);
+  });
+  it('ships the 25 MB database contract without weakening wallet idempotency',()=>{
+    const migration=fs.readFileSync('supabase/migrations/00029_payment_evidence_mobile_formats.sql','utf8');
+    expect(migration).toContain('26214400');
+    expect(migration).toContain('image/heic');
+    expect(migration).toContain('image/heif');
+    expect(migration).toContain('orders_receipt_size_check');
+    expect(migration).not.toMatch(/UPDATE\s+(credit_wallets|orders)|INSERT\s+INTO\s+credit_ledger/i);
   });
   it('ships a professional black QR asset whose decoded payment payload is unchanged',async()=>{
     const asset='release-assets/qr/affimatik-tng-duitnow-black.png';

@@ -2,7 +2,9 @@ import { DurableStore, OrderRecord } from '@/lib/db/store';
 import { signPrivateAsset } from '@/lib/storage/supabase-assets';
 
 export const QR_CONFIG_KEY = 'qr_checkout_config';
-export const MAX_PAYMENT_EVIDENCE_BYTES = 5 * 1024 * 1024;
+// Keep this below the Cloudflare request-body ceiling while allowing modern
+// phone photos (especially iPhone HEIC) without asking customers to resize.
+export const MAX_PAYMENT_EVIDENCE_BYTES = 25 * 1024 * 1024;
 
 export type QrPaymentState = 'PAYMENT_EVIDENCE_SUBMITTED' | 'PAYMENT_UNVERIFIED' | 'CREDITS_PROVISIONALLY_GRANTED' | 'BANK_PAYMENT_VERIFIED' | 'PROVISIONALLY_ACTIVE' | 'PAYMENT_CONFIRMED' | 'PAYMENT_REJECTED';
 
@@ -85,19 +87,24 @@ export async function publicQrConfig() {
   };
 }
 
-export function inspectEvidence(bytes: ArrayBuffer, declaredType: string): { mimeType: string; extension: string } {
-  if (bytes.byteLength < 8 || bytes.byteLength > MAX_PAYMENT_EVIDENCE_BYTES) throw new Error('Saiz bukti bayaran mestilah antara 8 bait hingga 5 MB.');
-  const head = new Uint8Array(bytes.slice(0, 12));
+export function inspectEvidence(bytes: ArrayBuffer, _declaredType: string): { mimeType: string; extension: string } {
+  if (bytes.byteLength < 8 || bytes.byteLength > MAX_PAYMENT_EVIDENCE_BYTES) throw new Error('Saiz bukti bayaran mestilah antara 8 bait hingga 25 MB.');
+  const head = new Uint8Array(bytes.slice(0, 32));
   const decoder = new TextDecoder();
-  const jpeg = declaredType === 'image/jpeg' && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
-  const png = declaredType === 'image/png' && [137,80,78,71,13,10,26,10].every((v, i) => head[i] === v);
-  const webp = declaredType === 'image/webp' && decoder.decode(head.slice(0,4)) === 'RIFF' && decoder.decode(head.slice(8,12)) === 'WEBP';
-  const pdf = declaredType === 'application/pdf' && decoder.decode(head.slice(0,5)) === '%PDF-';
-  if (jpeg) return { mimeType: declaredType, extension: 'jpg' };
-  if (png) return { mimeType: declaredType, extension: 'png' };
-  if (webp) return { mimeType: declaredType, extension: 'webp' };
-  if (pdf) return { mimeType: declaredType, extension: 'pdf' };
-  throw new Error('Bukti bayaran mesti JPEG, PNG, WebP atau PDF yang sah.');
+  const ascii = (start: number, end: number) => decoder.decode(head.slice(start, end));
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return { mimeType: 'image/jpeg', extension: 'jpg' };
+  if ([137,80,78,71,13,10,26,10].every((value, index) => head[index] === value)) return { mimeType: 'image/png', extension: 'png' };
+  if (ascii(0,4) === 'RIFF' && ascii(8,12) === 'WEBP') return { mimeType: 'image/webp', extension: 'webp' };
+  if (ascii(0,5) === '%PDF-') return { mimeType: 'application/pdf', extension: 'pdf' };
+  if (ascii(0,6) === 'GIF87a' || ascii(0,6) === 'GIF89a') return { mimeType: 'image/gif', extension: 'gif' };
+  if (ascii(0,2) === 'BM') return { mimeType: 'image/bmp', extension: 'bmp' };
+  if ((ascii(0,2) === 'II' && head[2] === 42 && head[3] === 0) || (ascii(0,2) === 'MM' && head[2] === 0 && head[3] === 42)) return { mimeType: 'image/tiff', extension: 'tiff' };
+  if (ascii(4,8) === 'ftyp') {
+    const brand = ascii(8,12).toLowerCase();
+    if (['heic','heix','hevc','hevx'].includes(brand)) return { mimeType: 'image/heic', extension: 'heic' };
+    if (['mif1','msf1','heim','heis'].includes(brand)) return { mimeType: 'image/heif', extension: 'heif' };
+  }
+  throw new Error('Bukti bayaran mesti fail gambar sebenar (termasuk HEIC/HEIF) atau PDF.');
 }
 
 export async function sha256Hex(bytes: ArrayBuffer) {
