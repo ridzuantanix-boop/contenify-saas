@@ -78,6 +78,10 @@ async function snapshot() {
     (SELECT count(*) FROM auth.users) AS auth_users,
     (SELECT count(*) FROM public.profiles) AS profiles,
     (SELECT count(*) FROM public.credit_wallets) AS wallets,
+    (SELECT count(*) FROM public.credit_ledger) AS ledger_entries,
+    (SELECT count(*) FROM public.orders) AS orders,
+    (SELECT count(*) FROM public.products) AS products,
+    (SELECT count(*) FROM public.product_images) AS product_images,
     (SELECT coalesce(sum(balance),0) FROM public.credit_wallets) AS wallet_balance,
     (SELECT coalesce(sum(reserved_balance),0) FROM public.credit_wallets) AS reserved_balance,
     (SELECT count(*) FROM public.video_jobs) AS jobs,
@@ -85,6 +89,10 @@ async function snapshot() {
     (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(email,''), '~' ORDER BY id),'')) FROM auth.users) AS auth_identity_hash,
     (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(default_workspace_id::text,'') || '|' || coalesce(tier::text,''), '~' ORDER BY id),'')) FROM public.profiles) AS profile_identity_hash,
     (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || balance::text || '|' || reserved_balance::text || '|' || lifetime_granted::text || '|' || lifetime_spent::text, '~' ORDER BY id),'')) FROM public.credit_wallets) AS wallet_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || amount::text || '|' || event_type::text || '|' || idempotency_key, '~' ORDER BY id),'')) FROM public.credit_ledger) AS ledger_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || plan_id || '|' || amount_myr::text || '|' || credits_granted::text || '|' || status, '~' ORDER BY id),'')) FROM public.orders) AS order_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || name, '~' ORDER BY id),'')) FROM public.products) AS product_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || coalesce(product_id::text,'') || '|' || r2_key || '|' || size_bytes::text, '~' ORDER BY id),'')) FROM public.product_images) AS product_image_row_hash,
     (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || status::text || '|' || coalesce(result_video_url,'') || '|' || coalesce(result_video_r2_key,'') || '|' || required_credits::text, '~' ORDER BY id),'')) FROM public.video_jobs) AS job_row_hash`)).rows[0];
 }
 try {
@@ -94,12 +102,12 @@ try {
   }
   const applied = [];
   const migrationSelection = process.env.AFFIMATIK_REHEARSAL_MIGRATIONS?.trim().toLowerCase();
-  const requestedMigrations = migrationSelection === 'none'
+  const requestedMigrations = !migrationSelection || migrationSelection === 'none'
     ? []
     : process.env.AFFIMATIK_REHEARSAL_MIGRATIONS
     ? process.env.AFFIMATIK_REHEARSAL_MIGRATIONS.split(',').map(value => Number(value.trim())).filter(Number.isInteger)
-    : Array.from({ length: 13 }, (_, index) => index + 12);
-  if (!requestedMigrations.length && migrationSelection !== 'none') throw new Error('Senarai migration rehearsal kosong.');
+    : [];
+  if (migrationSelection && migrationSelection !== 'none' && !requestedMigrations.length) throw new Error('Senarai migration rehearsal kosong.');
   for (const number of requestedMigrations) {
     const prefix = `000${number}_`;
     const { readdirSync } = await import('node:fs');
@@ -128,7 +136,7 @@ try {
   if (!v9Schema.creator_profiles || !v9Schema.product_folders || !v9Schema.auto_factory_batches || !v9Schema.daily_auto_schedules) {
     throw new Error(`Skema V9 tidak lengkap selepas rehearsal: ${JSON.stringify(v9Schema)}`);
   }
-  const receiptOut = { database, sourceBackup: dir, applied, baseline: manifest.baseline, after, verifiedAt: new Date().toISOString() };
+  const receiptOut = { database, sourceBackup: dir, mode: applied.length ? 'restore-and-explicit-migrations' : 'restore-only', applied, baseline: manifest.baseline, after, verifiedAt: new Date().toISOString() };
   writeFileSync(join(dir, 'restore-rehearsal.json'), JSON.stringify(receiptOut, null, 2));
   console.log(`Restore dan migrations ${applied.join(', ')} lulus pada database terasing ${database}.`);
 } finally { await check.end(); }

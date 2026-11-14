@@ -43,6 +43,7 @@ export default function LandingPage() {
             <Link href="#demo" className="hover:text-violet-700">Lihat Demo</Link>
             <Link href="#features" className="hover:text-violet-700">Apa Anda Dapat</Link>
             <Link href="#pricing" className="hover:text-violet-700">Harga</Link>
+            <Link href="#faq" className="hover:text-violet-700">Soalan Lazim</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/login" className="px-3 py-2 text-xs font-bold text-slate-700">Log Masuk</Link>
@@ -107,6 +108,21 @@ export default function LandingPage() {
               <div className="sm:text-right"><p className="text-5xl font-black">{LAUNCH_PACK.priceFormatted}</p><p className="mt-1 text-xs font-bold text-emerald-700">RM{LAUNCH_PACK.effectiveMyrPerVideo.toFixed(2)} / video</p><Link href="/register" className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 text-sm font-black text-white sm:w-auto">Grab Launch Pack <Zap className="h-4 w-4" /></Link></div>
             </div></div>
             <div className="mt-8 grid gap-5 md:grid-cols-3">{AUTHORITATIVE_PLANS.map(plan => <article key={plan.id} className={`rounded-3xl border bg-white p-6 ${plan.isPopular ? 'border-violet-500 shadow-lg shadow-violet-100' : 'border-slate-200'}`}>{plan.isPopular && <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-black text-violet-700">PALING POPULAR</span>}<h3 className="mt-3 text-lg font-black">{plan.name}</h3><p className="mt-3 text-3xl font-black">{plan.priceFormatted}<span className="text-xs font-semibold text-slate-500"> {plan.billingPeriod}</span></p><p className="mt-2 text-xs font-bold text-violet-700">{plan.monthlyCredits.toLocaleString()} kredit · hingga {plan.voiceVideoAllowance} video</p><p className="mt-1 text-[11px] text-emerald-700">± RM{effectiveMyrPerVideo(plan).toFixed(2)} / video</p><Link href="/register" className="mt-6 flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-black text-slate-800">Daftar & Pilih Pelan</Link></article>)}</div>
+          </div>
+        </section>
+
+        <section id="faq" className="bg-white px-5 py-16 sm:px-8 sm:py-24">
+          <div className="mx-auto max-w-4xl">
+            <div className="text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-violet-700">Baru nak mula?</p><h2 className="mt-3 text-3xl font-black">Soalan yang selalu ditanya</h2></div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2">
+              {[
+                ['Launch Pack ni langganan bulanan ke?', 'Bukan. Launch Pack ialah bayaran sekali RM19 untuk 150 kredit (hingga 15 video). Ia tidak mengaktifkan langganan automatik dan kreditnya sah selama 180 hari.'],
+                ['Macam mana kredit digunakan?', 'Setiap video Nexabot 15 saat menggunakan 10 kredit. Kredit hanya diselesaikan sekali apabila video berjaya disimpan. Jika generation gagal secara teknikal dan disahkan gagal, tempahan kredit dilepaskan semula.'],
+                ['Macam mana bayaran QR dibuat?', 'Daftar dan pilih pakej di Billing, imbas QR, bayar jumlah tepat dengan rujukan order, kemudian muat naik resit. Kredit boleh diaktifkan secara provisional sementara admin mengesahkan bayaran; status ini bukan pengesahan bank.'],
+                ['Apa beza Launch Pack dan pelan bulanan?', 'Launch Pack sesuai untuk cuba secara berbayar sekali sahaja. Pelan Starter, Pro dan Agency memberi lebih banyak kredit untuk penggunaan bulanan dan diperbaharui secara manual—tiada auto-renewal.'],
+              ].map(([question, answer]) => <article key={question} className="rounded-2xl border border-slate-200 bg-[#f9f9fd] p-5"><h3 className="text-sm font-black">{question}</h3><p className="mt-2 text-xs leading-6 text-slate-600">{answer}</p></article>)}
+            </div>
+            <p className="mt-7 text-center text-xs text-slate-600">Masih perlukan bantuan? <a href="mailto:support@affimatik.online" className="font-black text-violet-700 underline underline-offset-4">Hubungi sokongan AffiMatik</a>.</p>
           </div>
         </section>
 

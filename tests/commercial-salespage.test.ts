@@ -32,4 +32,14 @@ describe('commercial sales page and disabled Free Trial', () => {
     expect(landing).toContain("{ id: 'RH03'");
     expect(landing).not.toContain('20 Kredit Percuma');
   });
+
+  it('explains the beginner purchase flow without overstating payment verification', () => {
+    const landing = read('src/app/page.tsx');
+    expect(landing).toContain('Soalan yang selalu ditanya');
+    expect(landing).toContain('tidak mengaktifkan langganan automatik');
+    expect(landing).toContain('sah selama 180 hari');
+    expect(landing).toContain('status ini bukan pengesahan bank');
+    expect(landing).toContain('support@affimatik.online');
+    expect(landing).toContain('tempahan kredit dilepaskan semula');
+  });
 });

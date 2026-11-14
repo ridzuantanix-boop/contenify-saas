@@ -83,6 +83,10 @@ try {
     (SELECT count(*) FROM auth.users) AS auth_users,
     (SELECT count(*) FROM public.profiles) AS profiles,
     (SELECT count(*) FROM public.credit_wallets) AS wallets,
+    (SELECT count(*) FROM public.credit_ledger) AS ledger_entries,
+    (SELECT count(*) FROM public.orders) AS orders,
+    (SELECT count(*) FROM public.products) AS products,
+    (SELECT count(*) FROM public.product_images) AS product_images,
     (SELECT coalesce(sum(balance),0) FROM public.credit_wallets) AS wallet_balance,
     (SELECT coalesce(sum(reserved_balance),0) FROM public.credit_wallets) AS reserved_balance,
     (SELECT count(*) FROM public.video_jobs) AS jobs,
@@ -90,6 +94,10 @@ try {
     (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(email,''), '~' ORDER BY id),'')) FROM auth.users) AS auth_identity_hash,
     (SELECT md5(coalesce(string_agg(id::text || '|' || coalesce(default_workspace_id::text,'') || '|' || coalesce(tier::text,''), '~' ORDER BY id),'')) FROM public.profiles) AS profile_identity_hash,
     (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || balance::text || '|' || reserved_balance::text || '|' || lifetime_granted::text || '|' || lifetime_spent::text, '~' ORDER BY id),'')) FROM public.credit_wallets) AS wallet_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || amount::text || '|' || event_type::text || '|' || idempotency_key, '~' ORDER BY id),'')) FROM public.credit_ledger) AS ledger_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || plan_id || '|' || amount_myr::text || '|' || credits_granted::text || '|' || status, '~' ORDER BY id),'')) FROM public.orders) AS order_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || name, '~' ORDER BY id),'')) FROM public.products) AS product_row_hash,
+    (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || coalesce(product_id::text,'') || '|' || r2_key || '|' || size_bytes::text, '~' ORDER BY id),'')) FROM public.product_images) AS product_image_row_hash,
     (SELECT md5(coalesce(string_agg(id::text || '|' || workspace_id::text || '|' || status::text || '|' || coalesce(result_video_url,'') || '|' || coalesce(result_video_r2_key,'') || '|' || required_credits::text, '~' ORDER BY id),'')) FROM public.video_jobs) AS job_row_hash`)).rows[0];
   const db = await dumpDatabase();
   const buckets = (await client.query('SELECT id FROM storage.buckets ORDER BY id')).rows;
@@ -112,7 +120,7 @@ try {
   const receipt = { projectRef: ref, createdAt: manifest.createdAt, database: { file: db.file, sha256: db.encryptedSha256 }, manifest: { file: manifestEntry.file, sha256: manifestEntry.encryptedSha256 }, buckets: buckets.length, objects: objects.length, verified: true };
   writeFileSync(join(dir, 'receipt.json'), JSON.stringify(receipt, null, 2));
   console.log(`Backup terenkripsi dan hash disahkan: ${dir}`);
-  console.log(`Auth=${baseline.auth_users}, profiles=${baseline.profiles}, wallets=${baseline.wallets}, jobs=${baseline.jobs}, Storage=${objects.length}.`);
+  console.log(`Auth=${baseline.auth_users}, profiles=${baseline.profiles}, wallets=${baseline.wallets}, ledger=${baseline.ledger_entries}, orders=${baseline.orders}, jobs=${baseline.jobs}, products=${baseline.products}, media=${baseline.product_images}, Storage=${objects.length}.`);
 } finally {
   await client.end().catch(() => {});
 }
