@@ -5,6 +5,7 @@ import { reconcileOrphanAccounts } from '@/lib/db/reconcile';
 import { qrRpc } from '@/lib/billing/qr-checkout';
 import { getProfileEmail, getWorkspaceOwnerEmail, getWorkspacePaymentControl, listProvisionalExposure, sendPaymentEventEmail } from '@/lib/billing/payment-control';
 import { signPrivateAsset } from '@/lib/storage/supabase-assets';
+import { recordServerConversion } from '@/lib/analytics/conversion';
 
 
 /**
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: settlement.error || 'Bayaran tidak dapat disahkan.', settlement }, { status: 409 });
       }
       const customerEmail=await getProfileEmail(order.userId).catch(()=>'');await sendPaymentEventEmail({to:customerEmail,event:'PAYMENT_CONFIRMED',orderId}).catch(()=>undefined);
+      await recordServerConversion({eventName:'payment_bank_verified',dedupeKey:`verified:${orderId}`,userId:order.userId,workspaceId:order.workspaceId,metadata:{planId:order.planId,source:'admin_bank_confirmation'}}).catch(()=>false);
 
       await DurableStore.recordAuditLog(
         adminEmail,

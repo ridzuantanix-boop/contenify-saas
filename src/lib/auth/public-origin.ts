@@ -24,6 +24,8 @@ export function publicAppOrigin(req: NextRequest): string {
   return parsed.origin;
 }
 
-export function authCallbackUrl(req: NextRequest): string {
-  return `${publicAppOrigin(req)}/auth/callback`;
+export function authCallbackUrl(req: NextRequest, purchaseIntent?: string): string {
+  const callback = new URL('/auth/callback', publicAppOrigin(req));
+  if (purchaseIntent === 'launch_pack') callback.searchParams.set('intent', 'launch_pack');
+  return callback.toString();
 }

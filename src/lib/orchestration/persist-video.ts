@@ -1,6 +1,7 @@
 import { DurableStore, VideoJobRecord } from '@/lib/db/store';
 import { ingestProviderMp4 } from '@/lib/storage/supabase-assets';
 import { customerFailureMessage } from '@/lib/jobs/customer-failure';
+import { recordServerConversion } from '@/lib/analytics/conversion';
 
 export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string): Promise<boolean> {
   let objectKey = job.videoObjectKey;
@@ -42,5 +43,6 @@ export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: st
     videoUrl: objectKey ? `/api/videos/${job.id}/stream` : providerUrl,
     rawStatus,
   });
+  await recordServerConversion({eventName:'first_video_completed',dedupeKey:`job:${job.id}`,workspaceId:job.workspaceId,metadata:{provider:job.provider,styleId:job.styleId,source:'video_persisted'}}).catch(()=>false);
   return true;
 }

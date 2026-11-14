@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sparkles, ArrowRight, AlertCircle, CheckCircle2, Mail, Zap } from 'lucide-react';
+import { trackConversion } from '@/lib/analytics/conversion';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,10 +20,15 @@ export default function RegisterPage() {
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [resendBusy, setResendBusy] = useState(false);
 
+  useEffect(() => {
+    const intent = new URLSearchParams(window.location.search).get('intent');
+    if (intent === 'launch_pack') window.localStorage.setItem('affimatik_purchase_intent', 'launch_pack');
+  }, []);
+
   async function resendConfirmation() {
     setResendBusy(true); setErrorMsg(null);
     try {
-      const response = await fetch('/api/auth/resend-confirmation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: registeredEmail }) });
+      const response = await fetch('/api/auth/resend-confirmation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: registeredEmail, purchaseIntent: window.localStorage.getItem('affimatik_purchase_intent') }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Permintaan gagal.');
       setSuccessMsg(result.message);
@@ -32,6 +38,7 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    trackConversion('registration_started', 'register-submit', { source: 'launch_pack_funnel' });
     setIsLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -46,6 +53,7 @@ export default function RegisterPage() {
           whatsapp: whatsapp.trim(),
           password,
           referralCode: referralCode.trim() || undefined,
+          purchaseIntent: window.localStorage.getItem('affimatik_purchase_intent'),
         }),
       });
 
@@ -55,15 +63,17 @@ export default function RegisterPage() {
       }
 
       if (data.requiresEmailConfirmation) {
+        trackConversion('registration_completed', 'register-email-pending', { source: 'email_confirmation_required' });
         setRequiresEmailVerification(true);
         setRegisteredEmail(email.trim().toLowerCase());
         setSuccessMsg(null);
         return;
       }
 
-      setSuccessMsg('Akaun anda berjaya dicipta. Sedang membawa anda ke Dashboard...');
+      trackConversion('registration_completed', 'register-session-ready', { source: 'session_ready' });
+      setSuccessMsg('Akaun anda berjaya dicipta. Sedang membawa anda ke Launch Pack...');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/billing?intent=launch_pack');
       }, 1200);
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Ralat pendaftaran.');
@@ -114,7 +124,7 @@ export default function RegisterPage() {
                 {successMsg && <p role="status" className="text-xs text-emerald-700">{successMsg}</p>}
                 <button type="button" disabled={resendBusy} onClick={resendConfirmation} className="w-full rounded-xl border px-4 py-2.5 text-xs font-semibold disabled:opacity-50">{resendBusy ? 'Menghantar…' : 'Hantar semula jika belum disahkan'}</button>
                 <Link
-                  href="/login"
+                  href="/login?intent=launch_pack"
                   className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition"
                 >
                   <span>Pergi ke Halaman Log Masuk</span>
@@ -191,7 +201,7 @@ export default function RegisterPage() {
                 required
               />
               <p className="text-[10px] text-slate-400 mt-1">
-                Wajib untuk pengesahan akaun percuma & notifikasi siap video.
+                Digunakan untuk pengesahan akaun dan notifikasi berkaitan video.
               </p>
             </div>
 

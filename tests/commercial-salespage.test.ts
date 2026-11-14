@@ -26,7 +26,7 @@ describe('commercial sales page and disabled Free Trial', () => {
 
   it('presents the RM19 offer and genuine style sample endpoints', () => {
     const landing = read('src/app/page.tsx');
-    expect(landing).toContain('Dapatkan 15 Video — RM19');
+    expect(landing).toContain('Mula Dengan RM19');
     expect(landing).toContain('/api/style-samples/NX17');
     expect(landing).toContain("{ id: 'NX01'");
     expect(landing).toContain("{ id: 'RH03'");
@@ -35,10 +35,10 @@ describe('commercial sales page and disabled Free Trial', () => {
 
   it('explains the beginner purchase flow without overstating payment verification', () => {
     const landing = read('src/app/page.tsx');
-    expect(landing).toContain('Soalan yang selalu ditanya');
+    expect(landing).toContain('Soalan sebelum mula');
     expect(landing).toContain('tidak mengaktifkan langganan automatik');
     expect(landing).toContain('sah selama 180 hari');
-    expect(landing).toContain('status ini bukan pengesahan bank');
+    expect(landing).toContain('upload resit bukan pengesahan bank');
     expect(landing).toContain('support@affimatik.online');
     expect(landing).toContain('tempahan kredit dilepaskan semula');
   });

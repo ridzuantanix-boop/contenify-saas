@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -11,6 +11,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('intent') === 'launch_pack') {
+      window.localStorage.setItem('affimatik_purchase_intent', 'launch_pack');
+    }
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +38,8 @@ export default function LoginPage() {
         throw new Error(data.error || 'Log masuk gagal. Sila semak emel dan kata laluan.');
       }
 
-      router.push('/dashboard');
+      const launchIntent = window.localStorage.getItem('affimatik_purchase_intent') === 'launch_pack';
+      router.push(launchIntent ? '/billing?intent=launch_pack' : '/dashboard');
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Ralat log masuk.');
     } finally {
@@ -108,7 +115,7 @@ export default function LoginPage() {
 
           <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
             Belum ada akaun?{' '}
-            <Link href="/register" className="font-bold text-indigo-600 hover:text-indigo-700">
+            <Link href="/register?intent=launch_pack" className="font-bold text-indigo-600 hover:text-indigo-700">
               Cipta akaun & lihat pakej
             </Link>
           </div>

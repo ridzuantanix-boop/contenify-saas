@@ -4,10 +4,11 @@ import { authCallbackUrl } from '@/lib/auth/public-origin';
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const purchaseIntent = body.purchaseIntent === 'launch_pack' ? 'launch_pack' : undefined;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) return NextResponse.json({ error: 'Alamat emel tidak sah.' }, { status: 400 });
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) return NextResponse.json({ error: 'Perkhidmatan emel tidak tersedia.' }, { status: 503 });
   try {
-    const redirectTo = authCallbackUrl(req);
+    const redirectTo = authCallbackUrl(req, purchaseIntent);
     const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/resend?redirect_to=${encodeURIComponent(redirectTo)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_ANON_KEY },
       body: JSON.stringify({ type: 'signup', email }),

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   const password = typeof body.password === 'string' ? body.password : '';
   const whatsapp = typeof body.whatsapp === 'string' ? body.whatsapp.trim() : '';
   const fullName = typeof body.fullName === 'string' ? body.fullName.trim().slice(0, 255) : '';
+  const purchaseIntent = body.purchaseIntent === 'launch_pack' ? 'launch_pack' : undefined;
   const referralCode = typeof body.referralCode === 'string' ? body.referralCode.trim().toUpperCase() : (req.cookies.get('affimatik_ref')?.value || '');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || password.length < 8 || password.length > 128 || whatsapp.replace(/\D/g, '').length < 8 || !/^[A-Z0-9_-]{0,50}$/.test(referralCode)) {
     return NextResponse.json({ error: 'Semak alamat emel, kata laluan (8–128 aksara), WhatsApp dan kod rujukan.' }, { status: 400 });
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Pendaftaran sedang diselenggara.' }, { status: 503 });
     }
     try {
-      const redirectTo = authCallbackUrl(req);
+      const redirectTo = authCallbackUrl(req, purchaseIntent);
       const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_ANON_KEY },
         body: JSON.stringify({ email, password, data: { full_name: fullName || email.split('@')[0], whatsapp, referral_code: referralCode || null } }),

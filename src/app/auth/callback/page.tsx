@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { trackConversion } from '@/lib/analytics/conversion';
 
 type CallbackState = 'loading' | 'recovery' | 'expired' | 'error' | 'success';
 
@@ -49,9 +50,12 @@ export default function AuthCallbackPage() {
         const response = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ supabaseAccessToken: token }) });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Sesi AffiMatik tidak dapat dicipta.');
-        setMessage('Emel berjaya disahkan. Anda sedang dibawa ke Dashboard.');
+        trackConversion('email_verified', 'signup-email', { source: 'auth_callback' });
+        const launchIntent = query.get('intent') === 'launch_pack' || window.localStorage.getItem('affimatik_purchase_intent') === 'launch_pack';
+        if (launchIntent) window.localStorage.setItem('affimatik_purchase_intent', 'launch_pack');
+        setMessage(launchIntent ? 'Emel berjaya disahkan. Anda sedang dibawa ke Launch Pack.' : 'Emel berjaya disahkan. Anda sedang dibawa ke Dashboard.');
         setState('success');
-        window.setTimeout(() => window.location.replace('/dashboard'), 800);
+        window.setTimeout(() => window.location.replace(launchIntent ? '/billing?intent=launch_pack' : '/dashboard'), 800);
       } catch (cause) {
         setMessage(cause instanceof Error ? cause.message : 'Pengesahan tidak dapat diselesaikan.');
         setState('error');
