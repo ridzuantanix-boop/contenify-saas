@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
     if (uploaded && objectKey) await deletePrivateAsset(objectKey).catch(() => undefined);
     const message = error instanceof Error ? error.message : '';
     if (message === 'CHECKOUT_RATE_LIMIT') return NextResponse.json({ error: 'Terlalu banyak cubaan. Sila tunggu 10 minit.' }, { status: 429 });
+    if (/25 MB/.test(message)) return NextResponse.json({ error: message }, { status: 413 });
+    if (/fail gambar sebenar/.test(message)) return NextResponse.json({ error: message }, { status: 415 });
     return NextResponse.json({ error: message || 'Bukti pembayaran tidak dapat diproses.' }, { status: 503 });
   }
 }

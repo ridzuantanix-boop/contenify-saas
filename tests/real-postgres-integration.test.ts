@@ -47,6 +47,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00025_restore_provider_retry_scheduler.sql',
       '00026_cloud_auto_factory.sql',
       '00027_launch_pack_rm19.sql',
+      '00029_payment_evidence_mobile_formats.sql',
     ];
 
     for (const file of migrationFiles) {

@@ -70,6 +70,7 @@ describe('Real PostgreSQL Two-Connection Concurrency & Double-Checked Locking Su
       '00023_v72_pricing_and_credit_buckets.sql',
       '00024_instant_qr_full_access.sql',
       '00027_launch_pack_rm19.sql',
+      '00029_payment_evidence_mobile_formats.sql',
     ];
 
     for (const file of migrationFiles) {
