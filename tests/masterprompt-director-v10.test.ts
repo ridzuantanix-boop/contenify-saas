@@ -6,6 +6,7 @@ import { getVideoStyle, VIDEO_STYLES_REGISTRY } from '../src/lib/styles/registry
 import { sanitizePersonalizationSettings } from '../src/lib/personalization/config';
 import { NexabotAdapter } from '../src/lib/providers/nexabot';
 import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
+import { STYLE_DIRECTORS } from '../src/lib/engine/style-directors';
 
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const product: ProductProfile = { name:'the uploaded product image', category:'product shown', packagingFormat:'general', spokenShortName:'produk ini', confirmedFeatures:[], prohibitedClaims:['invented claims'], unknownFields:['ingredients'], sourceConfidence:'manual_fallback', provenance:'manual_user_entry', isVisionSupported:false };
@@ -30,7 +31,7 @@ describe('V10 Pawarna Masterprompt Director', () => {
       expect(compiled.providerPrompt, style.id).toContain('[HUMAN REALISM MASTERPROMPT V8]');
       expect(compiled.providerPrompt, style.id).toContain('[SHARIAH MODESTY LOCK');
       expect(compiled.providerPrompt, style.id).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
-      expect(compiled.providerPrompt, style.id).toMatch(/^\[PRIORITY 0 SPOKEN OUTPUT CONTRACT/);
+      expect(compiled.providerPrompt, style.id).toMatch(/^\[1\. CRITICAL PRODUCTION CONTRACT\]/);
       expect(compiled.providerPrompt, style.id).toContain('Finish every spoken word by second 11.5');
       expect(compiled.providerPrompt, style.id).toContain('Never infer touch operation, flexibility, brightness, eye comfort, battery life, efficacy');
       expect(compiled.providerPrompt, style.id).not.toMatch(/Script: ""|\$\{p\.spokenScript\}|\{script_body\}|V8 SMART SCRIPT CONTROL/i);
@@ -74,7 +75,64 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(payload.prompt).toBe(compiled.providerPrompt);
     expect(payload.media).toEqual([image,image]);
     expect(payload.prompt).toContain('Reference images 1 and 2 are intentionally IDENTICAL');
-    expect(payload.prompt).toContain('never a mandatory first frame');
+    expect(payload.prompt).toContain('neither may become the first video frame');
+  });
+
+  it('has one complete authoritative director specification for every official style', () => {
+    expect(Object.keys(STYLE_DIRECTORS).sort()).toEqual(VIDEO_STYLES_REGISTRY.map((style) => style.id).sort());
+    for (const style of VIDEO_STYLES_REGISTRY) {
+      const director = STYLE_DIRECTORS[style.id];
+      for (const field of ['concept','audienceExperience','openingVisual','shotComposition','sceneSelection','productInteraction','presenterVisibility','humanPerformance','voiceOrAudio','storytellingObjective','relevantProductInformation','naturalEnding'] as const) {
+        expect(director[field].length, `${style.id}.${field}`).toBeGreaterThan(20);
+      }
+      expect(director.hardFailures.length, style.id).toBeGreaterThanOrEqual(4);
+    }
+    const compilerSource = readFileSync('src/lib/engine/compiler.ts','utf8');
+    expect(compilerSource).not.toContain('AUTHORITATIVE_STYLE_MASTERPROMPTS');
+    expect(compilerSource).not.toMatch(/for\s*\([^)]*VIDEO_STYLES_REGISTRY[^)]*\)\s*\{/);
+  });
+
+  it('does not force an ungrounded kitchen, desk, bedroom or domestic fallback', () => {
+    const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene);
+    expect(compiled.providerPrompt).not.toContain('dapur atau ruang santai');
+    expect(compiled.providerPrompt).not.toContain('ordinary domestic context');
+    expect(compiled.providerPrompt).toContain('No customer-confirmed usage context was supplied');
+    expect(compiled.providerPrompt).toContain('without assuming a kitchen, desk, bedroom, bathroom');
+    const profile = AICreativeDirector.extractProductProfile({ productName:'Produk Tidak Dikenali' });
+    expect(profile.usageContext).toBeUndefined();
+    const planned = AICreativeDirector.createScenePlan(profile, getVideoStyle('NX01')!);
+    expect(planned.location).toContain('jangan andaikan dapur, meja kerja, bilik tidur, bilik air atau vanity tanpa bukti');
+  });
+
+  it('produces exactly one non-contradictory effective audio mode in final payloads', () => {
+    const spoken = DynamicPromptCompiler.compile(product, getVideoStyle('NX01')!, scene, { audioTreatment:'asmr' }).providerPrompt;
+    expect(spoken).toContain('Effective audio mode: SPOKEN PRESENTER');
+    expect(spoken).not.toContain('Effective audio mode: ASMR');
+
+    for (const mode of ['ambient','asmr'] as const) {
+      const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('RH03')!, scene, { audioTreatment:mode }).providerPrompt;
+      expect(prompt).toContain(`Effective audio mode: ${mode.toUpperCase()}`);
+      expect(prompt).not.toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
+      expect(prompt).not.toContain('[PRIORITY 0 SPOKEN OUTPUT CONTRACT');
+      expect(prompt).not.toContain('Effective audio mode: OFF-CAMERA VOICEOVER');
+      expect(prompt).toContain('Absolutely no spoken words, voiceover, narration, lip-sync or music');
+    }
+  });
+
+  it('keeps the requested seven-section payload order', () => {
+    const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('NX17')!, scene).providerPrompt;
+    const sections = [
+      '[1. CRITICAL PRODUCTION CONTRACT]',
+      '[2. SELECTED STYLE FULL CREATIVE DIRECTION]',
+      '[3. PRODUCT UNDERSTANDING AND CONTEXT]',
+      '[4. HUMAN PERFORMANCE AND SCENE BEHAVIOUR]',
+      '[5. VOICE OR AUDIO DIRECTION]',
+      '[6. NECESSARY SAFETY AND VISUAL LOCKS]',
+      '[7. ENDING REQUIREMENTS]',
+    ];
+    const positions = sections.map((section) => prompt.indexOf(section));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((a,b) => a-b));
   });
 
   it('keeps product realism and has no production import of the historical scriptwriter', () => {

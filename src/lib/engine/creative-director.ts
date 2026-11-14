@@ -181,45 +181,40 @@ export class AICreativeDirector {
 
     // Safe Core Function & Usage Context Grounding (Table 5 of 01_PRODUCT_AND_SCRIPT_BRAIN.md)
     let coreFunction = 'kegunaan dan keperluan seharian';
-    let usageContext = input.usageContext || 'kegunaan harian';
+    // Never manufacture a physical location. An absent context remains absent
+    // so the provider can choose from the recognizable category and style.
+    let usageContext = input.usageContext;
     let buyerProblem = input.buyerProblem || 'mencari pilihan praktikal untuk keperluan harian';
     let allowedQaQuestion = '';
 
     if (isWearableOrFashion || packagingFormat === 'apparel') {
       coreFunction = 'dipakai dan digayakan untuk penampilan kemas serta selesa';
-      usageContext = input.usageContext || 'aktiviti harian dan majlis santai';
       buyerProblem = input.buyerProblem || 'tudung sukar dibentuk atau kurang selesa dipakai lama';
       allowedQaQuestion = 'Tudung ni senang dibentuk dan selesa ke?';
     } else if (packagingFormat === 'jar' || packagingFormat === 'pouch' || lowerCat.includes('makan') || lowerCat.includes('masak')) {
       coreFunction = 'dihidang sebagai pelengkap hidangan bersama sajian utama';
-      usageContext = input.usageContext || 'dapur dan waktu makan';
       buyerProblem = input.buyerProblem || 'perlukan sajian ringkas dan cepat untuk hidangan makan';
       allowedQaQuestion = 'Sajian ni sedia dimakan terus ke?';
     } else if (packagingFormat === 'bottle' || lowerCat.includes('skin') || lowerCat.includes('cantik') || lowerCat.includes('diri')) {
       coreFunction = 'digunakan dalam rutin membersih atau melembapkan diri mengikut keperluan';
-      usageContext = input.usageContext || 'rutin penjagaan diri';
       buyerProblem = input.buyerProblem || 'kulit perlukan kelembapan dan penjagaan yang konsisten';
       allowedQaQuestion = 'Produk ni sesuai untuk kegunaan harian ke?';
     } else if (packagingFormat === 'gadget' || lowerCat.includes('gadget') || lowerCat.includes('elektronik')) {
       if (lowerName.includes('lampu')) {
         coreFunction = 'menerangi ruang meja belajar atau meja kerja';
-        usageContext = input.usageContext || 'meja belajar dan ruang kerja';
         buyerProblem = input.buyerProblem || 'meja belajar perlukan pencahayaan yang sesuai';
         allowedQaQuestion = 'Lampu ni boleh ubah tahap cahaya ke?';
       } else if (lowerName.includes('powerbank')) {
         coreFunction = 'mengecas peranti bila berada di luar atau travel';
-        usageContext = input.usageContext || 'perjalanan dan waktu travel';
         buyerProblem = input.buyerProblem || 'bateri peranti cepat habis waktu travel';
         allowedQaQuestion = 'Powerbank ni menyokong pengecasan pantas ke?';
       } else {
         coreFunction = 'melaksanakan fungsi teknikal untuk memudahkan urusan harian';
-        usageContext = input.usageContext || 'meja kerja dan kegunaan seharian';
         buyerProblem = input.buyerProblem || 'perlukan peranti yang praktikal dan mudah dikendalikan';
         allowedQaQuestion = 'Peranti ni praktikal untuk kegunaan kerja ke?';
       }
     } else if (lowerCat.includes('rumah') || lowerCat.includes('home')) {
       coreFunction = 'kegunaan dan kemudahan praktikal di rumah';
-      usageContext = input.usageContext || 'ruang rumah dan dapur';
       buyerProblem = input.buyerProblem || 'urusan rumah perlukan penyelesaian yang lebih memudahkan';
       allowedQaQuestion = 'Barang ni memudahkan urusan di rumah ke?';
     }
@@ -384,23 +379,9 @@ export class AICreativeDirector {
   ): ScenePlan {
     const plan = style.actionPlan;
 
-    // Authentic domestic Malaysian setting aligned with style and product
-    let location = 'Ruang tamu rumah moden Malaysia dengan pencahayaan siang semulajadi';
-    if (product.packagingFormat === 'jar' || product.category.toLowerCase().includes('makanan')) {
-      location = 'Dapur kediaman Malaysia yang kemas dan bersih dengan pencahayaan pagi neutral';
-    } else if (product.packagingFormat === 'bottle' || product.category.toLowerCase().includes('skincare')) {
-      location = 'Meja solek / vanity cerah dengan pencahayaan neutral seimbang 5500K';
-    } else if (product.packagingFormat === 'gadget' || style.id === 'RH17') {
-      location = 'Meja kerja moden yang kemas dengan pencahayaan studio lembut';
-    } else if (style.id === 'RH19') {
-      location = 'Kawasan tepi tingkap kediaman Malaysia dengan cahaya siang neutral semulajadi';
-    } else if (product.packagingFormat === 'apparel') {
-      location = 'Ruang santai kediaman dengan latar neutral dan cahaya tingkap semulajadi';
-    }
-
-    if (options?.locationOverride) {
-      location = options.locationOverride;
-    }
+    const location = options?.locationOverride
+      || product.usageContext
+      || 'Provider memilih lokasi Malaysia yang neutral atau relevan berdasarkan kategori produk yang benar-benar dapat dikenal pasti dan gaya terpilih; jangan andaikan dapur, meja kerja, bilik tidur, bilik air atau vanity tanpa bukti.';
 
     return {
       mainSubject: `Produk fizikal ${product.name}`,

@@ -1,8 +1,12 @@
-/** AffiMatik Creative V6 — canonical 20-style registry. */
+/**
+ * Customer-facing style catalogue and operational metadata.
+ * Full provider creative direction is authoritative only in
+ * engine/style-directors.ts; this registry must never compile provider text.
+ */
 import { VideoStyle, StyleCategory, StyleFilterOptions, AudioMode } from './types';
 import { getStyleMarketingMetadata } from './marketing-metadata';
 
-const VERSION = 'affimatik-creative-v8.3';
+const VERSION = 'pawarna-masterprompt-director-v10.2-quality-audit';
 type Direction = [string, string, string, string, string, string, string];
 type Seed = {
   id: string; slug: string; name: string; benefit: string; description: string;
