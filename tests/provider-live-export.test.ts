@@ -5,12 +5,12 @@ import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function compileFor(name: string, styleId: string, fact = 'only the purpose supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini', options: { audioTreatment?: 'voiceover' | 'ambient' | 'asmr'; voicePersonality?: string } = {}) {
+function compileFor(name: string, styleId: string, fact = 'only the purpose supported by the reference image', category = 'product shown in uploaded image', spokenShortName = 'produk ini', options: { audioTreatment?: 'voiceover' | 'ambient' | 'asmr'; voicePersonality?: string; callToAction?: 'tiktok_shop' | 'click_button' | 'tap_button' | 'check_bio' | 'dm_info' | 'none' | 'custom'; customCta?: string; buyerProblem?: string; packagingFormat?: ProductProfile['packagingFormat']; usageContext?: string | null } = {}) {
   const style = getVideoStyle(styleId)!;
   const product: ProductProfile = {
-    name, category, packagingFormat: 'general', spokenShortName,
-    coreFunction: fact, usageContext: 'ordinary Malaysian use inferred cautiously from the image',
-    buyerProblem: 'a grounded problem relevant to the actual product', allowedQaQuestion: 'what this product is actually for',
+    name, category, packagingFormat: options.packagingFormat || 'general', spokenShortName,
+    coreFunction: fact, usageContext: options.usageContext === null ? undefined : options.usageContext || 'ordinary Malaysian use inferred cautiously from the image',
+    buyerProblem: options.buyerProblem || 'a grounded problem relevant to the actual product', allowedQaQuestion: 'what this product is actually for',
     confirmedFeatures: [fact], prohibitedClaims: ['invented ingredients','certifications','medical outcomes','prices','testimonials'],
     unknownFields: ['ingredients','certifications','performance'], sourceConfidence: 'manual_fallback',
     provenance: 'manual_user_entry', isVisionSupported: false,
@@ -83,6 +83,36 @@ describe('real-provider QA prompt export', () => {
       writeFileSync(resolve(directory, 'v8-3-rh-retry-manifest.json'), JSON.stringify(
         rhManifest.filter((item) => ['RH01', 'RH04', 'RH17', 'RH19'].includes(item.styleId)), null, 2,
       ));
+      const emergencySalesDemos = [
+        {
+          styleId: 'NX01', productName: 'SERIYA Radiance Serum', spoken: 'Seriya Radiance Serum',
+          imagePath: 'scripts/release/assets/premium-products/seriya-serum.png',
+          category: 'skincare serum', fact: 'serum wajah berlabel Radiance Serum',
+          cta: 'tiktok_shop' as const, buyerProblem: 'sedang membandingkan pilihan serum wajah', packagingFormat: 'bottle' as const,
+        },
+        {
+          styleId: 'NX17', productName: 'NURIVA Omega-3', spoken: 'Nuriva Omega-3',
+          imagePath: 'scripts/release/assets/premium-products/nuriva-omega3.png',
+          category: 'supplement', fact: 'suplemen berlabel Omega-3',
+          cta: 'custom' as const, customCta: 'Tekan butang di bawah.', buyerProblem: 'sedang menyemak pilihan suplemen Omega-3', packagingFormat: 'bottle' as const,
+        },
+        {
+          styleId: 'NX09', productName: 'AROMAÉ Home Mist', spoken: 'Aromae Home Mist',
+          imagePath: 'scripts/release/assets/premium-products/aromae-home-mist.png',
+          category: 'home fragrance', fact: 'semburan pewangi ruang berlabel Home Mist',
+          cta: 'tiktok_shop' as const, buyerProblem: 'mahu memilih semburan pewangi untuk ruang rumah', packagingFormat: 'bottle' as const,
+        },
+      ].map((item) => ({
+        ...item,
+        prompt: compileFor(item.productName, item.styleId, item.fact, item.category, item.spoken, {
+          callToAction: item.cta,
+          customCta: item.customCta,
+          buyerProblem: item.buyerProblem,
+          packagingFormat: item.packagingFormat,
+          usageContext: null,
+        }),
+      }));
+      writeFileSync(resolve(directory, 'emergency-sales-demo-manifest.json'), JSON.stringify(emergencySalesDemos, null, 2));
     }
   });
 });
