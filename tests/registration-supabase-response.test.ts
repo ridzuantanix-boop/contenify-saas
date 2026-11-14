@@ -5,7 +5,7 @@ import { POST } from '../src/app/api/auth/register/route';
 const request = () => new NextRequest('https://affimatik.online/api/auth/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'new-test@example.invalid', password: 'strong-test-password', whatsapp: '01123456789', fullName: 'Test User' }),
+  body: JSON.stringify({ email: 'new-test@example.invalid', password: 'strong-test-password', whatsapp: '01123456789', fullName: 'Test User', acceptedTerms: true }),
 });
 
 describe('Supabase signup response contract', () => {
@@ -30,6 +30,16 @@ describe('Supabase signup response contract', () => {
     expect(body.user).toBeUndefined();
     expect(response.headers.get('set-cookie')).toBeNull();
     expect(upstream).toHaveBeenCalledTimes(1);
+  });
+
+  it('requires explicit Terms, Privacy and age eligibility acceptance', async () => {
+    configure();
+    const response = await POST(new NextRequest('https://affimatik.online/api/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'new-test@example.invalid', password: 'strong-test-password', whatsapp: '01123456789' }),
+    }));
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toContain('Persetujuan');
   });
 
   it('accepts a wrapped obfuscated existing-user response without exposing account existence', async () => {

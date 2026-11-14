@@ -256,6 +256,7 @@ describe('AffiMatik E2E Smoke Test Suite (Isolated Test Accounts & Lifecycle)', 
         password: 'PasswordSuper123!',
         fullName: 'Commercial Tester',
         whatsapp: '0123456789',
+        acceptedTerms: true,
       }),
     });
 

@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export default function RegisterPage() {
           password,
           referralCode: referralCode.trim() || undefined,
           purchaseIntent: window.localStorage.getItem('affimatik_purchase_intent'),
+          acceptedTerms,
         }),
       });
 
@@ -233,9 +235,14 @@ export default function RegisterPage() {
               />
             </div>
 
+            <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-5 text-slate-600">
+              <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} required className="mt-1" />
+              <span>Saya berumur 18 tahun ke atas, atau berumur 12–17 tahun dan telah mendapat kebenaran ibu bapa/penjaga termasuk untuk pembelian. Saya bersetuju dengan <Link href="/terms" className="font-bold text-indigo-700 underline">Terma</Link> dan <Link href="/privacy" className="font-bold text-indigo-700 underline">Notis Privasi</Link>.</span>
+            </label>
+
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !acceptedTerms}
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />

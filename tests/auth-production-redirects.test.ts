@@ -39,7 +39,7 @@ describe('production authentication redirects', () => {
       if (String(input).includes('/signup')) return new Response(JSON.stringify({ id: 'user-1', identities: [{}] }), { status: 200 });
       return new Response('{}', { status: 200 });
     }));
-    expect((await register(jsonRequest('https://evil.example/api/auth/register', { email: 'new@example.com', password: 'password123', whatsapp: '01123456789' }))).status).toBe(200);
+    expect((await register(jsonRequest('https://evil.example/api/auth/register', { email: 'new@example.com', password: 'password123', whatsapp: '01123456789', acceptedTerms: true }))).status).toBe(200);
     expect((await resend(jsonRequest('https://evil.example/api/auth/resend-confirmation', { email: 'new@example.com' }))).status).toBe(200);
     expect((await recover(jsonRequest('https://evil.example/api/auth/password-reset', { email: 'new@example.com' }))).status).toBe(200);
     expect(seen).toHaveLength(3);

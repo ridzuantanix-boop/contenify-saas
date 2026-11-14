@@ -35,7 +35,9 @@ export async function POST(req: NextRequest) {
   const whatsapp = typeof body.whatsapp === 'string' ? body.whatsapp.trim() : '';
   const fullName = typeof body.fullName === 'string' ? body.fullName.trim().slice(0, 255) : '';
   const purchaseIntent = body.purchaseIntent === 'launch_pack' ? 'launch_pack' : undefined;
+  const acceptedTerms = body.acceptedTerms === true;
   const referralCode = typeof body.referralCode === 'string' ? body.referralCode.trim().toUpperCase() : (req.cookies.get('affimatik_ref')?.value || '');
+  if (!acceptedTerms) return NextResponse.json({ error: 'Persetujuan Terma, Notis Privasi dan kelayakan umur diperlukan.' }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || password.length < 8 || password.length > 128 || whatsapp.replace(/\D/g, '').length < 8 || !/^[A-Z0-9_-]{0,50}$/.test(referralCode)) {
     return NextResponse.json({ error: 'Semak alamat emel, kata laluan (8–128 aksara), WhatsApp dan kod rujukan.' }, { status: 400 });
   }
