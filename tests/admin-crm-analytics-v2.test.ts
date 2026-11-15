@@ -31,6 +31,7 @@ describe('Admin CRM and first-party analytics dashboard', () => {
     const store=readFileSync('src/lib/db/store.ts','utf8');
     expect(page).toContain('{u.completedVideos} siap');
     expect(page).toContain('{u.totalJobs} jumlah');
+    expect(page).toContain('view=users&limit=200');
     expect(page).toContain('RM{u.confirmedSpendMyr.toFixed(2)}');
     expect(page).toContain('Ganjaran ulasan');
     expect(store).toContain('reviewRewardClaimed');

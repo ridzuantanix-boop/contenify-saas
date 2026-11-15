@@ -139,8 +139,8 @@ export default function AdminPage() {
     setIsLoadingUsers(true);
     try {
       const url = query.trim()
-        ? `/api/admin/operations?view=users&search=${encodeURIComponent(query.trim())}`
-        : `/api/admin/operations?view=users`;
+        ? `/api/admin/operations?view=users&limit=200&search=${encodeURIComponent(query.trim())}`
+        : `/api/admin/operations?view=users&limit=200`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
