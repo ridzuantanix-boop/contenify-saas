@@ -22,13 +22,13 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-product-scale-12-18';
+export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-product-scale-12-18-cta-timing';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT — OWNER CREATIVE INTENT]',
   'Nexabot independently writes the dialogue; AffiMatik supplies no spoken script.',
   'Create a complete energetic Malaysian affiliate conversation across most of the 15-second clip: a spontaneous audience-relevant hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or a complete natural ending.',
-  'Use approximately 45–55 spoken Malay words as an initial creative pacing target, not an inflexible limit. Keep the original fast but believable human rhythm; never force an artificial speed-up, robotic compression or a premature silent gap.',
+  'Use approximately 40–48 spoken Malay words as an initial creative pacing target, not an inflexible limit. Keep the original fast but believable human rhythm; never force an artificial speed-up, robotic compression or a premature silent gap.',
   'Let emphasis, breath, sentence linking and pace vary like a real creator speaking in one take. Preserve persuasive energy and natural imperfection rather than flattening the delivery into cautious category narration.',
   'When a CTA is selected, deliver it conversationally near the natural end and complete it before the clip ends. The CTA is the final spoken utterance: after its last word, add no new word, syllable, phoneme, repetition, thanks, tagline, filler or corrupted speech.',
   'Natural benefit-oriented storytelling is allowed when it follows a recognizable ordinary product purpose or customer-confirmed fact. Never invent an objectively false concrete specification, regulated outcome, price, review count, certification, popularity signal or personal testimonial.',
