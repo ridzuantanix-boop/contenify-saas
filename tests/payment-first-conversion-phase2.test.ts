@@ -10,7 +10,7 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('Payment-first conversion Phase 2', () => {
   it('provisions only a zero-credit checkout workspace before email verification', () => {
-    const migration = read('supabase/migrations/00029_payment_first_checkout.sql');
+    const migration = read('supabase/migrations/00030_payment_first_checkout.sql');
     expect(migration).toContain('provision_pending_checkout_account_atomic');
     expect(migration).toContain('VALUES (v_workspace, 0, 0, 0, 0');
     expect(migration).not.toContain('provision_wallet_atomic');

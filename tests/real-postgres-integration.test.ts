@@ -47,7 +47,10 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00025_restore_provider_retry_scheduler.sql',
       '00026_cloud_auto_factory.sql',
       '00027_launch_pack_rm19.sql',
+      '00028_conversion_events.sql',
       '00029_payment_evidence_mobile_formats.sql',
+      '00030_payment_first_checkout.sql',
+      '00031_review_reward_30_credits.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -88,6 +91,9 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(tables).toContain('auto_factory_items');
     expect(tables).toContain('daily_auto_schedules');
     expect(tables).toContain('daily_auto_runs');
+    expect(tables).toContain('conversion_events');
+    expect(tables).toContain('review_reward_downloads');
+    expect(tables).toContain('review_reward_claims');
 
     // Verify required_credits and client_request_id columns exist on video_jobs
     const colRes = await db.query<{ column_name: string }>(
@@ -911,5 +917,25 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     await db.query(`UPDATE creator_profiles SET version=4,settings='{"voicePersonality":"energetic"}' WHERE id=$1`,[profile]);
     expect((await db.query<{result:any}>(`SELECT claim_auto_factory_item_atomic(300) AS result`)).rows[0].result).toMatchObject({success:true,claimed:true,batch_id:batch,workspace_id:workspace});
     expect((await db.query<{immutable_snapshot:any}>(`SELECT immutable_snapshot FROM auto_factory_items WHERE batch_id=$1`,[batch])).rows[0].immutable_snapshot.creatorProfile.version).toBe(3);
+  });
+
+  it('grants the 30-credit review reward once after two distinct completed-video downloads', async () => {
+    const workspace='a9910000-0000-4000-8000-000000000001',user='b9910000-0000-4000-8000-000000000001';
+    const job1='c9910000-0000-4000-8000-000000000001',job2='c9910000-0000-4000-8000-000000000002';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Review Reward','review-reward-30',$2,'active')`,[workspace,user]);
+    await db.query(`INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,'owner')`,[workspace,user]);
+    await db.query(`INSERT INTO credit_wallets(workspace_id,balance,reserved_balance,lifetime_granted,lifetime_spent) VALUES($1,20,0,20,0)`,[workspace]);
+    for (const [job,request] of [[job1,'review-download-1'],[job2,'review-download-2']]) {
+      await db.query(`INSERT INTO video_jobs(id,workspace_id,user_id,preset_id,preset_version,provider,duration_seconds,required_credits,status,client_request_id,idempotency_key,compiled_prompt_snapshot,input_options,result_video_r2_key) VALUES($1,$2,$3,'NX01',2,'nexabot',15,10,'COMPLETED',$4,$4,'prompt','{}'::jsonb,$5)`,[job,workspace,user,request,`workspaces/${workspace}/outputs/${job}.mp4`]);
+    }
+    const record=(job:string)=>db.query<{result:any}>(`SELECT record_review_reward_download_atomic($1,$2,$3) AS result`,[workspace,user,job]);
+    expect((await record(job1)).rows[0].result).toMatchObject({success:true,download_count:1,eligible:false});
+    expect((await record(job1)).rows[0].result.download_count).toBe(1);
+    expect((await record(job2)).rows[0].result).toMatchObject({success:true,download_count:2,eligible:true});
+    const grant=()=>db.query<{result:any}>(`SELECT grant_review_reward_atomic($1,$2,$3,NULL,true) AS result`,[workspace,user,'AffiMatik mudah digunakan dan membantu saya siapkan video tanpa perlu rakam muka.']);
+    expect((await grant()).rows[0].result).toMatchObject({success:true,credits_granted:30,balance:50});
+    expect((await grant()).rows[0].result).toMatchObject({success:true,idempotent:true,credits_granted:0,balance:50});
+    expect((await db.query<{balance:number;lifetime_granted:number}>(`SELECT balance,lifetime_granted FROM credit_wallets WHERE workspace_id=$1`,[workspace])).rows[0]).toEqual({balance:50,lifetime_granted:50});
+    expect((await db.query<{count:number}>(`SELECT count(*)::int AS count FROM credit_ledger WHERE workspace_id=$1 AND reference_type='REVIEW_REWARD'`,[workspace])).rows[0].count).toBe(1);
   });
 });

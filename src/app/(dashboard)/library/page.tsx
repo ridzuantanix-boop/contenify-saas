@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { downloadPrivateMp4 } from '@/lib/download/client-download';
 
 type Video = { id: string; styleId: string; provider: string; durationSeconds: number; durationVerified: boolean; createdAt: string; imageAssetId?: string; batchId?: string; creatorProfileId?: string; productFolderId?: string; streamUrl: string; downloadUrl: string };
+type RewardState = { downloadCount: number; eligible: boolean; claimed: boolean; credits: number };
 
 export default function LibraryPage() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -15,12 +16,26 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [batchId, setBatchId] = useState('');
   const [downloadingId, setDownloadingId] = useState('');
+  const [reward, setReward] = useState<RewardState | null>(null);
+  const [reviewText, setReviewText] = useState('');
+  const [publishedUrl, setPublishedUrl] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [rewardMessage, setRewardMessage] = useState('');
+  const [rewardSubmitting, setRewardSubmitting] = useState(false);
+
+  async function loadReward() {
+    const response = await fetch('/api/review-reward', { cache: 'no-store' });
+    if (response.ok) setReward(await response.json());
+  }
 
   async function downloadVideo(video: Video) {
     setDownloadingId(video.id);
     setError('');
     try {
       await downloadPrivateMp4(video.downloadUrl, `affimatik-${video.styleId.toLowerCase()}-${video.id.slice(0, 8)}.mp4`);
+      await fetch('/api/review-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'record_download', videoId: video.id }) }).catch(() => null);
+      await loadReward().catch(() => null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Video tidak dapat dimuat turun.');
     } finally {
@@ -29,6 +44,7 @@ export default function LibraryPage() {
   }
 
   useEffect(() => { setBatchId(new URLSearchParams(window.location.search).get('batchId') || ''); }, []);
+  useEffect(() => { void loadReward().catch(() => null); }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -42,8 +58,30 @@ export default function LibraryPage() {
   }, [page,batchId]);
 
   const filtered = videos.filter((video) => `${video.styleId} ${video.provider}`.toLowerCase().includes(query.toLowerCase()));
+  async function claimReward(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setRewardSubmitting(true); setRewardMessage('');
+    try {
+      const response = await fetch('/api/review-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'claim', reviewText, publishedUrl, marketingConsent }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Ganjaran tidak dapat diproses.');
+      setRewardMessage(data.message); await loadReward();
+    } catch (err) { setRewardMessage(err instanceof Error ? err.message : 'Ganjaran tidak dapat diproses.'); }
+    finally { setRewardSubmitting(false); }
+  }
   return <div className="space-y-5">
     <div><h1 className="text-2xl font-bold">Video Library</h1><p className="text-sm text-slate-600">MP4 yang disalin ke storan peribadi AffiMatik dan boleh ditonton semula merentas peranti.</p>{batchId&&<p className="mt-2 text-xs font-bold text-indigo-700">Ditapis mengikut Cloud Batch · <button onClick={()=>setBatchId('')} className="underline">Tunjuk semua</button></p>}</div>
+    {reward?.eligible && <form onSubmit={claimReward} className="rounded-2xl border-2 border-violet-300 bg-violet-50 p-5 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-wider text-violet-700">Hadiah pengguna awal</p>
+      <h2 className="mt-2 text-xl font-black">Kongsi ulasan, dapat +30 kredit</h2>
+      <p className="mt-1 text-sm leading-6 text-slate-700">Anda dah muat turun sekurang-kurangnya dua video. Tulis ulasan jujur sekurang-kurangnya dua baris atau beri link video TikTok/Shopee untuk menerima 30 kredit sekali sahaja—bersamaan tiga video bonus.</p>
+      <div className="mt-4 grid gap-3"><textarea value={reviewText} onChange={(event)=>setReviewText(event.target.value)} rows={3} maxLength={2000} placeholder="Contoh: Prosesnya mudah dan saya boleh hasilkan video tanpa rakam muka..." className="rounded-xl border bg-white px-4 py-3 text-sm" aria-label="Ulasan AffiMatik" />
+      <input value={publishedUrl} onChange={(event)=>setPublishedUrl(event.target.value)} type="url" inputMode="url" placeholder="Link TikTok/Shopee (pilihan jika anda tulis ulasan)" className="rounded-xl border bg-white px-4 py-3 text-sm" aria-label="Link video TikTok atau Shopee" />
+      <label className="flex items-start gap-3 text-xs leading-5 text-slate-600"><input type="checkbox" checked={marketingConsent} onChange={(event)=>setMarketingConsent(event.target.checked)} className="mt-1" />Saya benarkan AffiMatik menggunakan ulasan atau link ini sebagai contoh pemasaran tanpa mendedahkan alamat emel saya.</label></div>
+      <button disabled={rewardSubmitting || !marketingConsent || (reviewText.trim().length < 40 && !publishedUrl.trim())} className="mt-4 rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50">{rewardSubmitting?'Memproses…':'Hantar & Terima +30 Kredit'}</button>
+      {rewardMessage&&<p role="status" className="mt-3 text-sm font-semibold text-violet-800">{rewardMessage}</p>}
+    </form>}
+    {reward?.claimed && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Terima kasih atas ulasan anda. Ganjaran +30 kredit sekali sahaja telah direkodkan.</div>}
     <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Cari video" placeholder="Cari gaya atau enjin" className="w-full rounded-lg border bg-white px-4 py-3 text-sm" />
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     {loading && <p className="text-sm">Memuatkan video…</p>}
