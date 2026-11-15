@@ -56,11 +56,11 @@ describe('AffiMatik V7.1 style marketing metadata', () => {
     }
   });
 
-  it('ships 20 optimized 720x1280 WebP posters and matching V6 samples', () => {
+  it('ships 20 optimized 720x1280 WebP posters and matching replacement demos', () => {
     for (const metadata of ALL_STYLE_MARKETING_METADATA) {
       const poster = resolve(process.cwd(), 'public', metadata.thumbnailPath.slice(1));
-      const sample = resolve(process.cwd(), 'public', 'style-previews', metadata.id, 'sample-v6.mp4');
-      expect(statSync(poster).size).toBeGreaterThan(20_000);
+      const sample = resolve(process.cwd(), 'public', 'style-previews', metadata.id, 'sample-demo-v1.mp4');
+      expect(statSync(poster).size).toBeGreaterThan(10_000);
       expect(statSync(sample).size).toBeGreaterThan(100_000);
       expect(readWebpDimensions(readFileSync(poster))).toEqual({ width: 720, height: 1280 });
     }

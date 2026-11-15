@@ -29,10 +29,11 @@ describe('commercial sales page and disabled Free Trial', () => {
     expect(landing).toContain('Mula Dengan RM19');
     expect(landing).toContain('/api/style-samples/NX17');
     expect(landing).toContain("{ id: 'NX01'");
+    expect(landing).toContain("{ id: 'NX02'");
     expect(landing).not.toContain("{ id: 'RH03'");
     expect(landing).not.toContain('Nova Lumi Table Lamp');
-    expect(landing).toContain('Sejarah V8.1');
-    expect(landing).toContain('belum disahkan terhadap kontrak CTA V10.2');
+    expect(landing).toContain('Screenshot biasa → video affiliate');
+    expect(landing).toContain('Demo baharu');
     expect(landing).not.toContain('20 Kredit Percuma');
   });
 

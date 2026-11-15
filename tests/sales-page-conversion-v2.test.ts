@@ -29,9 +29,9 @@ describe('AffiMatik Sales Page Conversion V2', () => {
       'Soalan sebelum mula',
       'Produk dah ada. Sekarang jadikan ia content.',
     ]) expect(page).toContain(copy);
-    expect(page).toContain('contoh sejarah Creative V8.1');
-    expect(page).toContain('bukan output V10.2');
-    for (const id of ['NX17', 'NX01']) expect(page).toContain(id);
+    expect(page).toContain('Screenshot biasa → video affiliate');
+    expect(page).toContain('Demo baharu');
+    for (const id of ['NX17', 'NX01', 'NX02']) expect(page).toContain(id);
     expect(page).not.toContain("{ id: 'RH03'");
     expect(page).not.toContain('Nova Lumi Table Lamp');
   });
@@ -41,8 +41,8 @@ describe('AffiMatik Sales Page Conversion V2', () => {
       'public/marketing/tutorials/affimatik-v10-mobile.mp4',
       'public/marketing/tutorials/quick-bulk-v9.mp4',
       'public/marketing/proof/seriya-source.webp',
-      'public/marketing/proof/lumea-source.webp',
-      'public/marketing/proof/nova-lumi-source.webp',
+      'public/marketing/proof/sherb-source.jpg',
+      'public/marketing/proof/vitamin-ce-source.jpg',
     ];
     for (const file of files) {
       const bytes = fs.readFileSync(path.join(root, file));
