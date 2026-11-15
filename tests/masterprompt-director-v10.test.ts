@@ -6,7 +6,7 @@ import { getVideoStyle, VIDEO_STYLES_REGISTRY } from '../src/lib/styles/registry
 import { sanitizePersonalizationSettings } from '../src/lib/personalization/config';
 import { NexabotAdapter } from '../src/lib/providers/nexabot';
 import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
-import { STYLE_DIRECTORS } from '../src/lib/engine/style-directors';
+import { PAWARNA_STYLE_CREATIVE_APPLICATIONS, STYLE_DIRECTORS } from '../src/lib/engine/style-directors';
 
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const product: ProductProfile = { name:'the uploaded product image', category:'product shown', packagingFormat:'general', spokenShortName:'produk ini', confirmedFeatures:[], prohibitedClaims:['invented claims'], unknownFields:['ingredients'], sourceConfidence:'manual_fallback', provenance:'manual_user_entry', isVisionSupported:false };
@@ -32,8 +32,11 @@ describe('V10 Pawarna Masterprompt Director', () => {
       expect(compiled.providerPrompt, style.id).toContain('[SHARIAH MODESTY LOCK');
       expect(compiled.providerPrompt, style.id).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
       expect(compiled.providerPrompt, style.id).toMatch(/^\[1\. CRITICAL PRODUCTION CONTRACT\]/);
-      expect(compiled.providerPrompt, style.id).toContain('Finish every spoken word by second 11.5');
-      expect(compiled.providerPrompt, style.id).toContain('Never infer touch operation, flexibility, brightness, eye comfort, battery life, efficacy');
+      expect(compiled.providerPrompt, style.id).toContain('[PAWARNA CREATIVE DNA — TEST A OWNER GOLD STANDARD]');
+      expect(compiled.providerPrompt, style.id).toContain('approximately 45–55 spoken Malay words as an initial creative pacing target, not an inflexible limit');
+      expect(compiled.providerPrompt, style.id).toContain('Pawarna Creative DNA application:');
+      expect(compiled.providerPrompt, style.id).not.toContain('second 11.5');
+      expect(compiled.providerPrompt, style.id).toContain('Never invent ingredients, efficacy, medical outcomes, certification, price, popularity, review counts, testimonials, discounts or personal experience');
       expect(compiled.providerPrompt, style.id).not.toMatch(/Script: ""|\$\{p\.spokenScript\}|\{script_body\}|V8 SMART SCRIPT CONTROL/i);
       return compiled.providerPrompt;
     });
@@ -46,15 +49,19 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(compiled.spokenScript).toBeUndefined();
     expect(compiled.providerPrompt).not.toContain(marker);
     expect(compiled.providerPrompt).not.toContain('kalau memang tengah survey produk ini, tengok yang ni dulu');
-    expect(compiled.providerPrompt).toContain('never use a generic placeholder');
+    expect(compiled.providerPrompt).toContain('rather than a generic category description or placeholder');
   });
 
   it('front-loads the provider-owned speech contract without hardcoding dialogue', () => {
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Nexabot independently writes the dialogue');
-    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Silently delete any uncertain benefit');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('45–55 spoken Malay words');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('supported FOMO only when evidence exists');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Preserve persuasive energy and natural imperfection');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toContain('two, or at most three');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toContain('second 11.5');
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toMatch(/[“”"](?:korang|saya|aku|produk)/i);
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene);
-    expect(compiled.providerPrompt.indexOf('[PRIORITY 0 SPOKEN OUTPUT CONTRACT')).toBeLessThan(compiled.providerPrompt.indexOf('[STYLE NX02'));
+    expect(compiled.providerPrompt.indexOf('[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT')).toBeLessThan(compiled.providerPrompt.indexOf('[STYLE NX02'));
   });
 
   it('normalizes historical personalization script settings to inert values', () => {
@@ -66,8 +73,8 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(compiled.providerPrompt).not.toContain('JANGAN HANTAR');
     expect(compiled.providerPrompt).toContain('Gunakan suasana meja belajar yang tenang.');
     expect(compiled.providerPrompt.match(/DM untuk info lanjut\./g)).toHaveLength(1);
-    expect(compiled.providerPrompt).toContain('This CTA must be the final spoken utterance');
-    expect(compiled.providerPrompt).toContain('generate zero additional speech or speech-like syllables');
+    expect(compiled.providerPrompt).toContain('This CTA is the final spoken utterance');
+    expect(compiled.providerPrompt).toContain('add no new word, syllable, phoneme');
   });
 
   it('separates image identity, category, physical observations, customer facts and unsupported claims', () => {
@@ -103,16 +110,35 @@ describe('V10 Pawarna Masterprompt Director', () => {
 
   it('has one complete authoritative director specification for every official style', () => {
     expect(Object.keys(STYLE_DIRECTORS).sort()).toEqual(VIDEO_STYLES_REGISTRY.map((style) => style.id).sort());
+    expect(Object.keys(PAWARNA_STYLE_CREATIVE_APPLICATIONS).sort()).toEqual(VIDEO_STYLES_REGISTRY.map((style) => style.id).sort());
     for (const style of VIDEO_STYLES_REGISTRY) {
       const director = STYLE_DIRECTORS[style.id];
       for (const field of ['concept','audienceExperience','openingVisual','shotComposition','sceneSelection','productInteraction','presenterVisibility','humanPerformance','voiceOrAudio','storytellingObjective','relevantProductInformation','naturalEnding'] as const) {
         expect(director[field].length, `${style.id}.${field}`).toBeGreaterThan(20);
       }
       expect(director.hardFailures.length, style.id).toBeGreaterThanOrEqual(4);
+      expect(PAWARNA_STYLE_CREATIVE_APPLICATIONS[style.id].length, `${style.id}.pawarnaCreativeDna`).toBeGreaterThan(80);
+      const compiled = DynamicPromptCompiler.compile(product, style, { ...scene, audioPolicy:style.audioMode });
+      expect(compiled.providerPrompt, style.id).toContain(`Pawarna Creative DNA application: ${PAWARNA_STYLE_CREATIVE_APPLICATIONS[style.id]}`);
     }
     const compilerSource = readFileSync('src/lib/engine/compiler.ts','utf8');
     expect(compilerSource).not.toContain('AUTHORITATIVE_STYLE_MASTERPROMPTS');
     expect(compilerSource).not.toMatch(/for\s*\([^)]*VIDEO_STYLES_REGISTRY[^)]*\)\s*\{/);
+  });
+
+  it('removes the V10.2 restrictions that flattened Test B while preserving factual safety', () => {
+    const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX09')!, scene, { callToAction:'tiktok_shop' }).providerPrompt;
+    expect(compiled).toContain('energetic, spontaneous off-camera Malaysian affiliate Malay');
+    expect(compiled).toContain('meaningful speech across most of the 15-second clip');
+    expect(compiled).toContain('Natural benefit-oriented storytelling is allowed');
+    expect(compiled).toContain('supported FOMO only when evidence exists');
+    expect(compiled).not.toContain('two, or at most three, short clauses');
+    expect(compiled).not.toContain('one compact spoken turn');
+    expect(compiled).not.toContain('Finish every spoken word by second 11.5');
+    expect(compiled).not.toContain('finish speech early');
+    expect(compiled).not.toContain('Default is calm off-camera');
+    expect(compiled).toContain('Never invent ingredients, efficacy, medical outcomes, certification, price, popularity, review counts, testimonials, discounts or personal experience');
+    expect(compiled).toContain('After its last word, generate no additional word, syllable, phoneme');
   });
 
   it('does not force an ungrounded kitchen, desk, bedroom or domestic fallback', () => {

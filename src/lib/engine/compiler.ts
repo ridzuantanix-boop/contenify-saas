@@ -22,16 +22,17 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-quality-audit';
+export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-owner-creative-dna-reset';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
-  '[PRIORITY 0 SPOKEN OUTPUT CONTRACT — APPLY BEFORE ALL CREATIVE DETAIL]',
+  '[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT — OWNER CREATIVE INTENT]',
   'Nexabot independently writes the dialogue; AffiMatik supplies no spoken script.',
-  'Use one compact natural Malaysian Malay turn of two, or at most three, short clauses: a style-specific hook, one image-grounded category purpose or customer-confirmed fact, then a concise ending or selected CTA.',
-  'Finish every spoken word by second 11.5, then continue natural physical action. Never restart, repeat, paraphrase or stretch the final clause to fill the clip.',
-  'When a CTA is selected, it is the final spoken utterance. After the CTA ends, generate no new word, phoneme, outro, repetition or verbal filler; continue only silent natural physical action and ordinary room sound.',
-  'Visible shape does not prove performance. Never infer touch operation, flexibility, brightness, eye comfort, battery life, efficacy or another result unless that exact fact is customer-confirmed or clearly readable in the reference.',
-  'Silently delete any uncertain benefit or performance statement before rendering; do not replace it with compliance wording or filler.',
+  'Create a complete energetic Malaysian affiliate conversation across most of the 15-second clip: a spontaneous audience-relevant hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or a complete natural ending.',
+  'Use approximately 45–55 spoken Malay words as an initial creative pacing target, not an inflexible limit. Keep the original fast but believable human rhythm; never force an artificial speed-up, robotic compression or a premature silent gap.',
+  'Let emphasis, breath, sentence linking and pace vary like a real creator speaking in one take. Preserve persuasive energy and natural imperfection rather than flattening the delivery into cautious category narration.',
+  'When a CTA is selected, deliver it conversationally near the natural end and complete it before the clip ends. The CTA is the final spoken utterance: after its last word, add no new word, syllable, phoneme, repetition, thanks, tagline, filler or corrupted speech.',
+  'Natural benefit-oriented storytelling is allowed when it follows a recognizable ordinary product purpose or customer-confirmed fact. Never invent an objectively false concrete specification, regulated outcome, price, review count, certification, popularity signal or personal testimonial.',
+  'Keep factual safeguards silent. Never turn them into spoken disclaimers, compliance language or generic filler.',
 ].join(' ');
 
 export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
@@ -45,28 +46,24 @@ export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
 
 export const NEXABOT_PRODUCT_UNDERSTANDING_V10 = [
   '[NEXABOT NATIVE PRODUCT UNDERSTANDING — PROVIDER OWNS CREATIVE THINKING]',
-  'Inspect the actual uploaded product reference. Identify readable brand and product name, recognizable category and ordinary intended use only when sufficiently supported by the image or customer-authored direction.',
-  'Build a believable Malaysian buyer situation specific to this product and selected style. When the authoritative effective audio mode includes speech, independently create original Bahasa Melayu Malaysia dialogue and never use a generic placeholder such as “kalau tengah survey produk ini, tengok yang ni dulu”. When the mode is Ambient, ASMR or No Speech, create no words or lip-sync.',
-  'Use a readable product name naturally when identifiable. If evidence is insufficient, stay cautiously within the recognizable category and omit uncertain benefits instead of inventing details.',
+  'Inspect the actual uploaded product reference. Identify readable brand and product name, recognizable category, ordinary intended purpose and the strongest relevant buyer situation supported by the image, customer context or reliable general product understanding.',
+  'Build a believable Malaysian buyer situation specific to this product and selected style. When the authoritative effective audio mode includes speech, independently create original persuasive Bahasa Melayu Malaysia dialogue rather than a generic category description or placeholder such as “kalau tengah survey produk ini, tengok yang ni dulu”. When the mode is Ambient, ASMR or No Speech, create no words or lip-sync.',
+  'Use a readable product name naturally when identifiable. Translate one supported function or confirmed fact into a meaningful everyday buyer benefit without claiming a measurable result that the evidence does not establish.',
   'Do not narrate packaging, label visibility, hand movement or camera action unless that detail is materially useful to a buyer.',
   'Image interpretation and model knowledge are not live internet research. Never invent ingredients, efficacy, medical outcomes, certification, price, popularity, review counts, testimonials, discounts or personal experience.',
 ].join(' ');
 
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
-  '[REAL MALAYSIAN AFFILIATE VOICE DNA V8.3]',
-  'Use spoken Bahasa Melayu Malaysia like a real Malaysian TikTok affiliate casually sharing a useful find with friends, never like a corporate presenter, newsreader, advertisement narrator or compliance officer.',
-  'Use ordinary Malaysian phrasing, naturally imperfect sentence links, small breaths, uneven but fluent rhythm and meaningful changes of intonation.',
-  'Do not mechanically insert eh, haa, weh, korang or tau. Nexabot chooses wording and particles from the product and style context.',
-  'Independently build one compact spoken turn: one distinct hook, one grounded product point, then one concise natural ending. Do not narrate for the full clip merely to fill time.',
-  'Focus on one supported intended purpose or ordinary category use context and finish speech comfortably before the video ends.',
-  'Do not repeat a catalogue-wide opening or closing. Match the selected style personality exactly.',
-  'Never repeat or paraphrase the same meaning twice. Each spoken clause must add new information; remove any echoed claim, hook, product point, CTA or outro before rendering.',
-  'No Indonesian forms, no English dialogue unless explicitly requested, no filler, no fake excitement, no uniform emphasis and no long unnatural pause.',
-  'A buyer problem does not prove that this product resolves it. Omit all unsupported benefit and performance claims.',
-  'Never claim personal use, purchase, customer reviews, ingredients, certifications, prices, specifications, performance results or medical outcomes unless explicitly supplied by the user or clearly legible in the reference.',
-  'Keep factual guardrails silent: do not speak legal-disclaimer phrases such as “berdasarkan apa yang kelihatan”. When detail is unavailable, use an ordinary useful category description or omit the claim.',
-  'Never use first-person product experience or routines, including claims that the speaker uses, drinks, takes, buys or keeps the product at home.',
-  'Speak the selected CTA intent naturally once when one is requested; never repeat it or render fake CTA graphics.',
+  '[PAWARNA CREATIVE DNA — TEST A OWNER GOLD STANDARD]',
+  'Speak like a real Malaysian TikTok affiliate who has just noticed a useful selling angle and immediately shares it with another person: spontaneous, persuasive, product-specific and alive, never corporate, restrained, generic or compliance-led.',
+  'Open with an audience-relevant situation or problem that earns attention immediately. Introduce the recognizable product naturally, develop one meaningful supported selling point or everyday buyer benefit, use a short FOMO beat only when the reference or customer context supports it, then flow into the selected CTA.',
+  'Use fast but believable Malaysian Malay with irregular emphasis, connected words, small breaths, uneven yet fluent rhythm, natural pitch movement, occasional tiny hesitation and imperfect articulation. It must feel spoken in one take, not read from a script.',
+  'Do not pronounce every word with studio perfection. Let some transitions blend naturally, vary speed between phrases and emphasize only the emotionally useful words.',
+  'Nexabot chooses authentic local particles and wording from the product and style context. Never mechanically sprinkle eh, haa, weh, korang or tau, and never reuse one catalogue-wide hook or closing.',
+  'Keep the selling energy appropriate to the selected style: friendly, confident, excited, story-led, soft-sell or off-camera, without erasing the style’s visual identity.',
+  'Natural marketing language and benefit-led storytelling are welcome. Do not invent concrete specifications, regulated health or beauty outcomes, fake prices, unsupported review/sold counts, certifications or personal-use testimony.',
+  'Keep factual safeguards internal and silent. Never make the presenter sound like a compliance officer or replace an uncertain detail with formal disclaimer narration.',
+  'Deliver the selected CTA naturally once as part of the same conversation. When Tanpa CTA is selected, complete the selling thought naturally without inventing a CTA.',
 ].join(' ');
 
 export const HUMAN_REALISM_MASTERPROMPT_V8 = [
@@ -422,11 +419,11 @@ export class DynamicPromptCompiler {
         : 'No image-observable physical fact was supplied as trusted context. Inspect conservatively and do not invent one.',
       customerConfirmedFacts.length
         ? `Customer-confirmed facts: ${customerConfirmedFacts.map((fact) => `“${fact}”`).join('; ')}. Treat them as factual context only, never as prewritten dialogue, a testimonial or permission to infer another benefit.`
-        : 'No customer-confirmed functional or benefit fact was supplied. Do not invent an appealing benefit to make the dialogue sell harder.',
+        : 'No customer-confirmed functional or benefit fact was supplied. Nexabot may still express one ordinary buyer benefit that directly follows from the recognizable product purpose or reliable general product understanding, but must not invent a measurable result, concrete specification or regulated outcome.',
       unsupportedClaims.length
         ? `Unsupported or unresolved claims: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Omit them entirely.`
         : 'Any claim not supported by the uploaded identity/category or a customer-confirmed fact is unsupported and must be omitted.',
-      'Never convert a buyer problem, intended audience, recognizable category, packaging appearance or plausible marketing idea into proof that this product solves a problem.',
+      'Use the buyer problem and intended audience as natural storytelling context, not as proof of a guaranteed outcome. The dialogue may present the product as a relevant option without claiming guaranteed resolution.',
     ].join(' ');
 
     const selectedScene = getBuiltInScene(options.builtInSceneId);
@@ -457,10 +454,11 @@ export class DynamicPromptCompiler {
     ].filter(Boolean).join(' ');
 
     const commonTruthfulness = [
-      'If the image and customer-confirmed facts do not establish a claim, omit it entirely. Never invent a special formula, ingredients, certifications, medical outcomes, personal-use results, prices or testimonials.',
-      'Never say or imply “pilihan terbaik”, “wajib”, personal use, purchase, dosage, absorption, symptom relief, energy, focus, wellness or health results. For supplements or health products, only use the customer-confirmed fact and clearly readable label facts; never explain an unverified effect on the body.',
-      'Never describe a product as wireless, rechargeable, battery-powered, portable or cable-free unless that exact fact is explicitly customer-confirmed. Use Malaysian Malay only; forbidden Indonesian forms include kamu, coba, kesehatan, ianya and banget.',
-      'Never repeat or semantically paraphrase a hook, fact, sentence, CTA or ending.',
+      'Use natural benefit-oriented affiliate language around a recognizable ordinary product purpose or customer-confirmed fact. Do not invent objectively false concrete specifications, ingredients, certifications, regulated outcomes, prices, review/sold counts, popularity signals, discounts or personal testimonials.',
+      'For supplements, health and beauty products, do not promise diagnosis, treatment, prevention, guaranteed bodily change or another regulated outcome that the supplied evidence does not establish. Keep this safeguard internal; never speak it as a disclaimer.',
+      'Never claim personal use, purchase or ownership on behalf of the presenter, and never invent a testimonial. Sell through the product-relevant buyer situation instead.',
+      'Do not call a product wireless, rechargeable, battery-powered or cable-free unless that exact fact is customer-confirmed or unmistakably readable. Use Malaysian Malay; avoid Indonesian forms such as kamu, coba, kesehatan, ianya and banget.',
+      'Do not repeat the same claim, CTA or meaning merely to fill time, but allow natural conversational linking and expressive emphasis.',
     ].join(' ');
 
     const providerDialogueDirective = !hasSpeech
@@ -477,11 +475,11 @@ export class DynamicPromptCompiler {
           MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
           '[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]',
           'AffiMatik has not supplied, generated, previewed or approved spoken sentences. Inspect the uploaded product reference and independently write original natural Malaysian Malay dialogue and lip-sync.',
-          `Follow the unique ${style.id} scene purpose, opening, buyer problem, product interaction, speaking personality, camera direction and ending. Create one distinct product-specific hook, one grounded practical point and one concise ending.`,
+          `Follow the unique ${style.id} scene purpose, opening, buyer situation, product interaction, speaking personality, camera direction and ending. Create a full spontaneous affiliate flow with an attention-grabbing hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or complete natural ending.`,
           'Never narrate camera framing, bottle rotation, hand movement, label visibility, product colour or packaging appearance.',
-          selectedCta ? `Customer-selected CTA intent: ${ctaMode}. The intended target is “${selectedCta}”. Integrate that action naturally once in your own product-specific conversation; never add CTA graphics or repeat it. This CTA must be the final spoken utterance. Once its last word is complete, close the speaking turn: no new word, syllable, phoneme, tagline, thanks, outro or verbal filler may follow.` : 'The customer selected Tanpa CTA. Do not add a spoken call to action.',
+          selectedCta ? `Customer-selected CTA intent: ${ctaMode}. The intended target is “${selectedCta}”. Deliver it naturally once near the conversational ending without changing into an announcer voice; never add CTA graphics or repeat it. This CTA is the final spoken utterance. Once its last word is complete, add no new word, syllable, phoneme, tagline, thanks, outro, filler or corrupted speech.` : 'The customer selected Tanpa CTA. Do not add a spoken call to action; complete the persuasive product thought naturally instead.',
           options.creativeInstruction ? 'The customer-authored Creative Directive may include their own requested wording. Preserve it as direction without AffiMatik rewriting, completing or paraphrasing it.' : '',
-          'Finish speech naturally before the clip ends. Do not fill time through repetition, dragged-out words or a generic fallback. If speech ends earlier, continue meaningful physical interaction and never freeze the subject.',
+          'Distribute meaningful speech across most of the 15-second clip with natural pace variation. Do not rush mechanically, force a premature silent gap, drag words, repeat filler or use a generic fallback. Complete the final utterance before the cut and let the physical performance end naturally.',
         ].filter(Boolean).join(' ');
 
     // Deliberate final payload order: production contract, style director,
@@ -505,8 +503,8 @@ export class DynamicPromptCompiler {
     const necessaryLocks = `[6. NECESSARY SAFETY AND VISUAL LOCKS] ${promptModules.safetyLocks} ${commonTruthfulness}`;
     const endingRequirements = hasSpeech
       ? selectedCta
-        ? '[7. ENDING REQUIREMENTS] The selected CTA is the final spoken utterance and must finish by second 11.5. After its last word, generate zero additional speech or speech-like syllables. Continue only silent natural style-specific physical action with ordinary non-verbal ambience until the clip ends. Never freeze, restart, repeat, paraphrase or add an outro.'
-        : '[7. ENDING REQUIREMENTS] Finish every spoken word by second 11.5, complete the meaning once, then continue a natural style-specific physical action until the clip ends. Never freeze, restart, repeat, paraphrase or cut off the final clause.'
+        ? '[7. ENDING REQUIREMENTS] Bring the selected CTA in near the natural conversational ending, normally during the final few seconds according to the actual speaking rhythm. Complete every CTA word before the 15-second cut. After its last word, generate no additional word, syllable, phoneme, repetition, thanks, tagline, filler or corrupted speech. Do not force a long silent gap; let the remaining natural physical action and room sound resolve the take.'
+        : '[7. ENDING REQUIREMENTS] Use meaningful natural speech across most of the clip and complete the final selling thought before the 15-second cut. Do not force an early ending, long silent gap, repeated recap or abrupt cutoff; let voice and style-specific physical action resolve together like one real take.'
       : '[7. ENDING REQUIREMENTS] Complete the style-specific physical action, let grip, gravity, contact and ambient sound settle naturally, and never freeze or end with an abrupt cut.';
     const visualPrompt = [
       criticalContract,

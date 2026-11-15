@@ -39,9 +39,9 @@ describe('real-provider QA prompt export', () => {
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
-      expect(prompt).toContain('If the image and customer-confirmed facts do not establish a claim, omit it entirely');
-      expect(prompt).toContain('Never invent a special formula, ingredients, certifications, medical outcomes');
-      expect(prompt).toContain('finish speech comfortably before the video ends');
+      expect(prompt).toContain('Use natural benefit-oriented affiliate language around a recognizable ordinary product purpose or customer-confirmed fact');
+      expect(prompt).toContain('Do not invent objectively false concrete specifications, ingredients, certifications, regulated outcomes');
+      expect(prompt).toContain('Distribute meaningful speech across most of the 15-second clip with natural pace variation');
       expect(prompt).not.toContain('before second 11');
     }
     expect(prompts.lampMotion).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');

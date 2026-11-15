@@ -22,6 +22,34 @@ export interface StyleDirectorSpec {
 function define(spec: StyleDirectorSpec): StyleDirectorSpec { return spec; }
 
 /**
+ * Test A's Pawarna selling personality, applied without copying its fixed POV
+ * tabletop scene into unrelated visual styles. Each entry explains how the
+ * shared creative DNA should sound inside that director's own identity.
+ */
+export const PAWARNA_STYLE_CREATIVE_APPLICATIONS: Record<string, string> = {
+  NX01: 'Open like a friend suddenly sharing a useful find, build one relatable buyer benefit with warm spontaneous energy, and let the CTA land as part of the same friendly conversation.',
+  NX02: 'Use a confident practical-review hook, explain one convincing buying reason in ordinary Malay, and preserve energetic human emphasis instead of a restrained product summary.',
+  NX03: 'Turn the genuine first reaction into a lively product-specific discovery, then develop one supported selling angle without pretending prior use.',
+  NX05: 'Lead with an emotionally recognizable everyday problem, introduce the product as a relevant option, and sell one supported benefit with persuasive empathy rather than a clinical disclaimer.',
+  NX07: 'Ask one natural buyer question, answer it like a lively Malaysian affiliate, and turn the answer into one useful supported selling point instead of formal FAQ copy.',
+  NX09: 'Use energetic off-camera Malaysian affiliate delivery over the hand-led goyang: immediate hook, natural product name, one meaningful selling point, supported FOMO when available, then a conversational CTA.',
+  NX10: 'Make the readable label detail feel useful and worth noticing, with engaging affiliate rhythm and buyer relevance rather than dry package narration.',
+  RH01: 'Keep the single natural goyang and faceless hand identity while using spontaneous off-camera selling energy whenever voice mode is selected; Ambient or ASMR remains fully speech-free.',
+  RH02: 'Keep the controlled tactile tilt while the optional voice sells one relevant buyer benefit with natural pace and emphasis; Ambient or ASMR remains fully speech-free.',
+  RH03: 'Keep the realistic pick-up and put-down while optional speech tells a compact persuasive buyer story instead of narrating the movement; Ambient or ASMR remains fully speech-free.',
+  RH04: 'Keep the believable shelf-selection action while optional speech sounds like a familiar affiliate recommendation with one supported reason to consider the product; sound-only choices remain silent.',
+  RH17: 'Keep the desk setup identity while optional speech connects a relatable work or study situation to one supported benefit with useful selling energy; sound-only choices remain silent.',
+  RH19: 'Keep the clean window-daylight identity while optional speech feels spontaneous, product-specific and persuasive rather than quiet catalogue narration; sound-only choices remain silent.',
+  NX11: 'Use an authentic first-person shopper hook, voice a relatable need, and turn one supported observation into an engaging reason to look closer without inventing ownership.',
+  NX12: 'Use excited but believable discovery energy, a product-specific reason for the excitement, and a lively conversational CTA without fabricating virality.',
+  NX13: 'Sound like relaxed Malaysian kitchen conversation with a quick relatable hook, one practical supported benefit and warm persuasive rhythm, never a formal cooking presenter.',
+  NX14: 'Open from a recognizable desk frustration or need, explain one practical supported benefit with friendly creator energy, and avoid corporate productivity narration.',
+  NX15: 'Tell a short relatable story with emotional movement from situation to product to supported benefit, then finish persuasively without turning it into a fake testimonial.',
+  NX16: 'Keep low-pressure soft selling but retain warmth, personality and persuasive product relevance; relaxed does not mean flat, generic or lifeless.',
+  NX17: 'Deliver the recommendation like a useful product idea that genuinely just occurred: quick hook, convincing supported reason, lively human rhythm and natural CTA without claiming personal use.',
+};
+
+/**
  * The single authoritative source for the twenty official style directors.
  * Universal identity, factuality, UI, realism and modesty locks live in the
  * compiler; everything creative and style-specific lives here.
@@ -101,8 +129,8 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'Adult modest presenter visible throughout.',
     humanPerformance:'Natural thinking glance, small pause, helpful eye contact and one restrained nod.',
     defaultAudioMode:'spoken_presenter', allowSoundOnly:false,
-    voiceOrAudio:'Helpful concise Malaysian Malay, phrased like a spoken answer rather than customer service copy.',
-    storytellingObjective:'Resolve one supported buying uncertainty in a single compact exchange.',
+    voiceOrAudio:'Helpful, lively Malaysian Malay, phrased like a spontaneous affiliate answer rather than customer service copy.',
+    storytellingObjective:'Resolve one supported buying uncertainty, then make its buyer relevance feel genuinely worth considering.',
     relevantProductInformation:'Choose a question the image or confirmed facts can answer; narrow it when evidence is limited.',
     naturalEnding:'Complete the answer cleanly; no second question or generic recap.',
     hardFailures:['fake comment UI','unanswerable broad question','formal FAQ wording','repeating question in the answer'],
@@ -117,10 +145,10 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'No presenter face or body; exactly one sleeve-covered adult hand.',
     humanPerformance:'Natural grip pressure, tiny wrist correction and realistic contact shadows.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Default is calm off-camera Malaysian Malay; Ambient or ASMR replaces all speech when explicitly selected.',
-    storytellingObjective:'Add a practical buyer context the hand action alone cannot communicate.',
+    voiceOrAudio:'Default is energetic, spontaneous off-camera Malaysian affiliate Malay with fast believable rhythm; Ambient or ASMR replaces all speech when explicitly selected.',
+    storytellingObjective:'Use the hand-led product moment to carry a persuasive product-specific hook, one supported buyer benefit and supported FOMO when available.',
     relevantProductInformation:'Use intended category purpose or one confirmed consideration; never narrate colour, label or movement.',
-    naturalEnding:'Finish speech before a two-second stable hold, or let sound-only mode settle naturally.',
+    naturalEnding:'Let the conversational CTA land near the end without extra speech afterward, or let sound-only mode settle naturally.',
     hardFailures:['visible presenter','second hand','narrating the tilt','mechanical shaking','speech in Ambient or ASMR mode'],
   }),
   define({
@@ -133,8 +161,8 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'No face or body; exactly one sleeve-covered adult hand.',
     humanPerformance:'Careful pointing, believable grip and no repeated tapping.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Plain-spoken factual Malaysian Malay; Ambient or ASMR mode contains no words.',
-    storytellingObjective:'Connect one verified label detail to a cautious ordinary use consideration.',
+    voiceOrAudio:'Engaging plain-spoken Malaysian affiliate Malay that makes one readable detail useful to a buyer; Ambient or ASMR mode contains no words.',
+    storytellingObjective:'Connect one verified label detail to a meaningful everyday buyer benefit without becoming a package-reading monologue.',
     relevantProductInformation:'Only text that is clearly readable or explicitly customer-confirmed.',
     naturalEnding:'End after the useful connection; never read the rest of the package.',
     hardFailures:['invented label text','reading multiple claims','visible presenter','speech in sound-only mode'],
@@ -149,8 +177,8 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'Faceless and body-free; exactly one sleeve-covered hand.',
     humanPerformance:'Subtle grip tension, believable weight and restrained handheld micro-shake.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Minimal off-camera buyer-context narration by default; selected Ambient or ASMR contains zero speech.',
-    storytellingObjective:'Pair believable handling with one reason the category may matter to a buyer.',
+    voiceOrAudio:'Spontaneous energetic off-camera affiliate delivery by default; selected Ambient or ASMR contains zero speech.',
+    storytellingObjective:'Pair believable handling with an immediate hook, one supported selling point and natural CTA when selected.',
     relevantProductInformation:'Recognizable intended purpose or confirmed fact only; never describe packaging movement.',
     naturalEnding:'Stable physical hold after speech or a quiet natural sound finish.',
     hardFailures:['mechanical shake loop','presenter face','narrating hand movement','speech in Ambient or ASMR mode'],
@@ -165,8 +193,8 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'No presenter; exactly one sleeve-covered hand may enter.',
     humanPerformance:'Measured wrist control and realistic object weight.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Soft observational off-camera narration, or zero speech in selected Ambient/ASMR mode.',
-    storytellingObjective:'Support one buyer-relevant consideration while the physical form remains believable.',
+    voiceOrAudio:'Natural expressive off-camera affiliate narration, or zero speech in selected Ambient/ASMR mode.',
+    storytellingObjective:'Sell one supported buyer benefit with lively human rhythm while the tactile form remains believable.',
     relevantProductInformation:'Use category purpose or confirmed construction/detail, not inferred performance.',
     naturalEnding:'Return product to rest and let movement settle fully.',
     hardFailures:['turntable rotation','floating product','narrated angle','speech in sound-only mode'],
@@ -181,8 +209,8 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'No face or body; one sleeve-covered hand only.',
     humanPerformance:'Real finger placement, gravity, friction and release timing; no robotic motion.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Short off-camera buyer context by default; Ambient or ASMR uses only synchronized environmental/contact sound.',
-    storytellingObjective:'Show plausible scale while giving one grounded reason the product category may be considered.',
+    voiceOrAudio:'Conversational off-camera affiliate storytelling by default; Ambient or ASMR uses only synchronized environmental/contact sound.',
+    storytellingObjective:'Show plausible scale while moving naturally from a relatable buyer situation to one supported reason to consider the product.',
     relevantProductInformation:'One supported purpose or confirmed fact; never narrate pick-up or put-down.',
     naturalEnding:'Hand exits and product remains still; speech must already be complete.',
     hardFailures:['turntable effect','object morphing','narrating the action','speech in Ambient or ASMR mode'],
@@ -213,10 +241,10 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'No face; one sleeve-covered hand may appear.',
     humanPerformance:'Small deliberate movement with natural hesitation and contact weight.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Focused off-camera narration, or natural room/contact sound only when Ambient/ASMR is selected.',
-    storytellingObjective:'Relate one supported purpose to a work or study context without promising better performance.',
+    voiceOrAudio:'Focused but lively off-camera affiliate narration, or natural room/contact sound only when Ambient/ASMR is selected.',
+    storytellingObjective:'Relate one supported purpose to a recognizable work or study need with practical persuasive energy.',
     relevantProductInformation:'Use only desk relevance supported by category or customer-confirmed facts.',
-    naturalEnding:'Settle into a usable-looking arrangement and finish speech early.',
+    naturalEnding:'Settle into a usable-looking arrangement while the spoken thought and optional CTA finish naturally near the end.',
     hardFailures:['forcing non-desk product onto desk','unsupported productivity claim','showroom styling','speech in sound-only mode'],
   }),
   define({
@@ -229,10 +257,10 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'No face or body; one sleeve-covered hand only.',
     humanPerformance:'Natural grip, tiny exposure-consistent motion and no display choreography.',
     defaultAudioMode:'off_camera_voiceover', allowSoundOnly:true,
-    voiceOrAudio:'Quiet minimal off-camera narration, or zero speech under selected Ambient/ASMR.',
-    storytellingObjective:'Communicate one grounded buyer consideration while preserving an unembellished physical view.',
+    voiceOrAudio:'Natural expressive off-camera affiliate narration, or zero speech under selected Ambient/ASMR.',
+    storytellingObjective:'Communicate one persuasive supported buyer benefit while preserving an unembellished physical view.',
     relevantProductInformation:'Purpose or confirmed detail only; never discuss light, colour or packaging unless buyer-relevant.',
-    naturalEnding:'Speech ends before a calm stable final beat.',
+    naturalEnding:'Voice and product movement resolve together naturally, with no post-ending words or abrupt cut.',
     hardFailures:['golden cinematic grade','talking about window light','late cut-off speech','speech in sound-only mode'],
   }),
   define({
@@ -309,7 +337,7 @@ export const STYLE_DIRECTORS: Record<string, StyleDirectorSpec> = Object.fromEnt
     presenterVisibility:'Adult modest presenter visible.',
     humanPerformance:'Reflective look, soft breath and one knowing gesture without melodrama.',
     defaultAudioMode:'spoken_presenter', allowSoundOnly:false,
-    voiceOrAudio:'Reflective conversational Malaysian Malay, concise enough to complete the story early.',
+    voiceOrAudio:'Reflective but persuasive conversational Malaysian Malay with enough emotional movement to carry the story across the clip.',
     storytellingObjective:'Move from situation to supported product relevance without claiming an outcome or experience.',
     relevantProductInformation:'One intended purpose or customer-confirmed fact that logically fits the story.',
     naturalEnding:'Close the thought calmly; no testimonial reveal or slogan.',
@@ -368,8 +396,11 @@ export function compileEffectiveAudioDirective(spec: StyleDirectorSpec, effectiv
 }
 
 export function compileStyleDirector(spec: StyleDirectorSpec, productName: string): string {
+  const pawarnaApplication = PAWARNA_STYLE_CREATIVE_APPLICATIONS[spec.id];
+  if (!pawarnaApplication) throw new Error(`Missing Pawarna Creative DNA application for ${spec.id}`);
   return [
     `[STYLE ${spec.id} — AUTHORITATIVE CREATIVE DIRECTOR]`,
+    `Pawarna Creative DNA application: ${pawarnaApplication}`,
     `Creative concept: ${spec.concept}`,
     `Intended audience experience: ${spec.audienceExperience}`,
     `Opening visual behaviour: ${spec.openingVisual}`,
