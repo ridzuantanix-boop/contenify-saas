@@ -1,0 +1,50 @@
+{
+  "sourcePath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\scripts\\release\\fixtures\\pov-affiliate-goyang-v6.1-original.txt",
+  "sourceSha256": "64d46ccd85c7bbc5561f15fb59dac2c263711de4f5a2c428c1baab3af179d82a",
+  "adaptedSha256": "a68bea96cebc65d4eb05d947a1e325e2b51d76db2f80255d944477b161aa5128",
+  "changes": [
+    {
+      "from": "within 10 seconds",
+      "to": "within 15 seconds",
+      "reason": "Match the active Nexabot 15-second workflow.",
+      "count": 1
+    },
+    {
+      "from": "EXACTLY 10-second",
+      "to": "EXACTLY 15-second",
+      "reason": "Match the active Nexabot 15-second workflow.",
+      "count": 2
+    },
+    {
+      "from": "entire 10-second video",
+      "to": "entire 15-second video",
+      "reason": "Match the active Nexabot 15-second workflow.",
+      "count": 1
+    },
+    {
+      "from": "CTA begins approximately 6.8–7.4 seconds.",
+      "to": "CTA begins approximately 9.0–10.2 seconds.",
+      "reason": "Give the same final CTA enough room in a 15-second clip.",
+      "count": 1
+    },
+    {
+      "from": "CTA must be completely finished by approximately 9.2 seconds.",
+      "to": "CTA must be completely finished by approximately 12.0 seconds.",
+      "reason": "Leave a silent physical ending after the CTA in a 15-second clip.",
+      "count": 1
+    },
+    {
+      "from": "Tekan button di bawah, okay?",
+      "to": "Kalau nak tengok detail, tekan beg kuning sekarang.",
+      "reason": "Use the owner-supplied identical CTA in both experiment arms.",
+      "count": 7
+    },
+    {
+      "from": "- beg kuning\n- yellow basket\n",
+      "to": "",
+      "reason": "Remove the original CTA blacklist that directly contradicts the owner-selected CTA.",
+      "count": 1
+    }
+  ],
+  "appendedCompatibilityBlock": "\n==================================================\nCONTROLLED NEXABOT A/B TEST INPUT — TECHNICAL COMPATIBILITY APPENDIX\n==================================================\nProvider output: one exactly 15-second vertical 9:16 i2v video at 720p.\nThe two supplied media entries are byte-identical copies of one PRODUCT IDENTITY reference. They represent one product only. They are not start frames, scene layouts, background plates or compositions to reproduce.\nProduct identity observed in the authorized image: POTONGGO manual kitchen chopper; compact transparent container; turquoise lid, base and central spindle; white pull handle; visible metal blades; readable POTONGGO brand.\nCustomer-confirmed ordinary product fact: the pull handle is manually operated and the product is intended to chop ordinary kitchen ingredients.\nUnsupported and prohibited: chopping speed, blade material, capacity, durability, safety superiority, popularity, reviews, testimonial, personal ownership or personal-use result. Omit rather than invent.\nRequired final spoken CTA, once only: \"Kalau nak tengok detail, tekan beg kuning sekarang.\"\nThe CTA is the final spoken utterance. After its last word, generate no new word, syllable, phoneme, tagline, thanks, repetition or verbal filler. Continue only natural silent hand action and ordinary room sound.\nNo popularity or scarcity evidence was supplied, so omit FOMO rather than inventing it.\nNexabot independently creates all product-related Malaysian Malay dialogue. No product script is supplied by AffiMatik.\n"
+}

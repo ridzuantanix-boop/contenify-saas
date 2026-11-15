@@ -1,0 +1,59 @@
+{
+  "shared": {
+    "mode": "i2v",
+    "telegram_id": "web",
+    "mediaCount": 2,
+    "mediaOrder": [
+      "same-product-reference",
+      "same-product-reference"
+    ],
+    "referencePath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\scripts\\release\\assets\\premium-products\\potonggo-chopper.png",
+    "referenceSha256": "7295d803484efa9c0db182930d555da3557de9b5e815f352d85cfb1d4740ec56",
+    "referenceBytes": 2000178,
+    "ratio": 2,
+    "resolution": 720,
+    "duration": 15,
+    "use_unlimited": false,
+    "cta": "Kalau nak tengok detail, tekan beg kuning sekarang.",
+    "productFacts": {
+      "identity": "POTONGGO Manual Chopper",
+      "category": "manual kitchen chopper",
+      "observed": [
+        "Compact transparent container",
+        "Turquoise lid, base and central spindle",
+        "White pull handle",
+        "Visible metal blades",
+        "Readable POTONGGO brand"
+      ],
+      "confirmed": [
+        "The pull handle is manually operated and the product is intended to chop ordinary kitchen ingredients."
+      ],
+      "unsupported": [
+        "chopping speed",
+        "blade material",
+        "capacity",
+        "durability",
+        "safety superiority",
+        "popularity",
+        "reviews",
+        "testimonial",
+        "personal ownership",
+        "personal-use result"
+      ]
+    }
+  },
+  "arms": [
+    {
+      "id": "A",
+      "label": "Direct Pawarna POV AFFILIATE GOYANG V6.1 adapted",
+      "promptSha256": "a68bea96cebc65d4eb05d947a1e325e2b51d76db2f80255d944477b161aa5128",
+      "promptLength": 27391
+    },
+    {
+      "id": "B",
+      "label": "AffiMatik V10.2 NX09 compiler",
+      "promptSha256": "43d610ad324d3c45a7c76b84b28997af5b2e0d6b0fd86faf9bc29ac629ed606b",
+      "promptLength": 19684
+    }
+  ]
+}

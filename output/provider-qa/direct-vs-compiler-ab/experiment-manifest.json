@@ -1,0 +1,73 @@
+{
+  "experiment": "direct-masterprompt-vs-affimatik-compiler",
+  "paidSubmissionLimit": 2,
+  "maximumProviderDebit": 0.6,
+  "expectedDebitPerJobFromLatestReceipt": 0.3,
+  "latestReceiptEvidence": "output/provider-qa/sales-demo-final-v10-2/receipt.json",
+  "source": {
+    "path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\scripts\\release\\fixtures\\pov-affiliate-goyang-v6.1-original.txt",
+    "sha256": "64d46ccd85c7bbc5561f15fb59dac2c263711de4f5a2c428c1baab3af179d82a",
+    "bytes": 30952,
+    "clipboardRawSha256": "d4b82d3f21bf5f60eb26905dd97d8048c63c15521621266579ba5ed7f93737cd"
+  },
+  "shared": {
+    "mode": "i2v",
+    "telegram_id": "web",
+    "mediaCount": 2,
+    "mediaOrder": [
+      "same-product-reference",
+      "same-product-reference"
+    ],
+    "referencePath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\scripts\\release\\assets\\premium-products\\potonggo-chopper.png",
+    "referenceSha256": "7295d803484efa9c0db182930d555da3557de9b5e815f352d85cfb1d4740ec56",
+    "referenceBytes": 2000178,
+    "ratio": 2,
+    "resolution": 720,
+    "duration": 15,
+    "use_unlimited": false,
+    "cta": "Kalau nak tengok detail, tekan beg kuning sekarang.",
+    "productFacts": {
+      "identity": "POTONGGO Manual Chopper",
+      "category": "manual kitchen chopper",
+      "observed": [
+        "Compact transparent container",
+        "Turquoise lid, base and central spindle",
+        "White pull handle",
+        "Visible metal blades",
+        "Readable POTONGGO brand"
+      ],
+      "confirmed": [
+        "The pull handle is manually operated and the product is intended to chop ordinary kitchen ingredients."
+      ],
+      "unsupported": [
+        "chopping speed",
+        "blade material",
+        "capacity",
+        "durability",
+        "safety superiority",
+        "popularity",
+        "reviews",
+        "testimonial",
+        "personal ownership",
+        "personal-use result"
+      ]
+    }
+  },
+  "arms": [
+    {
+      "id": "A",
+      "label": "Direct Pawarna POV AFFILIATE GOYANG V6.1 adapted",
+      "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\provider-qa\\direct-vs-compiler-ab\\test-a-direct-adapted-masterprompt.txt",
+      "promptSha256": "a68bea96cebc65d4eb05d947a1e325e2b51d76db2f80255d944477b161aa5128",
+      "promptLength": 27391
+    },
+    {
+      "id": "B",
+      "label": "AffiMatik V10.2 NX09 compiler",
+      "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\provider-qa\\direct-vs-compiler-ab\\test-b-v10.2-nx09-compiled-prompt.txt",
+      "promptSha256": "43d610ad324d3c45a7c76b84b28997af5b2e0d6b0fd86faf9bc29ac629ed606b",
+      "promptLength": 19684,
+      "promptVersion": "pawarna-masterprompt-director-v10.2-quality-audit"
+    }
+  ]
+}

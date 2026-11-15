@@ -1,0 +1,156 @@
+{
+  "experiment": "direct-masterprompt-vs-affimatik-compiler",
+  "jobs": {
+    "A": {
+      "arm": "A",
+      "label": "Direct Pawarna POV AFFILIATE GOYANG V6.1 adapted",
+      "status": "downloaded",
+      "idempotencyKey": "affimatik-direct-vs-compiler-ab-a-a68bea96cebc",
+      "promptSha256": "a68bea96cebc65d4eb05d947a1e325e2b51d76db2f80255d944477b161aa5128",
+      "promptLength": 27391,
+      "referenceSha256": "7295d803484efa9c0db182930d555da3557de9b5e815f352d85cfb1d4740ec56",
+      "submissionIntentAt": "2026-11-15T00:53:12.6238644Z",
+      "pollHistory": [
+        {
+          "at": "2026-11-15T00:53:17.7070612Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:53:31.3675449Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:53:44.7719379Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:53:58.1310599Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:54:11.4134399Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:54:24.7782998Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:54:38.0902545Z",
+          "status": "done"
+        }
+      ],
+      "taskId": "1e304c34c4804e5e",
+      "submittedAt": "2026-11-15T00:53:12.6759263Z",
+      "sanitizedSubmitResponse": {
+        "ok": true,
+        "id": "1e304c34c4804e5e",
+        "status": "processing"
+      },
+      "completedAt": "2026-11-15T00:54:43.0875008Z",
+      "outputPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\provider-qa\\direct-vs-compiler-ab\\test-a-final.mp4",
+      "outputSha256": "25e3dd47bd6b04f2ad0c02fc566b77c18c778fb5d7c58197ee985e87d34da3e5",
+      "mediaProbe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio"
+          }
+        ],
+        "format": {
+          "duration": "15.040000",
+          "size": "3520679"
+        }
+      }
+    },
+    "B": {
+      "arm": "B",
+      "label": "AffiMatik V10.2 NX09 compiler",
+      "status": "downloaded",
+      "idempotencyKey": "affimatik-direct-vs-compiler-ab-b-43d610ad324d",
+      "promptSha256": "43d610ad324d3c45a7c76b84b28997af5b2e0d6b0fd86faf9bc29ac629ed606b",
+      "promptLength": 19684,
+      "referenceSha256": "7295d803484efa9c0db182930d555da3557de9b5e815f352d85cfb1d4740ec56",
+      "submissionIntentAt": "2026-11-15T00:53:15.0546933Z",
+      "pollHistory": [
+        {
+          "at": "2026-11-15T00:53:18.2966739Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:53:32.1000249Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:53:45.4016711Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:53:58.7115089Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:54:12.0775375Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:54:25.5004769Z",
+          "status": "processing"
+        },
+        {
+          "at": "2026-11-15T00:54:47.0919808Z",
+          "status": "done"
+        }
+      ],
+      "taskId": "066f2a642d44f354",
+      "submittedAt": "2026-11-15T00:53:15.0783964Z",
+      "sanitizedSubmitResponse": {
+        "ok": true,
+        "id": "066f2a642d44f354",
+        "status": "processing"
+      },
+      "completedAt": "2026-11-15T00:54:49.0433162Z",
+      "outputPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\provider-qa\\direct-vs-compiler-ab\\test-b-final.mp4",
+      "outputSha256": "5049c2a57288dfed3155e0425919170aa1477ca2c130f99dd42fe83a20315ce1",
+      "mediaProbe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio"
+          }
+        ],
+        "format": {
+          "duration": "15.040000",
+          "size": "3550836"
+        }
+      }
+    }
+  },
+  "submissionIntents": 2,
+  "supplierCreditBefore": 24.45,
+  "pricingEvidence": {
+    "source": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\provider-qa\\sales-demo-final-v10-2\\receipt.json",
+    "observedDebitPerCompletedJob": 0.3,
+    "observedAt": "11/14/2026 16:54:15",
+    "currentBalanceVerifiedAt": "2026-11-15T00:53:12.1060773Z"
+  },
+  "supplierCreditAfter": 23.85,
+  "supplierCreditsUsed": 0.60,
+  "finishedAt": "2026-11-15T00:54:51.3000645Z"
+}
