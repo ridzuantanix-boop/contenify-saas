@@ -35,6 +35,22 @@ async function api(path, init = {}) {
 }
 function encodePath(path) { return path.split('/').map(encodeURIComponent).join('/'); }
 
+async function downloadEncryptedObject(bucketId, path, outputName) {
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await api(`/storage/v1/object/authenticated/${encodeURIComponent(bucketId)}/${encodePath(path)}`);
+      return await encrypt(Readable.fromWeb(response.body), outputName);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 3) break;
+      console.warn(`Muat turun Storage terputus; cuba semula ${attempt + 1}/3 untuk objek ${createHash('sha256').update(`${bucketId}/${path}`).digest('hex').slice(0, 12)}.`);
+      await new Promise(resolveDelay => setTimeout(resolveDelay, attempt * 750));
+    }
+  }
+  throw lastError;
+}
+
 async function listObjects(bucket, prefix = '') {
   const results = [];
   for (let offset = 0; ; offset += 1000) {
@@ -107,9 +123,8 @@ try {
     if (typeof bucketId !== 'string' || !bucketId) throw new Error('Bucket Storage tidak sah.');
     const paths = await listObjects(bucketId);
     for (const path of paths) {
-      const response = await api(`/storage/v1/object/authenticated/${encodeURIComponent(bucketId)}/${encodePath(path)}`);
       const id = createHash('sha256').update(`${bucketId}/${path}`).digest('hex');
-      objects.push({ bucket: bucketId, path, ...(await encrypt(Readable.fromWeb(response.body), `object-${id}.enc`)) });
+      objects.push({ bucket: bucketId, path, ...(await downloadEncryptedObject(bucketId, path, `object-${id}.enc`)) });
     }
     console.log(`Bucket ${bucketId}: ${paths.length} objek dieksport.`);
   }
