@@ -1,8 +1,10 @@
 type PaymentControl={paymentHold:boolean;holdReason?:string;holdOrderId?:string};
 export type PaymentEmailEvent='PAYMENT_DECLARATION_RECEIVED'|'PAYMENT_PROVISIONAL_ACTIVE'|'PAYMENT_CONFIRMED'|'PAYMENT_REJECTED'|'PAYMENT_HOLD_RELEASED';
+type EmailDeliveryStatus='SENT'|'FAILED'|'NOT_CONFIGURED';
+type PendingEmailNotification={id:string;user_id:string;notification_type:PaymentEmailEvent;related_order_id?:string;email_attempts:number};
 
 export function paymentEmailConfiguration(){
- return{configured:Boolean(process.env.RESEND_API_KEY),sender:process.env.PAYMENT_EMAIL_FROM||'AffiMatik <noreply@affimatik.online>',provider:'Resend'};
+ return{configured:Boolean(process.env.RESEND_API_KEY),sender:process.env.PAYMENT_EMAIL_FROM||'AffiMatik <noreply@affimatik.online>',replyTo:process.env.PAYMENT_EMAIL_REPLY_TO||'support@affimatik.online',provider:'Resend'};
 }
 
 function db(){if(!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw new Error('Pangkalan data tidak tersedia.');const key=process.env.SUPABASE_SERVICE_ROLE_KEY;return{base:process.env.SUPABASE_URL.replace(/\/$/,''),headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'}};}
@@ -28,14 +30,54 @@ export function buildPaymentEmail(input:{event:PaymentEmailEvent;orderId?:string
   PAYMENT_HOLD_RELEASED:{subject:'Akaun AffiMatik anda telah diaktifkan semula',heading:'Semakan pembayaran telah selesai',message:'Sekatan sementara telah dilepaskan. Anda boleh menggunakan baki kredit dan menjana video seperti biasa.',accent:'#059669'},
  };
  const item=content[input.event],reference=input.orderId?`<p style="font-size:12px;color:#64748b;margin-top:24px">Rujukan: ${escapeHtml(input.orderId)}</p>`:'';
- return{subject:item.subject,text:`${item.heading}\n\n${item.message}${input.orderId?`\n\nRujukan: ${input.orderId}`:''}`,html:`<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:560px;margin:0 auto;padding:32px 16px"><div style="background:white;border:1px solid #e2e8f0;border-radius:18px;padding:28px"><p style="margin:0 0 18px;color:#4f46e5;font-weight:800">AffiMatik by Pawarna</p><h1 style="font-size:22px;line-height:1.3;margin:0 0 14px;color:${item.accent}">${escapeHtml(item.heading)}</h1><p style="font-size:15px;line-height:1.7;margin:0">${escapeHtml(item.message)}</p>${reference}<p style="font-size:12px;line-height:1.6;color:#64748b;margin:24px 0 0">Emel automatik AffiMatik. Untuk bantuan, balas melalui saluran sokongan rasmi.</p></div></div></body></html>`};
+ return{subject:item.subject,text:`${item.heading}\n\n${item.message}${input.orderId?`\n\nRujukan: ${input.orderId}`:''}\n\nBantuan: support@affimatik.online`,html:`<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:560px;margin:0 auto;padding:32px 16px"><div style="background:white;border:1px solid #e2e8f0;border-radius:18px;padding:28px"><p style="margin:0 0 18px;color:#4f46e5;font-weight:800">AffiMatik by Pawarna</p><h1 style="font-size:22px;line-height:1.3;margin:0 0 14px;color:${item.accent}">${escapeHtml(item.heading)}</h1><p style="font-size:15px;line-height:1.7;margin:0">${escapeHtml(item.message)}</p>${reference}<p style="font-size:12px;line-height:1.6;color:#64748b;margin:24px 0 0">Emel automatik AffiMatik. Perlukan bantuan? Hubungi <a href="mailto:support@affimatik.online" style="color:#4f46e5">support@affimatik.online</a>.</p></div></div></body></html>`};
+}
+
+function retryAt(attempt:number){const minutes=[5,15,60,240,720][Math.max(0,Math.min(attempt-1,4))];return new Date(Date.now()+minutes*60_000).toISOString();}
+function safeProviderError(status:number,payload:unknown){const record=payload&&typeof payload==='object'?payload as Record<string,unknown>:{};return `HTTP_${status}:${String(record.name||record.message||'RESEND_ERROR').slice(0,300)}`;}
+function idempotencyKey(event:PaymentEmailEvent,orderId?:string){return `affimatik/${event}/${orderId||'no-order'}`.slice(0,256);}
+
+async function deliverPaymentEmail(input:{to:string;event:PaymentEmailEvent;orderId?:string;credits?:number;amountMyr?:number}){
+ if(!process.env.RESEND_API_KEY)return{status:'NOT_CONFIGURED' as EmailDeliveryStatus,error:'RESEND_API_KEY_NOT_CONFIGURED'};
+ if(!input.to)return{status:'FAILED' as EmailDeliveryStatus,error:'CUSTOMER_EMAIL_MISSING'};
+ const email=buildPaymentEmail(input),config=paymentEmailConfiguration();
+ try{
+  const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':idempotencyKey(input.event,input.orderId)},body:JSON.stringify({from:config.sender,to:[input.to],reply_to:config.replyTo,subject:email.subject,html:email.html,text:email.text})});
+  const payload=await response.json().catch(()=>({})) as Record<string,unknown>;
+  if(response.ok)return{status:'SENT' as EmailDeliveryStatus,providerId:typeof payload.id==='string'?payload.id:undefined};
+  return{status:'FAILED' as EmailDeliveryStatus,error:safeProviderError(response.status,payload)};
+ }catch(error){return{status:'FAILED' as EmailDeliveryStatus,error:`NETWORK:${error instanceof Error?error.name:'UNKNOWN'}`};}
+}
+
+async function updateEmailState(input:{notificationId?:string;orderId?:string;event:PaymentEmailEvent;status:EmailDeliveryStatus;providerId?:string;error?:string;attempt?:number}){
+ const{base,headers}=db();
+ if(input.notificationId){await fetch(`${base}/rest/v1/rpc/finish_customer_notification_email`,{method:'POST',headers,body:JSON.stringify({p_notification_id:input.notificationId,p_status:input.status,p_provider_id:input.providerId||null,p_error:input.error||null,p_next_attempt_at:input.status==='SENT'?null:retryAt(input.attempt||1)})});return;}
+ if(!input.orderId)return;
+ await fetch(`${base}/rest/v1/customer_notifications?related_order_id=eq.${encodeURIComponent(input.orderId)}&notification_type=eq.${encodeURIComponent(input.event)}&email_status=in.(PENDING,FAILED,NOT_CONFIGURED)`,{method:'PATCH',headers:{...headers,Prefer:'return=minimal'},body:JSON.stringify({email_status:input.status,email_provider_id:input.providerId||null,email_last_error:input.error||null,email_next_attempt_at:input.status==='SENT'?null:retryAt(1)})}).catch(()=>undefined);
+}
+
+export async function ensurePaymentEventNotification(input:{workspaceId:string;userId:string;event:PaymentEmailEvent;orderId:string;amountMyr?:number;credits?:number}){
+ const{base,headers}=db(),email=buildPaymentEmail(input),dedupe=idempotencyKey(input.event,input.orderId);
+ const response=await fetch(`${base}/rest/v1/customer_notifications?on_conflict=email_dedupe_key`,{method:'POST',headers:{...headers,Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify({workspace_id:input.workspaceId,user_id:input.userId,title:email.subject,message:email.text,notification_type:input.event,related_order_id:input.orderId,email_dedupe_key:dedupe})});
+ if(!response.ok)throw new Error(`CUSTOMER_NOTIFICATION_WRITE_${response.status}`);
 }
 
 export async function sendPaymentEventEmail(input:{to:string;event:PaymentEmailEvent;orderId?:string;credits?:number;amountMyr?:number}){
- let status:'SENT'|'FAILED'|'NOT_CONFIGURED'='NOT_CONFIGURED';const email=buildPaymentEmail(input);
- if(process.env.RESEND_API_KEY&&input.to){try{const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.PAYMENT_EMAIL_FROM||'AffiMatik <noreply@affimatik.online>',to:[input.to],subject:email.subject,html:email.html,text:email.text})});status=response.ok?'SENT':'FAILED';}catch{status='FAILED';}}
- if(input.orderId){const{base,headers}=db();await fetch(`${base}/rest/v1/customer_notifications?related_order_id=eq.${encodeURIComponent(input.orderId)}&notification_type=eq.${encodeURIComponent(input.event)}&email_status=eq.PENDING`,{method:'PATCH',headers:{...headers,Prefer:'return=minimal'},body:JSON.stringify({email_status:status})}).catch(()=>undefined);}
- return status;
+ const delivery=await deliverPaymentEmail(input);await updateEmailState({...input,...delivery}).catch(()=>undefined);return delivery.status;
+}
+
+export async function retryPendingPaymentEmails(limit=20){
+ if(!process.env.RESEND_API_KEY)return{configured:false,claimed:0,sent:0,failed:0};
+ const{base,headers}=db();const claim=await fetch(`${base}/rest/v1/rpc/claim_customer_notification_emails`,{method:'POST',headers,body:JSON.stringify({p_limit:limit,p_lease_seconds:300})});
+ if(!claim.ok)throw new Error(`EMAIL_QUEUE_CLAIM_${claim.status}`);
+ const notifications=await claim.json() as PendingEmailNotification[];if(!notifications.length)return{configured:true,claimed:0,sent:0,failed:0};
+ const userIds=[...new Set(notifications.map(item=>item.user_id))],profiles=await fetch(`${base}/rest/v1/profiles?id=in.(${userIds.map(encodeURIComponent).join(',')})&select=id,email`,{headers});
+ const emails=new Map<string,string>();if(profiles.ok)for(const profile of await profiles.json() as Array<{id:string;email:string}>)emails.set(profile.id,profile.email);
+ const orderIds=[...new Set(notifications.map(item=>item.related_order_id).filter((value):value is string=>Boolean(value)))],orders=new Map<string,{amount_myr:number;credits_granted:number}>();
+ if(orderIds.length){const response=await fetch(`${base}/rest/v1/orders?id=in.(${orderIds.map(encodeURIComponent).join(',')})&select=id,amount_myr,credits_granted`,{headers});if(response.ok)for(const order of await response.json() as Array<{id:string;amount_myr:number;credits_granted:number}>)orders.set(order.id,order);}
+ let sent=0,failed=0;
+ for(const item of notifications){const order=item.related_order_id?orders.get(item.related_order_id):undefined;const delivery=await deliverPaymentEmail({to:emails.get(item.user_id)||'',event:item.notification_type,orderId:item.related_order_id,amountMyr:order?.amount_myr,credits:order?.credits_granted});await updateEmailState({notificationId:item.id,event:item.notification_type,status:delivery.status,providerId:delivery.providerId,error:delivery.error,attempt:item.email_attempts});if(delivery.status==='SENT')sent++;else failed++;}
+ return{configured:true,claimed:notifications.length,sent,failed};
 }
 
 export async function listProvisionalExposure(){

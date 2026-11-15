@@ -48,6 +48,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00026_cloud_auto_factory.sql',
       '00027_launch_pack_rm19.sql',
       '00029_payment_evidence_mobile_formats.sql',
+      '00030_transactional_email_delivery.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -97,6 +98,21 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(cols).toContain('required_credits');
     expect(cols).toContain('client_request_id');
     expect(cols).toContain('result_video_url');
+  });
+
+  it('claims each transactional email once, leases it durably and finishes it idempotently', async () => {
+    const workspace='a3000000-0000-4000-8000-000000000001',user='b3000000-0000-4000-8000-000000000001',order='c3000000-0000-4000-8000-000000000001';
+    await db.query(`INSERT INTO workspaces(id,name,slug,owner_id) VALUES($1,'Email QA','email-qa',$2)`,[workspace,user]);
+    await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,'email-qa@example.test','free',$2)`,[user,workspace]);
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_method,payment_state) VALUES($1,$2,$3,'launch_pack',19,150,'PENDING','qr_manual','qr','PROVISIONALLY_ACTIVE')`,[order,workspace,user]);
+    await db.query(`INSERT INTO customer_notifications(workspace_id,user_id,title,message,notification_type,related_order_id) VALUES($1,$2,'Kredit aktif','Kredit tersedia','PAYMENT_PROVISIONAL_ACTIVE',$3)`,[workspace,user,order]);
+    const first=await db.query<{id:string;email_status:string;email_attempts:number}>(`SELECT id,email_status,email_attempts FROM claim_customer_notification_emails(20,300)`);
+    expect(first.rows).toHaveLength(1);expect(first.rows[0]).toMatchObject({email_status:'SENDING',email_attempts:1});
+    expect((await db.query(`SELECT id FROM claim_customer_notification_emails(20,300)`)).rows).toHaveLength(0);
+    expect((await db.query<{finish_customer_notification_email:boolean}>(`SELECT finish_customer_notification_email($1,'SENT','resend-email-id',NULL,NULL)`,[first.rows[0].id])).rows[0].finish_customer_notification_email).toBe(true);
+    expect((await db.query(`SELECT id FROM claim_customer_notification_emails(20,300)`)).rows).toHaveLength(0);
+    const saved=await db.query<{email_status:string;email_provider_id:string;email_dedupe_key:string}>(`SELECT email_status,email_provider_id,email_dedupe_key FROM customer_notifications WHERE id=$1`,[first.rows[0].id]);
+    expect(saved.rows[0]).toMatchObject({email_status:'SENT',email_provider_id:'resend-email-id',email_dedupe_key:`PAYMENT_PROVISIONAL_ACTIVE/${order}`});
   });
 
   it('enables row security on all sensitive payment and affiliate tables', async () => {

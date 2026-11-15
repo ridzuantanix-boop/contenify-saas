@@ -59,7 +59,19 @@ describe('Commercial Launch Operations V1',()=>{
   const queue=fs.readFileSync('src/lib/db/store.ts','utf8');
   expect(receipt).toContain('Promise.allSettled');
   expect(control).toContain('order=evidence_submitted_at.asc');
-  expect(control).toContain("status=response.ok?'SENT':'FAILED'");
+  expect(control).toContain("'Idempotency-Key':idempotencyKey");
+  expect(control).toContain('retryPendingPaymentEmails');
+  expect(control).toContain('finish_customer_notification_email');
   expect(queue).toMatch(/maxActive[^\n]*3|MAX_ACTIVE_NEXABOT_JOBS/);
+ });
+
+ it('ships a durable email queue migration without exposing it to customer roles',()=>{
+  const migration=fs.readFileSync('supabase/migrations/00030_transactional_email_delivery.sql','utf8');
+  expect(migration).toContain('FOR UPDATE SKIP LOCKED');
+  expect(migration).toContain("email_status='SENDING'");
+  expect(migration).toContain('email_attempts < 5');
+  expect(migration).toContain('customer_notifications_email_dedupe_unique');
+  expect(migration).toContain('REVOKE ALL ON FUNCTION public.claim_customer_notification_emails(INT,INT) FROM PUBLIC,anon,authenticated');
+  expect(migration).toContain('GRANT EXECUTE ON FUNCTION public.claim_customer_notification_emails(INT,INT) TO service_role');
  });
 });

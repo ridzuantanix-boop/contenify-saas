@@ -7,6 +7,7 @@ import { customerFailureMessage } from '@/lib/jobs/customer-failure';
 import { dispatchDueProviderRetry, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
 import { dispatchAutoFactoryCapacity, materializeDueDailyRuns } from '@/lib/auto-factory/core';
+import { retryPendingPaymentEmails } from '@/lib/billing/payment-control';
 
 
 const router = new ProviderRouter();
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const autoBefore = await runAutoFactorySafely();
+    const emailDelivery = await retryPendingPaymentEmails().catch(error=>({configured:Boolean(process.env.RESEND_API_KEY),claimed:0,sent:0,failed:0,error:error instanceof Error?error.message:String(error)}));
     const dailyAuto = autoBefore.daily;
     const autoFactoryBefore = autoBefore.dispatch;
     const leaseRecovery = await DurableStore.recoverExpiredNexabotDispatchLeases();
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
       dailyRunsCreated: dailyAuto.created,
       dailyRunsSkipped: dailyAuto.skipped,
       autoFactoryError: autoBefore.error,
+      emailDelivery,
     };
 
     const now = Date.now();
