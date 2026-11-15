@@ -89,7 +89,7 @@ const scene: ScenePlan = {
   actionProgression: 'One controlled playful goyang and a small natural grip adjustment without claiming performance',
   endPose: 'Stable product hold with silent physical ending after the CTA',
   primaryAction: 'Show the product identity and manual pull-handle mechanism with physically credible one-hand behaviour',
-  audioPolicy: 'voiceover',
+  audioPolicy: 'off_camera_narration',
   targetDurationSeconds: 15,
 };
 

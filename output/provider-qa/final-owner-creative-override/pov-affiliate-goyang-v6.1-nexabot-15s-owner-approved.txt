@@ -1,0 +1,1254 @@
+POV AFFILIATE GOYANG™ V6.1
+PRODUCT-ONLY INPUT + FIXED DESK-FACING-WALL SCENE + REAL HUMAN MALAY VOICE + BENEFIT + FOMO SCRIPT FLOW
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRIORITY SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Follow rules in this order.
+
+PRIORITY 1 — MUST NEVER FAIL
+- user uploads HERO PRODUCT IMAGE ONLY
+- never require background / scene reference upload
+- uploaded image is PRODUCT REFERENCE ONLY
+- never use uploaded screenshot itself as first frame
+- remove all UI / screenshot residue
+- preserve exact hero product identity
+- generate fixed desk-facing-wall scene automatically
+- one continuous stable scene
+- female arm fully covered
+- male override changes BOTH hand and voice
+- CTA must be fully spoken
+- CTA default = "Tekan button di bawah, okay?"
+- no false personal-use claim
+
+PRIORITY 2 — VISUAL REALISM
+- front-facing table setup
+- close background
+- hero product smaller on screen
+- natural human hand entry
+- real phone camera behaviour
+- no cinematic polish
+- no obvious CGI / AI aesthetic
+- stable background objects
+
+PRIORITY 3 — VOICE REALISM
+- ordinary Malaysian person
+- casual fast speech
+- irregular human rhythm
+- no presenter voice
+- no advertisement narrator tone
+- no robotic TTS cadence
+- dead air removed
+
+PRIORITY 4 — SCRIPT
+- audience-problem hook
+- product name
+- ONE benefit
+- ONE short FOMO
+- CTA
+- script must still fit naturally within 15 seconds
+
+If any lower-priority element conflicts with a higher-priority rule:
+FOLLOW THE HIGHER-PRIORITY RULE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. USER INPUT RULE — PRODUCT IMAGE ONLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The user uploads ONLY ONE image:
+
+HERO PRODUCT IMAGE.
+
+Do NOT ask the user to upload:
+- background image
+- scene image
+- desk reference
+- room reference
+- model reference
+- lifestyle reference
+
+The environment must be generated automatically from the FIXED SCENE TEMPLATE below.
+
+USER INPUT:
+HERO PRODUCT IMAGE ONLY.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. PRODUCT IMAGE ROLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The uploaded image is PRODUCT REFERENCE ONLY.
+
+Use it only to understand:
+- exact product identity
+- packaging shape
+- cap/lid
+- label
+- brand
+- product name
+- colours
+- visible proportions
+- visible printed design
+- visible materials
+
+DO NOT use the uploaded image itself as:
+- first frame
+- opening frame
+- background
+- transition
+- starting image
+- scene composition
+- video source frame
+
+REFERENCE IMAGE = PRODUCT IDENTITY ONLY.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. SCREENSHOT CLEANUP PIPELINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If uploaded image contains:
+- marketplace UI
+- social media UI
+- reviews
+- ratings
+- usernames
+- comments
+- buttons
+- price elements
+- screenshot borders
+- app interface
+- background text
+
+FIRST:
+extract / understand ONLY the physical hero product.
+
+Then completely discard the original uploaded frame.
+
+MANDATORY PIPELINE:
+
+USER PRODUCT IMAGE
+→ READ HERO PRODUCT IDENTITY
+→ REMOVE ALL UI / SCREENSHOT ELEMENTS
+→ DISCARD ORIGINAL FRAME
+→ RECONSTRUCT CLEAN HERO PRODUCT
+→ BUILD FIXED SCENE TEMPLATE
+→ PLACE HERO PRODUCT INTO SCENE
+→ VERIFY ZERO UI
+→ GENERATE VIDEO
+
+NEVER:
+RAW SCREENSHOT → VIDEO
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. CORE OUTPUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generate ONE complete EXACTLY 15-second vertical 9:16 Malaysian affiliate POV video.
+
+The final result must feel like:
+a REAL Malaysian affiliate creator casually recording a product on a normal smartphone while seated at a table facing a close wall/background.
+
+STRICTLY FACELESS POV.
+
+The camera represents the creator’s own point of view.
+
+Target:
+REAL SHORT-FORM PHONE CONTENT.
+
+NOT:
+AI lifestyle video.
+NOT:
+commercial product ad.
+NOT:
+cinematic product shoot.
+NOT:
+wide room scene.
+NOT:
+talking-head video.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. FIXED INTERNAL SCENE TEMPLATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Always generate the SAME GENERAL SCENE STYLE automatically.
+
+The user does NOT need to provide a scene reference.
+
+Scene structure:
+
+- creator seated directly in front of a table
+- camera facing forward
+- light / white tabletop in foreground
+- close pale vertical curtain / blinds-like background
+- bright soft white daylight feel
+- one neutral sculptural decorative object on the LEFT
+- one ribbed neutral vase-like object on the RIGHT
+- pale soft flowers / foliage rising from the vase
+- light tray / base beneath or near the vase
+- hero product held in foreground
+- optional second hand nearby if natural
+
+Composition:
+
+LEFT:
+neutral sculptural decor
+
+CENTER / FOREGROUND:
+creator hand + hero product
+
+RIGHT:
+ribbed vase-like object + pale flowers / foliage
+
+BACKGROUND:
+close pale vertical curtain / blinds-like surface
+
+The scene should feel:
+- front-facing
+- close
+- tight
+- contained
+- bright
+- soft
+- simple
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. FIXED SCENE STYLE LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Do NOT create a random new environment.
+
+Do NOT change the scene to:
+- bedroom
+- living room
+- kitchen
+- wardrobe area
+- office
+- shop
+- car
+- outdoor setting
+- wide house interior
+
+The default scene must remain:
+
+TABLE
++ CLOSE BACKGROUND
++ LEFT DECOR
++ RIGHT VASE / FLOWERS
++ HERO PRODUCT FOREGROUND.
+
+The product changes.
+The general scene stays consistent.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. TIGHT COMPOSITION LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The composition must feel like the creator is seated right in front of the table.
+
+Show:
+- table surface in lower frame
+- close background directly behind table
+- hero product in foreground
+- very limited surrounding environment
+
+Do NOT reveal:
+- deep room
+- entire room
+- large floor area
+- unrelated furniture
+- wide side angle
+
+Priority:
+TABLE + CLOSE BACKGROUND
+over
+ROOM INTERIOR.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. FIRST FRAME REALITY LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+At timestamp 0.00 seconds:
+
+Show the CLEAN generated environment.
+
+ZERO:
+- source screenshot
+- UI
+- review elements
+- app interface
+- overlay text
+
+The hero product must NOT begin as a perfectly centered catalog pose.
+
+Preferred:
+- product outside main presentation area
+OR
+- product partly entering frame
+
+The phone should feel like recording started just before the creator presents the product.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. NATURAL HAND + PRODUCT ENTRY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Preferred timing:
+
+0.00–0.25s
+Clean environment already recording.
+
+0.20–0.80s
+Hand + hero product naturally move into main foreground.
+
+Allow:
+- motion blur
+- slight tilt
+- temporary label unreadability
+- tiny autofocus lag
+- imperfect positioning
+- natural hand acceleration
+
+0.80–1.20s
+Hand settles casually.
+
+Only after settling:
+product becomes reasonably clear.
+
+Do NOT:
+- teleport product
+- spawn product suddenly
+- begin with perfect commercial pose
+- create dramatic reveal
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. EXACT HERO PRODUCT IDENTITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The uploaded product reference is the absolute source of truth.
+
+Preserve as closely as possible:
+- exact silhouette
+- width-height ratio
+- packaging geometry
+- cap/lid
+- colour
+- logo placement
+- label placement
+- brand
+- product name
+- printed layout
+- material
+- proportions
+- visible structure
+
+DO NOT:
+- redesign
+- beautify
+- simplify
+- modernize
+- recolour
+- move logo
+- invent text
+- create fake variant
+- substitute similar packaging
+
+The hero product is a FIXED PHYSICAL IDENTITY.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. UNKNOWN PRODUCT AREA PROTECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If only the front is visible:
+
+Keep product mostly:
+- front-facing
+- slight natural angle only
+
+Do NOT clearly reveal:
+- unseen back
+- unseen side
+- unknown opening mechanism
+- unknown contents
+- unknown internal colour
+
+Never invent unseen product details.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. HERO PRODUCT SIZE LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI often makes hero products too large.
+
+Therefore intentionally keep hero product SMALLER ON SCREEN.
+
+Preferred:
+approximately 15–22% of total frame height.
+
+Maximum during brief emphasis:
+approximately 25%.
+
+Maintain enough visible:
+- hand
+- table
+- background
+
+NEVER:
+- push product close to lens
+- use macro framing
+- make product dominate frame
+- enlarge for readability
+- make hand unrealistically small
+
+If uncertain:
+CHOOSE THE SMALLER VISUAL SIZE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. HUMAN HAND REALISM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The hand must look like a real unretouched human hand.
+
+Allow:
+- visible skin texture
+- fine lines
+- subtle dryness
+- slight colour variation
+- natural knuckles
+- subtle veins
+- finger asymmetry
+- realistic grip pressure
+- minor nail irregularity
+
+Do NOT:
+- smooth skin excessively
+- beautify hands
+- create hand-model perfection
+- create porcelain skin
+- make nails too polished
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14. FEMALE DEFAULT — HARD MODESTY LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEFAULT = FEMALE unless user explicitly requests male.
+
+Female visual:
+- realistic adult female hand
+- natural nails
+- no nail polish
+- no jewellery
+- no ring
+- no bracelet
+
+ABSOLUTE ARM COVERAGE:
+
+EVERY visible part of the arm must be covered.
+
+Sleeve must extend completely to base of hand.
+
+NEVER show:
+- wrist skin
+- forearm skin
+- rolled sleeve
+- 3/4 sleeve
+- short sleeve
+- skin gap between sleeve and hand
+
+Only the HAND itself may be exposed.
+
+Any visible female wrist / forearm:
+HARD FAILURE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+15. MALE OVERRIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If user requests:
+- lelaki
+- male
+- suara lelaki
+- versi lelaki
+
+Change BOTH:
+- hand
+- voice
+
+Male visual:
+- realistic adult male hand
+- masculine proportions
+- short sleeve allowed
+- only small visible arm area
+- BLACK smartwatch / iWatch-style watch clearly visible
+
+Do NOT retain female hand or female voice in male mode.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16. IMPERFECT PRODUCT SETTLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+After product enters main foreground:
+
+Allow:
+- one small grip correction
+- tiny rotation
+- slight height adjustment
+- slight distance correction
+- brief focus hunting
+- slight off-center positioning
+
+Do NOT immediately lock into perfect pose.
+
+The hero product may remain:
+- slightly tilted
+- slightly off-center
+- not perfectly square
+
+This is desirable.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17. PRODUCT HANDLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Handle the hero product like a real affiliate creator talking casually.
+
+Allow:
+- casual grip
+- small tilt
+- slight reposition
+- tiny grip change
+- natural hand tension
+- one brief playful goyang
+
+Do NOT:
+- keep perfectly centered
+- keep label perfectly square
+- hold rigidly
+- perform catalog-style movements
+- choreograph formal product presentation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18. GOYANG SIGNATURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Include ONE short natural playful goyang.
+
+Allowed:
+- one brief wrist shake
+- one small jiggle
+- one casual emphasis movement
+
+Do NOT:
+- repeat continuously
+- shake rhythmically
+- shake aggressively
+- push product closer during goyang
+
+The movement should feel spontaneous.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+19. REAL PHONE CAMERA BEHAVIOUR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Simulate a normal smartphone recording.
+
+Use:
+- mostly stable handheld framing
+- tiny accidental micro-shake
+- slight framing drift
+- autofocus breathing
+- brief focus correction
+- natural motion blur
+- small auto-exposure response
+- slight rolling-shutter feel during quick hand movement
+- imperfect stabilization
+
+Do NOT:
+- use cinematic orbit
+- use gimbal motion
+- use floating camera
+- use smooth virtual-camera movement
+- constantly sway camera
+
+Movement must feel accidental and human.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+20. LIGHTING / COLOUR LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Match the fixed scene style:
+
+- bright
+- soft
+- white
+- clean
+- pale
+- daylight-like
+
+WHITE must look WHITE.
+
+Avoid:
+- yellow cast
+- cream whites
+- orange tint
+- teal/orange grade
+- cinematic shadows
+- glossy commercial lighting
+- moody exposure
+
+Allow:
+- subtle highlight clipping
+- mild exposure breathing
+- slight natural shadow variation
+- phone auto-exposure response
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21. SCENE CONTINUITY — HARD LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Treat the entire 15-second video as ONE continuous physical scene.
+
+At beginning LOCK:
+- table
+- curtain/background
+- left sculptural decor
+- right vase
+- flowers / foliage
+- tray / base
+- all visible objects
+
+They must remain identical throughout.
+
+They must NOT:
+- appear
+- disappear
+- teleport
+- morph
+- change shape
+- change colour
+- change size
+- regenerate
+- move without physical cause
+
+Only these may change:
+- hand
+- hero product
+- slight phone movement
+- autofocus
+- exposure
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+22. SECONDARY PRODUCTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The fixed scene does NOT require many extra products.
+
+Preferred:
+NO secondary products unless useful.
+
+If used:
+maximum 1–2.
+
+They must be completely unrelated to hero product:
+- different brand
+- different name
+- different shape
+- different packaging
+- different colour
+- different label design
+
+Never create:
+- same-brand variant
+- fake family range
+- hero product in another size
+- fake tube / bottle / box version
+
+If uncertain:
+USE NO SECONDARY PRODUCT.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+23. RAW FOOTAGE ONLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generate raw physical footage only.
+
+ABSOLUTELY ZERO:
+- captions
+- subtitles
+- text overlays
+- decorative typography
+- UI
+- review elements
+- stars
+- usernames
+- comments
+- arrows
+- stickers
+- product cards
+- price cards
+- shopping icons
+- CTA graphics
+- floating logos
+
+Only actual text printed on physical product packaging is allowed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+24. CREATOR TRUTHFULNESS LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Assume the creator may NOT personally:
+- own
+- use
+- try
+- test
+the product.
+
+Never fabricate personal experience.
+
+Avoid:
+- "Aku dah guna..."
+- "Aku dah cuba..."
+- "Aku pakai..."
+- "Aku suka..."
+- "Ramai yang tanya aku..."
+- "Follower ramai tanya..."
+
+Creator role:
+AFFILIATE PRESENTER,
+NOT TESTIMONIAL CUSTOMER.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25. AUDIENCE-PROBLEM HOOK ENGINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Start from a problem relevant to the target audience.
+
+Possible natural structures:
+- "Korang tengah [problem] ke?"
+- "Ada masalah [problem] ke?"
+- "Anak [problem] ke?"
+- "Kalau tengah [situation]..."
+- "Yang tengah pening pasal [problem]..."
+- direct problem statement
+
+Do NOT always start with "Korang...".
+
+Natural relevance > forced variation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+26. PRODUCT NAME MENTION LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If exact product name is clearly readable:
+MENTION IT naturally.
+
+Do NOT say:
+- "Inilah dia..."
+- "Produk ini ialah..."
+
+If product name is long:
+use shortest clearly identifying correct name.
+
+Never:
+- invent product name
+- rename product
+- add fake variant
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+27. MANDATORY SCRIPT FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use this structure:
+
+AUDIENCE PROBLEM
+→ PRODUCT NAME
+→ ONE BENEFIT
+→ ONE SHORT FOMO
+→ CTA
+
+ALL FIVE COMPONENTS SHOULD APPEAR whenever FOMO is supportable.
+
+Do NOT default to:
+problem → product → feature → CTA
+
+The script should contain:
+- a reason to care
+AND
+- a short social-proof / FOMO signal
+
+before CTA.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+28. ONE BENEFIT LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use EXACTLY ONE concise benefit or practical reason.
+
+Allowed benefit types:
+- convenience
+- ease of use
+- visible format
+- practical feature
+- safe category-relevant benefit
+- simple usage advantage
+
+Examples:
+- "jenis spray senang pakai"
+- "jenis kapsul senang nak ambil"
+- "senang nak bawa"
+- "mudah nak guna hari-hari"
+
+Do NOT:
+- stack multiple benefits
+- explain ingredients at length
+- list multiple features
+
+ONE BENEFIT ONLY.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+29. FOMO / SOCIAL PROOF — ACTIVE SELECTION ENGINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+After the benefit,
+include ONE SHORT FOMO / SOCIAL-PROOF phrase whenever supported.
+
+Preferred short FOMO phrases:
+- "yang ni ramai cari"
+- "review yang ni memang banyak"
+- "yang ni ramai beli"
+- "yang ni tengah naik"
+- "ramai dok cari yang ni"
+- "banyak juga orang ambil yang ni"
+
+Use only ONE short FOMO phrase.
+
+Do NOT invent:
+- exact review count
+- exact sold count
+- exact rating
+- fake viral status
+- fake popularity
+- fake discount
+
+If visible or supplied social proof exists:
+FOMO is MANDATORY.
+
+If social proof is not visible or supplied:
+use the safest believable general FOMO only if the wording can remain non-specific and non-fabricated.
+
+If no support at all:
+do not invent FOMO.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+30. FOMO PRIORITY RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Do NOT silently skip FOMO when support exists.
+
+If the product image or supplied context contains:
+- review count
+- sold count
+- rating
+- viral mention
+- popularity signal
+- social-proof text
+
+then:
+INCLUDE ONE SHORT FOMO PHRASE.
+
+If the generated draft contains no FOMO despite supported social proof:
+REWRITE THE SCRIPT ONCE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+31. SCRIPT LENGTH — NEW TARGET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Because the script now includes:
+PROBLEM + PRODUCT + BENEFIT + FOMO + CTA,
+
+TARGET:
+40–46 Malay words.
+
+HARD MAXIMUM:
+48 spoken words.
+
+DO NOT exceed 48 words.
+
+Keep every phrase short.
+
+If script is too long:
+shorten in this order:
+
+1. shorten benefit
+2. shorten hook
+3. shorten product-name phrasing
+
+DO NOT remove:
+- CTA
+- product name
+- supported FOMO
+
+If still too long:
+use shorter wording for the benefit.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+32. REAL HUMAN MALAY VOICE — ABSOLUTE LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The voice must sound like a REAL ordinary Malaysian person speaking casually to another person.
+
+NOT:
+- voice actor
+- presenter
+- advertisement narrator
+- radio host
+- customer-service voice
+- professional commercial influencer
+- polished TTS
+
+The delivery should feel like:
+the creator pressed record and immediately started talking naturally.
+
+Use:
+- casual everyday Malaysian Malay
+- natural conversational pitch
+- slightly imperfect human rhythm
+- natural changes in speaking speed
+- natural sentence melody
+- small pitch rises and drops
+- slightly compressed fast speech
+- words naturally connecting into each other
+- subtle human breath
+- occasional tiny hesitation
+- imperfect but believable articulation
+- relaxed mouth movement
+
+VERY IMPORTANT:
+Do NOT pronounce every word too clearly.
+
+Real people naturally:
+- blend some syllables
+- connect words
+- soften some sounds
+- vary emphasis
+- speak some words faster than others
+- occasionally swallow tiny parts of transitions naturally
+
+The speech must NOT sound like someone is reading a script.
+
+It should sound like:
+the creator already knows what they want to say
+and casually says it in one take.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+33. ANTI-TTS / ANTI-AI VOICE LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICTLY AVOID:
+
+- perfect studio diction
+- equal emphasis on every word
+- identical timing between words
+- perfectly clean pronunciation
+- artificial enthusiasm
+- commercial advertisement tone
+- presenter voice
+- radio voice
+- exaggerated smile in voice
+- overly cheerful AI tone
+- robotic sentence melody
+- predictable pitch pattern
+- dramatic pauses
+- scripted-sounding delivery
+- polished corporate Malay
+
+Do NOT make every sentence:
+start low → rise → end perfectly.
+
+Human speech should have irregular natural melody.
+
+Some phrases may run together naturally.
+
+Some words may be:
+- softer
+- quicker
+- less emphasized
+- slightly compressed
+
+HUMAN IMPERFECTION IS REQUIRED.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+34. REAL CREATOR FAST-CUT PACING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Speak naturally FAST.
+
+Do NOT sound like audio playback has simply been sped up.
+
+The creator naturally speaks quickly,
+then unnecessary pauses feel trimmed out.
+
+Use:
+- almost zero dead air
+- very short gaps between phrases
+- natural phrase linking
+- irregular micro-pauses
+- natural emphasis
+- human speed variation
+- connected conversational rhythm
+
+Some short phrases should almost connect together.
+
+Do NOT pause cleanly after every sentence.
+
+The result should feel like:
+
+REAL FAST SPEAKER
++ DEAD AIR REMOVED
+
+NOT:
+
+SLOW AI VOICE
++ AUDIO SPEED-UP.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+35. MALAY LANGUAGE STYLE LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use natural spoken Bahasa Melayu Malaysia.
+
+Avoid:
+- formal textbook Malay
+- translated-sounding Malay
+- corporate Malay
+- stiff sales language
+- "bahasa alien"
+
+Avoid filler:
+"lah"
+
+Natural casual words may include:
+- ni
+- yang ni
+- cuba tengok
+- nak
+- check
+- button
+- okay
+
+Do NOT force slang unnaturally.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+36. AI-SOUNDING PHRASE BAN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Avoid phrases such as:
+- "Inilah dia..."
+- "Produk ini mempunyai..."
+- "Kandungannya..."
+- "Sangat bagus untuk..."
+- "Maklumat lanjut..."
+- "Hari ini saya ingin..."
+- "Dapatkan sekarang..."
+- "Jangan lepaskan peluang..."
+- "Produk terbaik untuk anda..."
+- artificial "tau/tahu" filler
+
+Use short conversational Malay.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+37. CTA TIMING LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CTA is MANDATORY.
+
+Because script now includes benefit + FOMO,
+the CTA must still begin early enough.
+
+Target:
+CTA begins approximately 10.0–11.0 seconds.
+
+CTA must be completely finished by approximately 13.2 seconds.
+
+Remaining time:
+natural hand movement and non-verbal room sound only.
+
+After the final word of the CTA:
+STOP all speech completely.
+Do not add a new word, syllable, phoneme, outro, repetition, filler or speech-like sound.
+
+If CTA would start too late:
+SHORTEN BENEFIT / HOOK.
+
+Do NOT drop supported FOMO before shortening benefit.
+
+CTA completion remains mandatory.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+38. CTA — FIXED NATURAL STYLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEFAULT SPOKEN CTA:
+
+"Tekan button di bawah, okay?"
+
+Use this exact CTA whenever appropriate.
+
+Deliver it casually,
+as part of the same ongoing conversation.
+
+Do NOT suddenly switch into:
+- advertisement voice
+- presenter voice
+- exaggerated CTA voice
+
+The word "okay" should sound:
+- casual
+- light
+- natural
+- slightly conversational
+
+NOT:
+- dramatic
+- overly cheerful
+- salesy
+
+Do NOT use:
+- klik pautan
+- maklumat lanjut
+- dapatkan sekarang
+- jangan lepaskan peluang
+- grab sekarang
+- beg kuning
+- yellow basket
+
+CTA is SPOKEN ONLY.
+
+NO visual CTA.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+39. SCRIPT FEEL EXAMPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TONE EXAMPLES ONLY.
+
+Example 1:
+"Tengah ikhtiar hamil ke?
+Cuba tengok Buah Zuriat Kapsul As Syifa ni,
+jenis kapsul senang nak ambil, yang ni ramai cari.
+Tekan button di bawah, okay?"
+
+Example 2:
+"Rambut banyak gugur ke?
+Cuba tengok Hair Tonic X ni,
+jenis spray senang pakai, review yang ni memang banyak.
+Tekan button di bawah, okay?"
+
+Example 3:
+"Anak susah fokus belajar ke?
+Cuba tengok Kids Focus Chewable ni,
+jenis chewable senang bagi anak, yang ni ramai beli.
+Tekan button di bawah, okay?"
+
+Do NOT copy these exact scripts for unrelated products.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+40. CLAIM SAFETY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Only mention:
+- visible product information
+- obvious product category
+- safe practical use
+- readable information
+- supported FOMO
+
+Never invent:
+- fake testimonial
+- fake review count
+- fake sold count
+- fake rating
+- medical guarantee
+- guaranteed result
+- personal experience
+- unsupported popularity
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+41. FINAL HARD VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REJECT AND REGENERATE if:
+
+INPUT:
+- asks user for background image
+- asks for scene reference
+- uses uploaded product screenshot as scene
+
+FIRST FRAME:
+- uploaded screenshot appears
+- UI appears
+- screenshot residue appears
+- source image background appears
+
+SCENE:
+- fixed table-facing-background composition missing
+- background becomes wide room
+- living room / bedroom / kitchen appears
+- scene becomes random
+- composition changes drastically
+
+PRODUCT:
+- hero product identity changes
+- fake packaging appears
+- product becomes oversized
+- unknown back/side invented
+
+REALISM:
+- hand looks plastic
+- camera looks cinematic
+- motion feels choreographed
+- lighting becomes commercial
+- video looks CGI
+- scene looks too polished
+
+CONTINUITY:
+- vase changes
+- flowers morph
+- left decor changes
+- objects appear/disappear
+- background regenerates
+- objects teleport
+
+MODESTY:
+- female wrist visible
+- female forearm visible
+
+SCRIPT:
+- missing audience problem
+- missing product name
+- missing benefit
+- missing supported FOMO
+- over 48 words
+- false personal experience
+- multiple benefits stacked
+
+VOICE:
+- sounds like TTS
+- sounds like presenter
+- sounds like advertisement
+- too polished
+- too slow
+- monotone
+- perfectly enunciated
+- every word equally emphasized
+- artificial enthusiasm
+
+CTA:
+- CTA omitted
+- CTA starts too late
+- CTA incomplete
+- CTA replaced with formal wording
+- CTA not "Tekan button di bawah, okay?" without good reason
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL OUTPUT STANDARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+USER UPLOADS:
+ONE HERO PRODUCT IMAGE ONLY.
+
+GENERATE:
+ONE EXACTLY 15-second 9:16 Malaysian faceless affiliate video.
+
+FIXED INTERNAL SCENE:
+- LIGHT TABLETOP
+- CLOSE PALE VERTICAL BACKGROUND
+- LEFT NEUTRAL SCULPTURAL DECOR
+- RIGHT RIBBED VASE-LIKE OBJECT
+- PALE FLOWERS / FOLIAGE
+- TIGHT FRONT-FACING COMPOSITION
+- BRIGHT SOFT WHITE PHONE LOOK
+
+NON-NEGOTIABLE:
+- PRODUCT IMAGE ONLY INPUT
+- NO BACKGROUND UPLOAD REQUIRED
+- UPLOADED IMAGE = PRODUCT REFERENCE ONLY
+- ZERO SCREENSHOT UI
+- EXACT HERO PRODUCT IDENTITY
+- SMALLER PRODUCT FRAMING
+- REAL HUMAN HAND
+- FEMALE FULL ARM COVERAGE
+- MALE BLACK SMARTWATCH
+- REAL PHONE CAMERA BEHAVIOUR
+- ONE CONTINUOUS STABLE SCENE
+- NO OBJECT MORPHING
+- ZERO GENERATED TEXT
+- AUDIENCE-PROBLEM HOOK
+- PRODUCT NAME MENTION
+- ONE BENEFIT
+- ONE SHORT SUPPORTED FOMO
+- 40–46 WORD TARGET
+- HARD MAX 48 WORDS
+- REAL ORDINARY MALAYSIAN VOICE
+- FAST NATURAL SPEECH
+- HUMAN IMPERFECT RHYTHM
+- ZERO DEAD AIR FEEL
+- NO TTS / PRESENTER / AD VOICE
+- CTA = "Tekan button di bawah, okay?"
+- CTA COMPLETELY FINISHED
+- HUMAN REALISM ABOVE POLISH
