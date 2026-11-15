@@ -1,4 +1,6 @@
 import { createHmac, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import pg from 'pg';
 
 const base = process.env.STAGING_APP_URL || 'https://affimatik-launch-lite-staging.nanotiva-garden.workers.dev';
 const supabase = process.env.STAGING_SUPABASE_URL || 'https://bymorrozeokshzuzcdro.supabase.co';
@@ -48,7 +50,20 @@ try {
   if (first.download_count!==1 || duplicateDownload.download_count!==1 || second.download_count!==2 || grant.credits_granted!==30 || replay.credits_granted!==0 || wallet.balance!==50 || ledger.length!==1) throw new Error('Staging reward invariants failed.');
   console.log(JSON.stringify({success:true,first,duplicateDownload,second,grant:{credits_granted:grant.credits_granted,balance:grant.balance},replay:{credits_granted:replay.credits_granted,balance:replay.balance},wallet,ledgerEntries:ledger.length},null,2));
 } finally {
-  await rest(`review_reward_claims?workspace_id=eq.${workspaceId}`,'DELETE').catch(()=>null);
-  await rest(`review_reward_downloads?workspace_id=eq.${workspaceId}`,'DELETE').catch(()=>null);
-  await rest(`workspaces?id=eq.${workspaceId}`,'DELETE').catch(()=>null);
+  if (!process.env.STAGING_DB_PASSWORD) throw new Error('STAGING_DB_PASSWORD diperlukan untuk cleanup QA.');
+  const client=new pg.Client({
+    host:process.env.STAGING_DB_HOST||'aws-0-ap-southeast-2.pooler.supabase.com',port:5432,
+    user:process.env.STAGING_DB_USER||'postgres.bymorrozeokshzuzcdro',database:'postgres',password:process.env.STAGING_DB_PASSWORD,
+    ssl:{ca:readFileSync('output/release/tools/supabase-prod-ca-2021.crt','utf8'),rejectUnauthorized:true},
+  });
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM review_reward_claims WHERE workspace_id=$1',[workspaceId]);
+    await client.query('DELETE FROM review_reward_downloads WHERE workspace_id=$1',[workspaceId]);
+    const deleted=await client.query("DELETE FROM workspaces WHERE id=$1 AND slug LIKE 'review-reward-%' RETURNING id",[workspaceId]);
+    if (deleted.rowCount!==1) throw new Error('Cleanup QA workspace tidak lengkap.');
+    await client.query('COMMIT');
+  } catch (error) { await client.query('ROLLBACK'); throw error; }
+  finally { await client.end(); }
 }
