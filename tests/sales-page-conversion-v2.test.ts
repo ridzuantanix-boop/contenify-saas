@@ -29,9 +29,11 @@ describe('AffiMatik Sales Page Conversion V2', () => {
       'Soalan sebelum mula',
       'Produk dah ada. Sekarang jadikan ia content.',
     ]) expect(page).toContain(copy);
-    expect(page).toContain('kempen Creative V6');
-    expect(page).toContain('Enjin live kini V10.1');
-    for (const id of ['NX17', 'NX01', 'RH03']) expect(page).toContain(id);
+    expect(page).toContain('contoh sejarah Creative V8.1');
+    expect(page).toContain('bukan output V10.2');
+    for (const id of ['NX17', 'NX01']) expect(page).toContain(id);
+    expect(page).not.toContain("{ id: 'RH03'");
+    expect(page).not.toContain('Nova Lumi Table Lamp');
   });
 
   it('uses the genuine uploaded tutorial and matched product-to-video assets', () => {
