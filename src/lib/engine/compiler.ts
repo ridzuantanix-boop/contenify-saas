@@ -22,7 +22,7 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-owner-creative-dna-reset';
+export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-product-scale-12-18';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT — OWNER CREATIVE INTENT]',
@@ -101,7 +101,7 @@ function productScaleDirective(product: ProductProfile): string {
         : /organizer|kitchen|household/.test(category)
           ? 'Keep the object plausibly sized against hands, counters, shelves and nearby household items.'
           : 'Use conservative category-appropriate real-world scale against hands, furniture and the human body.';
-  return `[PLAUSIBLE PRODUCT SCALE LOCK] ${categoryGuide} Preserve one consistent physical size throughout. Never enlarge the product for label readability, never infer exact dimensions from a screenshot, and use realistic grip, contact shadows and perspective.`;
+  return `[PRODUCT SCALE LOCK] ${categoryGuide} The product must appear naturally small and physically believable relative to a real human hand, tabletop and surrounding environment. For compact handheld products such as serum bottles, supplement bottles, cosmetics, sprays and similar products, target approximately 12–18% of the full video frame height, preferably approximately 15%. Never artificially enlarge the product for emphasis or use oversized hero-product framing. Maintain believable hand-to-product proportions and preserve realistic size when the product is lifted or moved. For larger products, preserve believable real-world dimensions rather than forcing them into the compact-product target. Preserve one consistent physical size throughout. Product identity, packaging, logos, labels, colours and shape must remain unchanged. Never enlarge the product for label readability, never infer exact dimensions from a screenshot, and use realistic grip, contact shadows and perspective.`;
 }
 
 /**

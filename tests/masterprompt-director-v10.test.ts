@@ -27,6 +27,10 @@ describe('V10 Pawarna Masterprompt Director', () => {
       expect(compiled.providerPrompt, style.id).toContain('[NEXABOT NATIVE PRODUCT UNDERSTANDING — PROVIDER OWNS CREATIVE THINKING]');
       expect(compiled.providerPrompt, style.id).toContain(`[STYLE ${style.id} —`);
       expect(compiled.providerPrompt, style.id).toContain('[PRODUCT IDENTITY MAX LOCK]');
+      expect(compiled.providerPrompt, style.id).toContain('[PRODUCT SCALE LOCK]');
+      expect(compiled.providerPrompt, style.id).toContain('approximately 12–18% of the full video frame height, preferably approximately 15%');
+      expect(compiled.providerPrompt, style.id).toContain('For larger products, preserve believable real-world dimensions');
+      expect(compiled.providerPrompt, style.id).not.toMatch(/20\s*(?:%|percent)?\s*(?:–|-|to)\s*30%/i);
       expect(compiled.providerPrompt, style.id).toContain('[ZERO UI & WATERMARK LOCK]');
       expect(compiled.providerPrompt, style.id).toContain('[HUMAN REALISM MASTERPROMPT V8]');
       expect(compiled.providerPrompt, style.id).toContain('[SHARIAH MODESTY LOCK');
@@ -191,7 +195,10 @@ describe('V10 Pawarna Masterprompt Director', () => {
     expect(HUMAN_REALISM_MASTERPROMPT_V8).toContain('Creator review:');
     const profile=AICreativeDirector.extractProductProfile({productName:'Lampu Nova',productCategory:'Lampu'});
     const compiled=DynamicPromptCompiler.compile(profile,getVideoStyle('NX01')!,AICreativeDirector.createScenePlan(profile,getVideoStyle('NX01')!));
-    expect(compiled.providerPrompt).toContain('[PLAUSIBLE PRODUCT SCALE LOCK]');
+    expect(compiled.providerPrompt).toContain('[PRODUCT SCALE LOCK]');
+    expect(compiled.providerPrompt).toContain('target approximately 12–18% of the full video frame height');
+    expect(compiled.providerPrompt).toContain('preferably approximately 15%');
+    expect(compiled.providerPrompt).not.toMatch(/20\s*(?:%|percent)?\s*(?:–|-|to)\s*30%/i);
     expect(readFileSync('src/lib/engine/compiler.ts','utf8')).not.toContain("from './script-control'");
     expect(readFileSync('src/lib/personalization/config.ts','utf8')).not.toContain('engine/script-control');
   });
