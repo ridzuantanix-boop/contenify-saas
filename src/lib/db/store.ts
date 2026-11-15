@@ -2529,6 +2529,7 @@ export class DurableStore {
   }): Promise<{
     users: Array<{
       id: string;
+      email: string;
       emailMasked: string;
       fullName: string;
       whatsapp: string;
@@ -2537,6 +2538,16 @@ export class DurableStore {
       balance: number;
       createdAt: string;
       provisionStatus: 'provisioned' | 'pending';
+      totalJobs: number;
+      completedVideos: number;
+      failedJobs: number;
+      activeJobs: number;
+      lastActivityAt: string | null;
+      confirmedOrders: number;
+      confirmedSpendMyr: number;
+      provisionalOrders: number;
+      reviewRewardClaimed: boolean;
+      customerStatus: 'paid' | 'provisional' | 'creator' | 'registered';
     }>;
     total: number;
     isAuthoritative: boolean;
@@ -2576,22 +2587,43 @@ export class DurableStore {
       const total = countHeader ? parseInt(countHeader.split('/')[1] || '0', 10) : 0;
       const rows = await res.json();
 
-      // Fetch wallet balances for these workspaces
+      // Fetch wallet, generation, payment and reward details for the CRM page.
       const workspaceIds = rows.map((r: any) => r.default_workspace_id).filter(Boolean);
       let walletMap: Record<string, number> = {};
+      const jobMap:Record<string,{total:number;completed:number;failed:number;active:number;last:string|null}>={};
+      const orderMap:Record<string,{confirmed:number;confirmedMyr:number;provisional:number}>={};
+      const rewardWorkspaces=new Set<string>();
       if (workspaceIds.length > 0) {
-        const wUrl = `${process.env.SUPABASE_URL}/rest/v1/credit_wallets?workspace_id=in.(${workspaceIds.map(encodeURIComponent).join(',')})&select=workspace_id,balance`;
-        const wRes = await fetch(wUrl, { headers: sHeaders });
+        const ids=workspaceIds.map(encodeURIComponent).join(',');
+        const [wRes,jRes,oRes,rRes]=await Promise.all([
+          fetch(`${process.env.SUPABASE_URL}/rest/v1/credit_wallets?workspace_id=in.(${ids})&select=workspace_id,balance`,{headers:sHeaders}),
+          fetch(`${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=in.(${ids})&select=workspace_id,status,created_at,updated_at&limit=10000`,{headers:sHeaders}),
+          fetch(`${process.env.SUPABASE_URL}/rest/v1/orders?workspace_id=in.(${ids})&select=workspace_id,status,payment_state,amount_myr&limit=10000`,{headers:sHeaders}),
+          fetch(`${process.env.SUPABASE_URL}/rest/v1/review_reward_claims?workspace_id=in.(${ids})&select=workspace_id&limit=10000`,{headers:sHeaders}),
+        ]);
         if (wRes.ok) {
           const wRows = await wRes.json();
           for (const w of wRows) {
             walletMap[w.workspace_id] = w.balance;
           }
         }
+        if(jRes.ok)for(const job of await jRes.json()){
+          const item=jobMap[job.workspace_id]||{total:0,completed:0,failed:0,active:0,last:null};item.total++;
+          if(job.status==='COMPLETED')item.completed++;if(job.status==='FAILED'||job.status==='FAILED_FINAL')item.failed++;
+          if(['QUEUED','SUBMITTING','PROCESSING','GENERATING','QUALITY_CHECK'].includes(job.status))item.active++;
+          const activity=job.updated_at||job.created_at;if(!item.last||new Date(activity)>new Date(item.last))item.last=activity;jobMap[job.workspace_id]=item;
+        }
+        if(oRes.ok)for(const order of await oRes.json()){
+          const item=orderMap[order.workspace_id]||{confirmed:0,confirmedMyr:0,provisional:0};
+          if(order.status==='PAID'&&['PAYMENT_CONFIRMED','BANK_PAYMENT_VERIFIED'].includes(order.payment_state||'')){item.confirmed++;item.confirmedMyr+=Number(order.amount_myr||0);}
+          if(order.payment_state==='PROVISIONALLY_ACTIVE')item.provisional++;orderMap[order.workspace_id]=item;
+        }
+        if(rRes.ok)for(const reward of await rRes.json())rewardWorkspaces.add(reward.workspace_id);
       }
 
-      const users = rows.map((r: any) => ({
+      const users = rows.map((r: any) => {const jobs=jobMap[r.default_workspace_id]||{total:0,completed:0,failed:0,active:0,last:null};const orders=orderMap[r.default_workspace_id]||{confirmed:0,confirmedMyr:0,provisional:0};return({
         id: r.id,
+        email: r.email || '',
         emailMasked: maskEmail(r.email || ''),
         fullName: r.full_name || 'Pengguna',
         whatsapp: r.whatsapp || '-',
@@ -2600,7 +2632,10 @@ export class DurableStore {
         balance: walletMap[r.default_workspace_id] ?? 0,
         createdAt: r.created_at || new Date().toISOString(),
         provisionStatus: (r.default_workspace_id && walletMap[r.default_workspace_id] !== undefined) ? 'provisioned' as const : 'pending' as const,
-      }));
+        totalJobs:jobs.total,completedVideos:jobs.completed,failedJobs:jobs.failed,activeJobs:jobs.active,lastActivityAt:jobs.last,
+        confirmedOrders:orders.confirmed,confirmedSpendMyr:Math.round(orders.confirmedMyr*100)/100,provisionalOrders:orders.provisional,
+        reviewRewardClaimed:rewardWorkspaces.has(r.default_workspace_id),customerStatus:orders.confirmed>0?'paid' as const:orders.provisional>0?'provisional' as const:jobs.completed>0?'creator' as const:'registered' as const,
+      })});
 
       return { users, total, isAuthoritative: true };
     }
@@ -2628,6 +2663,7 @@ export class DurableStore {
 
     const users = page.map(u => ({
       id: u.userId || u.id || 'usr_local',
+      email: u.email || '',
       emailMasked: maskEmail(u.email || ''),
       fullName: u.fullName || 'Pengguna',
       whatsapp: u.whatsapp || '-',
@@ -2636,6 +2672,8 @@ export class DurableStore {
       balance: localDb.wallets[u.workspaceId]?.balance ?? 0,
       createdAt: u.registeredAt || new Date().toISOString(),
       provisionStatus: localDb.wallets[u.workspaceId] ? 'provisioned' as const : 'pending' as const,
+      totalJobs:0,completedVideos:0,failedJobs:0,activeJobs:0,lastActivityAt:null,
+      confirmedOrders:0,confirmedSpendMyr:0,provisionalOrders:0,reviewRewardClaimed:false,customerStatus:'registered' as const,
     }));
 
     return { users, total, isAuthoritative: false };

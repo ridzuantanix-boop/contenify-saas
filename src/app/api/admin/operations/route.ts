@@ -6,6 +6,7 @@ import { qrRpc } from '@/lib/billing/qr-checkout';
 import { getProfileEmail, getWorkspaceOwnerEmail, getWorkspacePaymentControl, listProvisionalExposure, sendPaymentEventEmail } from '@/lib/billing/payment-control';
 import { signPrivateAsset } from '@/lib/storage/supabase-assets';
 import { recordServerConversion } from '@/lib/analytics/conversion';
+import { getAdminDashboardInsights } from '@/lib/admin/dashboard-insights';
 
 
 /**
@@ -202,7 +203,7 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get('view') || 'orders';
 
   if (view === 'metrics') {
-    const [metrics,nexabotQueue] = await Promise.all([DurableStore.getSoftLaunchMetrics(),DurableStore.getNexabotQueueMetrics()]);
+    const [metrics,nexabotQueue,dashboardInsights] = await Promise.all([DurableStore.getSoftLaunchMetrics(),DurableStore.getNexabotQueueMetrics(),getAdminDashboardInsights().catch(()=>undefined)]);
     if (process.env.NEXABOT_API_KEY) {
       try {
         const balanceResponse = await fetch(`${process.env.NEXABOT_BASE_URL || 'https://nexabot.id'}/api/v1/credits`, { headers: { Authorization: `Bearer ${process.env.NEXABOT_API_KEY}`, 'X-API-Key': process.env.NEXABOT_API_KEY }, cache: 'no-store' });
@@ -213,7 +214,7 @@ export async function GET(req: NextRequest) {
         }
       } catch { nexabotQueue.provider_balance = null; }
     }
-    return NextResponse.json({ success: true, metrics: { ...metrics, nexabotQueue } });
+    return NextResponse.json({ success: true, metrics: { ...metrics, nexabotQueue, dashboardInsights } });
   }
 
   if (view === 'lookup') {

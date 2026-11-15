@@ -33,10 +33,20 @@ interface Metrics {
   isAvailable?: boolean;
   error?: string;
   nexabotQueue?: {active:number;dispatching:number;queued:number;completed:number;failed:number;average_duration_seconds?:number;estimated_provider_spend_myr:number;observed_provider_credits:number;estimated_provider_credits:number;outstanding_customer_credits:number;estimated_credit_liability_myr:number;provider_balance?:number|null};
+  dashboardInsights?: {
+    traffic:{uniqueVisitors:number;uniqueVisitors7d:number;uniqueVisitors30d:number;landingViews:number;demoPlays:number;trackingSince:string|null};
+    funnel:{events:Record<string,number>;rates:{visitorToRegistration:number;registrationToCheckout:number;checkoutToReceipt:number;receiptToVerified:number;verifiedToFirstVideo:number}};
+    customers:{total:number;new24h:number;new7d:number;new30d:number;paying:number;provisional:number;active30d:number};
+    revenue:{confirmedMyr:number;provisionalMyr:number;confirmedOrders:number;provisionalOrders:number};
+    videos:{totalJobs:number;completed:number;failed:number;active:number;completed24h:number;completed30d:number};
+    rewards:{claims:number;creditsGranted:number};
+    timeline:Array<{date:string;visitors:number;registrations:number;completedVideos:number}>;
+  };
 }
 
 interface RegisteredUser {
   id: string;
+  email: string;
   emailMasked: string;
   fullName: string;
   whatsapp: string;
@@ -45,6 +55,9 @@ interface RegisteredUser {
   balance: number;
   createdAt: string;
   provisionStatus: 'provisioned' | 'pending';
+  totalJobs:number;completedVideos:number;failedJobs:number;activeJobs:number;lastActivityAt:string|null;
+  confirmedOrders:number;confirmedSpendMyr:number;provisionalOrders:number;reviewRewardClaimed:boolean;
+  customerStatus:'paid'|'provisional'|'creator'|'registered';
 }
 
 interface Customer {
@@ -214,6 +227,7 @@ export default function AdminPage() {
     const requested=new URLSearchParams(window.location.search).get('tab');
     if(requested==='users'||requested==='activation')selectAdminTab(requested);
     loadMetrics();
+    loadUsers('');
     // Query state is read only once at launch, including PWA shortcuts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -536,6 +550,34 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {metrics?.dashboardInsights && <>
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-2"><div><h4 className="text-sm font-bold text-slate-900">Trafik, pelanggan & jualan</h4><p className="text-[11px] text-slate-500">Data first-party sejak conversion tracking diaktifkan{metrics.dashboardInsights.traffic.trackingSince?` · ${new Date(metrics.dashboardInsights.traffic.trackingSince).toLocaleDateString('ms-MY')}`:''}.</p></div><div className="flex gap-2"><a href="/admin/finance-ops" className="rounded-lg border px-3 py-2 text-xs font-bold text-indigo-700">Finance & Payment</a><a href="/admin?tab=users" className="rounded-lg border px-3 py-2 text-xs font-bold text-indigo-700">Buka CRM</a></div></div>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {[
+                ['Visitor unik',metrics.dashboardInsights.traffic.uniqueVisitors,`${metrics.dashboardInsights.traffic.uniqueVisitors7d} dalam 7 hari`],
+                ['Visitor 30 hari',metrics.dashboardInsights.traffic.uniqueVisitors30d,`${metrics.dashboardInsights.traffic.landingViews} landing view`],
+                ['Pendaftaran',metrics.dashboardInsights.customers.total,`+${metrics.dashboardInsights.customers.new7d} dalam 7 hari`],
+                ['Pelanggan aktif 30h',metrics.dashboardInsights.customers.active30d,`${metrics.dashboardInsights.customers.paying} pelanggan disahkan bayar`],
+                ['Revenue disahkan',`RM${metrics.dashboardInsights.revenue.confirmedMyr.toFixed(2)}`,`${metrics.dashboardInsights.revenue.confirmedOrders} order`],
+                ['Provisional',`RM${metrics.dashboardInsights.revenue.provisionalMyr.toFixed(2)}`,`${metrics.dashboardInsights.revenue.provisionalOrders} belum bank-verified`],
+                ['Video siap',metrics.dashboardInsights.videos.completed,`+${metrics.dashboardInsights.videos.completed24h} dalam 24 jam`],
+                ['Ganjaran ulasan',metrics.dashboardInsights.rewards.claims,`${metrics.dashboardInsights.rewards.creditsGranted} kredit diberi`],
+              ].map(([label,value,note])=><article key={String(label)} className="rounded-xl border bg-white p-4"><p className="text-[11px] font-semibold text-slate-500">{String(label)}</p><p className="mt-1 text-xl font-black text-slate-900">{String(value)}</p><p className="mt-1 text-[10px] text-slate-500">{String(note)}</p></article>)}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border bg-white p-5 shadow-sm"><h4 className="text-sm font-bold">Funnel conversion</h4><div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">{[
+            ['Pelawat → daftar',metrics.dashboardInsights.funnel.events.registration_completed,metrics.dashboardInsights.funnel.rates.visitorToRegistration],
+            ['Daftar → checkout',metrics.dashboardInsights.funnel.events.launch_checkout_started,metrics.dashboardInsights.funnel.rates.registrationToCheckout],
+            ['Checkout → resit',metrics.dashboardInsights.funnel.events.qr_evidence_submitted,metrics.dashboardInsights.funnel.rates.checkoutToReceipt],
+            ['Resit → verified',metrics.dashboardInsights.funnel.events.payment_bank_verified,metrics.dashboardInsights.funnel.rates.receiptToVerified],
+            ['Verified → video 1',metrics.dashboardInsights.funnel.events.first_video_completed,metrics.dashboardInsights.funnel.rates.verifiedToFirstVideo],
+          ].map(([label,count,rate])=><div key={String(label)} className="rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold text-slate-500">{String(label)}</p><p className="mt-1 text-lg font-black">{String(count)}</p><p className="text-xs font-bold text-indigo-700">{String(rate)}%</p></div>)}</div><p className="mt-3 text-[10px] text-slate-400">Kadar berdasarkan event first-party yang berjaya direkod; ia bukan data iklan atau pixel pihak ketiga.</p></section>
+
+          <section className="rounded-2xl border bg-white p-5 shadow-sm"><h4 className="text-sm font-bold">Trend 14 hari</h4><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-xs"><thead><tr className="border-b text-left text-slate-500"><th className="py-2">Tarikh</th><th>Visitor</th><th>Pendaftaran</th><th>Video siap</th><th>Aktiviti</th></tr></thead><tbody>{metrics.dashboardInsights.timeline.map(day=>{const total=day.visitors+day.registrations+day.completedVideos;const max=Math.max(1,...metrics.dashboardInsights!.timeline.map(item=>item.visitors+item.registrations+item.completedVideos));return <tr key={day.date} className="border-b last:border-0"><td className="py-2 font-medium">{new Date(`${day.date}T00:00:00+08:00`).toLocaleDateString('ms-MY',{day:'2-digit',month:'short'})}</td><td>{day.visitors}</td><td>{day.registrations}</td><td>{day.completedVideos}</td><td className="w-48"><div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-indigo-500" style={{width:`${Math.max(total?4:0,total/max*100)}%`}} /></div></td></tr>})}</tbody></table></div></section>
+        </>}
+
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-900">Nexabot Smart Queue & Kos Model 376</h4><span className="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700">Had global 3</span></div>
           <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4 lg:grid-cols-6">
@@ -639,7 +681,7 @@ export default function AdminPage() {
                 <span>Senarai Pengguna Berdaftar ({usersTotal})</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Pengguna berdaftar dengan nombor WhatsApp. Akaun baharu tidak lagi menerima kredit Free Trial.
+                Rekod pelanggan, penggunaan video, bayaran, baki wallet, ganjaran ulasan dan aktiviti terakhir.
               </p>
             </div>
 
@@ -692,43 +734,51 @@ export default function AdminPage() {
           {/* Users Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[1180px] text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="py-3 px-4">Nama Penuh</th>
-                    <th className="py-3 px-4">Emel (Dilindungi)</th>
+                    <th className="py-3 px-4">Pelanggan</th>
                     <th className="py-3 px-4">No. WhatsApp</th>
+                    <th className="py-3 px-4">Status CRM</th>
                     <th className="py-3 px-4">Pelan (Tier)</th>
                     <th className="py-3 px-4">Baki Kredit</th>
+                    <th className="py-3 px-4">Video</th>
+                    <th className="py-3 px-4">Bayaran</th>
+                    <th className="py-3 px-4">Reward</th>
+                    <th className="py-3 px-4">Aktiviti Terakhir</th>
                     <th className="py-3 px-4">Tarikh Daftar</th>
-                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Provision</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {isLoadingUsers ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                      <td colSpan={11} className="py-8 text-center text-slate-400">
                         Memuatkan senarai pengguna...
                       </td>
                     </tr>
                   ) : registeredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                      <td colSpan={11} className="py-8 text-center text-slate-400">
                         Tiada rekod pengguna berdaftar ditemui.
                       </td>
                     </tr>
                   ) : (
                     registeredUsers.map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50/60 transition">
-                        <td className="py-3 px-4 font-semibold text-slate-900">{u.fullName}</td>
-                        <td className="py-3 px-4 font-mono text-[11px] text-slate-600">{u.emailMasked}</td>
+                        <td className="py-3 px-4"><p className="font-semibold text-slate-900">{u.fullName}</p><p className="font-mono text-[10px] text-slate-500">{u.email||u.emailMasked}</p><p className="mt-1 font-mono text-[9px] text-slate-400">{u.workspaceId}</p></td>
                         <td className="py-3 px-4 font-medium text-slate-800">{u.whatsapp}</td>
+                        <td className="py-3 px-4"><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${u.customerStatus==='paid'?'bg-emerald-100 text-emerald-800':u.customerStatus==='provisional'?'bg-amber-100 text-amber-800':u.customerStatus==='creator'?'bg-violet-100 text-violet-800':'bg-slate-100 text-slate-700'}`}>{u.customerStatus==='paid'?'Berbayar':u.customerStatus==='provisional'?'Bayaran belum verified':u.customerStatus==='creator'?'Creator aktif':'Berdaftar'}</span></td>
                         <td className="py-3 px-4">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
                             {u.tier}
                           </span>
                         </td>
                         <td className="py-3 px-4 font-bold text-slate-900">{u.balance} kr</td>
+                        <td className="py-3 px-4"><p className="font-black text-indigo-700">{u.completedVideos} siap</p><p className="text-[10px] text-slate-500">{u.totalJobs} jumlah · {u.activeJobs} aktif · {u.failedJobs} gagal</p></td>
+                        <td className="py-3 px-4"><p className="font-bold">RM{u.confirmedSpendMyr.toFixed(2)}</p><p className="text-[10px] text-slate-500">{u.confirmedOrders} verified · {u.provisionalOrders} provisional</p></td>
+                        <td className="py-3 px-4">{u.reviewRewardClaimed?<span className="font-bold text-emerald-700">+30 dituntut</span>:<span className="text-slate-400">Belum</span>}</td>
+                        <td className="py-3 px-4 text-[11px] text-slate-500">{u.lastActivityAt?new Date(u.lastActivityAt).toLocaleString('ms-MY'):'—'}</td>
                         <td className="py-3 px-4 text-slate-500 text-[11px]">
                           {new Date(u.createdAt).toLocaleDateString('ms-MY', {
                             day: 'numeric',
