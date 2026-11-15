@@ -1,0 +1,31 @@
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const key=process.env.NEXABOT_API_KEY, imagePath=resolve(process.env.BENCHMARK_IMAGE||'');
+if(!key||!existsSync(imagePath)) throw new Error('Local API credential or exact benchmark image is missing.');
+const out=resolve('output/provider-qa/nexabot-native-intelligence-v1');
+const manifest=JSON.parse(readFileSync(resolve(out,'manifest.json'),'utf8'));
+const evidencePath=resolve(out,'double-reference-a2.json');
+if(existsSync(evidencePath)) throw new Error('Hard guard: A2 evidence already exists; refusing another submission.');
+const source=manifest.tests.find((test)=>test.id==='A');
+if(!source) throw new Error('Test A prompt is missing.');
+const bytes=readFileSync(imagePath), hash=createHash('sha256').update(bytes).digest('hex');
+if(hash!==manifest.image.sha256) throw new Error('Image bytes differ from the original benchmark.');
+const mime=imagePath.toLowerCase().endsWith('.png')?'image/png':'image/jpeg';
+const media=`data:${mime};base64,${bytes.toString('base64')}`;
+const headers={Authorization:`Bearer ${key}`,'x-api-key':key};
+const save=(value)=>writeFileSync(evidencePath,JSON.stringify(value,null,2));
+const getJson=async(url,options={})=>{const response=await fetch(url,options),raw=await response.text();let data;try{data=JSON.parse(raw)}catch{data={raw}}return{response,data}};
+const balance=async()=>{const{response,data}=await getJson('https://nexabot.id/api/v1/credits',{headers});if(!response.ok||!Number.isFinite(Number(data.credit)))throw new Error('Credit lookup failed.');return Number(data.credit)};
+const ev={test:'A2',comparisonTo:'A',difference:'media count only: two identical image data URIs instead of one',prompt:source.prompt,promptSha256:source.promptSha256,promptLength:source.promptLength,imageSha256:hash,imageBytes:bytes.length,mediaCount:2,mediaOrder:[hash,hash],model:'omni_flash',mode:'i2v',ratio:2,resolution:720,duration:15,useUnlimited:false,submissionIntentAt:new Date().toISOString(),pollHistory:[]};
+save(ev);
+ev.creditBefore=await balance();
+if(ev.creditBefore<0.3)throw new Error('Insufficient provider balance for the single owner-authorized A2 job.');
+const payload={model:'omni_flash',mode:'i2v',prompt:source.prompt,telegram_id:'web',media:[media,media],ratio:2,resolution:720,duration:15,use_unlimited:false};
+const{response,data}=await getJson('https://nexabot.id/api/v1/api',{method:'POST',headers:{...headers,'Content-Type':'application/json','X-Idempotency-Key':`affimatik-native-v1-a2-${source.promptSha256.slice(0,12)}-${hash.slice(0,12)}`},body:JSON.stringify(payload)});
+ev.submissionHttpStatus=response.status;ev.initialResponse=data;ev.taskId=String(data.job_id??data.id??data.task_id??'');ev.submittedAt=new Date().toISOString();save(ev);
+if(!response.ok||!ev.taskId)throw new Error('A2 did not return a safe task ID. No retry will be made.');
+const deadline=Date.now()+20*60*1000;
+while(Date.now()<deadline){const checkedAt=new Date().toISOString();try{const poll=await getJson(`https://nexabot.id/api/v1/jobs/${ev.taskId}`,{headers}),job=poll.data.job??poll.data,status=String(job.status??'unknown').toLowerCase();ev.pollHistory.push({checkedAt,httpStatus:poll.response.status,status,progress:job.progress??null,error:job.error??null});ev.finalProviderRecord=job;ev.status=status;save(ev);if(status==='done'){const url=job.storage_url||job.video_url||`https://nexabot.id/api/v1/jobs/${ev.taskId}/download`,download=await fetch(url.startsWith('http')?url:`https://nexabot.id${url}`,{headers});if(!download.ok)throw new Error(`Download HTTP ${download.status}`);const video=Buffer.from(await download.arrayBuffer());ev.outputPath=resolve(out,`test-a2-${ev.taskId}.mp4`);writeFileSync(ev.outputPath,video);ev.outputBytes=video.length;ev.outputSha256=createHash('sha256').update(video).digest('hex');ev.status='downloaded';break}if(status==='failed')break}catch(error){ev.pollHistory.push({checkedAt,error:String(error)})}await new Promise(r=>setTimeout(r,5000))}
+ev.creditAfter=await balance();ev.creditUsed=Number((ev.creditBefore-ev.creditAfter).toFixed(4));ev.finishedAt=new Date().toISOString();save(ev);if(ev.creditUsed>0.3001)throw new Error(`A2 debit ${ev.creditUsed} exceeded 0.30.`);console.log(JSON.stringify({taskId:ev.taskId,status:ev.status,creditBefore:ev.creditBefore,creditAfter:ev.creditAfter,creditUsed:ev.creditUsed,outputPath:ev.outputPath},null,2));
