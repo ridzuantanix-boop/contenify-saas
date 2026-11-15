@@ -14,6 +14,7 @@ interface StylePosterMediaProps {
 export function StylePosterMedia({ metadata, onPreview, compact = false }: StylePosterMediaProps) {
   const [hoverPreview, setHoverPreview] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hasVerifiedMedia = metadata.previewStatus === 'verified_media';
 
   const startHoverPreview = () => {
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
@@ -36,14 +37,18 @@ export function StylePosterMedia({ metadata, onPreview, compact = false }: Style
       onMouseLeave={stopHoverPreview}
       data-testid={`style-media-${metadata.id}`}
     >
-      <Image
-        src={metadata.thumbnailPath}
-        alt={`Poster gaya ${metadata.title}: ${metadata.tagline}`}
-        fill
-        sizes={compact ? '(max-width: 768px) 50vw, 220px' : '(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 280px'}
-        className={`object-contain transition-opacity duration-200 ${hoverPreview ? 'opacity-0' : 'opacity-100'}`}
-      />
-      {hoverPreview && (
+      {hasVerifiedMedia ? <Image
+          src={metadata.thumbnailPath}
+          alt={`Poster gaya ${metadata.title}: ${metadata.tagline}`}
+          fill
+          sizes={compact ? '(max-width: 768px) 50vw, 220px' : '(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 280px'}
+          className={`object-contain transition-opacity duration-200 ${hoverPreview ? 'opacity-0' : 'opacity-100'}`}
+        /> : <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950 via-violet-900 to-slate-950 p-5 text-center text-white">
+          <span className="rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">Preview pembangunan</span>
+          <strong className="mt-3 text-sm leading-tight">{metadata.title}</strong>
+          <span className="mt-2 text-[10px] leading-relaxed text-violet-100">Prompt tersedia · MP4 sebenar belum disahkan</span>
+        </div>}
+      {hasVerifiedMedia && hoverPreview && (
         <video
           ref={videoRef}
           src={metadata.previewPath}
@@ -56,7 +61,7 @@ export function StylePosterMedia({ metadata, onPreview, compact = false }: Style
           className="absolute inset-0 h-full w-full object-contain"
         />
       )}
-      <button
+      {hasVerifiedMedia ? <button
         type="button"
         onClick={(event) => {
           event.preventDefault();
@@ -68,7 +73,7 @@ export function StylePosterMedia({ metadata, onPreview, compact = false }: Style
       >
         <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
         Preview
-      </button>
+      </button> : <span className="absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 rounded-full bg-amber-300 px-3 py-2 text-[10px] font-bold text-amber-950 shadow-lg">Belum ada preview sebenar</span>}
       <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-slate-950/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
         15s · Voice
       </span>

@@ -35,8 +35,8 @@ function readWebpDimensions(buffer: Buffer): { width: number; height: number } {
 
 describe('AffiMatik V7.1 style marketing metadata', () => {
   it('defines exactly one complete record for every official style', () => {
-    expect(STYLE_MARKETING_IDS).toHaveLength(20);
-    expect(new Set(STYLE_MARKETING_IDS).size).toBe(20);
+    expect(STYLE_MARKETING_IDS).toHaveLength(30);
+    expect(new Set(STYLE_MARKETING_IDS).size).toBe(30);
     expect(ALL_STYLE_MARKETING_METADATA.map((style) => style.id)).toEqual(STYLE_MARKETING_IDS);
     expect(VIDEO_STYLES_REGISTRY.map((style) => style.id)).toEqual(STYLE_MARKETING_IDS);
   });
@@ -48,7 +48,7 @@ describe('AffiMatik V7.1 style marketing metadata', () => {
       expect(style?.description).toBe(metadata.description);
       expect(style?.benefit).toBe(metadata.tagline);
       expect(style?.tags).toEqual(metadata.tags);
-      expect(style?.previewVideoUrl).toBe(metadata.previewPath);
+      expect(style?.previewVideoUrl).toBe(metadata.previewStatus === 'verified_media' ? metadata.previewPath : null);
       expect(metadata.tags.length).toBeGreaterThanOrEqual(2);
       expect(metadata.tags.length).toBeLessThanOrEqual(3);
       expect(metadata.niches.length).toBeGreaterThan(0);
@@ -56,8 +56,10 @@ describe('AffiMatik V7.1 style marketing metadata', () => {
     }
   });
 
-  it('ships 20 optimized 720x1280 WebP posters and matching replacement demos', () => {
-    for (const metadata of ALL_STYLE_MARKETING_METADATA) {
+  it('ships optimized 720x1280 posters and demos only for styles with verified media', () => {
+    const verified = ALL_STYLE_MARKETING_METADATA.filter((metadata) => metadata.previewStatus === 'verified_media');
+    expect(verified).toHaveLength(20);
+    for (const metadata of verified) {
       const poster = resolve(process.cwd(), 'public', metadata.thumbnailPath.slice(1));
       const sample = resolve(process.cwd(), 'public', 'style-previews', metadata.id, 'sample-demo-v1.mp4');
       expect(statSync(poster).size).toBeGreaterThan(10_000);
@@ -72,6 +74,7 @@ describe('AffiMatik V7.1 style marketing metadata', () => {
     expect(component).toContain('prefers-reduced-motion: reduce');
     expect(component).toContain('aria-label={`Preview video');
     expect(component).toContain("setHoverPreview(false)");
+    expect(component).toContain('MP4 sebenar belum disahkan');
     expect(component).not.toContain('preload="auto"');
   });
 });

@@ -736,9 +736,9 @@ function VideoFactoryContent() {
                       </div>
 
                       <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 text-[10px]">
-                        <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          ✓ Kualiti Sah ({style.engine === 'nexabot' ? '10' : '15'} Kr)
+                        <span className={`${style.qualityStatus === 'video_tested' ? 'text-emerald-700' : 'text-sky-700'} font-semibold flex items-center gap-1`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${style.qualityStatus === 'video_tested' ? 'bg-emerald-500' : 'bg-sky-500'}`}></span>
+                          {style.qualityStatus === 'video_tested' ? '✓ Sampel Sebenar' : 'Prompt Staging'} ({style.engine === 'nexabot' ? '10' : '15'} Kr)
                         </span>
                         <button
                           type="button"

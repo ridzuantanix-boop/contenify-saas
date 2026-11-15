@@ -13,12 +13,12 @@ const product: ProductProfile = { name:'the uploaded product image', category:'p
 const scene: ScenePlan = { mainSubject:product.name, location:'ordinary Malaysian setting', lighting:'neutral daylight', cameraDistance:'smartphone 1x', cameraMovement:'single continuous take', startPose:'natural', actionProgression:'style-specific action', endPose:'natural', primaryAction:'style-specific action', audioPolicy:'spoken_bm', targetDurationSeconds:15 };
 
 describe('V10 Pawarna Masterprompt Director', () => {
-  it('preserves exactly 20 published Nexabot 15-second styles', () => {
-    expect(VIDEO_STYLES_REGISTRY).toHaveLength(20);
+  it('preserves 20 existing styles and adds 10 staged Expansion V1 styles', () => {
+    expect(VIDEO_STYLES_REGISTRY).toHaveLength(30);
     expect(VIDEO_STYLES_REGISTRY.every((style) => style.engine === 'nexabot' && style.durationSeconds === 15 && style.publicationStatus === 'published')).toBe(true);
   });
 
-  it('compiles 20 independent provider-owned masterprompts with all hard locks', () => {
+  it('compiles 30 independent provider-owned masterprompts with all hard locks', () => {
     const prompts = VIDEO_STYLES_REGISTRY.map((style) => {
       const compiled = DynamicPromptCompiler.compile(product, style, { ...scene, audioPolicy:style.audioMode });
       expect(compiled.promptVersion).toBe(GEMS_PROMPT_VERSION);
@@ -44,7 +44,7 @@ describe('V10 Pawarna Masterprompt Director', () => {
       expect(compiled.providerPrompt, style.id).not.toMatch(/Script: ""|\$\{p\.spokenScript\}|\{script_body\}|V8 SMART SCRIPT CONTROL/i);
       return compiled.providerPrompt;
     });
-    expect(new Set(prompts).size).toBe(20);
+    expect(new Set(prompts).size).toBe(30);
   });
 
   it('ignores legacy script inputs and rejects the former generic fallback', () => {

@@ -1,8 +1,9 @@
-/** Customer-facing metadata for the 20 official AffiMatik styles. */
+/** Customer-facing metadata for the 30 official AffiMatik styles. */
 export const STYLE_MARKETING_IDS = [
   'NX01', 'NX02', 'NX03', 'NX05', 'NX07', 'NX09', 'NX10',
   'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19',
   'NX11', 'NX12', 'NX13', 'NX14', 'NX15', 'NX16', 'NX17',
+  'NX21', 'NX22', 'NX23', 'NX24', 'NX25', 'NX26', 'NX27', 'NX28', 'NX29', 'NX30',
 ] as const;
 
 export type StyleMarketingId = (typeof STYLE_MARKETING_IDS)[number];
@@ -12,7 +13,9 @@ export type StyleMarketingCategory =
   | 'POV'
   | 'Lifestyle'
   | 'Cerita & Masalah'
-  | 'Soft Sell';
+  | 'Soft Sell'
+  | 'Fesyen'
+  | 'Dapur';
 
 export interface StyleMarketingMetadata {
   id: StyleMarketingId;
@@ -25,12 +28,13 @@ export interface StyleMarketingMetadata {
   previewPath: `/api/style-samples/${StyleMarketingId}`;
   niches: readonly string[];
   creativeDirectionRef: `style:${StyleMarketingId}`;
+  previewStatus: 'verified_media' | 'development_placeholder';
 }
 
 type MetadataSeed = Omit<
   StyleMarketingMetadata,
-  'id' | 'thumbnailPath' | 'previewPath' | 'creativeDirectionRef'
->;
+  'id' | 'thumbnailPath' | 'previewPath' | 'creativeDirectionRef' | 'previewStatus'
+> & { previewStatus?: StyleMarketingMetadata['previewStatus'] };
 
 function defineStyle(id: StyleMarketingId, seed: MetadataSeed): StyleMarketingMetadata {
   return {
@@ -39,6 +43,7 @@ function defineStyle(id: StyleMarketingId, seed: MetadataSeed): StyleMarketingMe
     thumbnailPath: `/style-posters/${id}.webp`,
     previewPath: `/api/style-samples/${id}`,
     creativeDirectionRef: `style:${id}`,
+    previewStatus: seed.previewStatus ?? 'verified_media',
   };
 }
 
@@ -63,6 +68,16 @@ export const STYLE_MARKETING_METADATA: Record<StyleMarketingId, StyleMarketingMe
   NX15: defineStyle('NX15', { title: 'Cerita Masalah Pendek', description: 'Penceritaan ringkas tentang situasi harian sebelum menunjukkan produk yang sesuai.', tagline: 'Cerita pendek, penyelesaian relevan', tags: ['Story', 'Masalah harian', 'Relatable'], categoryLabel: 'Cerita & Masalah', niches: ['Semua produk'] }),
   NX16: defineStyle('NX16', { title: 'Soft Sell Tanpa Paksa', description: 'Cadangan produk secara lembut, santai dan tidak terlalu menjual.', tagline: 'Cadangan ringan, tiada tekanan', tags: ['Soft sell', 'Santai', 'Lifestyle'], categoryLabel: 'Soft Sell', niches: ['Semua produk'] }),
   NX17: defineStyle('NX17', { title: 'Recommend Secara Spontan', description: 'Creator teringat satu produk berguna lalu berkongsi sebab yang relevan secara spontan.', tagline: 'Cadangan spontan yang product-specific', tags: ['Recommend', 'Spontan', 'Creator'], categoryLabel: 'Review & Creator', niches: ['Semua produk'] }),
+  NX21: defineStyle('NX21', { title: 'Kurung Catwalk', description: 'Persembahan penuh baju kurung dengan langkah perlahan dan gerakan fabrik yang natural.', tagline: 'Potongan kurung jelas, gerakan sopan', tags: ['Baju kurung', 'Full look', 'Muslimah'], categoryLabel: 'Fesyen', niches: ['Baju kurung', 'Pakaian Muslimah'], previewStatus: 'development_placeholder' }),
+  NX22: defineStyle('NX22', { title: 'Kebaya Elegance', description: 'Showcase kebaya labuh yang sopan dengan fokus pada jahitan, tekstur dan jatuhan fabrik.', tagline: 'Detail kebaya labuh yang elegan', tags: ['Kebaya labuh', 'Detail fabrik', 'Muslimah'], categoryLabel: 'Fesyen', niches: ['Kebaya labuh', 'Pakaian acara'], previewStatus: 'development_placeholder' }),
+  NX23: defineStyle('NX23', { title: 'Tudung Styling', description: 'Paparan drape, liputan dan rupa fabrik tudung tanpa membuka aurat sepanjang video.', tagline: 'Drape tudung jelas dan sopan', tags: ['Tudung', 'Drape', 'Coverage'], categoryLabel: 'Fesyen', niches: ['Tudung', 'Hijab', 'Aksesori Muslimah'], previewStatus: 'development_placeholder' }),
+  NX24: defineStyle('NX24', { title: 'OOTD Mirror Review', description: 'Review OOTD gaya telefon pintar di hadapan cermin oleh presenter Muslimah yang natural.', tagline: 'OOTD real, bukan runway', tags: ['OOTD', 'Mirror review', 'Muslimah'], categoryLabel: 'Fesyen', niches: ['Pakaian Muslimah', 'Set pakaian'], previewStatus: 'development_placeholder' }),
+  NX25: defineStyle('NX25', { title: 'Kids Outfit Showcase', description: 'Pakaian kanak-kanak dipamer pada hanger, mannequin atau flat-lay tanpa memerlukan wajah kanak-kanak.', tagline: 'Kidswear jelas tanpa child actor', tags: ['Kidswear', 'Hanger', 'Flat-lay'], categoryLabel: 'Fesyen', niches: ['Pakaian kanak-kanak'], previewStatus: 'development_placeholder' }),
+  NX26: defineStyle('NX26', { title: 'Boutique Collection', description: 'Persembahan butik yang bergerak antara siluet dan detail pakaian tanpa mencipta varian baharu.', tagline: 'Rasa butik, identiti pakaian kekal', tags: ['Boutique', 'Garment detail', 'Collection'], categoryLabel: 'Fesyen', niches: ['Pakaian Muslimah', 'Koleksi butik'], previewStatus: 'development_placeholder' }),
+  NX27: defineStyle('NX27', { title: 'Kuali Cooking Demo', description: 'Demo kuali atau pan dalam dapur Malaysia dengan fizik perkakas, haba dan makanan yang believable.', tagline: 'Demo memasak yang realistik', tags: ['Kuali', 'Cooking demo', 'Dapur'], categoryLabel: 'Dapur', niches: ['Kuali', 'Pan', 'Cookware'], previewStatus: 'development_placeholder' }),
+  NX28: defineStyle('NX28', { title: 'Air Fryer Demo', description: 'Urutan penggunaan air fryer yang munasabah sambil mengekalkan reka bentuk dan kawalan sebenar.', tagline: 'Air fryer dalam rutin sebenar', tags: ['Air fryer', 'Appliance', 'Demo'], categoryLabel: 'Dapur', niches: ['Air fryer'], previewStatus: 'development_placeholder' }),
+  NX29: defineStyle('NX29', { title: 'Kitchen Appliance Review', description: 'Review kontekstual untuk rice cooker, microwave, oven atau perkakas dapur setara.', tagline: 'Perkakas dapur dinilai dalam konteks', tags: ['Appliance', 'Review', 'Dapur'], categoryLabel: 'Dapur', niches: ['Rice cooker', 'Microwave', 'Oven', 'Perkakas dapur'], previewStatus: 'development_placeholder' }),
+  NX30: defineStyle('NX30', { title: 'Dapur Problem Solver', description: 'Mulakan dengan tugas dapur yang relatable lalu tunjuk penggunaan biasa produk secara praktikal.', tagline: 'Masalah dapur, penggunaan praktikal', tags: ['Problem solver', 'Praktikal', 'Dapur'], categoryLabel: 'Dapur', niches: ['Peralatan dapur', 'Cookware', 'Kitchen tools'], previewStatus: 'development_placeholder' }),
 };
 
 export function getStyleMarketingMetadata(id: string): StyleMarketingMetadata | undefined {

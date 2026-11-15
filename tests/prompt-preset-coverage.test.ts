@@ -17,7 +17,7 @@ describe('published style database coverage', () => {
     );
     const publishedIds = getAllVideoStyles().map((style) => style.id);
 
-    expect(publishedIds).toHaveLength(20);
+    expect(publishedIds).toHaveLength(30);
     expect(publishedIds.filter((id) => !seededIds.has(id))).toEqual([]);
   });
 

@@ -687,9 +687,13 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
       // Real 15s Nexabot V6 samples were generated for every published style.
       expect(verifiedStyles.length).toBe(0);
       expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'video_tested')).toHaveLength(20);
+      expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'nexabot' && s.qualityStatus === 'prompt_validated')).toHaveLength(10);
       expect(VIDEO_STYLES_REGISTRY.filter((s) => s.engine === 'runninghub')).toHaveLength(0);
       for (const s of VIDEO_STYLES_REGISTRY.filter((item) => item.qualityStatus === 'video_tested')) {
         expect(s.previewVideoUrl).toBe(`/api/style-samples/${s.id}`);
+      }
+      for (const s of VIDEO_STYLES_REGISTRY.filter((item) => item.qualityStatus === 'prompt_validated')) {
+        expect(s.previewVideoUrl).toBeNull();
       }
       expect(VIDEO_STYLES_REGISTRY.filter((s) => s.id.startsWith('RH')).every((s) => s.engine === 'nexabot')).toBe(true);
     });
