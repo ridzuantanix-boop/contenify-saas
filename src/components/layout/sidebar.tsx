@@ -186,7 +186,7 @@ export function Sidebar() {
               Daftar akaun sekarang untuk mula jana video secara automatik.
             </p>
             <Link
-              href="/register"
+              href="/register?intent=launch_pack&source=sidebar"
               className="block w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold text-center transition shadow-2xs"
             >
               Cipta Akaun
