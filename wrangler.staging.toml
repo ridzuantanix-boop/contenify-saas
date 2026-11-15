@@ -15,7 +15,8 @@ APP_BASE_URL = "https://affimatik-launch-lite-staging.nanotiva-garden.workers.de
 SUPABASE_URL = "https://bymorrozeokshzuzcdro.supabase.co"
 AFFIMATIK_VOICE_PUBLIC_ENABLED = "true"
 AFFIMATIK_MOTION_PUBLIC_ENABLED = "false"
-PUBLIC_CHECKOUT_ENABLED = "false"
+# Staging remains access-gated; enable checkout here for isolated QR journey QA.
+PUBLIC_CHECKOUT_ENABLED = "true"
 USE_MOCK_PROVIDERS = "false"
 
 [[services]]
