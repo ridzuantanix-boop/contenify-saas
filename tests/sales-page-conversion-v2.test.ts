@@ -11,9 +11,9 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 describe('AffiMatik Sales Page Conversion V2', () => {
   it('opens with the customer problem, solution, real proof and exact RM19 CTA', () => {
     const page = read('src/app/page.tsx');
-    expect(page).toContain('Penat Nak Buat Video Affiliate');
-    expect(page).toContain('Banyak produk nak promote');
-    expect(page).toContain('Mula Dengan RM19');
+    expect(page).toContain('Dari Screenshot Produk Terus Jadi');
+    expect(page).toContain('Penat nak fikir skrip');
+    expect(page).toContain('Cuba 15 Video Pertama — RM19');
     expect(page).toContain('Satu gambar produk → satu video affiliate sebenar');
     expect(page).toContain('RM19 · 150 kredit · sah 180 hari');
   });
@@ -21,16 +21,16 @@ describe('AffiMatik Sales Page Conversion V2', () => {
   it('ships all eight customer-first sections and honest proof labels', () => {
     const page = read('src/app/page.tsx');
     for (const copy of [
-      'Produk makin banyak. Masa content tetap sama.',
-      'Gambar masuk. MP4 sebenar keluar.',
-      'Upload. Pilih gaya. Tekan Jana.',
-      'Tak perlu tunggu depan skrin satu video demi satu.',
+      'Produk Dalam Beg Kuning Makin Banyak',
+      'Masuk Screenshot Biasa. Keluar Video Affiliate Yang Hidup.',
+      'Tak Perlu Pandai Edit. Tak Perlu Tulis Skrip.',
+      'Biar Sistem Jalan di Belakang Tabir',
       'Cara paling mudah untuk mula',
       'Soalan sebelum mula',
-      'Produk dah ada. Sekarang jadikan ia content.',
+      'Produk Dalam Galeri Dah Banyak.',
     ]) expect(page).toContain(copy);
     expect(page).toContain('Screenshot biasa → video affiliate');
-    expect(page).toContain('Demo baharu');
+    expect(page).toContain("Demo {String(index+1).padStart(2,'0')}");
     for (const id of ['NX17', 'NX01', 'NX02']) expect(page).toContain(id);
     expect(page).not.toContain("{ id: 'RH03'");
     expect(page).not.toContain('Nova Lumi Table Lamp');
@@ -48,7 +48,7 @@ describe('AffiMatik Sales Page Conversion V2', () => {
       const bytes = fs.readFileSync(path.join(root, file));
       expect(bytes.length).toBeGreaterThan(10_000);
     }
-    expect(read('src/app/page.tsx')).toContain('Rakaman skrin sebenar AffiMatik V10.1');
+    expect(read('src/app/page.tsx')).toContain('Rakaman skrin sebenar aliran jana video pada paparan telefon.');
   });
 
   it('preserves Launch Pack intent from landing through auth and billing', () => {

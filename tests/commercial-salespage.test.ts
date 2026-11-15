@@ -26,24 +26,24 @@ describe('commercial sales page and disabled Free Trial', () => {
 
   it('presents the RM19 offer and genuine style sample endpoints', () => {
     const landing = read('src/app/page.tsx');
-    expect(landing).toContain('Mula Dengan RM19');
-    expect(landing).toContain('/api/style-samples/NX17');
+    expect(landing).toContain('Cuba 15 Video Pertama — RM19');
+    expect(landing).toContain('/api/style-samples/${id}');
     expect(landing).toContain("{ id: 'NX01'");
     expect(landing).toContain("{ id: 'NX02'");
     expect(landing).not.toContain("{ id: 'RH03'");
     expect(landing).not.toContain('Nova Lumi Table Lamp');
     expect(landing).toContain('Screenshot biasa → video affiliate');
-    expect(landing).toContain('Demo baharu');
+    expect(landing).toContain("Demo {String(index+1).padStart(2,'0')}");
     expect(landing).not.toContain('20 Kredit Percuma');
   });
 
   it('explains the beginner purchase flow without overstating payment verification', () => {
     const landing = read('src/app/page.tsx');
     expect(landing).toContain('Soalan sebelum mula');
-    expect(landing).toContain('tidak mengaktifkan langganan automatik');
+    expect(landing).toContain('bayaran sekali sahaja');
     expect(landing).toContain('sah selama 180 hari');
-    expect(landing).toContain('upload resit bukan pengesahan bank');
+    expect(landing).toContain('pengesahan pembayaran dibuat');
     expect(landing).toContain('support@affimatik.online');
-    expect(landing).toContain('tempahan kredit dilepaskan semula');
+    expect(landing).toContain('kredit dilepaskan semula ke akaun secara automatik');
   });
 });
