@@ -37,13 +37,18 @@ describe('production authentication redirects', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
       seen.push(String(input));
       if (String(input).includes('/signup')) return new Response(JSON.stringify({ id: 'user-1', identities: [{}] }), { status: 200 });
+      if (String(input).includes('/rpc/provision_pending_checkout_account_atomic')) {
+        return new Response(JSON.stringify({ success: true, workspace_id: 'workspace-1' }), { status: 200 });
+      }
       return new Response('{}', { status: 200 });
     }));
     expect((await register(jsonRequest('https://evil.example/api/auth/register', { email: 'new@example.com', password: 'password123', whatsapp: '01123456789', acceptedTerms: true }))).status).toBe(200);
     expect((await resend(jsonRequest('https://evil.example/api/auth/resend-confirmation', { email: 'new@example.com' }))).status).toBe(200);
     expect((await recover(jsonRequest('https://evil.example/api/auth/password-reset', { email: 'new@example.com' }))).status).toBe(200);
-    expect(seen).toHaveLength(3);
-    for (const url of seen) expect(decodeURIComponent(url)).toContain('redirect_to=https://affimatik.online/auth/callback');
+    expect(seen).toHaveLength(4);
+    const emailRequests = seen.filter((url) => !url.includes('/rpc/provision_pending_checkout_account_atomic'));
+    expect(emailRequests).toHaveLength(3);
+    for (const url of emailRequests) expect(decodeURIComponent(url)).toContain('redirect_to=https://affimatik.online/auth/callback');
     for (const url of seen) expect(url).not.toContain('localhost');
   });
 

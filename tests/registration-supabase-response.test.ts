@@ -19,17 +19,19 @@ describe('Supabase signup response contract', () => {
     vi.stubEnv('SESSION_SECRET', 'test-session-secret');
   }
 
-  it('accepts the flat user returned by the raw GoTrue signup endpoint without granting credits', async () => {
+  it('creates a checkout-only session for a new unverified identity without granting credits', async () => {
     configure();
-    const upstream = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'user-1', identities: [{ id: 'identity-1' }], confirmation_sent_at: '2026-11-08T00:00:00Z' }), { status: 200 }));
+    const upstream = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: '11111111-1111-4111-8111-111111111111', identities: [{ id: 'identity-1' }], confirmation_sent_at: '2026-11-08T00:00:00Z' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, workspace_id: '22222222-2222-4222-8222-222222222222', email_confirmed: false }), { status: 200 }));
     vi.stubGlobal('fetch', upstream);
     const response = await POST(request());
     const body = await response.json();
     expect(response.status).toBe(200);
-    expect(body).toMatchObject({ success: true, requiresEmailConfirmation: true });
-    expect(body.user).toBeUndefined();
-    expect(response.headers.get('set-cookie')).toBeNull();
-    expect(upstream).toHaveBeenCalledTimes(1);
+    expect(body).toMatchObject({ success: true, requiresEmailConfirmation: false, emailVerificationPending: true });
+    expect(body.user).toMatchObject({ emailVerified: false, workspaceId: '22222222-2222-4222-8222-222222222222' });
+    expect(response.headers.get('set-cookie')).toContain('affimatik_session=');
+    expect(upstream).toHaveBeenCalledTimes(2);
   });
 
   it('requires explicit Terms, Privacy and age eligibility acceptance', async () => {

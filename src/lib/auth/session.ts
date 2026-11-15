@@ -11,8 +11,14 @@ export interface UserSession {
   workspaceId: string;
   role: 'owner' | 'admin' | 'member' | 'superadmin';
   tier: 'free' | 'starter' | 'pro' | 'agency';
+  /** False only for the short-lived payment-first checkout session. */
+  emailVerified?: boolean;
   issuedAt: number;
   expiresAt: number;
+}
+
+export function isEmailVerificationPending(session: UserSession): boolean {
+  return session.emailVerified === false;
 }
 
 const DEFAULT_SESSION_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days

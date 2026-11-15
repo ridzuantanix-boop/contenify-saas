@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
   const acceptedTerms = body.acceptedTerms === true;
   const referralCode = typeof body.referralCode === 'string' ? body.referralCode.trim().toUpperCase() : (req.cookies.get('affimatik_ref')?.value || '');
   if (!acceptedTerms) return NextResponse.json({ error: 'Persetujuan Terma, Notis Privasi dan kelayakan umur diperlukan.' }, { status: 400 });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || password.length < 8 || password.length > 128 || whatsapp.replace(/\D/g, '').length < 8 || !/^[A-Z0-9_-]{0,50}$/.test(referralCode)) {
-    return NextResponse.json({ error: 'Semak alamat emel, kata laluan (8–128 aksara), WhatsApp dan kod rujukan.' }, { status: 400 });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || password.length < 8 || password.length > 128 || (whatsapp && whatsapp.replace(/\D/g, '').length < 8) || !/^[A-Z0-9_-]{0,50}$/.test(referralCode)) {
+    return NextResponse.json({ error: 'Semak alamat emel, kata laluan (8–128 aksara) dan kod rujukan.' }, { status: 400 });
   }
 
   if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
@@ -59,13 +59,32 @@ export async function POST(req: NextRequest) {
       const user = result.user && typeof result.user === 'object'
         ? result.user as Record<string, unknown> : result;
       if (typeof user.id !== 'string' || !user.id) return NextResponse.json({ error: 'Respons pendaftaran tidak lengkap.' }, { status: 502 });
-      // A confirmed Supabase identity is provisioned atomically at first login.
-      // No workspace or welcome credit is created for an unverified mailbox.
       if (result.session) {
         return NextResponse.json({ error: 'Pengesahan emel mesti diaktifkan pada Supabase Auth sebelum pendaftaran boleh digunakan.' }, { status: 503 });
       }
-      return NextResponse.json({ success: true, requiresEmailConfirmation: true, email,
-        message: 'Jika ini akaun baharu, semak emel pengesahan. Jika pernah mendaftar, sila log masuk.' });
+      const identities = Array.isArray(user.identities) ? user.identities : [];
+      if (identities.length === 0) {
+        return NextResponse.json({ success: true, requiresEmailConfirmation: true, email,
+          message: 'Jika ini akaun baharu, semak emel pengesahan. Jika pernah mendaftar, sila log masuk.' });
+      }
+      const provisionResponse = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/provision_pending_checkout_account_atomic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ p_user_id: user.id, p_email: email, p_full_name: fullName || email.split('@')[0], p_whatsapp: whatsapp }),
+      });
+      const provision = await provisionResponse.json().catch(() => ({})) as Record<string, unknown>;
+      if (!provisionResponse.ok || provision.success !== true || typeof provision.workspace_id !== 'string') {
+        return NextResponse.json({ error: 'Akaun dicipta tetapi checkout belum dapat disediakan. Gunakan pautan emel atau cuba log masuk selepas pengesahan.' }, { status: 503 });
+      }
+      const checkoutUser = { userId: user.id, email, fullName: fullName || email.split('@')[0], whatsapp,
+        workspaceId: provision.workspace_id, tier: 'free' as const, role: 'owner' as const, emailVerified: false };
+      const sessionToken = await createSessionToken(checkoutUser, 24 * 60 * 60);
+      const checkoutResponse = NextResponse.json({ success: true, requiresEmailConfirmation: false,
+        emailVerificationPending: true, email, user: checkoutUser,
+        message: 'Akaun dicipta. Teruskan bayaran QR; sahkan emel selepas bukti bayaran dihantar.' });
+      checkoutResponse.cookies.set('affimatik_session', sessionToken, { httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 24 * 60 * 60 });
+      return checkoutResponse;
     } catch { return NextResponse.json({ error: 'Perkhidmatan pendaftaran tidak dapat diakses.' }, { status: 503 }); }
   }
 

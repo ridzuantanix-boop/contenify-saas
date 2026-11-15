@@ -5,7 +5,7 @@ import { DynamicPromptCompiler } from '@/lib/engine/compiler';
 import { ProductProfile, ScenePlan } from '@/lib/engine/types';
 import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
-import { getSessionFromRequest } from '@/lib/auth/session';
+import { getSessionFromRequest, isEmailVerificationPending } from '@/lib/auth/session';
 import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
 import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
 import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
@@ -51,6 +51,9 @@ export async function POST(req: NextRequest) {
         { error: 'Akses Ditolak: Anda mesti log masuk untuk menghantar tugasan penjanaan video.' },
         { status: 401 }
       );
+    }
+    if (isEmailVerificationPending(session)) {
+      return NextResponse.json({ error: 'Sahkan emel anda sebelum menjana video pertama.', code: 'EMAIL_VERIFICATION_REQUIRED' }, { status: 403 });
     }
 
     const workspaceId = session.workspaceId;
