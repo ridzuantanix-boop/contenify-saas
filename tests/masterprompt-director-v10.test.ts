@@ -65,7 +65,7 @@ describe('REAL V3 Nexabot creative autonomy', () => {
   it('gives Nexabot sole ownership of hooks, dialogue and selling approach', () => {
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO');
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt');
-    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Never fabricate the presenter’s personal use, testing, consumption, ownership experience or personal result');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Never fabricate the presenter’s personal use, testing, consumption or personal result');
     const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene).providerPrompt;
     expect(prompt.indexOf('[REAL V3 NATIVE SPEECH CONTRACT]')).toBeLessThan(prompt.indexOf('[STYLE NX02'));
     expect(prompt).toContain('Nexabot independently creates the NX02 hook, dialogue, selling approach and visual actions');

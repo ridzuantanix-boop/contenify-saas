@@ -43,7 +43,7 @@ describe('real-provider QA prompt export', () => {
       expect(prompt).toContain('Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO');
       expect(prompt).toContain('AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt');
       expect(prompt).toContain('[NO FAKE SELF-USE TESTIMONIAL — STRICT]');
-      expect(prompt).toContain('Never state or imply that the presenter personally used, tried, tested, consumed, applied, owned or experienced results');
+      expect(prompt).toContain('Never state or imply that the presenter personally used, tried, tested, consumed, applied or experienced results');
       expect(prompt).toContain('Ordinary product handling, wearing, styling or demonstration is allowed');
       expect(prompt).not.toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
       expect(prompt).not.toMatch(/ordinary buyer benefit|supported FOMO|mandatory benefit/i);

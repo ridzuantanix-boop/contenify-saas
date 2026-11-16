@@ -28,7 +28,7 @@ export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[REAL V3 NATIVE SPEECH CONTRACT]',
   'Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO, Malaysian delivery and visual actions. AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt.',
   'Use natural contemporary Bahasa Melayu Malaysia with spontaneous affiliate energy, varied pace and clear product and CTA pronunciation. Choose the wording and persuasive structure freely for the product and selected style rather than following a fixed dialogue formula.',
-  'Never fabricate the presenter’s personal use, testing, consumption, ownership experience or personal result. Ordinary visible handling and demonstration are not automatically personal-use testimonials.',
+  'Never fabricate the presenter’s personal use, testing, consumption or personal result. Ordinary visible handling, possession and demonstration are not automatically personal-use testimonials.',
   'Fit the original dialogue naturally within 15 seconds. When selected, speak the customer CTA once and complete it before the cut without corrupted speech afterward.',
 ].join(' ');
 
@@ -402,7 +402,7 @@ export class DynamicPromptCompiler {
 
     const commonTruthfulness = [
       '[NO FAKE SELF-USE TESTIMONIAL — STRICT]',
-      'Never state or imply that the presenter personally used, tried, tested, consumed, applied, owned or experienced results from the product unless that experience was explicitly supplied by the customer as true.',
+      'Never state or imply that the presenter personally used, tried, tested, consumed, applied or experienced results from the product unless that experience was explicitly supplied by the customer as true.',
       'Never invent first-person outcomes such as a problem being solved or the product working for the presenter. Ordinary product handling, wearing, styling or demonstration is allowed and is not automatically a personal-use testimonial.',
       'Outside this strict rule, Nexabot retains broad freedom to create product-relevant hooks, storytelling, selling angles, subjective enthusiasm and FOMO while preserving the visible product identity and customer-selected style.',
     ].join(' ');

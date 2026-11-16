@@ -45,6 +45,6 @@ describe('AFFIMATIK V8 — creative quality regression', () => {
     const compiled = DynamicPromptCompiler.compile(profile, style, AICreativeDirector.createScenePlan(profile, style), { customScript: legacyScript });
     expect(compiled.providerPrompt).not.toContain(legacyScript);
     expect(compiled.providerPrompt).toContain('[NO FAKE SELF-USE TESTIMONIAL — STRICT]');
-    expect(compiled.providerPrompt).toContain('Never state or imply that the presenter personally used, tried, tested, consumed, applied, owned or experienced results');
+    expect(compiled.providerPrompt).toContain('Never state or imply that the presenter personally used, tried, tested, consumed, applied or experienced results');
   });
 });
