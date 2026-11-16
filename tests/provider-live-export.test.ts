@@ -40,9 +40,12 @@ describe('real-provider QA prompt export', () => {
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
       expect(prompt).toContain('[NEXABOT NATIVE PRODUCT INTERPRETATION]');
-      expect(prompt).toContain('Nexabot alone creates the hook, product-specific dialogue');
-      expect(prompt).toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
-      expect(prompt).toContain('Never claim personal use, efficacy, medical/beauty outcome, measurable performance');
+      expect(prompt).toContain('Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO');
+      expect(prompt).toContain('AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt');
+      expect(prompt).toContain('[NO FAKE SELF-USE TESTIMONIAL — STRICT]');
+      expect(prompt).toContain('Never state or imply that the presenter personally used, tried, tested, consumed, applied, owned or experienced results');
+      expect(prompt).toContain('Ordinary product handling, wearing, styling or demonstration is allowed');
+      expect(prompt).not.toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
       expect(prompt).not.toMatch(/ordinary buyer benefit|supported FOMO|mandatory benefit/i);
     }
     expect(prompts.lampMotion).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');

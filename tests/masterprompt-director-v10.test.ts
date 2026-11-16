@@ -21,7 +21,7 @@ describe('REAL V3 Nexabot creative autonomy', () => {
     const prompts = VIDEO_STYLES_REGISTRY.map((style) => {
       const compiled = DynamicPromptCompiler.compile(product, style, { ...scene, audioPolicy:style.audioMode });
       expect(compiled.promptVersion).toBe(GEMS_PROMPT_VERSION);
-      expect(GEMS_PROMPT_VERSION).toBe('affimatik-real-v3-nexabot-creative-autonomy');
+      expect(GEMS_PROMPT_VERSION).toBe('affimatik-real-v3-creative-freedom-no-fake-self-use');
       expect(compiled.spokenScript, style.id).toBeUndefined();
       expect(compiled.providerPrompt, style.id).toContain('[REAL V3 COMPACT GLOBAL CONTRACT]');
       expect(compiled.providerPrompt, style.id).toContain('[NEXABOT NATIVE PRODUCT INTERPRETATION]');
@@ -38,6 +38,9 @@ describe('REAL V3 Nexabot creative autonomy', () => {
       expect(compiled.providerPrompt, style.id).toContain('[PAWARNA CREATIVE DNA]');
       expect(compiled.providerPrompt, style.id).toContain('[TRUE-WHITE REAL PHONE COLOUR]');
       expect(compiled.providerPrompt, style.id).toContain('[NATURAL MALAYSIAN VOICE]');
+      expect(compiled.providerPrompt, style.id).toContain('[NO FAKE SELF-USE TESTIMONIAL — STRICT]');
+      expect(compiled.providerPrompt, style.id).toContain('Nexabot retains broad freedom to create product-relevant hooks, storytelling, selling angles, subjective enthusiasm and FOMO');
+      expect(compiled.providerPrompt, style.id).toContain('Ordinary product handling, wearing, styling or demonstration is allowed');
       expect(compiled.providerPrompt.length, style.id).toBeLessThan(10_000);
       expect(compiled.providerPrompt, style.id).not.toMatch(/Script: ""|\$\{p\.spokenScript\}|\{script_body\}|V8 SMART SCRIPT CONTROL/i);
       expect(compiled.providerPrompt, style.id).not.toMatch(/ordinary buyer benefit|supported buyer benefit|supported FOMO|mandatory benefit/i);
@@ -60,8 +63,9 @@ describe('REAL V3 Nexabot creative autonomy', () => {
   });
 
   it('gives Nexabot sole ownership of hooks, dialogue and selling approach', () => {
-    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Nexabot alone creates the hook, product-specific dialogue');
-    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Never fabricate the presenter’s personal use, testing, consumption, ownership experience or personal result');
     const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene).providerPrompt;
     expect(prompt.indexOf('[REAL V3 NATIVE SPEECH CONTRACT]')).toBeLessThan(prompt.indexOf('[STYLE NX02'));
     expect(prompt).toContain('Nexabot independently creates the NX02 hook, dialogue, selling approach and visual actions');
@@ -71,7 +75,7 @@ describe('REAL V3 Nexabot creative autonomy', () => {
     expect(sanitizePersonalizationSettings({scriptMode:'custom',scriptVariant:'story',customScript:'JANGAN HANTAR'})).toMatchObject({scriptMode:'provider_auto',scriptVariant:'style',customScript:''});
   });
 
-  it('separates customer facts from unsupported claims without creating benefits', () => {
+  it('separates customer metadata from verified facts without making AffiMatik the creative writer', () => {
     const grounded: ProductProfile = { ...product, name:'POTONGGO Manual Chopper', category:'manual kitchen chopper', observedPhysicalFacts:['clear container with turquoise lid and visible internal blades'], confirmedFeatures:['customer confirms the pull handle is manually operated'], unknownFields:['capacity','blade material'] };
     const prompt=DynamicPromptCompiler.compile(grounded,getVideoStyle('NX17')!,scene).providerPrompt;
     expect(prompt).toContain('[PRODUCT FACT BOUNDARY]');
@@ -79,8 +83,11 @@ describe('REAL V3 Nexabot creative autonomy', () => {
     expect(prompt).toContain('Customer-supplied visible facts:');
     expect(prompt).toContain('Explicit customer facts:');
     expect(prompt).toContain('They are context, not prewritten dialogue');
-    expect(prompt).toContain('Unverified or prohibited:');
-    expect(prompt).toContain('When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit');
+    expect(prompt).toContain('Unverified customer metadata:');
+    expect(prompt).toContain('Do not present it as customer-confirmed fact or verified research');
+    expect(prompt).toContain('AffiMatik does not preselect benefits or promotional claims');
+    expect(prompt).toContain('[NO FAKE SELF-USE TESTIMONIAL — STRICT]');
+    expect(prompt).not.toContain('When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit');
   });
 
   it('uses duplicate product identity references without treating them as start frames', () => {

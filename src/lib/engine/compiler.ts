@@ -22,14 +22,14 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-real-v3-nexabot-creative-autonomy';
+export const GEMS_PROMPT_VERSION = 'affimatik-real-v3-creative-freedom-no-fake-self-use';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[REAL V3 NATIVE SPEECH CONTRACT]',
-  'Nexabot alone creates the hook, product-specific dialogue, Malaysian delivery and selling approach. AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording.',
-  'Use natural contemporary Bahasa Melayu Malaysia with spontaneous selling energy, varied pace and clear product and CTA pronunciation. Avoid robotic advertising cadence, repeated filler, forced slang and catalogue-style phrasing.',
-  'Use only image-supported information and explicit customer facts. If no benefit is supported, discuss a visible characteristic or the ordinary category function without implying testing, ownership or results.',
-  'Keep the dialogue short enough to complete naturally within 15 seconds. When selected, speak the CTA once as the final utterance and finish it before the cut, with no repeated or corrupted speech afterward.',
+  'Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO, Malaysian delivery and visual actions. AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt.',
+  'Use natural contemporary Bahasa Melayu Malaysia with spontaneous affiliate energy, varied pace and clear product and CTA pronunciation. Choose the wording and persuasive structure freely for the product and selected style rather than following a fixed dialogue formula.',
+  'Never fabricate the presenter’s personal use, testing, consumption, ownership experience or personal result. Ordinary visible handling and demonstration are not automatically personal-use testimonials.',
+  'Fit the original dialogue naturally within 15 seconds. When selected, speak the customer CTA once and complete it before the cut without corrupted speech afterward.',
 ].join(' ');
 
 export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
@@ -42,7 +42,7 @@ export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
 export const NEXABOT_PRODUCT_UNDERSTANDING_V10 = [
   '[NEXABOT NATIVE PRODUCT INTERPRETATION]',
   'Inspect the uploaded image and independently recognize the product, readable identity, visible characteristics and ordinary category function. Do not assume live web research.',
-  'Create the product-specific concept and dialogue yourself within the selected style. Use only visible evidence and explicit customer facts; never invent capabilities, results, specifications, prices, certifications, popularity, testimonials or personal experience.',
+  'Independently create the concept, hook, selling angle, storytelling, FOMO, dialogue and actions within the selected style. AffiMatik does not preselect benefits or promotional claims. Never present inference as verified research, and never fabricate personal-use experience or personal results.',
 ].join(' ');
 
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
@@ -66,7 +66,7 @@ export const PAWARNA_TRUE_COLOR_REAL_V2 = [
 export const PAWARNA_HUMAN_VOICE_REAL_V2 = [
   '[NATURAL MALAYSIAN VOICE]',
   'Use authentic contemporary Bahasa Melayu Malaysia with conversational sentence structure, natural emphasis, varied pace and age-appropriate delivery.',
-  'Avoid formulaic ad phrases, forced slang, repeated “lah/la”, repeated “korang”, stock praise and robotic presenter cadence. Nexabot remains the sole writer of every spoken sentence.',
+  'Nexabot freely chooses natural local wording, reactions, rhythm and persuasive energy for the selected style. Do not force a universal catchphrase, banned-word list or identical presenter personality. Nexabot remains the sole writer of every spoken sentence.',
 ].join(' ');
 
 const VOICE_PERSONALITY_DIRECTIONS: Record<string, string> = {
@@ -370,10 +370,10 @@ export class DynamicPromptCompiler {
         : 'No customer-supplied visible facts.',
       customerConfirmedFacts.length
         ? `Explicit customer facts: ${customerConfirmedFacts.map((fact) => `“${fact}”`).join('; ')}. They are context, not prewritten dialogue and not permission to infer another claim.`
-        : 'No explicit customer fact was supplied. Do not invent or imply a benefit. Discuss only visible characteristics or the ordinary category function.',
+        : 'No explicit customer fact was supplied. AffiMatik supplies no benefit, hook, FOMO or selling claim; Nexabot creates the product-specific presentation from the image and style context.',
       unsupportedClaims.length
-        ? `Unverified or prohibited: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Omit them.`
-        : 'Omit every capability, result, specification, testimonial or performance claim not supported by the image or explicit customer facts.',
+        ? `Unverified customer metadata: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Do not present it as customer-confirmed fact or verified research.`
+        : 'No additional customer-confirmed product facts were supplied.',
     ].join(' ');
 
     const selectedScene = getBuiltInScene(options.builtInSceneId);
@@ -401,8 +401,10 @@ export class DynamicPromptCompiler {
     ].filter(Boolean).join(' ');
 
     const commonTruthfulness = [
-      '[TRUTHFULNESS LOCK] Use only visible evidence and explicit customer facts. Never claim personal use, efficacy, medical/beauty outcome, measurable performance, material, ingredient, certification, price, stock, popularity, discount or testimonial without direct support.',
-      'When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit. Keep this rule silent rather than speaking a disclaimer.',
+      '[NO FAKE SELF-USE TESTIMONIAL — STRICT]',
+      'Never state or imply that the presenter personally used, tried, tested, consumed, applied, owned or experienced results from the product unless that experience was explicitly supplied by the customer as true.',
+      'Never invent first-person outcomes such as a problem being solved or the product working for the presenter. Ordinary product handling, wearing, styling or demonstration is allowed and is not automatically a personal-use testimonial.',
+      'Outside this strict rule, Nexabot retains broad freedom to create product-relevant hooks, storytelling, selling angles, subjective enthusiasm and FOMO while preserving the visible product identity and customer-selected style.',
     ].join(' ');
 
     const providerDialogueDirective = !hasSpeech
