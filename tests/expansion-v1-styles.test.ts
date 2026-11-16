@@ -32,32 +32,32 @@ describe('Expansion V1 NX21-NX30',()=>{
     const prompts=ids.map(id=>DynamicPromptCompiler.compile(product,getVideoStyle(id)!,scene,{callToAction:'tiktok_shop'}).providerPrompt);
     expect(new Set(prompts).size).toBe(10);
     for(const [index,prompt] of prompts.entries()){
-      expect(prompt).toContain(`[STYLE ${ids[index]} — AUTHORITATIVE CREATIVE DIRECTOR]`);
+      expect(prompt).toContain(`[STYLE ${ids[index]} — PREDEFINED CONFIGURATION]`);
       expect(prompt).toContain('[SHARIAH MODESTY LOCK');
       expect(prompt).toContain('[PRODUCT SCALE LOCK]');
-      expect(prompt).toContain('For larger products, preserve believable real-world dimensions');
-      expect(prompt).toContain('Nexabot independently writes the dialogue');
-      expect(prompt).toContain('[PAWARNA TRUE COLOR™ — REAL V2 GLOBAL QUALITY FOUNDATION]');
-      expect(prompt).toContain('Genuinely neutral-white garments, walls, appliances and surfaces remain visually white, not cream or yellow.');
-      expect(prompt).toContain('[PAWARNA HUMAN VOICE™ — REAL V2 GLOBAL QUALITY FOUNDATION]');
+      expect(prompt).toContain('larger products retain their plausible real dimensions');
+      expect(prompt).toContain('Nexabot alone creates the hook, product-specific dialogue');
+      expect(prompt).toContain('[TRUE-WHITE REAL PHONE COLOUR]');
+      expect(prompt).toContain('Genuinely white surfaces stay white');
+      expect(prompt).toContain('[NATURAL MALAYSIAN VOICE]');
       expect(prompt).toContain('Nexabot remains the sole writer of every spoken sentence');
-      expect(prompt).toContain('not every presenter should sound like a teenager');
-      expect(prompt).toContain('This CTA is the final spoken utterance');
-      expect(prompt).toContain('must not be copied as the first frame');
+      expect(prompt).toContain('age-appropriate delivery');
+      expect(prompt).toContain('Speak it naturally once as the final utterance');
+      expect(prompt).toContain('References are not start frames');
       expect(prompt).not.toContain('Script:');
     }
   });
 
-  it('applies REAL V2 true-color and human-voice foundations to all 30 styles',()=>{
+  it('applies REAL V3 compact colour and voice foundations to all 30 styles',()=>{
     const expansionPrompt=DynamicPromptCompiler.compile(product,getVideoStyle('NX21')!,scene,{callToAction:'tiktok_shop'}).providerPrompt;
     const productionPrompt=DynamicPromptCompiler.compile(product,getVideoStyle('NX01')!,scene,{callToAction:'tiktok_shop'}).providerPrompt;
-    expect(expansionPrompt).toContain('No global yellow, amber, sepia, muddy brown, grey or desaturated cast');
-    expect(expansionPrompt).toContain('Do not habitually use filler words or stock phrases');
+    expect(expansionPrompt).toContain('Avoid global yellow, cream, amber, sepia or muddy grading');
+    expect(expansionPrompt).toContain('Avoid formulaic ad phrases, forced slang, repeated “lah/la”');
     expect(expansionPrompt).not.toContain('warm golden cinematic lighting');
     expect(expansionPrompt).not.toContain('cream-coloured white surfaces');
-    expect(productionPrompt).toContain('[PAWARNA TRUE COLOR™ — REAL V2 GLOBAL QUALITY FOUNDATION]');
-    expect(productionPrompt).toContain('[PAWARNA HUMAN VOICE™ — REAL V2 GLOBAL QUALITY FOUNDATION]');
-    expect(productionPrompt).toContain('Do not impose a universal word count');
+    expect(productionPrompt).toContain('[TRUE-WHITE REAL PHONE COLOUR]');
+    expect(productionPrompt).toContain('[NATURAL MALAYSIAN VOICE]');
+    expect(productionPrompt).toContain('[REAL V3 NATIVE SPEECH CONTRACT]');
   });
 
   it('keeps audio contracts non-contradictory and kid presentation faceless',()=>{
@@ -76,7 +76,8 @@ describe('Expansion V1 NX21-NX30',()=>{
     expect(nx23).toContain('plain neutral daylight dressing wall physically unrelated to the source retail display');
     expect(nx23).toContain('Do not inherit warm boutique lighting, cream décor or the source-image background');
     expect(nx23).toContain('never preface, paraphrase or repeat its invitation such as “nak tengok detail”');
-    expect(nx23).toContain('without adding a second generic benefit or inferring comfort, cooling, convenience or time savings');
+    expect(nx23).toContain('Only visible colour, pattern, shape, drape and customer-confirmed fabric facts');
+    expect(nx23).toContain('omit unsupported comfort, cooling, non-slip, easy-styling and time-saving claims');
     expect(nx23).toContain('transition directly into the selected CTA once with no repeated lead-in');
     expect(nx27).toContain('bright, naturally exposed Malaysian home kitchen with neutral daylight-balanced whites');
     expect(nx27).toContain('a loose opaque sleeve must cover the forearm and wrist continuously');

@@ -19,10 +19,10 @@ describe('AFFIMATIK V8 — creative quality regression', () => {
       expect(compiled.provider).toBe('nexabot');
       expect(compiled.spokenScript).toBeUndefined();
       expect(compiled.providerPrompt).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
-      expect(compiled.visualPrompt).toContain('9:16 aspect ratio');
-      expect(compiled.visualPrompt).toContain('neutral daylight');
-      expect(compiled.visualPrompt).toContain('NO phone UI overlays');
-      expect(compiled.visualPrompt).toContain('Modesty Guardrail');
+      expect(compiled.visualPrompt).toContain('vertical 9:16 live-action affiliate video');
+      expect(compiled.visualPrompt).toContain('[TRUE-WHITE REAL PHONE COLOUR]');
+      expect(compiled.visualPrompt).toContain('[CLEAN VIDEO LOCK]');
+      expect(compiled.visualPrompt).toMatch(/\[(?:SHARIAH MODESTY LOCK|MODESTY GUIDELINE)/);
     }
   });
 

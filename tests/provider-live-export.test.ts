@@ -33,16 +33,17 @@ describe('real-provider QA prompt export', () => {
     };
     for (const prompt of Object.values(prompts)) {
       expect(prompt.length).toBeGreaterThan(2000);
-      expect(prompt).toContain('[PRODUCT IDENTITY MAX LOCK]');
-      expect(prompt).toContain('never paste it in as a still introductory frame');
-      expect(prompt).toContain('No decorative sparkles, glints, star stickers');
+      expect(prompt).toContain('[PRODUCT IDENTITY LOCK]');
+      expect(prompt).toContain('References are not start frames or composition templates');
+      expect(prompt).toContain('[CLEAN VIDEO LOCK]');
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
-      expect(prompt).toContain('Use natural benefit-oriented affiliate language around a recognizable ordinary product purpose or customer-confirmed fact');
-      expect(prompt).toContain('Do not invent objectively false concrete specifications, ingredients, certifications, regulated outcomes');
-      expect(prompt).toContain('Distribute meaningful speech across most of the 15-second clip with natural pace variation');
-      expect(prompt).not.toContain('before second 11');
+      expect(prompt).toContain('[NEXABOT NATIVE PRODUCT INTERPRETATION]');
+      expect(prompt).toContain('Nexabot alone creates the hook, product-specific dialogue');
+      expect(prompt).toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
+      expect(prompt).toContain('Never claim personal use, efficacy, medical/beauty outcome, measurable performance');
+      expect(prompt).not.toMatch(/ordinary buyer benefit|supported FOMO|mandatory benefit/i);
     }
     expect(prompts.lampMotion).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {

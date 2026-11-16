@@ -1,5 +1,5 @@
 /**
- * AFFIMATIK by Pawarna — Creative V6 direct-provider prompt compiler
+ * AFFIMATIK by Pawarna — REAL V3 direct-provider prompt compiler
  * Translates Product Profile + Video Style + Scene Plan into Provider-Specific Payloads
  * 
  * AffiMatik compiles a canonical, style-specific masterprompt and references.
@@ -22,86 +22,51 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-real-v2-global-quality-30-styles';
+export const GEMS_PROMPT_VERSION = 'affimatik-real-v3-nexabot-creative-autonomy';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
-  '[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT — OWNER CREATIVE INTENT]',
-  'Nexabot independently writes the dialogue; AffiMatik supplies no spoken script.',
-  'Create a complete energetic Malaysian affiliate conversation across most of the 15-second clip: a spontaneous audience-relevant hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or a complete natural ending.',
-  'Use only as much dialogue as this style and product can complete naturally within 15 seconds. Prefer one meaningful product-specific observation over stacked generic benefits. Do not impose a universal word count, force an artificial speed-up, use robotic compression or create a premature silent gap.',
-  'Let emphasis, breath, sentence linking and pace vary like a real creator speaking in one take. Preserve persuasive energy and natural imperfection rather than flattening the delivery into cautious category narration.',
-  'When a CTA is selected, deliver it conversationally near the natural end and complete it before the clip ends. The CTA is the final spoken utterance: after its last word, add no new word, syllable, phoneme, repetition, thanks, tagline, filler or corrupted speech.',
-  'Natural benefit-oriented storytelling is allowed when it follows a recognizable ordinary product purpose or customer-confirmed fact. Never invent an objectively false concrete specification, regulated outcome, price, review count, certification, popularity signal or personal testimonial.',
-  'Keep factual safeguards silent. Never turn them into spoken disclaimers, compliance language or generic filler.',
+  '[REAL V3 NATIVE SPEECH CONTRACT]',
+  'Nexabot alone creates the hook, product-specific dialogue, Malaysian delivery and selling approach. AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording.',
+  'Use natural contemporary Bahasa Melayu Malaysia with spontaneous selling energy, varied pace and clear product and CTA pronunciation. Avoid robotic advertising cadence, repeated filler, forced slang and catalogue-style phrasing.',
+  'Use only image-supported information and explicit customer facts. If no benefit is supported, discuss a visible characteristic or the ordinary category function without implying testing, ownership or results.',
+  'Keep the dialogue short enough to complete naturally within 15 seconds. When selected, speak the CTA once as the final utterance and finish it before the cut, with no repeated or corrupted speech afterward.',
 ].join(' ');
 
 export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
-  '[PAWARNA MASTERPROMPT DIRECTOR V10 — PRIORITY SYSTEM]',
-  'PRIORITY 0 HARD PRODUCTION CONSTRAINTS: exact supported product identity; correct image-reference roles; valid 15-second vertical 9:16 Nexabot i2v output; zero screenshot UI contamination; no fabricated claims, prices, reviews, medical outcomes or certifications; selected CTA intent; no AffiMatik-authored dialogue.',
-  'PRIORITY 1 STYLE IDENTITY: preserve the selected presenter/faceless/POV/hand-led perspective, environment, physical action, emotional tone, buyer-information purpose and audio behaviour. Universal rules may not erase the style identity.',
-  'PRIORITY 2 HUMAN REALISM: plausible physical scale, anatomy, grip, weight, gaze, body movement, smartphone optics, ambient environment and natural material rendering; use an ordinary Malaysian voice only when the effective audio mode includes speech.',
-  'PRIORITY 3 NATIVE CREATIVE STORYTELLING: Nexabot independently chooses the relevant buyer situation, grounded product point and believable ending. When the effective audio mode includes speech, it also creates the hook, natural Malaysian wording and selected CTA wording.',
-  'Resolve conflicts strictly in this priority order.',
+  '[REAL V3 COMPACT GLOBAL CONTRACT]',
+  'Create one continuous 15-second vertical 9:16 live-action affiliate video. Nexabot owns product interpretation, concept, scene details, hook, dialogue, voice, action and final video.',
+  'Follow the selected style identity and effective audio mode. Preserve the uploaded product, reference roles, realistic physics, selected CTA and modesty requirements.',
+  'Do not reproduce marketplace UI, the source screenshot composition, fake overlays or unsupported product claims.',
 ].join(' ');
 
 export const NEXABOT_PRODUCT_UNDERSTANDING_V10 = [
-  '[NEXABOT NATIVE PRODUCT UNDERSTANDING — PROVIDER OWNS CREATIVE THINKING]',
-  'Inspect the actual uploaded product reference. Identify readable brand and product name, recognizable category, ordinary intended purpose and the strongest relevant buyer situation supported by the image, customer context or reliable general product understanding.',
-  'Build a believable Malaysian buyer situation specific to this product and selected style. When the authoritative effective audio mode includes speech, independently create original persuasive Bahasa Melayu Malaysia dialogue rather than a generic category description or placeholder such as “kalau tengah survey produk ini, tengok yang ni dulu”. When the mode is Ambient, ASMR or No Speech, create no words or lip-sync.',
-  'Use a readable product name naturally when identifiable. Translate one supported function or confirmed fact into a meaningful everyday buyer benefit without claiming a measurable result that the evidence does not establish.',
-  'Do not narrate packaging, label visibility, hand movement or camera action unless that detail is materially useful to a buyer.',
-  'Image interpretation and model knowledge are not live internet research. Never invent ingredients, efficacy, medical outcomes, certification, price, popularity, review counts, testimonials, discounts or personal experience.',
+  '[NEXABOT NATIVE PRODUCT INTERPRETATION]',
+  'Inspect the uploaded image and independently recognize the product, readable identity, visible characteristics and ordinary category function. Do not assume live web research.',
+  'Create the product-specific concept and dialogue yourself within the selected style. Use only visible evidence and explicit customer facts; never invent capabilities, results, specifications, prices, certifications, popularity, testimonials or personal experience.',
 ].join(' ');
 
 export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
-  '[PAWARNA CREATIVE DNA — TEST A OWNER GOLD STANDARD]',
-  'Speak like a real Malaysian TikTok affiliate who has just noticed a useful selling angle and immediately shares it with another person: spontaneous, persuasive, product-specific and alive, never corporate, restrained, generic or compliance-led.',
-  'Open with an audience-relevant situation or problem that earns attention immediately. Introduce the recognizable product naturally, develop one meaningful supported selling point or everyday buyer benefit, use a short FOMO beat only when the reference or customer context supports it, then flow into the selected CTA.',
-  'Use fast but believable Malaysian Malay with irregular emphasis, connected words, small breaths, uneven yet fluent rhythm, natural pitch movement, occasional tiny hesitation and imperfect articulation. It must feel spoken in one take, not read from a script.',
-  'Do not pronounce every word with studio perfection. Let some transitions blend naturally, vary speed between phrases and emphasize only the emotionally useful words.',
-  'Nexabot chooses authentic local particles and wording from the product and style context. Never mechanically sprinkle eh, haa, weh, korang or tau, and never reuse one catalogue-wide hook or closing.',
-  'Keep the selling energy appropriate to the selected style: friendly, confident, excited, story-led, soft-sell or off-camera, without erasing the style’s visual identity.',
-  'Natural marketing language and benefit-led storytelling are welcome. Do not invent concrete specifications, regulated health or beauty outcomes, fake prices, unsupported review/sold counts, certifications or personal-use testimony.',
-  'Keep factual safeguards internal and silent. Never make the presenter sound like a compliance officer or replace an uncertain detail with formal disclaimer narration.',
-  'Deliver the selected CTA naturally once as part of the same conversation. When Tanpa CTA is selected, complete the selling thought naturally without inventing a CTA.',
+  '[PAWARNA CREATIVE DNA]',
+  'Sound like a real Malaysian affiliate speaking spontaneously to another person: persuasive, product-specific and alive, never corporate or scripted.',
+  'Nexabot chooses the hook, wording, rhythm and selling approach. Preserve the selected style’s friendly, energetic, calm, premium, faceless or practical personality without reusing one universal catchphrase.',
 ].join(' ');
 
 export const HUMAN_REALISM_MASTERPROMPT_V8 = [
-  '[HUMAN REALISM MASTERPROMPT V8] [REAL HUMAN PERFORMANCE DIRECTOR V8.3]',
-  'Create ordinary Malaysian creator behaviour, not polished commercial acting. Use irregular natural blinking, subtle breathing, relaxed jaw movement during pauses and believable facial-muscle transitions.',
-  'Do not stare into the lens throughout. Alternate motivated eye contact with one or two brief product glances; never use periodic blinking, repeated nodding, a frozen smile or a frozen final pose.',
-  'Maintain believable weight distribution, tiny posture and shoulder adjustments, and hands that react to the object’s plausible real weight. One purposeful gesture is better than decorative repeated motion.',
-  'Creator review: alternate naturally between the lens and product, with one small head movement and a restrained hand gesture.',
-  'First impression: use one spontaneous micro-reaction such as a slight eyebrow lift or half-smile; never exaggerated surprise.',
-  'Question and answer: show a brief thinking expression before the answer, then return gaze naturally to the lens.',
-  'Hand demonstration: use a real grip, believable object weight, correct finger contact, stable label and physical contact shadows.',
-  'POV: use credible first-person reach and restrained handheld movement, never floating or impossible camera travel.',
-  'Lifestyle: perform one small context-relevant action while speaking instead of posing motionless.',
-  'Soft sell: relaxed local speaking tone, never a commercial announcer voice or over-rehearsed sales performance.',
-  'Use environment-appropriate believable light, natural skin tones, consistent exposure and white balance, authentic material texture and physical shadows. No yellow cast, teal-orange grade, fake glow, excessive sharpening or plastic skin.',
+  '[REALISTIC HUMAN AND PRODUCT PHYSICS]',
+  'Use ordinary Malaysian creator behaviour, natural gaze, breathing and restrained gestures. Keep anatomy, grip, object weight, geometry, labels, contact shadows and movement physically believable and stable.',
+  'Use natural smartphone 1x perspective and one continuous take; no floating objects, impossible camera travel, morphing or frozen final pose.',
 ].join(' ');
 
 export const PAWARNA_TRUE_COLOR_REAL_V2 = [
-  '[PAWARNA TRUE COLOR™ — REAL V2 GLOBAL QUALITY FOUNDATION]',
-  'Bright, naturally exposed Malaysian smartphone footage. Neutral daylight-balanced white balance.',
-  'Genuinely neutral-white garments, walls, appliances and surfaces remain visually white, not cream or yellow. If the actual reference product is cream, beige or yellow, preserve that original identity exactly.',
-  'Preserve accurate garment, product and natural skin colours. Use fresh readable exposure, natural contrast and realistic material texture.',
-  'If the source image contains warm tungsten lighting, construct an appropriate neutral-daylight environment instead of inheriting its yellow cast.',
-  'No global yellow, amber, sepia, muddy brown, grey or desaturated cast; no teal-orange treatment.',
-  'No unnecessary cinematic grading, overprocessed HDR glow, plastic beauty enhancement, skin smoothing or artificial sharpening.',
-  'Keep the selected style’s own physically relevant environment; never replace all styles with one generic white room.',
+  '[TRUE-WHITE REAL PHONE COLOUR]',
+  'Use bright neutral everyday lighting and accurate natural skin and product colours. Genuinely white surfaces stay white; cream, beige, amber or coloured products keep their real source colour.',
+  'Avoid global yellow, cream, amber, sepia or muddy grading, synthetic HDR glow, skin smoothing and artificial sharpening. Keep the style-specific environment.',
 ].join(' ');
 
 export const PAWARNA_HUMAN_VOICE_REAL_V2 = [
-  '[PAWARNA HUMAN VOICE™ — REAL V2 GLOBAL QUALITY FOUNDATION]',
-  'Speak in authentic contemporary Malaysian Malay, like a real creator explaining something spontaneously to a friend.',
-  'Use conversational sentence structure, natural emphasis, varied pace and meaningful reactions to the visible product. Avoid formulaic promotional phrasing and forced local slang.',
-  'Do not habitually use filler words or stock phrases such as “lah”, “la”, “memang sesuai sangat”, “memang best”, “elok sangat”, “game changer”, “worth it”, “wajib cuba”, “yang paling best”, repeated “nak tengok detail” or “hari ini saya nak kongsikan”.',
-  'Do not repeatedly open unrelated videos with “korang” or another catalogue-wide catchphrase. Formulaic praise without a product-specific observation is not useful dialogue.',
-  'Do not repeatedly open videos with the same catchphrase, and do not replace these phrases with a new universal catchphrase.',
-  'Keep delivery natural and age-appropriate for the selected style; not every presenter should sound like a teenager.',
-  'Preserve the selected style’s own friendly, energetic, calm, premium, faceless or practical voice identity; this global foundation must not homogenize the catalogue.',
-  'Nexabot remains the sole writer of every spoken sentence; AffiMatik supplies voice direction, not a script.',
+  '[NATURAL MALAYSIAN VOICE]',
+  'Use authentic contemporary Bahasa Melayu Malaysia with conversational sentence structure, natural emphasis, varied pace and age-appropriate delivery.',
+  'Avoid formulaic ad phrases, forced slang, repeated “lah/la”, repeated “korang”, stock praise and robotic presenter cadence. Nexabot remains the sole writer of every spoken sentence.',
 ].join(' ');
 
 const VOICE_PERSONALITY_DIRECTIONS: Record<string, string> = {
@@ -114,17 +79,8 @@ const VOICE_PERSONALITY_DIRECTIONS: Record<string, string> = {
 };
 
 function productScaleDirective(product: ProductProfile): string {
-  const category = `${product.category} ${product.packagingFormat}`.toLowerCase();
-  const categoryGuide = /serum|beauty|cosmetic|bottle/.test(category)
-    ? 'Treat a serum or cosmetic bottle as a small palm-sized retail object unless the customer supplied other dimensions.'
-    : /supplement|health|wellness/.test(category)
-      ? 'Treat a retail supplement bottle or box as a normal hand-held pharmacy-sized object, never a giant jar.'
-      : /lamp|lighting/.test(category)
-        ? 'Keep a desk lamp plausibly sized beside furniture, a laptop and the presenter.'
-        : /organizer|kitchen|household/.test(category)
-          ? 'Keep the object plausibly sized against hands, counters, shelves and nearby household items.'
-          : 'Use conservative category-appropriate real-world scale against hands, furniture and the human body.';
-  return `[PRODUCT SCALE LOCK] ${categoryGuide} The product must appear naturally small and physically believable relative to a real human hand, tabletop and surrounding environment. For compact handheld products such as serum bottles, supplement bottles, cosmetics, sprays and similar products, target approximately 12–18% of the full video frame height, preferably approximately 15%. Never artificially enlarge the product for emphasis or use oversized hero-product framing. Maintain believable hand-to-product proportions and preserve realistic size when the product is lifted or moved. For larger products, preserve believable real-world dimensions rather than forcing them into the compact-product target. Preserve one consistent physical size throughout. Product identity, packaging, logos, labels, colours and shape must remain unchanged. Never enlarge the product for label readability, never infer exact dimensions from a screenshot, and use realistic grip, contact shadows and perspective.`;
+  void product;
+  return '[PRODUCT SCALE LOCK] Keep believable real-world scale against hands, body, furniture and surroundings. Compact handheld products should occupy approximately 12–18% of frame height, preferably about 15%; larger products retain their plausible real dimensions. Never enlarge for emphasis or label readability. Keep scale stable while moving.';
 }
 
 /**
@@ -145,10 +101,10 @@ export function getEngineDescription(engine: 'nexabot' | 'runninghub' | string):
 export interface CompilerOptions {
   callToAction?: CtaMode;
   isMuslimahModest?: boolean;
-  /** Historical input only. V10 never injects it into a new automatic job. */
+  /** Historical input only. REAL V3 never injects it into a new automatic job. */
   customScript?: string;
   customCta?: string;
-  /** Historical input only. Normalized to provider-owned dialogue in V10. */
+  /** Historical input only. Normalized to provider-owned dialogue in REAL V3. */
   scriptMode?: 'smart' | 'custom' | 'provider_auto' | string;
   creativeInstruction?: string;
   imageRole?: 'reference' | 'start_frame';
@@ -160,7 +116,7 @@ export interface CompilerOptions {
   niche?: string;
   voicePersonality?: string;
   storyboard?: string;
-  /** Historical input only. Ignored by the V10 compiler. */
+  /** Historical input only. Ignored by the REAL V3 compiler. */
   scriptVariant?: 'style' | 'direct' | 'helpful' | 'short' | 'story' | string;
   audioTreatment?: 'voiceover' | 'ambient' | 'asmr';
 }
@@ -288,19 +244,11 @@ export class DynamicPromptCompiler {
     const isMuslimah = options.isMuslimahModest ?? style.modestyLock;
     const isHandOnly = style.category === 'hand_demo' || style.category === 'product_handling' || style.category === 'pov' || style.id.startsWith('RH');
 
-    // -------------------------------------------------------------------------
-    // MASTERPROMPT LOCK V6 — LAYER 1: UNIVERSAL MANDATORY LOCKS
-    // -------------------------------------------------------------------------
-
-    // 1. PRODUCT IDENTITY MAX LOCK
     const identityLockDirectives = [
-      `[PRODUCT IDENTITY MAX LOCK]`,
-      `The uploaded product image is an authoritative identity reference for "${product.name}".`,
-      `Preserve exact product geometry, shape, proportions, cap, material, logo, brand, label, typography, and packaging colour with stable consistency across all frames.`,
+      '[PRODUCT IDENTITY LOCK]',
+      `The uploaded image is the authority for “${product.name}”. Preserve its recognizable shape, geometry, packaging, label, logo, colours and visible components consistently.`,
       productScaleDirective(product),
-      `Strictly NO product morphing, NO duplicate products, NO changing labels, NO changing packaging colours, NO missing caps, NO oversized containers, NO floating objects, NO artificial product rotation, NO sudden disappearance, NO unexpected object replacement.`,
-      `Never add a printed volume, size, specification, certification, ingredient, icon or word that is absent from the reference image. If small text is unreadable, leave it indistinct instead of inventing letters or numbers.`,
-      `[SCREENSHOT CONTAMINATION CONTROL] If the reference is a marketplace or social screenshot, isolate the physical product identity and ignore prices, ratings, reviews, usernames, comments, buttons, navigation bars, shopping icons, seller UI and app borders. Never reproduce the screenshot or phone screen in the footage.`,
+      'No morphing, duplication, missing components, changed label, invented printed detail or floating object. Leave unreadable text indistinct.',
     ].join(' ');
 
     const hasAvatarReference = Boolean(options.avatarName);
@@ -311,57 +259,38 @@ export class DynamicPromptCompiler {
       ? (duplicateProductReference ? 3 : 3)
       : (duplicateProductReference ? 3 : 2);
     const ingredientReferenceDirectives = [
-      '[INGREDIENT REFERENCE — NEVER FIRST FRAME LOCK]',
+      '[REFERENCE ROLE LOCK]',
       duplicateProductReference
-        ? 'Reference images 1 and 2 are intentionally IDENTICAL copies of the same product. They are duplicate ingredient/subject identity references only and must be interpreted as one physical product, never two products.'
-        : 'Reference image 1 is the product ingredient/subject identity reference. The remaining reference slots are reserved for the selected presenter and environment.',
-      'Every uploaded reference is guidance for identity or environment only. No reference image is a start frame, opening frame, storyboard frame, background plate, mandatory composition, crop, camera angle or layout template.',
-      'The first generated video frame must be a freshly composed live-action frame. Never reproduce, trace, extend, animate or closely match the product reference as the opening frame.',
-      isHandOnly
-        ? 'From the first instant, show a newly composed real-world scene with the physical product already grounded in the style-specific hand action.'
-        : 'From the first instant, show the presenter already inside a believable real-world location with the physical product naturally held or used according to the selected style.',
-      'The opening background, lighting arrangement, framing, scale, crop, perspective and hand placement must be visibly different from the isolated product reference.',
-      'Never begin with a static product cutout, the reference-image background, a white border, an isolated packaging shot, a zoom-out from the uploaded image, or a still-to-motion transition.',
-      'Natural movement must exist from frame zero: believable breathing or hand tension, a small gaze or wrist adjustment, and restrained handheld camera micro-shake.',
+        ? 'References 1 and 2 are byte-identical views of one product identity, never two products.'
+        : 'Reference 1 is the product identity; remaining references retain their assigned presenter or environment roles.',
+      'References are not start frames or composition templates. Build a fresh live-action scene and ignore screenshot UI, prices, ratings, app borders, buttons and source-image decoration.',
     ].join(' ');
 
-    // 2. ZERO UI / PLATFORM / WATERMARK LOCK
     const zeroUiLockDirectives = [
-      `[ZERO UI & WATERMARK LOCK]`,
-      `Full-frame vertical 9:16 aspect ratio footage naturally recorded in physical space, WITHOUT displaying any smartphone border, phone mockup frame, or screen bezel.`,
-      `Strictly NO TikTok logo, NO social media interface, NO user-added or fabricated watermark, NO phone frame, NO phone UI overlays, NO fake buttons, NO smartphone mockup, NO embedded video player, NO screen borders, NO playback controls, NO floating captions, NO UI overlay, NO picture-in-picture, NO yellow basket graphics, NO shopping app interface, NO username overlays, NO like/comment/share buttons. An authentic, unavoidable Nexabot Omni-Flash provider watermark is permitted; do not imitate or remove it.`,
-      `No decorative sparkles, glints, star stickers, lens flares, floating symbols or animated graphic effects.`,
+      '[CLEAN VIDEO LOCK]',
+      'Full-frame physical 9:16 footage with no marketplace/social UI, phone frame, fake buttons, captions, shopping graphics, decorative sparkles or fabricated watermark. An unavoidable provider watermark is permitted.',
     ].join(' ');
 
-    // 3. REALISTIC UGC / HUMAN REALISM LOCK (Includes smartphone 1x, iPhone 15 Pro, daylight 5500K)
     const realismDirectives = [
-      `[REALISTIC UGC PROFILE]`,
-      `Natural 1x smartphone camera optics, authentic neutral daylight where appropriate, single continuous 15-second handheld take, subtle micro-shake, realistic human skin with natural pores and textures, lifelike eye gaze, natural gravity and believable physical object contact.`,
-      `Begin immediately in the live physical scene. Treat the uploaded image solely as a product identity reference; never paste it in as a still introductory frame or automatically use it as the first video frame.`,
-      `Strictly NO jump cuts, NO push-in zoom, NO camera spin, NO crash pan, NO first-frame flash, NO synthetic colour grading, NO excessive cinematic effects, NO plastic skin, NO AI-generated look.`,
       HUMAN_REALISM_MASTERPROMPT_V8,
       PAWARNA_TRUE_COLOR_REAL_V2,
     ].filter(Boolean).join(' ');
 
-    // 4. SHARIAH MODESTY LOCK V5
     let modestyDirectives = '';
     if (isMuslimah) {
       if (isHandOnly) {
         modestyDirectives = [
-          `[SHARIAH MODESTY LOCK — HAND DEMO] Modesty Guardrail:`,
-          `Exactly ONE naturally proportioned adult hand with sleeve fully covering wrist at all times.`,
-          `Strictly NO rings, NO bracelets, NO nail polish, NO artificial nails. Exactly 5 natural fingers with normal realistic grip and anatomy.`,
+          '[SHARIAH MODESTY LOCK — HAND DEMO]',
+          'Use the style-required number of naturally proportioned adult hands. Sleeves cover wrists and forearms throughout; no rings, bracelets, nail polish or artificial nails.',
         ].join(' ');
       } else {
         modestyDirectives = [
-          `[SHARIAH MODESTY LOCK — PRESENTER] Modesty Guardrail:`,
-          `Adult modest Malaysian Muslimah presenter: Hijab labuh fully covering hair, neck, and chest securely.`,
-          `Loose-fitting modest clothing, long sleeves covering wrists at all times including arm transitions.`,
-          `Strictly NO transparent fabric, NO tight outfits, NO jewellery (no rings, no bracelets, no necklaces), NO unintended hair or neck exposure during movements.`,
+          '[SHARIAH MODESTY LOCK — PRESENTER]',
+          'Adult Malaysian Muslimah: hijab fully covers hair, neck and chest; clothing is loose and opaque; sleeves cover wrists and forearms throughout. No jewellery or unintended exposure.',
         ].join(' ');
       }
     } else {
-      modestyDirectives = `[MODESTY GUIDELINE] Modesty Guardrail: Model wears neat, modern casual everyday attire appropriate for general Malaysian audiences.`;
+      modestyDirectives = '[MODESTY GUIDELINE] Use neat, non-revealing everyday attire appropriate for a general Malaysian audience.';
     }
 
     const promptModules: UniversalPromptModules = {
@@ -404,8 +333,7 @@ export class DynamicPromptCompiler {
     promptModules: UniversalPromptModules,
     preflight: { isValid: boolean; errors: string[] }
   ): CompiledGenerationPrompt {
-    const ctaMode = options.callToAction || 'none';
-    const selectedCta = resolveCtaPhrase(ctaMode, options.customCta || '');
+    const selectedCta = resolveCtaPhrase(options.callToAction || 'none', options.customCta || '');
     const styleDirector = STYLE_DIRECTORS[style.id];
     if (!styleDirector) {
       preflight.errors.push(`Gaya ${style.id} tiada masterprompt rasmi.`);
@@ -429,25 +357,23 @@ export class DynamicPromptCompiler {
             ? 'Off-camera narrator creates original product-specific Malaysian Malay dialogue; no visible mouth speaks.'
             : 'No spoken dialogue, voiceover, narration or lip-sync.';
     const productContextDirective = product.usageContext?.trim()
-      ? `Customer-confirmed usage context: ${product.usageContext.trim()}. Use it only when physically compatible with the selected style.`
-      : 'No customer-confirmed usage context was supplied. Infer a physically and culturally relevant Malaysian setting cautiously from the recognizable product category and selected style. If category evidence is insufficient, use a neutral lived-in interior or neutral clean surface without assuming a kitchen, desk, bedroom, bathroom or other product-specific location.';
+      ? `Customer-confirmed usage context: “${product.usageContext.trim()}”. Use it only when compatible with the product image and selected style.`
+      : 'No customer-confirmed usage context. Nexabot chooses a believable Malaysian setting from the image, recognized category and selected style; use a neutral everyday setting when uncertain.';
     const observedPhysicalFacts = (product.observedPhysicalFacts || []).map((fact) => fact.trim()).filter(Boolean).slice(0, 10);
     const customerConfirmedFacts = (product.confirmedFeatures || []).map((fact) => fact.trim()).filter(Boolean).slice(0, 10);
     const unsupportedClaims = [...(product.unknownFields || []), ...(product.prohibitedClaims || [])].map((fact) => fact.trim()).filter(Boolean).slice(0, 20);
     const productEvidenceContract = [
-      '[PRODUCT EVIDENCE CONTRACT — KEEP SOURCES SEPARATE]',
-      `Product identity metadata to verify against the uploaded image: “${product.name}”. The image remains the identity authority; a name is not evidence of a benefit.`,
-      `Reasonably identifiable category: “${product.category}”. Use this only to understand what kind of object it is and to choose a plausible scene. A category never proves efficacy, suitability, quality or a buyer outcome.`,
+      '[PRODUCT FACT BOUNDARY]',
+      `Customer-supplied identity metadata: “${product.name}”; category: “${product.category}”. Verify identity against the image. Category identifies ordinary function only and proves no result or quality.`,
       observedPhysicalFacts.length
-        ? `Image-observable physical facts: ${observedPhysicalFacts.map((fact) => `“${fact}”`).join('; ')}. These facts describe visible construction or packaging only and must not be converted into performance claims.`
-        : 'No image-observable physical fact was supplied as trusted context. Inspect conservatively and do not invent one.',
+        ? `Customer-supplied visible facts: ${observedPhysicalFacts.map((fact) => `“${fact}”`).join('; ')}.`
+        : 'No customer-supplied visible facts.',
       customerConfirmedFacts.length
-        ? `Customer-confirmed facts: ${customerConfirmedFacts.map((fact) => `“${fact}”`).join('; ')}. Treat them as factual context only, never as prewritten dialogue, a testimonial or permission to infer another benefit.`
-        : 'No customer-confirmed functional or benefit fact was supplied. Nexabot may still express one ordinary buyer benefit that directly follows from the recognizable product purpose or reliable general product understanding, but must not invent a measurable result, concrete specification or regulated outcome.',
+        ? `Explicit customer facts: ${customerConfirmedFacts.map((fact) => `“${fact}”`).join('; ')}. They are context, not prewritten dialogue and not permission to infer another claim.`
+        : 'No explicit customer fact was supplied. Do not invent or imply a benefit. Discuss only visible characteristics or the ordinary category function.',
       unsupportedClaims.length
-        ? `Unsupported or unresolved claims: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Omit them entirely.`
-        : 'Any claim not supported by the uploaded identity/category or a customer-confirmed fact is unsupported and must be omitted.',
-      'Use the buyer problem and intended audience as natural storytelling context, not as proof of a guaranteed outcome. The dialogue may present the product as a relevant option without claiming guaranteed resolution.',
+        ? `Unverified or prohibited: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Omit them.`
+        : 'Omit every capability, result, specification, testimonial or performance claim not supported by the image or explicit customer facts.',
     ].join(' ');
 
     const selectedScene = getBuiltInScene(options.builtInSceneId);
@@ -457,32 +383,26 @@ export class DynamicPromptCompiler {
     const avatarReferenceIndex = duplicateProductReference ? 3 : 2;
     const backgroundReferenceIndex = hasAvatarReference ? 3 : (duplicateProductReference ? 3 : 2);
     const personalizationDirectives = [
-      '[PERSONALIZATION REFERENCES — ORDER AND ROLE LOCK]',
+      '[CUSTOMER CONFIGURATION]',
       duplicateProductReference
-        ? 'Reference images 1 and 2 are the same PRODUCT IDENTITY authority uploaded twice to reinforce ingredient/subject identity. They represent one product only and neither may become the first video frame.'
-        : 'Reference image 1 is the PRODUCT IDENTITY authority. Use it to preserve the exact product; it is not a mandatory first video frame.',
+        ? 'References 1 and 2 are identical copies of one product identity; never create two products.'
+        : 'Reference 1 is the product identity.',
       options.avatarName
-        ? `Reference image ${avatarReferenceIndex} is the selected PRESENTER IDENTITY reference named "${options.avatarName}". Preserve this adult person's recognizable face, skin tone, body proportions and modest appearance consistently. Do not blend the presenter with the product or copy the avatar image background.`
-        : 'No avatar reference is selected. Create an appropriate adult Malaysian presenter only when the style requires one.',
+        ? `Reference ${avatarReferenceIndex} is presenter identity “${options.avatarName}”; preserve the adult face, skin tone and modest appearance without copying its background.`
+        : 'No presenter reference; create an adult Malaysian presenter only if the style needs one.',
       options.backgroundName
-        ? `Reference image ${backgroundReferenceIndex} is the BACKGROUND/ENVIRONMENT reference named "${options.backgroundName}". Recreate its spatial character and setting only; never turn objects from that image into the product or presenter and never use it as a frozen opening frame.`
+        ? `Reference ${backgroundReferenceIndex} is environment “${options.backgroundName}”; use its setting only, never its objects as product or presenter.`
         : selectedScene
-          ? `Use this customer-selected textual environment: ${selectedScene.directive}. This is a scene direction, not an image reference.`
-          : 'Choose a believable environment appropriate to the actual product category.',
-      options.niche && options.niche !== 'auto' ? `Customer-selected niche: ${options.niche}. Adapt buyer context and demonstrations to this niche without inventing product facts.` : '',
-      options.voicePersonality && options.voicePersonality !== 'auto' ? `Customer-selected speaking personality: ${options.voicePersonality}. ${VOICE_PERSONALITY_DIRECTIONS[options.voicePersonality] || ''} Preserve the style identity while applying this vocal performance.` : '',
-      options.storyboard && options.storyboard !== 'auto' ? `Customer-selected storyboard: ${options.storyboard}. Use it only when physically appropriate to the reference product.` : '',
-      'Never quietly substitute, merge or ignore a selected reference. If a reference conflicts with safety or cannot be followed, keep the product identity authoritative and avoid fabricating substitute identities.',
-      'For every PRODUCT reference, preserve the physical product identity but exclude its source composition: do not copy the original surface, decorative props, lighting pattern, shadows, camera crop, perspective or object arrangement. Marketplace UI, prices, ratings, buttons and seller decoration are never scene elements.',
-      'Build a visibly independent live-action scene from the selected style and grounded category. Do not animate, extend or reconstruct the uploaded product screenshot as the opening shot.',
+          ? `Customer-selected environment: ${selectedScene.directive}`
+          : '',
+      options.niche && options.niche !== 'auto' ? `Customer niche: ${options.niche}.` : '',
+      options.voicePersonality && options.voicePersonality !== 'auto' ? `Voice personality: ${options.voicePersonality}. ${VOICE_PERSONALITY_DIRECTIONS[options.voicePersonality] || ''}` : '',
+      options.storyboard && options.storyboard !== 'auto' ? `Storyboard preference: ${options.storyboard}.` : '',
     ].filter(Boolean).join(' ');
 
     const commonTruthfulness = [
-      'Use natural benefit-oriented affiliate language around a recognizable ordinary product purpose or customer-confirmed fact. Do not invent objectively false concrete specifications, ingredients, certifications, regulated outcomes, prices, review/sold counts, popularity signals, discounts or personal testimonials.',
-      'For supplements, health and beauty products, do not promise diagnosis, treatment, prevention, guaranteed bodily change or another regulated outcome that the supplied evidence does not establish. Keep this safeguard internal; never speak it as a disclaimer.',
-      'Never claim personal use, purchase or ownership on behalf of the presenter, and never invent a testimonial. Sell through the product-relevant buyer situation instead.',
-      'Do not call a product wireless, rechargeable, battery-powered or cable-free unless that exact fact is customer-confirmed or unmistakably readable. Use Malaysian Malay; avoid Indonesian forms such as kamu, coba, kesehatan, ianya and banget.',
-      'Do not repeat the same claim, CTA or meaning merely to fill time, but allow natural conversational linking and expressive emphasis.',
+      '[TRUTHFULNESS LOCK] Use only visible evidence and explicit customer facts. Never claim personal use, efficacy, medical/beauty outcome, measurable performance, material, ingredient, certification, price, stock, popularity, discount or testimonial without direct support.',
+      'When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit. Keep this rule silent rather than speaking a disclaimer.',
     ].join(' ');
 
     const providerDialogueDirective = !hasSpeech
@@ -499,46 +419,31 @@ export class DynamicPromptCompiler {
           MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
           PAWARNA_HUMAN_VOICE_REAL_V2,
           '[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]',
-          'AffiMatik has not supplied, generated, previewed or approved spoken sentences. Inspect the uploaded product reference and independently write original natural Malaysian Malay dialogue and lip-sync.',
-          `Follow the unique ${style.id} scene purpose, opening, buyer situation, product interaction, speaking personality, camera direction and ending. Create a full spontaneous affiliate flow with an attention-grabbing hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or complete natural ending.`,
-          'Never narrate camera framing, bottle rotation, hand movement, label visibility, product colour or packaging appearance.',
-          selectedCta ? `Customer-selected CTA intent: ${ctaMode}. The intended target is “${selectedCta}”. Deliver it naturally once near the conversational ending without changing into an announcer voice; never add CTA graphics or repeat it. This CTA is the final spoken utterance. Once its last word is complete, add no new word, syllable, phoneme, tagline, thanks, outro, filler or corrupted speech.` : 'The customer selected Tanpa CTA. Do not add a spoken call to action; complete the persuasive product thought naturally instead.',
-          options.creativeInstruction ? 'The customer-authored Creative Directive may include their own requested wording. Preserve it as direction without AffiMatik rewriting, completing or paraphrasing it.' : '',
-          'Distribute meaningful speech across most of the 15-second clip with natural pace variation. Do not rush mechanically, force a premature silent gap, drag words, repeat filler or use a generic fallback. Complete the final utterance before the cut and let the physical performance end naturally.',
+          `Nexabot independently creates the ${style.id} hook, dialogue, selling approach and visual actions from the product image and customer facts. AffiMatik provides no spoken sentences.`,
+          selectedCta ? `Customer CTA: “${selectedCta}”. Speak it naturally once as the final utterance, fully before the cut, with no later word or repetition.` : 'Customer selected no CTA. Do not invent one.',
+          options.creativeInstruction ? 'Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue.' : '',
         ].filter(Boolean).join(' ');
 
-    // Deliberate final payload order: production contract, style director,
-    // product/context, human performance, one effective audio mode, safety
-    // locks, then the natural ending contract.
     const criticalContract = [
-      '[1. CRITICAL PRODUCTION CONTRACT]',
       promptModules.criticalContract,
       hasSpeech ? NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 : '',
-      'Create one continuous 15-second vertical 9:16 live-action shot.',
     ].filter(Boolean).join(' ');
     const productAndContext = [
-      '[3. PRODUCT UNDERSTANDING AND CONTEXT]',
       promptModules.productUnderstanding,
       productEvidenceContract,
       productContextDirective,
       personalizationDirectives,
-      options.creativeInstruction ? `Customer Creative Directive: ${options.creativeInstruction}` : '',
+      options.creativeInstruction ? `Customer Creative Directive (verbatim): ${options.creativeInstruction}` : '',
     ].filter(Boolean).join(' ');
-    const humanPerformance = `[4. HUMAN PERFORMANCE AND SCENE BEHAVIOUR] ${promptModules.humanPerformance}`;
-    const necessaryLocks = `[6. NECESSARY SAFETY AND VISUAL LOCKS] ${promptModules.safetyLocks} ${commonTruthfulness}`;
-    const endingRequirements = hasSpeech
-      ? selectedCta
-        ? '[7. ENDING REQUIREMENTS] Bring the selected CTA in near the natural conversational ending, normally during the final few seconds according to the actual speaking rhythm. Complete every CTA word before the 15-second cut. After its last word, generate no additional word, syllable, phoneme, repetition, thanks, tagline, filler or corrupted speech. Do not force a long silent gap; let the remaining natural physical action and room sound resolve the take.'
-        : '[7. ENDING REQUIREMENTS] Use meaningful natural speech across most of the clip and complete the final selling thought before the 15-second cut. Do not force an early ending, long silent gap, repeated recap or abrupt cutoff; let voice and style-specific physical action resolve together like one real take.'
-      : '[7. ENDING REQUIREMENTS] Complete the style-specific physical action, let grip, gravity, contact and ambient sound settle naturally, and never freeze or end with an abrupt cut.';
     const visualPrompt = [
       criticalContract,
-      `[2. SELECTED STYLE FULL CREATIVE DIRECTION] ${styleSpecificPrompt}`,
+      styleSpecificPrompt,
       productAndContext,
-      humanPerformance,
-      `[5. VOICE OR AUDIO DIRECTION] ${effectiveAudioDirective} ${providerDialogueDirective}`,
-      necessaryLocks,
-      endingRequirements,
+      promptModules.humanPerformance,
+      effectiveAudioDirective,
+      providerDialogueDirective,
+      promptModules.safetyLocks,
+      commonTruthfulness,
     ].filter(Boolean).join(' ');
     const fullPayload = visualPrompt;
 
@@ -551,7 +456,7 @@ export class DynamicPromptCompiler {
       audioDirective,
       safetyRules: [
         `AffiMatik Voice (15s) effective audio mode: ${effectiveAudioMode}`,
-        'Pawarna Masterprompt Director V10 priority system enforced',
+        'AffiMatik REAL V3 compact provider contract enforced',
         'No Indonesia loanwords or slang',
         'Zero UI, no TikTok logo, no phone frame',
         'No unverified medical or cosmetic claims',

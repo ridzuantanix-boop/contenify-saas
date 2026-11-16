@@ -40,12 +40,12 @@ describe('AffiMatik V7 Personalization Studio', () => {
       avatarName: 'Aina Creator', backgroundName: 'Dapur Putih', niche: 'kitchen', voicePersonality: 'friendly',
       storyboard: 'step_by_step', callToAction: 'none', creativeInstruction: 'Demonstrate one safe ordinary action.',
     });
-    expect(compiled.providerPrompt).toContain('Reference image 1 is the PRODUCT IDENTITY authority');
-    expect(compiled.providerPrompt).toContain('Reference image 2 is the selected PRESENTER IDENTITY');
-    expect(compiled.providerPrompt).toContain('Reference image 3 is the BACKGROUND/ENVIRONMENT');
-    expect(compiled.providerPrompt).toContain('not a mandatory first video frame');
-    expect(compiled.providerPrompt).toContain('Customer-selected storyboard: step_by_step');
-    expect(compiled.providerPrompt).toContain('Do not add a spoken call to action');
+    expect(compiled.providerPrompt).toContain('Reference 1 is the product identity');
+    expect(compiled.providerPrompt).toContain('Reference 2 is presenter identity “Aina Creator”');
+    expect(compiled.providerPrompt).toContain('Reference 3 is environment “Dapur Putih”');
+    expect(compiled.providerPrompt).toContain('References are not start frames or composition templates');
+    expect(compiled.providerPrompt).toContain('Storyboard preference: step_by_step');
+    expect(compiled.providerPrompt).toContain('Customer selected no CTA. Do not invent one');
     expect(compiled.spokenScript).toBeUndefined();
     expect(compiled.providerPrompt).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
   });

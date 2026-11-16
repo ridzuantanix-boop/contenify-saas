@@ -566,23 +566,18 @@ export function compileEffectiveAudioDirective(spec: StyleDirectorSpec, effectiv
 }
 
 export function compileStyleDirector(spec: StyleDirectorSpec, productName: string): string {
-  const pawarnaApplication = PAWARNA_STYLE_CREATIVE_APPLICATIONS[spec.id];
-  if (!pawarnaApplication) throw new Error(`Missing Pawarna Creative DNA application for ${spec.id}`);
+  void productName;
   return [
-    `[STYLE ${spec.id} — AUTHORITATIVE CREATIVE DIRECTOR]`,
-    `Pawarna Creative DNA application: ${pawarnaApplication}`,
-    `Creative concept: ${spec.concept}`,
-    `Intended audience experience: ${spec.audienceExperience}`,
-    `Opening visual behaviour: ${spec.openingVisual}`,
-    `Shot composition: ${spec.shotComposition}`,
-    `Scene-selection logic: ${spec.sceneSelection}`,
-    `Product interaction: ${spec.productInteraction}`,
-    `Presenter visibility: ${spec.presenterVisibility}`,
-    `Human acting behaviour: ${spec.humanPerformance}`,
-    `Storytelling objective: ${spec.storytellingObjective}`,
-    `Relevant product information: ${spec.relevantProductInformation}`,
-    `Natural ending: ${spec.naturalEnding}`,
-    `Style-specific hard failures: ${spec.hardFailures.join('; ')}.`,
-    `Exact product identity reference metadata: "${productName}". The uploaded image guides identity and must not be copied as the first frame.`,
+    `[STYLE ${spec.id} — PREDEFINED CONFIGURATION]`,
+    `Concept: ${spec.concept}`,
+    `Opening: ${spec.openingVisual}`,
+    `Camera: ${spec.shotComposition}`,
+    `Scene boundary: ${spec.sceneSelection}`,
+    `Interaction: ${spec.productInteraction}`,
+    `Presenter: ${spec.presenterVisibility}`,
+    `Performance: ${spec.humanPerformance}`,
+    `Information boundary: ${spec.relevantProductInformation}`,
+    `Ending: ${spec.naturalEnding}`,
+    `Avoid for this style: ${spec.hardFailures.join('; ')}.`,
   ].join(' ');
 }
