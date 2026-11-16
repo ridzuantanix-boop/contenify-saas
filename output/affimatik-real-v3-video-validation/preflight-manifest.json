@@ -1,0 +1,209 @@
+{
+  "campaign": "AFFIMATIK_REAL_V3_CONTROLLED_VIDEO_VALIDATION",
+  "preparedAt": "2026-11-16T11:40:15.354Z",
+  "sourceCommit": "7092d1daf3582f8a53b4bfcba5ff74fecd4f2626",
+  "authorizationState": "AWAITING_OWNER_PAID_TEST_APPROVAL",
+  "submissionCount": 0,
+  "customerWalletImpact": "NONE",
+  "productionImpact": "NONE",
+  "liveProviderPreflight": {
+    "checked": true,
+    "model": "omni_flash",
+    "mode": "i2v",
+    "duration": 15,
+    "resolution": "720p",
+    "ratio": "9:16",
+    "unitCost": 0.3,
+    "proposedTotal": 1.2,
+    "supplierBalance": 8.33,
+    "activeJobs": 0,
+    "withinProposedBudget": true
+  },
+  "fairness": {
+    "sameOriginalReferenceBytes": true,
+    "sameReferenceCountAndOrder": true,
+    "sameModelDurationResolutionRatio": true,
+    "sameCta": true,
+    "intendedDifference": "REAL V3 compiled provider prompt; obsolete REAL V2 label removed from otherwise equivalent harness directive."
+  },
+  "hardGuards": {
+    "maximumSubmissions": 4,
+    "onePerStyle": true,
+    "automaticRetries": false,
+    "ambiguous5xxRequiresReconciliation": true
+  },
+  "jobs": [
+    {
+      "styleId": "NX01",
+      "styleName": "Sembang Kawan Santai",
+      "status": "PREPARED_NOT_SUBMITTED",
+      "baseline": {
+        "taskId": "8d0aeb64cde554e3",
+        "credit": 0.3,
+        "promptLength": 24728,
+        "promptSha256": "da0480866f5a0baf01eb3a1aa5fcf6a7ea8f446ea1047175bfd18ee9481af324",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX01-8d0aeb64cde554e3.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX01.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX01.jpg"
+      },
+      "reference": {
+        "label": "Owner-authorized S-HERB screenshot",
+        "path": "C:/Users/user/.codex/codex-remote-attachments/01a1a93c-06c3-7a63-9909-599706e05606/A26B9D5E-5503-41BD-9CCF-A94B485CE8DF/1-Photo-1.jpg",
+        "sha256": "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+        "bytes": 115340,
+        "mediaCount": 2,
+        "mediaOrder": [
+          "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+          "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824"
+        ]
+      },
+      "provider": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "duration": 15,
+        "resolution": 720,
+        "ratio": 2,
+        "useUnlimited": false
+      },
+      "cta": "tekan beg kuning",
+      "realV3": {
+        "promptVersion": "affimatik-real-v3-nexabot-creative-autonomy",
+        "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\prompts\\NX01.txt",
+        "promptLength": 8889,
+        "promptSha256": "78990c87fe79607df48aed9c62da4b694177f30d860a281d0f8fcfc91d025cee",
+        "idempotencyKey": "affimatik-real-v3-validation-nx01-78990c87fe79-9257fcbe6cee",
+        "exactPayloadPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\payloads-private\\NX01.json",
+        "exactPayloadBytes": 316705
+      }
+    },
+    {
+      "styleId": "NX09",
+      "styleName": "Produk Bergerak + Voiceover",
+      "status": "PREPARED_NOT_SUBMITTED",
+      "baseline": {
+        "taskId": "f03c8c1ab55d1bd9",
+        "credit": 0.3,
+        "promptLength": 24491,
+        "promptSha256": "b28f9829db72abf2f931f77fd2857be1a8490c23d639a4f7140839e0167cfadd",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX09-f03c8c1ab55d1bd9.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX09.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX09.jpg"
+      },
+      "reference": {
+        "label": "AROMAÉ home-mist test fixture",
+        "path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\scripts\\release\\assets\\premium-products\\aromae-home-mist.png",
+        "sha256": "637df91b906392841b36480e0a3a07ce75646fa6c7269a68e9285145564b9469",
+        "bytes": 2370870,
+        "mediaCount": 2,
+        "mediaOrder": [
+          "637df91b906392841b36480e0a3a07ce75646fa6c7269a68e9285145564b9469",
+          "637df91b906392841b36480e0a3a07ce75646fa6c7269a68e9285145564b9469"
+        ]
+      },
+      "provider": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "duration": 15,
+        "resolution": 720,
+        "ratio": 2,
+        "useUnlimited": false
+      },
+      "cta": "kalau nak semak, boleh tekan di bawah",
+      "realV3": {
+        "promptVersion": "affimatik-real-v3-nexabot-creative-autonomy",
+        "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\prompts\\NX09.txt",
+        "promptLength": 8746,
+        "promptSha256": "9bc0b3a3d148b1b250f6fd60e2155351b55a61e41ca37304ed629bf1c598db41",
+        "idempotencyKey": "affimatik-real-v3-validation-nx09-9bc0b3a3d148-637df91b9063",
+        "exactPayloadPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\payloads-private\\NX09.json",
+        "exactPayloadBytes": 6331306
+      }
+    },
+    {
+      "styleId": "NX23",
+      "styleName": "Tudung Styling",
+      "status": "PREPARED_NOT_SUBMITTED",
+      "baseline": {
+        "taskId": "e19e840ffc59f3cf",
+        "credit": 0.3,
+        "promptLength": 25531,
+        "promptSha256": "33b443724de29532d25ee3df6d4c4a36acc0ef06b013b0dbf1fa732d7ff161a1",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX23-e19e840ffc59f3cf.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX23.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX23.jpg"
+      },
+      "reference": {
+        "label": "Tudung mannequin fixture",
+        "path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\expansion-v1-real-qa\\fixtures\\NX23-tudung.jpg",
+        "sha256": "1843370064abc23e09f23f1387b3a364e40e35f1c8e000c6c2c760f5c7324a10",
+        "bytes": 3421189,
+        "mediaCount": 2,
+        "mediaOrder": [
+          "1843370064abc23e09f23f1387b3a364e40e35f1c8e000c6c2c760f5c7324a10",
+          "1843370064abc23e09f23f1387b3a364e40e35f1c8e000c6c2c760f5c7324a10"
+        ]
+      },
+      "provider": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "duration": 15,
+        "resolution": 720,
+        "ratio": 2,
+        "useUnlimited": false
+      },
+      "cta": "tengok detail dekat bawah",
+      "realV3": {
+        "promptVersion": "affimatik-real-v3-nexabot-creative-autonomy",
+        "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\prompts\\NX23.txt",
+        "promptLength": 9578,
+        "promptSha256": "7c446370e7f38dc563f7aa6fa5c925610cd08a712f7e5d5c6b9011f004abdbfc",
+        "idempotencyKey": "affimatik-real-v3-validation-nx23-7c446370e7f3-1843370064ab",
+        "exactPayloadPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\payloads-private\\NX23.json",
+        "exactPayloadBytes": 9133015
+      }
+    },
+    {
+      "styleId": "NX27",
+      "styleName": "Kuali Cooking Demo",
+      "status": "PREPARED_NOT_SUBMITTED",
+      "baseline": {
+        "taskId": "72284443073a1428",
+        "credit": 0.3,
+        "promptLength": 25996,
+        "promptSha256": "2e9d61cad4ea4848f97abe89742e4c8631eb34b33e9de9727b30b7620d88c3e5",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX27-72284443073a1428.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX27.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX27.jpg"
+      },
+      "reference": {
+        "label": "Wok fixture",
+        "path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\expansion-v1-real-qa\\fixtures\\NX27-wok.jpg",
+        "sha256": "3a18b438691246dd8545edb0a65cad59bf7aae27ee642176fb06a515aa0be663",
+        "bytes": 1080348,
+        "mediaCount": 2,
+        "mediaOrder": [
+          "3a18b438691246dd8545edb0a65cad59bf7aae27ee642176fb06a515aa0be663",
+          "3a18b438691246dd8545edb0a65cad59bf7aae27ee642176fb06a515aa0be663"
+        ]
+      },
+      "provider": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "duration": 15,
+        "resolution": 720,
+        "ratio": 2,
+        "useUnlimited": false
+      },
+      "cta": "tekan beg kuning",
+      "realV3": {
+        "promptVersion": "affimatik-real-v3-nexabot-creative-autonomy",
+        "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\prompts\\NX27.txt",
+        "promptLength": 10013,
+        "promptSha256": "6b3359328504b4cdcd2dcf7927e11bc548bf4e4540e4b50ad0d2ea3025cdb1b9",
+        "idempotencyKey": "affimatik-real-v3-validation-nx27-6b3359328504-3a18b4386912",
+        "exactPayloadPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\payloads-private\\NX27.json",
+        "exactPayloadBytes": 2891201
+      }
+    }
+  ]
+}

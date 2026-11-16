@@ -1,0 +1,27 @@
+{
+  "campaign": "AFFIMATIK_REAL_V3_CONTROLLED_VIDEO_VALIDATION",
+  "authorizationState": "AWAITING_OWNER_PAID_TEST_APPROVAL",
+  "submissionIntents": 0,
+  "jobs": {
+    "NX01": {
+      "status": "PREPARED_NOT_SUBMITTED",
+      "idempotencyKey": "affimatik-real-v3-validation-nx01-78990c87fe79-9257fcbe6cee",
+      "taskId": null
+    },
+    "NX09": {
+      "status": "PREPARED_NOT_SUBMITTED",
+      "idempotencyKey": "affimatik-real-v3-validation-nx09-9bc0b3a3d148-637df91b9063",
+      "taskId": null
+    },
+    "NX23": {
+      "status": "PREPARED_NOT_SUBMITTED",
+      "idempotencyKey": "affimatik-real-v3-validation-nx23-7c446370e7f3-1843370064ab",
+      "taskId": null
+    },
+    "NX27": {
+      "status": "PREPARED_NOT_SUBMITTED",
+      "idempotencyKey": "affimatik-real-v3-validation-nx27-6b3359328504-3a18b4386912",
+      "taskId": null
+    }
+  }
+}
