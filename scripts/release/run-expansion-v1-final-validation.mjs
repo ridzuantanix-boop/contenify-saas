@@ -6,7 +6,11 @@ const apiKey = process.env.NEXABOT_API_KEY;
 if (!apiKey) throw new Error('NEXABOT_API_KEY is required.');
 
 const baseUrl = 'https://nexabot.id';
-const root = resolve('output/expansion-v1-final-validation');
+const runId = process.env.VALIDATION_RUN_ID?.trim();
+if (runId && !/^[a-z0-9-]+$/i.test(runId)) throw new Error('VALIDATION_RUN_ID contains unsupported characters.');
+const root = resolve(runId
+  ? `output/expansion-v1-final-validation-${runId}`
+  : 'output/expansion-v1-final-validation');
 const videosDir = resolve(root, 'videos');
 const statePath = resolve(root, 'provider-state.json');
 const manifestPath = resolve(root, 'manifest.json');

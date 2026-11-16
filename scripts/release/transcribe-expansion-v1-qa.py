@@ -12,7 +12,7 @@ AUDIO = ROOT / "audio"
 OUT = ROOT / "transcripts"
 OUT.mkdir(parents=True, exist_ok=True)
 
-model = WhisperModel("base", device="cpu", compute_type="int8")
+model = WhisperModel(os.environ.get("WHISPER_MODEL", "base"), device="cpu", compute_type="int8")
 
 for audio_path in sorted(AUDIO.glob("NX*.wav")):
     with wave.open(str(audio_path), "rb") as wav_file:
