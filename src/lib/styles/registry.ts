@@ -69,6 +69,11 @@ export const VIDEO_STYLES_REGISTRY: VideoStyle[] = [
   make({ id:'NX30',slug:'dapur-problem-solver',name:'Dapur Problem Solver',benefit:'Tugas dapur relatable diikuti penggunaan biasa produk',description:'Masalah praktikal dan demonstrasi ringkas tanpa janji prestasi.',category:'problem_solution',suitable:['kitchen','cookware','appliance','kitchen_tool'],action:'kitchen_task_problem_solver',camera:'task-level smartphone 1x continuous shot',tags:['kitchen','problem_solution','practical'],avatar:true,validation:'prompt_validated',direction:['Masalah dapur biasa dengan penyelesaian visual yang grounded','Buka di tengah satu tugas dapur yang dikenali','Relatable, pantas dan persuasive','Reaksi memahami lalu satu aksi penggunaan','Dapur Malaysia sebenar mengikut kategori','Tunjuk fungsi biasa tanpa before-after palsu','Tugas selesai secara natural dan CTA lengkap'] }),
 ];
 
+/** Public marketing/UI count derived from the published customer registry. */
+export const PUBLISHED_STYLE_COUNT = VIDEO_STYLES_REGISTRY.filter(
+  (style) => style.publicationStatus === 'published',
+).length;
+
 export function getVideoStyle(value: string): VideoStyle | undefined {
   const q = value?.trim().toLowerCase();
   return VIDEO_STYLES_REGISTRY.find((s) => s.id.toLowerCase() === q || s.slug.toLowerCase() === q || s.legacyAliasId?.toLowerCase() === q);

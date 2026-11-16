@@ -38,7 +38,7 @@ describe('Payment-first conversion Phase 2', () => {
     const billing = read('src/app/(dashboard)/billing/page.tsx');
     const register = read('src/app/register/page.tsx');
     for (const copy of [
-      'Daftar akaun dan terus bayar melalui QR', '+ 12 gaya lain di dalam studio', 'Clean MP4 (9:16)',
+      'Daftar akaun dan terus bayar melalui QR', 'PUBLISHED_STYLE_COUNT - 8', 'Clean MP4 (9:16)',
       'Buat Sendiri vs Guna AffiMatik', 'Akses Awal (Soft Launch)', '3. Sahkan Emel & Jana Video Pertama',
     ]) expect(page).toContain(copy);
     expect(register).toContain('Cipta Akaun & Terus ke QR');

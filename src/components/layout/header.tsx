@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sparkles, Bell, HelpCircle, LogOut, LogIn, Gift, Menu } from 'lucide-react';
+import { PUBLISHED_STYLE_COUNT } from '@/lib/styles/registry';
 
 export function Header({
   onMenuToggle,
@@ -77,7 +78,7 @@ export function Header({
         <div className="hidden md:flex items-center gap-2">
           <h1 className="text-xs sm:text-sm font-medium text-slate-500">
             Penjana Video AI Pasaran Malaysia &mdash;{' '}
-            <span className="text-slate-800 font-semibold">20 Gaya Voice V6 · 15s</span>
+            <span className="text-slate-800 font-semibold">{PUBLISHED_STYLE_COUNT} Gaya Video · 15s</span>
           </h1>
         </div>
       </div>

@@ -2,6 +2,7 @@
  * AFFIMATIK by Pawarna — Authoritative Billing & Pricing Configuration
  * Single source of truth for subscription plans, credit allowances, and generation costs.
  */
+import { PUBLISHED_STYLE_COUNT } from '@/lib/styles/registry';
 
 export interface PricingPlan {
   id: string;
@@ -50,7 +51,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
       '500 Kredit Sebulan',
       'Hingga 50 video Voice 15 saat',
       'Akses Penuh Video Style Library',
-      '20 gaya AffiMatik Voice V6',
+      `${PUBLISHED_STYLE_COUNT} gaya video AffiMatik`,
       'Video menegak 9:16',
     ],
   },
@@ -69,7 +70,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
       'Hingga 200 video Voice 15 saat',
       'Semua Ciri Starter',
       'RunningHub kekal tidak aktif',
-      '20 gaya AffiMatik Voice V6',
+      `${PUBLISHED_STYLE_COUNT} gaya video AffiMatik`,
     ],
   },
   {
@@ -83,7 +84,7 @@ export const AUTHORITATIVE_PLANS: PricingPlan[] = [
     features: [
       '8,000 Kredit Sebulan',
       'Hingga 800 video Voice 15 saat',
-      '20 gaya AffiMatik Voice V6',
+      `${PUBLISHED_STYLE_COUNT} gaya video AffiMatik`,
     ],
   },
 ];

@@ -25,7 +25,7 @@ import {
   ImageIcon,
   BookmarkPlus,
 } from 'lucide-react';
-import { VIDEO_STYLES_REGISTRY, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
+import { VIDEO_STYLES_REGISTRY, PUBLISHED_STYLE_COUNT, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
 import { getStyleMarketingMetadata } from '@/lib/styles/marketing-metadata';
 import { StylePosterMedia } from '@/components/styles/style-poster-media';
@@ -697,7 +697,7 @@ function VideoFactoryContent() {
             {/* Poster-first style gallery; video is requested only on hover/Preview. */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span>Pilih daripada 20 Gaya Video Rasmi:</span>
+                <span>Pilih daripada {PUBLISHED_STYLE_COUNT} Gaya Video Rasmi:</span>
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya dipaparkan</span>
               </div>
 

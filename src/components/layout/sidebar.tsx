@@ -25,6 +25,7 @@ import {
   ContactRound,
   FolderOpen,
 } from 'lucide-react';
+import { PUBLISHED_STYLE_COUNT } from '@/lib/styles/registry';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -32,7 +33,7 @@ const NAV_ITEMS = [
   { name: 'Cloud Auto Factory', href: '/auto-factory', icon: Cloud, badge: 'V9' },
   { name: 'Creator Profiles', href: '/creator-profiles', icon: ContactRound },
   { name: 'Product Folders', href: '/product-folders', icon: FolderOpen },
-  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: '20 Gaya' },
+  { name: 'Video Styles', href: '/styles', icon: Sparkles, badge: `${PUBLISHED_STYLE_COUNT} Gaya` },
   { name: 'Program Affiliate', href: '/affiliate', icon: BadgePercent },
   { name: 'Product Library', href: '/products', icon: ShoppingBag },
   { name: 'Avatar Library', href: '/avatars', icon: Users },

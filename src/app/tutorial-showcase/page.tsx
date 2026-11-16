@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PUBLISHED_STYLE_COUNT, VIDEO_STYLES_REGISTRY } from '@/lib/styles/registry';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -23,15 +24,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const styles = [
-  ['NX01', 'Sembang Kawan Santai'], ['NX02', 'Masalah Harian'], ['NX03', 'Demo Terus'],
-  ['NX05', 'Cerita Ringkas'], ['NX07', 'POV Pengguna'], ['NX09', 'Review Jujur'],
-  ['NX10', 'Unboxing Natural'], ['NX11', 'Hook Pantas'], ['NX12', 'Lifestyle Harian'],
-  ['NX13', 'Creator Profesional'], ['NX14', 'Soft Sell'], ['NX15', 'FAQ Produk'],
-  ['NX16', 'Kerja & Produktiviti'], ['NX17', 'Recommend Spontan'],
-  ['RH01', 'Product Hero'], ['RH02', 'Shelf Pick'], ['RH03', 'Ambient ASMR'],
-  ['RH04', 'Window Light'], ['RH17', 'Hands-on Detail'], ['RH19', 'Cinematic Product'],
-];
+const styles = VIDEO_STYLES_REGISTRY.map((style) => [style.id, style.name]);
 
 const steps = [
   ['1', 'Pilih folder produk', 'Pilih satu folder atau muat naik beberapa imej produk terus dari telefon.'],
@@ -163,7 +156,7 @@ export default function TutorialShowcasePage() {
         </section>
 
         <section data-tutorial-step="styles">
-          <SectionTitle eyebrow="05 · 20 Gaya Rasmi" title="Pilih visual yang sesuai untuk setiap produk" text="Setiap job mengunci gaya pilihan sebelum dihantar supaya tetapan tidak berubah di tengah proses." />
+          <SectionTitle eyebrow={`05 · ${PUBLISHED_STYLE_COUNT} Gaya Rasmi`} title="Pilih visual yang sesuai untuk setiap produk" text="Setiap job mengunci gaya pilihan sebelum dihantar supaya tetapan tidak berubah di tengah proses." />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{styles.map(([id, name]) => <article key={id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><img src={`/style-posters/${id}.webp`} alt={`Poster gaya ${id} ${name}`} className="aspect-[9/12] w-full object-cover" /><div className="p-3"><p className="text-xs font-black text-indigo-700">{id}</p><p className="mt-1 text-xs font-bold">{name}</p></div></article>)}</div>
         </section>
 

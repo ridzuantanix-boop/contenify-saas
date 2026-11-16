@@ -11,8 +11,8 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 describe('AffiMatik Sales Page Conversion V2', () => {
   it('opens with the customer problem, solution, real proof and exact RM19 CTA', () => {
     const page = read('src/app/page.tsx');
-    expect(page).toContain('Dari Screenshot Produk Terus Jadi');
-    expect(page).toContain('Penat nak fikir skrip');
+    expect(page).toContain('30 Gaya Video Affiliate.');
+    expect(page).toContain('Pilih, Personalize & Jana.');
     expect(page).toContain('Cuba 15 Video Pertama — RM19');
     expect(page).toContain('Satu gambar produk → satu video affiliate sebenar');
     expect(page).toContain('RM19 · 150 kredit · sah 180 hari');
@@ -22,7 +22,8 @@ describe('AffiMatik Sales Page Conversion V2', () => {
     const page = read('src/app/page.tsx');
     for (const copy of [
       'Produk Dalam Beg Kuning Makin Banyak',
-      'Masuk Screenshot Biasa. Keluar Video Affiliate Yang Hidup.',
+      'Produk Berbeza. Gaya Berbeza. Output Sebenar.',
+      'Video Anda. Avatar Anda. Background Anda.',
       'Tak Perlu Pandai Edit. Tak Perlu Tulis Skrip.',
       'Biar Sistem Jalan di Belakang Tabir',
       'Cara paling mudah untuk mula',
@@ -31,10 +32,23 @@ describe('AffiMatik Sales Page Conversion V2', () => {
     ]) expect(page).toContain(copy);
     expect(page).toContain('Screenshot biasa → video affiliate');
     expect(page).toContain("Demo {String(index+1).padStart(2,'0')}");
-    for (const id of ['NX21','NX22','NX23','NX24','NX25','NX26','NX27','NX28','NX29','NX30','NX01','NX02']) expect(page).toContain(id);
+    for (const id of ['NX21','NX23','NX25','NX28','NX29','NX30','NX01','NX02']) expect(page).toContain(id);
+    expect(page).not.toContain("{ id: 'NX27'");
     expect(page).toContain('Demo owner-approved');
     expect(page).not.toContain("{ id: 'RH03'");
     expect(page).not.toContain('Nova Lumi Table Lamp');
+  });
+
+  it('derives the 30-style claim from the published registry and shows real personalization evidence', () => {
+    const page = read('src/app/page.tsx');
+    const registry = read('src/lib/styles/registry.ts');
+    expect(page).toContain('PUBLISHED_STYLE_COUNT');
+    expect(registry).toContain("style.publicationStatus === 'published'");
+    expect(page).toContain('Paparan sebenar Creator Studio');
+    expect(page).toContain('/marketing/tutorials/affimatik-v10-mobile-poster.jpg');
+    expect(page).toContain('Upload avatar sendiri');
+    expect(page).toContain('Upload background sendiri');
+    expect(page).toContain('gaya faceless atau hand-only');
   });
 
   it('uses the genuine uploaded tutorial and matched product-to-video assets', () => {
@@ -120,7 +134,7 @@ describe('AffiMatik Sales Page Conversion V2', () => {
 
   it('removes stale V6 SEO metadata while preserving the admin manifest', () => {
     const layout = read('src/app/layout.tsx');
-    expect(layout).toContain('Jana Video Affiliate Dari Gambar Produk');
+    expect(layout).toContain('30 Gaya Video Affiliate Dengan Avatar & Background Sendiri');
     expect(layout).toContain('openGraph');
     expect(layout).not.toContain('AffiMatik Voice V6');
     expect(read('src/app/manifest.ts')).toContain("name: 'AffiMatik Admin & CRM'");

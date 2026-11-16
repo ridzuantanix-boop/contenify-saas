@@ -21,7 +21,7 @@ describe('public tutorial showcase', () => {
     for (const section of ['dashboard', 'creator-profiles', 'product-folders', 'auto-factory', 'styles', 'queue', 'video-library', 'billing']) {
       expect(source).toContain(`data-tutorial-step=\"${section}\"`);
     }
-    expect(source).toContain('20 Gaya Rasmi');
+    expect(source).toContain('PUBLISHED_STYLE_COUNT');
     expect(source).toContain('Daily Auto Run');
   });
 });
