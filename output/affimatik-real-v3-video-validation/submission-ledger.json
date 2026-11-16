@@ -1,27 +1,829 @@
 {
   "campaign": "AFFIMATIK_REAL_V3_CONTROLLED_VIDEO_VALIDATION",
-  "authorizationState": "AWAITING_OWNER_PAID_TEST_APPROVAL",
-  "submissionIntents": 0,
+  "authorizationState": "EXECUTED_NO_RETRIES",
+  "submissionIntents": 4,
   "jobs": {
     "NX01": {
-      "status": "PREPARED_NOT_SUBMITTED",
+      "status": "downloaded",
       "idempotencyKey": "affimatik-real-v3-validation-nx01-78990c87fe79-9257fcbe6cee",
-      "taskId": null
+      "taskId": "d90ca7de68428053",
+      "submissionIntentAt": "2026-11-16T12:02:35.801Z",
+      "promptSha256": "78990c87fe79607df48aed9c62da4b694177f30d860a281d0f8fcfc91d025cee",
+      "imageSha256": "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "promptSha256": "78990c87fe79607df48aed9c62da4b694177f30d860a281d0f8fcfc91d025cee",
+        "promptLength": 8889,
+        "media": [
+          {
+            "order": 1,
+            "sha256": "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+            "bytes": 115340
+          },
+          {
+            "order": 2,
+            "sha256": "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+            "bytes": 115340
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      },
+      "submissionHttpStatus": 202,
+      "initialResponse": {
+        "ok": true,
+        "job_id": "d90ca7de68428053",
+        "status": "queued",
+        "download_url": "/api/v1/jobs/d90ca7de68428053/download",
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "duration": 15,
+        "watermark": false,
+        "credit_cost": 0.3,
+        "unlimited": false,
+        "credit_balance": 8.03,
+        "est_seconds": 150
+      },
+      "reportedCreditCost": 0.3,
+      "submittedAt": "2026-11-16T12:02:37.010Z",
+      "pollHistory": [
+        {
+          "at": "2026-11-16T12:02:37.629Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:02:45.178Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:02:52.680Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:00.230Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:07.754Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:15.338Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:22.861Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:30.364Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:37.934Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:45.585Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:03:53.095Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:00.668Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:08.217Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:15.708Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:23.358Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:30.868Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Downloading result…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:38.373Z",
+          "httpStatus": 200,
+          "status": "done",
+          "progress": "Downloading result…",
+          "error": ""
+        }
+      ],
+      "finalProviderRecord": {
+        "id": "d90ca7de68428053",
+        "status": "done",
+        "mode": "i2v",
+        "prompt": "[REAL V3 COMPACT GLOBAL CONTRACT] Create one continuous 15-second vertical 9:16 live-action affiliate video. Nexabot owns product interpretation, concept, scene details, hook, dialogue, voice, action and final video. Follow the selected style identity and effective audio mode. Preserve the uploaded product, reference roles, realistic physics, selected CTA and modesty requirements. Do not reproduce marketplace UI, the source screenshot composition, fake overlays or unsupported product claims. [REAL V3 NATIVE SPEECH CONTRACT] Nexabot alone creates the hook, product-specific dialogue, Malaysian delivery and selling approach. AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording. Use natural contemporary Bahasa Melayu Malaysia with spontaneous selling energy, varied pace and clear product and CTA pronunciation. Avoid robotic advertising cadence, repeated filler, forced slang and catalogue-style phrasing. Use only image-supported information and explicit customer facts. If no benefit is supported, discuss a visible characteristic or the ordinary category function without implying testing, ownership or results. Keep the dialogue short enough to complete naturally within 15 seconds. When selected, speak the CTA once as the final utterance and finish it before the cut, with no repeated or corrupted speech afterward. [STYLE NX01 — PREDEFINED CONFIGURATION] Concept: A useful product find shared in the easy rhythm of a trusted friend. Opening: Presenter is already living in a believable product-relevant moment, notices the viewer and brings the product naturally into conversational focus. Camera: Eye-level handheld smartphone 1x medium shot; presenter, hands and product remain comfortably visible without hero-product framing. Scene boundary: Choose an ordinary Malaysian setting supported by the recognizable product category; if category evidence is weak, use a neutral lived-in room without category props. Interaction: Hold at credible scale near the torso, make one motivated glance and one small adjustment only when it supports the conversation. Presenter: Adult modest Malaysian presenter visible throughout with natural face, shoulders and hands. Performance: Relaxed shoulders, small smile, irregular blinking, one spontaneous gesture and changing eye contact between product and viewer. Information boundary: Prefer recognizable category purpose or one customer-confirmed fact; omit uncertain benefit language. Ending: Finish the thought, allow a small product glance or relaxed hold, and use the selected CTA once only when requested. Avoid for this style: catalogue-style feature list; generic greeting used across products; hard-sell urgency; frozen smile or presenter pose. [NEXABOT NATIVE PRODUCT INTERPRETATION] Inspect the uploaded image and independently recognize the product, readable identity, visible characteristics and ordinary category function. Do not assume live web research. Create the product-specific concept and dialogue yourself within the selected style. Use only visible evidence and explicit customer facts; never invent capabilities, results, specifications, prices, certifications, popularity, testimonials or personal experience. [PRODUCT FACT BOUNDARY] Customer-supplied identity metadata: “”; category: “”. Verify identity against the image. Category identifies ordinary function only and proves no result or quality. No customer-supplied visible facts. No explicit customer fact was supplied. Do not invent or imply a benefit. Discuss only visible characteristics or the ordinary category function. Unverified or prohibited: “Any product-specific attribute not clearly visible in the supplied image remains unverified.”; “Unsupported efficacy, medical outcome, specification, price, popularity, testimonial, guarantee and personal-use claim.”. Omit them. No customer-confirmed usage context. Nexabot chooses a believable Malaysian setting from the image, recognized category and selected style; use a neutral everyday setting when uncertain. [CUSTOMER CONFIGURATION] References 1 and 2 are identical copies of one product identity; never create two products. No presenter reference; create an adult Malaysian presenter only if the style needs one. Customer Creative Directive (verbatim): Use the two byte-identical references only as one product identity authority. Nexabot independently interprets the image and writes every product-specific spoken word. Preserve the selected style’s distinct scene, camera, performance and audio identity. Do not copy screenshot UI or source composition. Do not invent objectively false facts, regulated outcomes, personal experience, prices, reviews or performance guarantees. Keep compact handheld objects near the configured 12–18% scale target and larger garments or appliances at believable real-world dimensions. [REALISTIC HUMAN AND PRODUCT PHYSICS] Use ordinary Malaysian creator behaviour, natural gaze, breathing and restrained gestures. Keep anatomy, grip, object weight, geometry, labels, contact shadows and movement physically believable and stable. Use natural smartphone 1x perspective and one continuous take; no floating objects, impossible camera travel, morphing or frozen final pose. [TRUE-WHITE REAL PHONE COLOUR] Use bright neutral everyday lighting and accurate natural skin and product colours. Genuinely white surfaces stay white; cream, beige, amber or coloured products keep their real source colour. Avoid global yellow, cream, amber, sepia or muddy grading, synthetic HDR glow, skin smoothing and artificial sharpening. Keep the style-specific environment. [AUTHORITATIVE EFFECTIVE AUDIO MODE] Effective audio mode: SPOKEN PRESENTER. Warm colloquial Malaysian Malay, lightly animated and sincere; never announcer-like or over-familiar. The visible presenter speaks with accurate lip-sync. [PAWARNA CREATIVE DNA] Sound like a real Malaysian affiliate speaking spontaneously to another person: persuasive, product-specific and alive, never corporate or scripted. Nexabot chooses the hook, wording, rhythm and selling approach. Preserve the selected style’s friendly, energetic, calm, premium, faceless or practical personality without reusing one universal catchphrase. [NATURAL MALAYSIAN VOICE] Use authentic contemporary Bahasa Melayu Malaysia with conversational sentence structure, natural emphasis, varied pace and age-appropriate delivery. Avoid formulaic ad phrases, forced slang, repeated “lah/la”, repeated “korang”, stock praise and robotic presenter cadence. Nexabot remains the sole writer of every spoken sentence. [NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT] Nexabot independently creates the NX01 hook, dialogue, selling approach and visual actions from the product image and customer facts. AffiMatik provides no spoken sentences. Customer CTA: “tekan beg kuning”. Speak it naturally once as the final utterance, fully before the cut, with no later word or repetition. Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue. [PRODUCT IDENTITY LOCK] The uploaded image is the authority for “”. Preserve its recognizable shape, geometry, packaging, label, logo, colours and visible components consistently. [PRODUCT SCALE LOCK] Keep believable real-world scale against hands, body, furniture and surroundings. Compact handheld products should occupy approximately 12–18% of frame height, preferably about 15%; larger products retain their plausible real dimensions. Never enlarge for emphasis or label readability. Keep scale stable while moving. No morphing, duplication, missing components, changed label, invented printed detail or floating object. Leave unreadable text indistinct. [REFERENCE ROLE LOCK] References 1 and 2 are byte-identical views of one product identity, never two products. References are not start frames or composition templates. Build a fresh live-action scene and ignore screenshot UI, prices, ratings, app borders, buttons and source-image decoration. [CLEAN VIDEO LOCK] Full-frame physical 9:16 footage with no marketplace/social UI, phone frame, fake buttons, captions, shopping graphics, decorative sparkles or fabricated watermark. An unavoidable provider watermark is permitted. [SHARIAH MODESTY LOCK — PRESENTER] Adult Malaysian Muslimah: hijab fully covers hair, neck and chest; clothing is loose and opaque; sleeves cover wrists and forearms throughout. No jewellery or unintended exposure. [TRUTHFULNESS LOCK] Use only visible evidence and explicit customer facts. Never claim personal use, efficacy, medical/beauty outcome, measurable performance, material, ingredient, certification, price, stock, popularity, discount or testimonial without direct support. When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit. Keep this rule silent rather than speaking a disclaimer.",
+        "ratio": 2,
+        "aspect": 1,
+        "resolution": 720,
+        "duration": 15,
+        "error": "",
+        "progress": "Downloading result…",
+        "status_text": "Downloading result…",
+        "created_at": 1794830557059,
+        "started_at": 1794830595871,
+        "finished_at": 1794830671798,
+        "width": 720,
+        "height": 1280,
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "watermark": false,
+        "size_bytes": 4162747,
+        "has_file": true,
+        "storage_url": "https://bwcqhtntrfntnkjokihp.supabase.co/storage/v1/object/public/storage/media/2026/11/50e19e5f-3c88-4b03-adba-bc910ac5fa23.mp4",
+        "local_expires_at": null,
+        "local_fallback": false,
+        "source": null,
+        "plan_id": null,
+        "scene_index": null
+      },
+      "outputPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX01-d90ca7de68428053.mp4",
+      "outputBytes": 4162747,
+      "outputSha256": "ef9ab9b74e561dcb53609c8d695a50133314c1e15b2c40b9c25306255532d42c",
+      "downloadedAt": "2026-11-16T12:04:40.213Z",
+      "styleId": "NX01"
     },
     "NX09": {
-      "status": "PREPARED_NOT_SUBMITTED",
+      "status": "downloaded",
       "idempotencyKey": "affimatik-real-v3-validation-nx09-9bc0b3a3d148-637df91b9063",
-      "taskId": null
+      "taskId": "f36b9a12e0af43ab",
+      "submissionIntentAt": "2026-11-16T12:04:40.646Z",
+      "promptSha256": "9bc0b3a3d148b1b250f6fd60e2155351b55a61e41ca37304ed629bf1c598db41",
+      "imageSha256": "637df91b906392841b36480e0a3a07ce75646fa6c7269a68e9285145564b9469",
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "promptSha256": "9bc0b3a3d148b1b250f6fd60e2155351b55a61e41ca37304ed629bf1c598db41",
+        "promptLength": 8746,
+        "media": [
+          {
+            "order": 1,
+            "sha256": "637df91b906392841b36480e0a3a07ce75646fa6c7269a68e9285145564b9469",
+            "bytes": 2370870
+          },
+          {
+            "order": 2,
+            "sha256": "637df91b906392841b36480e0a3a07ce75646fa6c7269a68e9285145564b9469",
+            "bytes": 2370870
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      },
+      "submissionHttpStatus": 202,
+      "initialResponse": {
+        "ok": true,
+        "job_id": "f36b9a12e0af43ab",
+        "status": "queued",
+        "download_url": "/api/v1/jobs/f36b9a12e0af43ab/download",
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "duration": 15,
+        "watermark": false,
+        "credit_cost": 0.3,
+        "unlimited": false,
+        "credit_balance": 7.73,
+        "est_seconds": 150
+      },
+      "reportedCreditCost": 0.3,
+      "submittedAt": "2026-11-16T12:04:47.089Z",
+      "pollHistory": [
+        {
+          "at": "2026-11-16T12:04:47.583Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:04:55.322Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:03.019Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:10.505Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:18.092Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:25.687Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:33.642Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:41.248Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:48.805Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:05:56.377Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:03.930Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:11.599Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:19.122Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:26.662Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:34.269Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:41.825Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:49.347Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Downloading result…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:06:56.865Z",
+          "httpStatus": 200,
+          "status": "done",
+          "progress": "Downloading result…",
+          "error": ""
+        }
+      ],
+      "finalProviderRecord": {
+        "id": "f36b9a12e0af43ab",
+        "status": "done",
+        "mode": "i2v",
+        "prompt": "[REAL V3 COMPACT GLOBAL CONTRACT] Create one continuous 15-second vertical 9:16 live-action affiliate video. Nexabot owns product interpretation, concept, scene details, hook, dialogue, voice, action and final video. Follow the selected style identity and effective audio mode. Preserve the uploaded product, reference roles, realistic physics, selected CTA and modesty requirements. Do not reproduce marketplace UI, the source screenshot composition, fake overlays or unsupported product claims. [REAL V3 NATIVE SPEECH CONTRACT] Nexabot alone creates the hook, product-specific dialogue, Malaysian delivery and selling approach. AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording. Use natural contemporary Bahasa Melayu Malaysia with spontaneous selling energy, varied pace and clear product and CTA pronunciation. Avoid robotic advertising cadence, repeated filler, forced slang and catalogue-style phrasing. Use only image-supported information and explicit customer facts. If no benefit is supported, discuss a visible characteristic or the ordinary category function without implying testing, ownership or results. Keep the dialogue short enough to complete naturally within 15 seconds. When selected, speak the CTA once as the final utterance and finish it before the cut, with no repeated or corrupted speech afterward. [STYLE NX09 — PREDEFINED CONFIGURATION] Concept: Faceless tactile product focus accompanied by relaxed buyer-context narration. Opening: One covered-wrist hand already holds the product in a newly composed, category-relevant physical scene. Camera: Hand-level smartphone 1x close-medium framing; exactly one hand and no face, torso or reflected presenter. Scene boundary: Choose a surface and environment that fit the recognized category; otherwise use a neutral clean surface without kitchen, desk or bedroom assumptions. Interaction: One gentle 8–12 degree micro-tilt with believable weight, then stable hold; label identity stays consistent. Presenter: No presenter face or body; exactly one sleeve-covered adult hand. Performance: Natural grip pressure, tiny wrist correction and realistic contact shadows. Information boundary: Use intended category purpose or one confirmed consideration; never narrate colour, label or movement. Ending: Let the conversational CTA land near the end without extra speech afterward, or let sound-only mode settle naturally. Avoid for this style: visible presenter; second hand; narrating the tilt; mechanical shaking; speech in Ambient or ASMR mode. [NEXABOT NATIVE PRODUCT INTERPRETATION] Inspect the uploaded image and independently recognize the product, readable identity, visible characteristics and ordinary category function. Do not assume live web research. Create the product-specific concept and dialogue yourself within the selected style. Use only visible evidence and explicit customer facts; never invent capabilities, results, specifications, prices, certifications, popularity, testimonials or personal experience. [PRODUCT FACT BOUNDARY] Customer-supplied identity metadata: “”; category: “”. Verify identity against the image. Category identifies ordinary function only and proves no result or quality. No customer-supplied visible facts. No explicit customer fact was supplied. Do not invent or imply a benefit. Discuss only visible characteristics or the ordinary category function. Unverified or prohibited: “Any product-specific attribute not clearly visible in the supplied image remains unverified.”; “Unsupported efficacy, medical outcome, specification, price, popularity, testimonial, guarantee and personal-use claim.”. Omit them. No customer-confirmed usage context. Nexabot chooses a believable Malaysian setting from the image, recognized category and selected style; use a neutral everyday setting when uncertain. [CUSTOMER CONFIGURATION] References 1 and 2 are identical copies of one product identity; never create two products. No presenter reference; create an adult Malaysian presenter only if the style needs one. Customer Creative Directive (verbatim): Use the two byte-identical references only as one product identity authority. Nexabot independently interprets the image and writes every product-specific spoken word. Preserve the selected style’s distinct scene, camera, performance and audio identity. Do not copy screenshot UI or source composition. Do not invent objectively false facts, regulated outcomes, personal experience, prices, reviews or performance guarantees. Keep compact handheld objects near the configured 12–18% scale target and larger garments or appliances at believable real-world dimensions. [REALISTIC HUMAN AND PRODUCT PHYSICS] Use ordinary Malaysian creator behaviour, natural gaze, breathing and restrained gestures. Keep anatomy, grip, object weight, geometry, labels, contact shadows and movement physically believable and stable. Use natural smartphone 1x perspective and one continuous take; no floating objects, impossible camera travel, morphing or frozen final pose. [TRUE-WHITE REAL PHONE COLOUR] Use bright neutral everyday lighting and accurate natural skin and product colours. Genuinely white surfaces stay white; cream, beige, amber or coloured products keep their real source colour. Avoid global yellow, cream, amber, sepia or muddy grading, synthetic HDR glow, skin smoothing and artificial sharpening. Keep the style-specific environment. [AUTHORITATIVE EFFECTIVE AUDIO MODE] Effective audio mode: OFF-CAMERA VOICEOVER. Default is energetic, spontaneous off-camera Malaysian affiliate Malay with fast believable rhythm; Ambient or ASMR replaces all speech when explicitly selected. No visible mouth speaks. [PAWARNA CREATIVE DNA] Sound like a real Malaysian affiliate speaking spontaneously to another person: persuasive, product-specific and alive, never corporate or scripted. Nexabot chooses the hook, wording, rhythm and selling approach. Preserve the selected style’s friendly, energetic, calm, premium, faceless or practical personality without reusing one universal catchphrase. [NATURAL MALAYSIAN VOICE] Use authentic contemporary Bahasa Melayu Malaysia with conversational sentence structure, natural emphasis, varied pace and age-appropriate delivery. Avoid formulaic ad phrases, forced slang, repeated “lah/la”, repeated “korang”, stock praise and robotic presenter cadence. Nexabot remains the sole writer of every spoken sentence. [NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT] Nexabot independently creates the NX09 hook, dialogue, selling approach and visual actions from the product image and customer facts. AffiMatik provides no spoken sentences. Customer CTA: “kalau nak semak, boleh tekan di bawah”. Speak it naturally once as the final utterance, fully before the cut, with no later word or repetition. Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue. [PRODUCT IDENTITY LOCK] The uploaded image is the authority for “”. Preserve its recognizable shape, geometry, packaging, label, logo, colours and visible components consistently. [PRODUCT SCALE LOCK] Keep believable real-world scale against hands, body, furniture and surroundings. Compact handheld products should occupy approximately 12–18% of frame height, preferably about 15%; larger products retain their plausible real dimensions. Never enlarge for emphasis or label readability. Keep scale stable while moving. No morphing, duplication, missing components, changed label, invented printed detail or floating object. Leave unreadable text indistinct. [REFERENCE ROLE LOCK] References 1 and 2 are byte-identical views of one product identity, never two products. References are not start frames or composition templates. Build a fresh live-action scene and ignore screenshot UI, prices, ratings, app borders, buttons and source-image decoration. [CLEAN VIDEO LOCK] Full-frame physical 9:16 footage with no marketplace/social UI, phone frame, fake buttons, captions, shopping graphics, decorative sparkles or fabricated watermark. An unavoidable provider watermark is permitted. [SHARIAH MODESTY LOCK — HAND DEMO] Use the style-required number of naturally proportioned adult hands. Sleeves cover wrists and forearms throughout; no rings, bracelets, nail polish or artificial nails. [TRUTHFULNESS LOCK] Use only visible evidence and explicit customer facts. Never claim personal use, efficacy, medical/beauty outcome, measurable performance, material, ingredient, certification, price, stock, popularity, discount or testimonial without direct support. When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit. Keep this rule silent rather than speaking a disclaimer.",
+        "ratio": 2,
+        "aspect": 1,
+        "resolution": 720,
+        "duration": 15,
+        "error": "",
+        "progress": "Downloading result…",
+        "status_text": "Downloading result…",
+        "created_at": 1794830687122,
+        "started_at": 1794830742818,
+        "finished_at": 1794830810928,
+        "width": 720,
+        "height": 1280,
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "watermark": false,
+        "size_bytes": 3655771,
+        "has_file": true,
+        "storage_url": "https://bwcqhtntrfntnkjokihp.supabase.co/storage/v1/object/public/storage/media/2026/11/d2b58bc8-5d35-42cc-8856-4793f781e407.mp4",
+        "local_expires_at": null,
+        "local_fallback": false,
+        "source": null,
+        "plan_id": null,
+        "scene_index": null
+      },
+      "outputPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX09-f36b9a12e0af43ab.mp4",
+      "outputBytes": 3655771,
+      "outputSha256": "0aa0ff38118684f99d0402cf2d6055f38541a8e3c9a7038028bc5e447f892933",
+      "downloadedAt": "2026-11-16T12:07:00.388Z",
+      "styleId": "NX09"
     },
     "NX23": {
-      "status": "PREPARED_NOT_SUBMITTED",
+      "status": "downloaded",
       "idempotencyKey": "affimatik-real-v3-validation-nx23-7c446370e7f3-1843370064ab",
-      "taskId": null
+      "taskId": "85acb8b071cac165",
+      "submissionIntentAt": "2026-11-16T12:07:00.810Z",
+      "promptSha256": "7c446370e7f38dc563f7aa6fa5c925610cd08a712f7e5d5c6b9011f004abdbfc",
+      "imageSha256": "1843370064abc23e09f23f1387b3a364e40e35f1c8e000c6c2c760f5c7324a10",
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "promptSha256": "7c446370e7f38dc563f7aa6fa5c925610cd08a712f7e5d5c6b9011f004abdbfc",
+        "promptLength": 9578,
+        "media": [
+          {
+            "order": 1,
+            "sha256": "1843370064abc23e09f23f1387b3a364e40e35f1c8e000c6c2c760f5c7324a10",
+            "bytes": 3421189
+          },
+          {
+            "order": 2,
+            "sha256": "1843370064abc23e09f23f1387b3a364e40e35f1c8e000c6c2c760f5c7324a10",
+            "bytes": 3421189
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      },
+      "submissionHttpStatus": 202,
+      "initialResponse": {
+        "ok": true,
+        "job_id": "85acb8b071cac165",
+        "status": "queued",
+        "download_url": "/api/v1/jobs/85acb8b071cac165/download",
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "duration": 15,
+        "watermark": false,
+        "credit_cost": 0.3,
+        "unlimited": false,
+        "credit_balance": 7.43,
+        "est_seconds": 150
+      },
+      "reportedCreditCost": 0.3,
+      "submittedAt": "2026-11-16T12:07:11.275Z",
+      "pollHistory": [
+        {
+          "at": "2026-11-16T12:07:11.792Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:07:19.386Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:07:26.886Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:07:34.534Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:07:42.063Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:07:49.565Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:07:57.066Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Sending model — uploading input…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:04.600Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:12.115Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:19.688Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:27.256Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:34.750Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:42.368Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:49.867Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:08:57.392Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:09:04.982Z",
+          "httpStatus": 200,
+          "status": "done",
+          "progress": "Downloading result…",
+          "error": ""
+        }
+      ],
+      "finalProviderRecord": {
+        "id": "85acb8b071cac165",
+        "status": "done",
+        "mode": "i2v",
+        "prompt": "[REAL V3 COMPACT GLOBAL CONTRACT] Create one continuous 15-second vertical 9:16 live-action affiliate video. Nexabot owns product interpretation, concept, scene details, hook, dialogue, voice, action and final video. Follow the selected style identity and effective audio mode. Preserve the uploaded product, reference roles, realistic physics, selected CTA and modesty requirements. Do not reproduce marketplace UI, the source screenshot composition, fake overlays or unsupported product claims. [REAL V3 NATIVE SPEECH CONTRACT] Nexabot alone creates the hook, product-specific dialogue, Malaysian delivery and selling approach. AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording. Use natural contemporary Bahasa Melayu Malaysia with spontaneous selling energy, varied pace and clear product and CTA pronunciation. Avoid robotic advertising cadence, repeated filler, forced slang and catalogue-style phrasing. Use only image-supported information and explicit customer facts. If no benefit is supported, discuss a visible characteristic or the ordinary category function without implying testing, ownership or results. Keep the dialogue short enough to complete naturally within 15 seconds. When selected, speak the CTA once as the final utterance and finish it before the cut, with no repeated or corrupted speech afterward. [STYLE NX23 — PREDEFINED CONFIGURATION] Concept: A fully covered hijab presentation focused on drape, coverage and visible fabric behaviour without an undressing tutorial. Opening: Start with the hijab already correctly worn and fully covering hair, ears, neck and chest before one small edge adjustment. Camera: Chest-up smartphone 1x view with full chest coverage visible; one restrained side angle may show drape without cropping the coverage area. Scene boundary: Use a plain neutral daylight dressing wall physically unrelated to the source retail display. Do not inherit warm boutique lighting, cream décor or the source-image background; keep the black garment neutral rather than tinting the scene amber. Interaction: Adjust only the outer fabric edge or shoulder drape; never unwrap, expose underlayers or invent pins, patterns and decorative accessories. Presenter: Adult Muslimah presenter visible with complete hijab coverage and opaque long sleeves reaching the wrists at every frame. Performance: Gentle fabric touch, one natural head turn, relaxed blink and believable smile with no beauty-influencer posing. Information boundary: Only visible colour, pattern, shape, drape and customer-confirmed fabric facts; omit unsupported comfort, cooling, non-slip, easy-styling and time-saving claims. Ending: Maintain full coverage, transition directly into the selected CTA once with no repeated lead-in, then end with a small settled fabric hold and no post-CTA speech. Avoid for this style: hair ear neck or chest exposure; unwrap or scarf transformation; invented fabric comfort cooling convenience or time savings; repeated CTA lead-in or repeated invitation; beauty close-up that hides garment coverage. [NEXABOT NATIVE PRODUCT INTERPRETATION] Inspect the uploaded image and independently recognize the product, readable identity, visible characteristics and ordinary category function. Do not assume live web research. Create the product-specific concept and dialogue yourself within the selected style. Use only visible evidence and explicit customer facts; never invent capabilities, results, specifications, prices, certifications, popularity, testimonials or personal experience. [PRODUCT FACT BOUNDARY] Customer-supplied identity metadata: “”; category: “”. Verify identity against the image. Category identifies ordinary function only and proves no result or quality. No customer-supplied visible facts. No explicit customer fact was supplied. Do not invent or imply a benefit. Discuss only visible characteristics or the ordinary category function. Unverified or prohibited: “Any product-specific attribute not clearly visible in the supplied image remains unverified.”; “Unsupported efficacy, medical outcome, specification, price, popularity, testimonial, guarantee and personal-use claim.”. Omit them. No customer-confirmed usage context. Nexabot chooses a believable Malaysian setting from the image, recognized category and selected style; use a neutral everyday setting when uncertain. [CUSTOMER CONFIGURATION] References 1 and 2 are identical copies of one product identity; never create two products. No presenter reference; create an adult Malaysian presenter only if the style needs one. Customer Creative Directive (verbatim): Use the two byte-identical references only as one product identity authority. Nexabot independently interprets the image and writes every product-specific spoken word. Preserve the selected style’s distinct scene, camera, performance and audio identity. Do not copy screenshot UI or source composition. Do not invent objectively false facts, regulated outcomes, personal experience, prices, reviews or performance guarantees. Keep compact handheld objects near the configured 12–18% scale target and larger garments or appliances at believable real-world dimensions. [REALISTIC HUMAN AND PRODUCT PHYSICS] Use ordinary Malaysian creator behaviour, natural gaze, breathing and restrained gestures. Keep anatomy, grip, object weight, geometry, labels, contact shadows and movement physically believable and stable. Use natural smartphone 1x perspective and one continuous take; no floating objects, impossible camera travel, morphing or frozen final pose. [TRUE-WHITE REAL PHONE COLOUR] Use bright neutral everyday lighting and accurate natural skin and product colours. Genuinely white surfaces stay white; cream, beige, amber or coloured products keep their real source colour. Avoid global yellow, cream, amber, sepia or muddy grading, synthetic HDR glow, skin smoothing and artificial sharpening. Keep the style-specific environment. [AUTHORITATIVE EFFECTIVE AUDIO MODE] Effective audio mode: SPOKEN PRESENTER. Friendly lively Malaysian Malay that sounds like practical tudung sharing, not a formal styling class or beauty advertisement. Build the speech around one specific visible drape or coverage observation. Use varied contemporary sentence structure without repeatedly leaning on “sangat”, “memang”, “lah” or “la”. Move directly into the customer-selected CTA once; never preface, paraphrase or repeat its invitation such as “nak tengok detail”. The visible presenter speaks with accurate lip-sync. [PAWARNA CREATIVE DNA] Sound like a real Malaysian affiliate speaking spontaneously to another person: persuasive, product-specific and alive, never corporate or scripted. Nexabot chooses the hook, wording, rhythm and selling approach. Preserve the selected style’s friendly, energetic, calm, premium, faceless or practical personality without reusing one universal catchphrase. [NATURAL MALAYSIAN VOICE] Use authentic contemporary Bahasa Melayu Malaysia with conversational sentence structure, natural emphasis, varied pace and age-appropriate delivery. Avoid formulaic ad phrases, forced slang, repeated “lah/la”, repeated “korang”, stock praise and robotic presenter cadence. Nexabot remains the sole writer of every spoken sentence. [NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT] Nexabot independently creates the NX23 hook, dialogue, selling approach and visual actions from the product image and customer facts. AffiMatik provides no spoken sentences. Customer CTA: “tengok detail dekat bawah”. Speak it naturally once as the final utterance, fully before the cut, with no later word or repetition. Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue. [PRODUCT IDENTITY LOCK] The uploaded image is the authority for “”. Preserve its recognizable shape, geometry, packaging, label, logo, colours and visible components consistently. [PRODUCT SCALE LOCK] Keep believable real-world scale against hands, body, furniture and surroundings. Compact handheld products should occupy approximately 12–18% of frame height, preferably about 15%; larger products retain their plausible real dimensions. Never enlarge for emphasis or label readability. Keep scale stable while moving. No morphing, duplication, missing components, changed label, invented printed detail or floating object. Leave unreadable text indistinct. [REFERENCE ROLE LOCK] References 1 and 2 are byte-identical views of one product identity, never two products. References are not start frames or composition templates. Build a fresh live-action scene and ignore screenshot UI, prices, ratings, app borders, buttons and source-image decoration. [CLEAN VIDEO LOCK] Full-frame physical 9:16 footage with no marketplace/social UI, phone frame, fake buttons, captions, shopping graphics, decorative sparkles or fabricated watermark. An unavoidable provider watermark is permitted. [SHARIAH MODESTY LOCK — PRESENTER] Adult Malaysian Muslimah: hijab fully covers hair, neck and chest; clothing is loose and opaque; sleeves cover wrists and forearms throughout. No jewellery or unintended exposure. [TRUTHFULNESS LOCK] Use only visible evidence and explicit customer facts. Never claim personal use, efficacy, medical/beauty outcome, measurable performance, material, ingredient, certification, price, stock, popularity, discount or testimonial without direct support. When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit. Keep this rule silent rather than speaking a disclaimer.",
+        "ratio": 2,
+        "aspect": 1,
+        "resolution": 720,
+        "duration": 15,
+        "error": "",
+        "progress": "Downloading result…",
+        "status_text": "Downloading result…",
+        "created_at": 1794830831367,
+        "started_at": 1794830873695,
+        "finished_at": 1794830944027,
+        "width": 720,
+        "height": 1280,
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "watermark": false,
+        "size_bytes": 3852983,
+        "has_file": true,
+        "storage_url": "https://bwcqhtntrfntnkjokihp.supabase.co/storage/v1/object/public/storage/media/2026/11/b435ca7d-c97c-4417-b4dd-c7a83c285379.mp4",
+        "local_expires_at": null,
+        "local_fallback": false,
+        "source": null,
+        "plan_id": null,
+        "scene_index": null
+      },
+      "outputPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX23-85acb8b071cac165.mp4",
+      "outputBytes": 3852983,
+      "outputSha256": "a36b78dd68a8924b6772270d6015791a4c945902b4aaf57f3f6dea1fc8747012",
+      "downloadedAt": "2026-11-16T12:09:08.268Z",
+      "styleId": "NX23"
     },
     "NX27": {
-      "status": "PREPARED_NOT_SUBMITTED",
+      "status": "downloaded",
       "idempotencyKey": "affimatik-real-v3-validation-nx27-6b3359328504-3a18b4386912",
-      "taskId": null
+      "taskId": "985afe4a7da45bd5",
+      "submissionIntentAt": "2026-11-16T12:09:08.799Z",
+      "promptSha256": "6b3359328504b4cdcd2dcf7927e11bc548bf4e4540e4b50ad0d2ea3025cdb1b9",
+      "imageSha256": "3a18b438691246dd8545edb0a65cad59bf7aae27ee642176fb06a515aa0be663",
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "promptSha256": "6b3359328504b4cdcd2dcf7927e11bc548bf4e4540e4b50ad0d2ea3025cdb1b9",
+        "promptLength": 10013,
+        "media": [
+          {
+            "order": 1,
+            "sha256": "3a18b438691246dd8545edb0a65cad59bf7aae27ee642176fb06a515aa0be663",
+            "bytes": 1080348
+          },
+          {
+            "order": 2,
+            "sha256": "3a18b438691246dd8545edb0a65cad59bf7aae27ee642176fb06a515aa0be663",
+            "bytes": 1080348
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      },
+      "submissionHttpStatus": 202,
+      "initialResponse": {
+        "ok": true,
+        "job_id": "985afe4a7da45bd5",
+        "status": "queued",
+        "download_url": "/api/v1/jobs/985afe4a7da45bd5/download",
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "duration": 15,
+        "watermark": false,
+        "credit_cost": 0.3,
+        "unlimited": false,
+        "credit_balance": 7.13,
+        "est_seconds": 150
+      },
+      "reportedCreditCost": 0.3,
+      "submittedAt": "2026-11-16T12:09:14.607Z",
+      "pollHistory": [
+        {
+          "at": "2026-11-16T12:09:15.155Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:09:22.715Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:09:30.254Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:09:37.775Z",
+          "httpStatus": 200,
+          "status": "queued",
+          "progress": "",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:09:45.327Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Sending model — uploading input…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:09:52.940Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:00.534Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:08.041Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:15.570Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:23.176Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:30.714Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:38.274Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:45.818Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:10:53.319Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:11:00.924Z",
+          "httpStatus": 200,
+          "status": "processing",
+          "progress": "Processing model…",
+          "error": ""
+        },
+        {
+          "at": "2026-11-16T12:11:08.455Z",
+          "httpStatus": 200,
+          "status": "done",
+          "progress": "Downloading result…",
+          "error": ""
+        }
+      ],
+      "finalProviderRecord": {
+        "id": "985afe4a7da45bd5",
+        "status": "done",
+        "mode": "i2v",
+        "prompt": "[REAL V3 COMPACT GLOBAL CONTRACT] Create one continuous 15-second vertical 9:16 live-action affiliate video. Nexabot owns product interpretation, concept, scene details, hook, dialogue, voice, action and final video. Follow the selected style identity and effective audio mode. Preserve the uploaded product, reference roles, realistic physics, selected CTA and modesty requirements. Do not reproduce marketplace UI, the source screenshot composition, fake overlays or unsupported product claims. [REAL V3 NATIVE SPEECH CONTRACT] Nexabot alone creates the hook, product-specific dialogue, Malaysian delivery and selling approach. AffiMatik supplies no script, benefit sentence, FOMO sentence or hook wording. Use natural contemporary Bahasa Melayu Malaysia with spontaneous selling energy, varied pace and clear product and CTA pronunciation. Avoid robotic advertising cadence, repeated filler, forced slang and catalogue-style phrasing. Use only image-supported information and explicit customer facts. If no benefit is supported, discuss a visible characteristic or the ordinary category function without implying testing, ownership or results. Keep the dialogue short enough to complete naturally within 15 seconds. When selected, speak the CTA once as the final utterance and finish it before the cut, with no repeated or corrupted speech afterward. [STYLE NX27 — PREDEFINED CONFIGURATION] Concept: A believable one-action wok or pan cooking demonstration in an ordinary Malaysian home kitchen. Opening: Begin with the exact referenced wok or pan safely positioned on a compatible hob before one ordinary cooking action starts. Camera: Counter-side smartphone 1x medium-close view showing cookware scale, covered hand, utensil and safe work area without dramatic flame shots. Scene boundary: Use a bright, naturally exposed Malaysian home kitchen with neutral daylight-balanced whites, compatible hob geometry and restrained ingredients only when the cookware category is clear. Keep white walls and counters visibly white without dim amber, cream or overexposed lighting. Interaction: A sleeve-covered hand performs one stir, turn or lift supported by the item form; preserve handles, lid and visible construction exactly. If the visible hand is female, a loose opaque sleeve must cover the forearm and wrist continuously through every stirring or lifting frame. Presenter: No face required. Any visible female hand must remain connected to a loose opaque sleeve covering the entire forearm and wrist in every frame; alternatively a fully modest adult presenter may appear safely behind the counter. Performance: Natural utensil grip, realistic cookware weight, controlled heat distance and believable food contact with no impossible physics. Information boundary: Visible shape, handle, lid, size cues and customer-confirmed material or compatibility only; never infer rapid heating, heat distribution, coating, durability or cooking performance from the photograph. Ending: Cooking action stops in a safe stable position. Give the selected CTA enough unhurried conversational room to finish naturally as the final speech, then let ordinary kitchen room sound carry any remaining moment; no new action or product claim begins after it. Avoid for this style: impossible heat food or utensil physics; invented rapid heating heat distribution non-stick or cooking result; changed handles lid or pan design; unsafe flame; female wrist or forearm visible during any stirring or lifting frame; repeated CTA lead-in or stacked generic benefits. [NEXABOT NATIVE PRODUCT INTERPRETATION] Inspect the uploaded image and independently recognize the product, readable identity, visible characteristics and ordinary category function. Do not assume live web research. Create the product-specific concept and dialogue yourself within the selected style. Use only visible evidence and explicit customer facts; never invent capabilities, results, specifications, prices, certifications, popularity, testimonials or personal experience. [PRODUCT FACT BOUNDARY] Customer-supplied identity metadata: “”; category: “”. Verify identity against the image. Category identifies ordinary function only and proves no result or quality. No customer-supplied visible facts. No explicit customer fact was supplied. Do not invent or imply a benefit. Discuss only visible characteristics or the ordinary category function. Unverified or prohibited: “Any product-specific attribute not clearly visible in the supplied image remains unverified.”; “Unsupported efficacy, medical outcome, specification, price, popularity, testimonial, guarantee and personal-use claim.”. Omit them. No customer-confirmed usage context. Nexabot chooses a believable Malaysian setting from the image, recognized category and selected style; use a neutral everyday setting when uncertain. [CUSTOMER CONFIGURATION] References 1 and 2 are identical copies of one product identity; never create two products. No presenter reference; create an adult Malaysian presenter only if the style needs one. Customer Creative Directive (verbatim): Use the two byte-identical references only as one product identity authority. Nexabot independently interprets the image and writes every product-specific spoken word. Preserve the selected style’s distinct scene, camera, performance and audio identity. Do not copy screenshot UI or source composition. Do not invent objectively false facts, regulated outcomes, personal experience, prices, reviews or performance guarantees. Keep compact handheld objects near the configured 12–18% scale target and larger garments or appliances at believable real-world dimensions. [REALISTIC HUMAN AND PRODUCT PHYSICS] Use ordinary Malaysian creator behaviour, natural gaze, breathing and restrained gestures. Keep anatomy, grip, object weight, geometry, labels, contact shadows and movement physically believable and stable. Use natural smartphone 1x perspective and one continuous take; no floating objects, impossible camera travel, morphing or frozen final pose. [TRUE-WHITE REAL PHONE COLOUR] Use bright neutral everyday lighting and accurate natural skin and product colours. Genuinely white surfaces stay white; cream, beige, amber or coloured products keep their real source colour. Avoid global yellow, cream, amber, sepia or muddy grading, synthetic HDR glow, skin smoothing and artificial sharpening. Keep the style-specific environment. [AUTHORITATIVE EFFECTIVE AUDIO MODE] Effective audio mode: OFF-CAMERA VOICEOVER. Lively practical Malaysian Malay voiceover, or synchronized kitchen ambience only when a sound-only option is deliberately selected. In spoken mode, make one product-specific observation grounded in visible design or the ordinary cooking action, then move directly into the customer-selected CTA. Do not stack generic benefits, repeat the CTA lead-in, or rely on “memang sesuai sangat”, “makin mudah”, “yang paling best”, “lah” or “la”. No visible mouth speaks. [PAWARNA CREATIVE DNA] Sound like a real Malaysian affiliate speaking spontaneously to another person: persuasive, product-specific and alive, never corporate or scripted. Nexabot chooses the hook, wording, rhythm and selling approach. Preserve the selected style’s friendly, energetic, calm, premium, faceless or practical personality without reusing one universal catchphrase. [NATURAL MALAYSIAN VOICE] Use authentic contemporary Bahasa Melayu Malaysia with conversational sentence structure, natural emphasis, varied pace and age-appropriate delivery. Avoid formulaic ad phrases, forced slang, repeated “lah/la”, repeated “korang”, stock praise and robotic presenter cadence. Nexabot remains the sole writer of every spoken sentence. [NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT] Nexabot independently creates the NX27 hook, dialogue, selling approach and visual actions from the product image and customer facts. AffiMatik provides no spoken sentences. Customer CTA: “tekan beg kuning”. Speak it naturally once as the final utterance, fully before the cut, with no later word or repetition. Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue. [PRODUCT IDENTITY LOCK] The uploaded image is the authority for “”. Preserve its recognizable shape, geometry, packaging, label, logo, colours and visible components consistently. [PRODUCT SCALE LOCK] Keep believable real-world scale against hands, body, furniture and surroundings. Compact handheld products should occupy approximately 12–18% of frame height, preferably about 15%; larger products retain their plausible real dimensions. Never enlarge for emphasis or label readability. Keep scale stable while moving. No morphing, duplication, missing components, changed label, invented printed detail or floating object. Leave unreadable text indistinct. [REFERENCE ROLE LOCK] References 1 and 2 are byte-identical views of one product identity, never two products. References are not start frames or composition templates. Build a fresh live-action scene and ignore screenshot UI, prices, ratings, app borders, buttons and source-image decoration. [CLEAN VIDEO LOCK] Full-frame physical 9:16 footage with no marketplace/social UI, phone frame, fake buttons, captions, shopping graphics, decorative sparkles or fabricated watermark. An unavoidable provider watermark is permitted. [SHARIAH MODESTY LOCK — PRESENTER] Adult Malaysian Muslimah: hijab fully covers hair, neck and chest; clothing is loose and opaque; sleeves cover wrists and forearms throughout. No jewellery or unintended exposure. [TRUTHFULNESS LOCK] Use only visible evidence and explicit customer facts. Never claim personal use, efficacy, medical/beauty outcome, measurable performance, material, ingredient, certification, price, stock, popularity, discount or testimonial without direct support. When evidence is limited, use visible characteristics or ordinary category function—not an inferred benefit. Keep this rule silent rather than speaking a disclaimer.",
+        "ratio": 2,
+        "aspect": 1,
+        "resolution": 720,
+        "duration": 15,
+        "error": "",
+        "progress": "Downloading result…",
+        "status_text": "Downloading result…",
+        "created_at": 1794830954605,
+        "started_at": 1794830983882,
+        "finished_at": 1794831064951,
+        "width": 720,
+        "height": 1280,
+        "model": "omni_flash",
+        "model_label": "Omni Flash 1.2",
+        "kind": "video",
+        "watermark": false,
+        "size_bytes": 4479779,
+        "has_file": true,
+        "storage_url": "https://bwcqhtntrfntnkjokihp.supabase.co/storage/v1/object/public/storage/media/2026/11/7f77d53b-82ec-497b-905f-db48dd26d50b.mp4",
+        "local_expires_at": null,
+        "local_fallback": false,
+        "source": null,
+        "plan_id": null,
+        "scene_index": null
+      },
+      "outputPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX27-985afe4a7da45bd5.mp4",
+      "outputBytes": 4479779,
+      "outputSha256": "f568c33f63fb133ac5d7d172e667d33323114acf0673b0800fee39f72c0725ab",
+      "downloadedAt": "2026-11-16T12:11:13.688Z",
+      "styleId": "NX27"
     }
-  }
+  },
+  "approval": {
+    "approved": true,
+    "maximumSubmissions": 4,
+    "maximumSupplierCredits": 1.2,
+    "automaticRetries": false
+  },
+  "confirmedUnitCost": 0.3,
+  "runStartedAt": "2026-11-16T12:02:34.483Z",
+  "activeJobsBefore": 0,
+  "supplierCreditBefore": 8.33,
+  "supplierCreditAfter": 7.13,
+  "actualSupplierDebit": 1.2,
+  "finishedAt": "2026-11-16T12:19:41.121Z"
 }

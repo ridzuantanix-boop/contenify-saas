@@ -1,0 +1,387 @@
+{
+  "styleId": "NX23",
+  "styleName": "Tudung Styling",
+  "ctaTarget": "tengok detail dekat bawah",
+  "taskId": "85acb8b071cac165",
+  "supplierCredit": 0.3,
+  "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX23-85acb8b071cac165.mp4",
+  "mp4Sha256": "a36b78dd68a8924b6772270d6015791a4c945902b4aaf57f3f6dea1fc8747012",
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 720,
+        "height": 1280
+      },
+      {
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "48000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "15.040000",
+      "size": "3852983"
+    }
+  },
+  "language": "ms",
+  "languageProbability": 1.0,
+  "transcript": "Assalamualaikum semua, hari ini saya nak kongsikan tentang tudung hijab hitam yang sangat selesa ini. Tengoklah rekaan sulaman di bahagian atasnya. Jatuhan kainya sangat kemas dan terletak. Tengok detail dekat bawah. Detail dekat bawah.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 5.2,
+      "text": "Assalamualaikum semua, hari ini saya nak kongsikan tentang tudung hijab hitam yang sangat selesa ini."
+    },
+    {
+      "start": 5.54,
+      "end": 7.76,
+      "text": "Tengoklah rekaan sulaman di bahagian atasnya."
+    },
+    {
+      "start": 8.16,
+      "end": 10.78,
+      "text": "Jatuhan kainya sangat kemas dan terletak."
+    },
+    {
+      "start": 11.9,
+      "end": 13.12,
+      "text": "Tengok detail dekat bawah."
+    },
+    {
+      "start": 13.48,
+      "end": 14.46,
+      "text": "Detail dekat bawah."
+    }
+  ],
+  "words": [
+    {
+      "start": 0.0,
+      "end": 0.88,
+      "word": "Assalamualaikum",
+      "probability": 0.9593
+    },
+    {
+      "start": 0.88,
+      "end": 1.12,
+      "word": "semua,",
+      "probability": 0.9134
+    },
+    {
+      "start": 1.46,
+      "end": 1.58,
+      "word": "hari",
+      "probability": 0.8652
+    },
+    {
+      "start": 1.58,
+      "end": 1.78,
+      "word": "ini",
+      "probability": 0.9831
+    },
+    {
+      "start": 1.78,
+      "end": 1.94,
+      "word": "saya",
+      "probability": 0.9585
+    },
+    {
+      "start": 1.94,
+      "end": 2.06,
+      "word": "nak",
+      "probability": 0.9936
+    },
+    {
+      "start": 2.06,
+      "end": 2.52,
+      "word": "kongsikan",
+      "probability": 0.8451
+    },
+    {
+      "start": 2.52,
+      "end": 2.88,
+      "word": "tentang",
+      "probability": 0.9922
+    },
+    {
+      "start": 2.88,
+      "end": 3.32,
+      "word": "tudung",
+      "probability": 0.9131
+    },
+    {
+      "start": 3.32,
+      "end": 3.64,
+      "word": "hijab",
+      "probability": 0.9752
+    },
+    {
+      "start": 3.64,
+      "end": 4.0,
+      "word": "hitam",
+      "probability": 0.9864
+    },
+    {
+      "start": 4.0,
+      "end": 4.12,
+      "word": "yang",
+      "probability": 0.9952
+    },
+    {
+      "start": 4.12,
+      "end": 4.52,
+      "word": "sangat",
+      "probability": 0.9966
+    },
+    {
+      "start": 4.52,
+      "end": 4.9,
+      "word": "selesa",
+      "probability": 0.8727
+    },
+    {
+      "start": 4.9,
+      "end": 5.2,
+      "word": "ini.",
+      "probability": 0.8653
+    },
+    {
+      "start": 5.54,
+      "end": 6.0,
+      "word": "Tengoklah",
+      "probability": 0.8486
+    },
+    {
+      "start": 6.0,
+      "end": 6.4,
+      "word": "rekaan",
+      "probability": 0.9285
+    },
+    {
+      "start": 6.4,
+      "end": 6.78,
+      "word": "sulaman",
+      "probability": 0.8952
+    },
+    {
+      "start": 6.78,
+      "end": 6.94,
+      "word": "di",
+      "probability": 0.9755
+    },
+    {
+      "start": 6.94,
+      "end": 7.24,
+      "word": "bahagian",
+      "probability": 0.9954
+    },
+    {
+      "start": 7.24,
+      "end": 7.76,
+      "word": "atasnya.",
+      "probability": 0.9936
+    },
+    {
+      "start": 8.16,
+      "end": 8.64,
+      "word": "Jatuhan",
+      "probability": 0.9075
+    },
+    {
+      "start": 8.64,
+      "end": 9.2,
+      "word": "kainya",
+      "probability": 0.8387
+    },
+    {
+      "start": 9.2,
+      "end": 9.46,
+      "word": "sangat",
+      "probability": 0.9974
+    },
+    {
+      "start": 9.46,
+      "end": 9.98,
+      "word": "kemas",
+      "probability": 0.9658
+    },
+    {
+      "start": 9.98,
+      "end": 10.22,
+      "word": "dan",
+      "probability": 0.996
+    },
+    {
+      "start": 10.22,
+      "end": 10.78,
+      "word": "terletak.",
+      "probability": 0.8948
+    },
+    {
+      "start": 11.9,
+      "end": 12.26,
+      "word": "Tengok",
+      "probability": 0.9858
+    },
+    {
+      "start": 12.26,
+      "end": 12.54,
+      "word": "detail",
+      "probability": 0.7296
+    },
+    {
+      "start": 12.54,
+      "end": 12.76,
+      "word": "dekat",
+      "probability": 0.8983
+    },
+    {
+      "start": 12.76,
+      "end": 13.12,
+      "word": "bawah.",
+      "probability": 0.9972
+    },
+    {
+      "start": 13.48,
+      "end": 13.94,
+      "word": "Detail",
+      "probability": 0.8981
+    },
+    {
+      "start": 13.94,
+      "end": 14.1,
+      "word": "dekat",
+      "probability": 0.9924
+    },
+    {
+      "start": 14.1,
+      "end": 14.46,
+      "word": "bawah.",
+      "probability": 0.9983
+    }
+  ],
+  "speechStart": 0.0,
+  "speechEnd": 14.46,
+  "ctaTimingCandidate": {
+    "start": 13.48,
+    "end": 14.46,
+    "text": "Detail dekat bawah."
+  },
+  "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX23.jpg",
+  "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX23-v2-v3.jpg",
+  "frameTimes": [
+    0.4,
+    2.5,
+    5.0,
+    7.5,
+    10.0,
+    12.5,
+    14.5
+  ],
+  "colorSamples": [
+    {
+      "second": 0.4,
+      "meanRgb": [
+        102.41,
+        101.24,
+        88.92
+      ],
+      "brightMeanRgb": [
+        233.92,
+        209.01,
+        183.16
+      ]
+    },
+    {
+      "second": 2.5,
+      "meanRgb": [
+        103.72,
+        101.65,
+        88.66
+      ],
+      "brightMeanRgb": [
+        233.99,
+        209.83,
+        184.11
+      ]
+    },
+    {
+      "second": 5.0,
+      "meanRgb": [
+        97.57,
+        96.33,
+        83.68
+      ],
+      "brightMeanRgb": [
+        235.42,
+        211.87,
+        186.38
+      ]
+    },
+    {
+      "second": 7.5,
+      "meanRgb": [
+        102.11,
+        100.42,
+        87.74
+      ],
+      "brightMeanRgb": [
+        232.28,
+        207.9,
+        182.13
+      ]
+    },
+    {
+      "second": 10.0,
+      "meanRgb": [
+        104.35,
+        101.93,
+        88.88
+      ],
+      "brightMeanRgb": [
+        231.43,
+        207.31,
+        182.23
+      ]
+    },
+    {
+      "second": 12.5,
+      "meanRgb": [
+        102.69,
+        100.79,
+        88.08
+      ],
+      "brightMeanRgb": [
+        230.83,
+        206.6,
+        181.23
+      ]
+    },
+    {
+      "second": 14.5,
+      "meanRgb": [
+        101.99,
+        100.11,
+        87.78
+      ],
+      "brightMeanRgb": [
+        231.78,
+        206.59,
+        181.07
+      ]
+    }
+  ],
+  "baseline": {
+    "taskId": "e19e840ffc59f3cf",
+    "credit": 0.3,
+    "promptLength": 25531,
+    "promptSha256": "33b443724de29532d25ee3df6d4c4a36acc0ef06b013b0dbf1fa732d7ff161a1",
+    "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX23-e19e840ffc59f3cf.mp4",
+    "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX23.json",
+    "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX23.jpg"
+  }
+}

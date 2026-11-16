@@ -1,0 +1,1516 @@
+{
+  "generatedAt": "2026-11-16T12:19:41.121Z",
+  "results": {
+    "NX01": {
+      "styleId": "NX01",
+      "styleName": "Sembang Kawan Santai",
+      "ctaTarget": "tekan beg kuning",
+      "taskId": "d90ca7de68428053",
+      "supplierCredit": 0.3,
+      "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX01-d90ca7de68428053.mp4",
+      "mp4Sha256": "ef9ab9b74e561dcb53609c8d695a50133314c1e15b2c40b9c25306255532d42c",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "format": {
+          "duration": "15.040000",
+          "size": "4162747"
+        }
+      },
+      "language": "ms",
+      "languageProbability": 1.0,
+      "transcript": "Korang tengok ni, minyak herbe as herb. Nampak tak ada herbe kayu kat dalam ni. Botol dia comel sangat 30 ml sesuai untuk minyak urut tradisional senang nak bawa ke mana-mana. Baunya pun mempun memang menyegarkan. Kalau korang nak, tekan bet kuning.",
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 3.98,
+          "text": "Korang tengok ni, minyak herbe as herb. Nampak tak ada herbe kayu kat dalam ni."
+        },
+        {
+          "start": 4.18,
+          "end": 7.94,
+          "text": "Botol dia comel sangat 30 ml sesuai untuk minyak urut tradisional"
+        },
+        {
+          "start": 7.94,
+          "end": 9.58,
+          "text": "senang nak bawa ke mana-mana."
+        },
+        {
+          "start": 10.06,
+          "end": 14.48,
+          "text": "Baunya pun mempun memang menyegarkan. Kalau korang nak, tekan bet kuning."
+        }
+      ],
+      "words": [
+        {
+          "start": 0.0,
+          "end": 0.4,
+          "word": "Korang",
+          "probability": 0.5949
+        },
+        {
+          "start": 0.4,
+          "end": 0.66,
+          "word": "tengok",
+          "probability": 0.9991
+        },
+        {
+          "start": 0.66,
+          "end": 0.8,
+          "word": "ni,",
+          "probability": 0.9581
+        },
+        {
+          "start": 1.2,
+          "end": 1.44,
+          "word": "minyak",
+          "probability": 0.9884
+        },
+        {
+          "start": 1.44,
+          "end": 1.72,
+          "word": "herbe",
+          "probability": 0.4076
+        },
+        {
+          "start": 1.72,
+          "end": 1.92,
+          "word": "as",
+          "probability": 0.1899
+        },
+        {
+          "start": 1.92,
+          "end": 2.16,
+          "word": "herb.",
+          "probability": 0.2161
+        },
+        {
+          "start": 2.38,
+          "end": 2.68,
+          "word": "Nampak",
+          "probability": 0.9951
+        },
+        {
+          "start": 2.68,
+          "end": 2.8,
+          "word": "tak",
+          "probability": 0.9874
+        },
+        {
+          "start": 2.8,
+          "end": 2.94,
+          "word": "ada",
+          "probability": 0.8303
+        },
+        {
+          "start": 2.94,
+          "end": 3.18,
+          "word": "herbe",
+          "probability": 0.8359
+        },
+        {
+          "start": 3.18,
+          "end": 3.48,
+          "word": "kayu",
+          "probability": 0.9475
+        },
+        {
+          "start": 3.48,
+          "end": 3.58,
+          "word": "kat",
+          "probability": 0.7534
+        },
+        {
+          "start": 3.58,
+          "end": 3.82,
+          "word": "dalam",
+          "probability": 0.9885
+        },
+        {
+          "start": 3.82,
+          "end": 3.98,
+          "word": "ni.",
+          "probability": 0.993
+        },
+        {
+          "start": 4.18,
+          "end": 4.52,
+          "word": "Botol",
+          "probability": 0.8534
+        },
+        {
+          "start": 4.52,
+          "end": 4.6,
+          "word": "dia",
+          "probability": 0.4991
+        },
+        {
+          "start": 4.6,
+          "end": 5.0,
+          "word": "comel",
+          "probability": 0.6656
+        },
+        {
+          "start": 5.0,
+          "end": 5.26,
+          "word": "sangat",
+          "probability": 0.9891
+        },
+        {
+          "start": 5.26,
+          "end": 5.64,
+          "word": "30",
+          "probability": 0.7871
+        },
+        {
+          "start": 5.64,
+          "end": 6.08,
+          "word": "ml",
+          "probability": 0.5502
+        },
+        {
+          "start": 6.08,
+          "end": 6.74,
+          "word": "sesuai",
+          "probability": 0.8608
+        },
+        {
+          "start": 6.74,
+          "end": 6.92,
+          "word": "untuk",
+          "probability": 0.9402
+        },
+        {
+          "start": 6.92,
+          "end": 7.2,
+          "word": "minyak",
+          "probability": 0.9922
+        },
+        {
+          "start": 7.2,
+          "end": 7.4,
+          "word": "urut",
+          "probability": 0.9081
+        },
+        {
+          "start": 7.4,
+          "end": 7.94,
+          "word": "tradisional",
+          "probability": 0.9455
+        },
+        {
+          "start": 7.94,
+          "end": 8.68,
+          "word": "senang",
+          "probability": 0.5791
+        },
+        {
+          "start": 8.68,
+          "end": 8.8,
+          "word": "nak",
+          "probability": 0.9954
+        },
+        {
+          "start": 8.8,
+          "end": 8.98,
+          "word": "bawa",
+          "probability": 0.9573
+        },
+        {
+          "start": 8.98,
+          "end": 9.12,
+          "word": "ke",
+          "probability": 0.9965
+        },
+        {
+          "start": 9.12,
+          "end": 9.28,
+          "word": "mana",
+          "probability": 0.8505
+        },
+        {
+          "start": 9.28,
+          "end": 9.58,
+          "word": "-mana.",
+          "probability": 0.9297
+        },
+        {
+          "start": 10.06,
+          "end": 10.58,
+          "word": "Baunya",
+          "probability": 0.5542
+        },
+        {
+          "start": 10.58,
+          "end": 10.84,
+          "word": "pun",
+          "probability": 0.9991
+        },
+        {
+          "start": 10.84,
+          "end": 11.5,
+          "word": "mempun",
+          "probability": 0.7395
+        },
+        {
+          "start": 11.5,
+          "end": 11.7,
+          "word": "memang",
+          "probability": 0.9437
+        },
+        {
+          "start": 11.7,
+          "end": 12.34,
+          "word": "menyegarkan.",
+          "probability": 0.8187
+        },
+        {
+          "start": 12.74,
+          "end": 12.98,
+          "word": "Kalau",
+          "probability": 0.9309
+        },
+        {
+          "start": 12.98,
+          "end": 13.32,
+          "word": "korang",
+          "probability": 0.9976
+        },
+        {
+          "start": 13.32,
+          "end": 13.5,
+          "word": "nak,",
+          "probability": 0.9978
+        },
+        {
+          "start": 13.72,
+          "end": 14.0,
+          "word": "tekan",
+          "probability": 0.9684
+        },
+        {
+          "start": 14.0,
+          "end": 14.14,
+          "word": "bet",
+          "probability": 0.1945
+        },
+        {
+          "start": 14.14,
+          "end": 14.48,
+          "word": "kuning.",
+          "probability": 0.8748
+        }
+      ],
+      "speechStart": 0.0,
+      "speechEnd": 14.48,
+      "ctaTimingCandidate": {
+        "start": 10.06,
+        "end": 14.48,
+        "text": "Baunya pun mempun memang menyegarkan. Kalau korang nak, tekan bet kuning."
+      },
+      "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX01.jpg",
+      "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX01-v2-v3.jpg",
+      "frameTimes": [
+        0.4,
+        2.5,
+        5.0,
+        7.5,
+        10.0,
+        12.5,
+        14.5
+      ],
+      "colorSamples": [
+        {
+          "second": 0.4,
+          "meanRgb": [
+            99.52,
+            89.33,
+            71.11
+          ],
+          "brightMeanRgb": [
+            226.88,
+            206.41,
+            165.26
+          ]
+        },
+        {
+          "second": 2.5,
+          "meanRgb": [
+            103.96,
+            91.41,
+            72.93
+          ],
+          "brightMeanRgb": [
+            228.88,
+            205.68,
+            162.31
+          ]
+        },
+        {
+          "second": 5.0,
+          "meanRgb": [
+            97.85,
+            87.59,
+            72.56
+          ],
+          "brightMeanRgb": [
+            214.46,
+            213.1,
+            200.45
+          ]
+        },
+        {
+          "second": 7.5,
+          "meanRgb": [
+            96.23,
+            86.61,
+            71.74
+          ],
+          "brightMeanRgb": [
+            217.56,
+            216.3,
+            201.79
+          ]
+        },
+        {
+          "second": 10.0,
+          "meanRgb": [
+            99.03,
+            88.95,
+            73.33
+          ],
+          "brightMeanRgb": [
+            220.59,
+            210.09,
+            182.15
+          ]
+        },
+        {
+          "second": 12.5,
+          "meanRgb": [
+            97.31,
+            87.75,
+            72.9
+          ],
+          "brightMeanRgb": [
+            218.95,
+            216.67,
+            200.68
+          ]
+        },
+        {
+          "second": 14.5,
+          "meanRgb": [
+            101.81,
+            91.32,
+            74.15
+          ],
+          "brightMeanRgb": [
+            219.39,
+            216.34,
+            200.3
+          ]
+        }
+      ],
+      "baseline": {
+        "taskId": "8d0aeb64cde554e3",
+        "credit": 0.3,
+        "promptLength": 24728,
+        "promptSha256": "da0480866f5a0baf01eb3a1aa5fcf6a7ea8f446ea1047175bfd18ee9481af324",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX01-8d0aeb64cde554e3.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX01.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX01.jpg"
+      }
+    },
+    "NX09": {
+      "styleId": "NX09",
+      "styleName": "Produk Bergerak + Voiceover",
+      "ctaTarget": "kalau nak semak, boleh tekan di bawah",
+      "taskId": "f36b9a12e0af43ab",
+      "supplierCredit": 0.3,
+      "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX09-f36b9a12e0af43ab.mp4",
+      "mp4Sha256": "0aa0ff38118684f99d0402cf2d6055f38541a8e3c9a7038028bc5e447f892933",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "format": {
+          "duration": "15.040000",
+          "size": "3655771"
+        }
+      },
+      "language": "ms",
+      "languageProbability": 1.0,
+      "transcript": "Korang kena tengok aromai homies ni, hiasan botol dia nampak eksklusif sangat. Sekali sembuh je, satu rumah rasa segar. Bau dia memang sangat menenangkan. Kalau nak semak, boleh tekan di bawah.",
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 4.76,
+          "text": "Korang kena tengok aromai homies ni, hiasan botol dia nampak eksklusif sangat."
+        },
+        {
+          "start": 5.1,
+          "end": 7.74,
+          "text": "Sekali sembuh je, satu rumah rasa segar."
+        },
+        {
+          "start": 8.94,
+          "end": 13.7,
+          "text": "Bau dia memang sangat menenangkan. Kalau nak semak, boleh tekan di bawah."
+        }
+      ],
+      "words": [
+        {
+          "start": 0.0,
+          "end": 0.38,
+          "word": "Korang",
+          "probability": 0.7045
+        },
+        {
+          "start": 0.38,
+          "end": 0.58,
+          "word": "kena",
+          "probability": 0.9961
+        },
+        {
+          "start": 0.58,
+          "end": 0.92,
+          "word": "tengok",
+          "probability": 0.993
+        },
+        {
+          "start": 0.92,
+          "end": 1.42,
+          "word": "aromai",
+          "probability": 0.8598
+        },
+        {
+          "start": 1.42,
+          "end": 1.94,
+          "word": "homies",
+          "probability": 0.5696
+        },
+        {
+          "start": 1.94,
+          "end": 2.1,
+          "word": "ni,",
+          "probability": 0.7975
+        },
+        {
+          "start": 2.6,
+          "end": 2.96,
+          "word": "hiasan",
+          "probability": 0.9548
+        },
+        {
+          "start": 2.96,
+          "end": 3.36,
+          "word": "botol",
+          "probability": 0.9663
+        },
+        {
+          "start": 3.36,
+          "end": 3.48,
+          "word": "dia",
+          "probability": 0.9295
+        },
+        {
+          "start": 3.48,
+          "end": 3.8,
+          "word": "nampak",
+          "probability": 0.9963
+        },
+        {
+          "start": 3.8,
+          "end": 4.48,
+          "word": "eksklusif",
+          "probability": 0.9719
+        },
+        {
+          "start": 4.48,
+          "end": 4.76,
+          "word": "sangat.",
+          "probability": 0.9876
+        },
+        {
+          "start": 5.1,
+          "end": 5.44,
+          "word": "Sekali",
+          "probability": 0.9765
+        },
+        {
+          "start": 5.44,
+          "end": 5.9,
+          "word": "sembuh",
+          "probability": 0.6615
+        },
+        {
+          "start": 5.9,
+          "end": 6.12,
+          "word": "je,",
+          "probability": 0.7915
+        },
+        {
+          "start": 6.42,
+          "end": 6.64,
+          "word": "satu",
+          "probability": 0.9679
+        },
+        {
+          "start": 6.64,
+          "end": 6.96,
+          "word": "rumah",
+          "probability": 0.9701
+        },
+        {
+          "start": 6.96,
+          "end": 7.24,
+          "word": "rasa",
+          "probability": 0.9957
+        },
+        {
+          "start": 7.24,
+          "end": 7.74,
+          "word": "segar.",
+          "probability": 0.9619
+        },
+        {
+          "start": 8.94,
+          "end": 9.38,
+          "word": "Bau",
+          "probability": 0.4682
+        },
+        {
+          "start": 9.38,
+          "end": 9.66,
+          "word": "dia",
+          "probability": 0.9963
+        },
+        {
+          "start": 9.66,
+          "end": 9.94,
+          "word": "memang",
+          "probability": 0.9947
+        },
+        {
+          "start": 9.94,
+          "end": 10.38,
+          "word": "sangat",
+          "probability": 0.9881
+        },
+        {
+          "start": 10.38,
+          "end": 11.12,
+          "word": "menenangkan.",
+          "probability": 0.9854
+        },
+        {
+          "start": 11.64,
+          "end": 11.86,
+          "word": "Kalau",
+          "probability": 0.9708
+        },
+        {
+          "start": 11.86,
+          "end": 12.0,
+          "word": "nak",
+          "probability": 0.992
+        },
+        {
+          "start": 12.0,
+          "end": 12.46,
+          "word": "semak,",
+          "probability": 0.5861
+        },
+        {
+          "start": 12.72,
+          "end": 12.88,
+          "word": "boleh",
+          "probability": 0.9968
+        },
+        {
+          "start": 12.88,
+          "end": 13.2,
+          "word": "tekan",
+          "probability": 0.95
+        },
+        {
+          "start": 13.2,
+          "end": 13.34,
+          "word": "di",
+          "probability": 0.8197
+        },
+        {
+          "start": 13.34,
+          "end": 13.7,
+          "word": "bawah.",
+          "probability": 0.9992
+        }
+      ],
+      "speechStart": 0.0,
+      "speechEnd": 13.7,
+      "ctaTimingCandidate": {
+        "start": 8.94,
+        "end": 13.7,
+        "text": "Bau dia memang sangat menenangkan. Kalau nak semak, boleh tekan di bawah."
+      },
+      "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX09.jpg",
+      "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX09-v2-v3.jpg",
+      "frameTimes": [
+        0.4,
+        2.5,
+        5.0,
+        7.5,
+        10.0,
+        12.5,
+        14.5
+      ],
+      "colorSamples": [
+        {
+          "second": 0.4,
+          "meanRgb": [
+            181.15,
+            156.77,
+            128.91
+          ],
+          "brightMeanRgb": [
+            225.11,
+            210.61,
+            186.33
+          ]
+        },
+        {
+          "second": 2.5,
+          "meanRgb": [
+            180.62,
+            157.59,
+            130.41
+          ],
+          "brightMeanRgb": [
+            225.06,
+            210.41,
+            186.06
+          ]
+        },
+        {
+          "second": 5.0,
+          "meanRgb": [
+            179.33,
+            155.47,
+            127.95
+          ],
+          "brightMeanRgb": [
+            224.68,
+            209.9,
+            185.61
+          ]
+        },
+        {
+          "second": 7.5,
+          "meanRgb": [
+            181.03,
+            156.89,
+            129.53
+          ],
+          "brightMeanRgb": [
+            225.43,
+            210.62,
+            186.63
+          ]
+        },
+        {
+          "second": 10.0,
+          "meanRgb": [
+            180.09,
+            156.24,
+            128.31
+          ],
+          "brightMeanRgb": [
+            225.13,
+            210.29,
+            186.02
+          ]
+        },
+        {
+          "second": 12.5,
+          "meanRgb": [
+            180.15,
+            156.12,
+            128.32
+          ],
+          "brightMeanRgb": [
+            225.09,
+            210.06,
+            185.52
+          ]
+        },
+        {
+          "second": 14.5,
+          "meanRgb": [
+            179.79,
+            155.8,
+            128.06
+          ],
+          "brightMeanRgb": [
+            224.81,
+            209.86,
+            185.45
+          ]
+        }
+      ],
+      "baseline": {
+        "taskId": "f03c8c1ab55d1bd9",
+        "credit": 0.3,
+        "promptLength": 24491,
+        "promptSha256": "b28f9829db72abf2f931f77fd2857be1a8490c23d639a4f7140839e0167cfadd",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX09-f03c8c1ab55d1bd9.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX09.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX09.jpg"
+      }
+    },
+    "NX23": {
+      "styleId": "NX23",
+      "styleName": "Tudung Styling",
+      "ctaTarget": "tengok detail dekat bawah",
+      "taskId": "85acb8b071cac165",
+      "supplierCredit": 0.3,
+      "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX23-85acb8b071cac165.mp4",
+      "mp4Sha256": "a36b78dd68a8924b6772270d6015791a4c945902b4aaf57f3f6dea1fc8747012",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "format": {
+          "duration": "15.040000",
+          "size": "3852983"
+        }
+      },
+      "language": "ms",
+      "languageProbability": 1.0,
+      "transcript": "Assalamualaikum semua, hari ini saya nak kongsikan tentang tudung hijab hitam yang sangat selesa ini. Tengoklah rekaan sulaman di bahagian atasnya. Jatuhan kainya sangat kemas dan terletak. Tengok detail dekat bawah. Detail dekat bawah.",
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.2,
+          "text": "Assalamualaikum semua, hari ini saya nak kongsikan tentang tudung hijab hitam yang sangat selesa ini."
+        },
+        {
+          "start": 5.54,
+          "end": 7.76,
+          "text": "Tengoklah rekaan sulaman di bahagian atasnya."
+        },
+        {
+          "start": 8.16,
+          "end": 10.78,
+          "text": "Jatuhan kainya sangat kemas dan terletak."
+        },
+        {
+          "start": 11.9,
+          "end": 13.12,
+          "text": "Tengok detail dekat bawah."
+        },
+        {
+          "start": 13.48,
+          "end": 14.46,
+          "text": "Detail dekat bawah."
+        }
+      ],
+      "words": [
+        {
+          "start": 0.0,
+          "end": 0.88,
+          "word": "Assalamualaikum",
+          "probability": 0.9593
+        },
+        {
+          "start": 0.88,
+          "end": 1.12,
+          "word": "semua,",
+          "probability": 0.9134
+        },
+        {
+          "start": 1.46,
+          "end": 1.58,
+          "word": "hari",
+          "probability": 0.8652
+        },
+        {
+          "start": 1.58,
+          "end": 1.78,
+          "word": "ini",
+          "probability": 0.9831
+        },
+        {
+          "start": 1.78,
+          "end": 1.94,
+          "word": "saya",
+          "probability": 0.9585
+        },
+        {
+          "start": 1.94,
+          "end": 2.06,
+          "word": "nak",
+          "probability": 0.9936
+        },
+        {
+          "start": 2.06,
+          "end": 2.52,
+          "word": "kongsikan",
+          "probability": 0.8451
+        },
+        {
+          "start": 2.52,
+          "end": 2.88,
+          "word": "tentang",
+          "probability": 0.9922
+        },
+        {
+          "start": 2.88,
+          "end": 3.32,
+          "word": "tudung",
+          "probability": 0.9131
+        },
+        {
+          "start": 3.32,
+          "end": 3.64,
+          "word": "hijab",
+          "probability": 0.9752
+        },
+        {
+          "start": 3.64,
+          "end": 4.0,
+          "word": "hitam",
+          "probability": 0.9864
+        },
+        {
+          "start": 4.0,
+          "end": 4.12,
+          "word": "yang",
+          "probability": 0.9952
+        },
+        {
+          "start": 4.12,
+          "end": 4.52,
+          "word": "sangat",
+          "probability": 0.9966
+        },
+        {
+          "start": 4.52,
+          "end": 4.9,
+          "word": "selesa",
+          "probability": 0.8727
+        },
+        {
+          "start": 4.9,
+          "end": 5.2,
+          "word": "ini.",
+          "probability": 0.8653
+        },
+        {
+          "start": 5.54,
+          "end": 6.0,
+          "word": "Tengoklah",
+          "probability": 0.8486
+        },
+        {
+          "start": 6.0,
+          "end": 6.4,
+          "word": "rekaan",
+          "probability": 0.9285
+        },
+        {
+          "start": 6.4,
+          "end": 6.78,
+          "word": "sulaman",
+          "probability": 0.8952
+        },
+        {
+          "start": 6.78,
+          "end": 6.94,
+          "word": "di",
+          "probability": 0.9755
+        },
+        {
+          "start": 6.94,
+          "end": 7.24,
+          "word": "bahagian",
+          "probability": 0.9954
+        },
+        {
+          "start": 7.24,
+          "end": 7.76,
+          "word": "atasnya.",
+          "probability": 0.9936
+        },
+        {
+          "start": 8.16,
+          "end": 8.64,
+          "word": "Jatuhan",
+          "probability": 0.9075
+        },
+        {
+          "start": 8.64,
+          "end": 9.2,
+          "word": "kainya",
+          "probability": 0.8387
+        },
+        {
+          "start": 9.2,
+          "end": 9.46,
+          "word": "sangat",
+          "probability": 0.9974
+        },
+        {
+          "start": 9.46,
+          "end": 9.98,
+          "word": "kemas",
+          "probability": 0.9658
+        },
+        {
+          "start": 9.98,
+          "end": 10.22,
+          "word": "dan",
+          "probability": 0.996
+        },
+        {
+          "start": 10.22,
+          "end": 10.78,
+          "word": "terletak.",
+          "probability": 0.8948
+        },
+        {
+          "start": 11.9,
+          "end": 12.26,
+          "word": "Tengok",
+          "probability": 0.9858
+        },
+        {
+          "start": 12.26,
+          "end": 12.54,
+          "word": "detail",
+          "probability": 0.7296
+        },
+        {
+          "start": 12.54,
+          "end": 12.76,
+          "word": "dekat",
+          "probability": 0.8983
+        },
+        {
+          "start": 12.76,
+          "end": 13.12,
+          "word": "bawah.",
+          "probability": 0.9972
+        },
+        {
+          "start": 13.48,
+          "end": 13.94,
+          "word": "Detail",
+          "probability": 0.8981
+        },
+        {
+          "start": 13.94,
+          "end": 14.1,
+          "word": "dekat",
+          "probability": 0.9924
+        },
+        {
+          "start": 14.1,
+          "end": 14.46,
+          "word": "bawah.",
+          "probability": 0.9983
+        }
+      ],
+      "speechStart": 0.0,
+      "speechEnd": 14.46,
+      "ctaTimingCandidate": {
+        "start": 13.48,
+        "end": 14.46,
+        "text": "Detail dekat bawah."
+      },
+      "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX23.jpg",
+      "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX23-v2-v3.jpg",
+      "frameTimes": [
+        0.4,
+        2.5,
+        5.0,
+        7.5,
+        10.0,
+        12.5,
+        14.5
+      ],
+      "colorSamples": [
+        {
+          "second": 0.4,
+          "meanRgb": [
+            102.41,
+            101.24,
+            88.92
+          ],
+          "brightMeanRgb": [
+            233.92,
+            209.01,
+            183.16
+          ]
+        },
+        {
+          "second": 2.5,
+          "meanRgb": [
+            103.72,
+            101.65,
+            88.66
+          ],
+          "brightMeanRgb": [
+            233.99,
+            209.83,
+            184.11
+          ]
+        },
+        {
+          "second": 5.0,
+          "meanRgb": [
+            97.57,
+            96.33,
+            83.68
+          ],
+          "brightMeanRgb": [
+            235.42,
+            211.87,
+            186.38
+          ]
+        },
+        {
+          "second": 7.5,
+          "meanRgb": [
+            102.11,
+            100.42,
+            87.74
+          ],
+          "brightMeanRgb": [
+            232.28,
+            207.9,
+            182.13
+          ]
+        },
+        {
+          "second": 10.0,
+          "meanRgb": [
+            104.35,
+            101.93,
+            88.88
+          ],
+          "brightMeanRgb": [
+            231.43,
+            207.31,
+            182.23
+          ]
+        },
+        {
+          "second": 12.5,
+          "meanRgb": [
+            102.69,
+            100.79,
+            88.08
+          ],
+          "brightMeanRgb": [
+            230.83,
+            206.6,
+            181.23
+          ]
+        },
+        {
+          "second": 14.5,
+          "meanRgb": [
+            101.99,
+            100.11,
+            87.78
+          ],
+          "brightMeanRgb": [
+            231.78,
+            206.59,
+            181.07
+          ]
+        }
+      ],
+      "baseline": {
+        "taskId": "e19e840ffc59f3cf",
+        "credit": 0.3,
+        "promptLength": 25531,
+        "promptSha256": "33b443724de29532d25ee3df6d4c4a36acc0ef06b013b0dbf1fa732d7ff161a1",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX23-e19e840ffc59f3cf.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX23.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX23.jpg"
+      }
+    },
+    "NX27": {
+      "styleId": "NX27",
+      "styleName": "Kuali Cooking Demo",
+      "ctaTarget": "tekan beg kuning",
+      "taskId": "985afe4a7da45bd5",
+      "supplierCredit": 0.3,
+      "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX27-985afe4a7da45bd5.mp4",
+      "mp4Sha256": "f568c33f63fb133ac5d7d172e667d33323114acf0673b0800fee39f72c0725ab",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "format": {
+          "duration": "15.040000",
+          "size": "4479779"
+        }
+      },
+      "language": "ms",
+      "languageProbability": 1.0,
+      "transcript": "Tengok kuali wajan carbon steel ini, sangat praktikal untuk masakkan harian anda. Rekaan kukuh dengan pemegang kayu selesa, hidangan siap dimasak dengan sempurna. Tekan beg kuning.",
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 4.86,
+          "text": "Tengok kuali wajan carbon steel ini, sangat praktikal untuk masakkan harian anda."
+        },
+        {
+          "start": 5.3,
+          "end": 11.08,
+          "text": "Rekaan kukuh dengan pemegang kayu selesa, hidangan siap dimasak dengan sempurna."
+        },
+        {
+          "start": 12.46,
+          "end": 13.88,
+          "text": "Tekan beg kuning."
+        }
+      ],
+      "words": [
+        {
+          "start": 0.0,
+          "end": 0.4,
+          "word": "Tengok",
+          "probability": 0.8607
+        },
+        {
+          "start": 0.4,
+          "end": 0.78,
+          "word": "kuali",
+          "probability": 0.8299
+        },
+        {
+          "start": 0.78,
+          "end": 1.14,
+          "word": "wajan",
+          "probability": 0.9505
+        },
+        {
+          "start": 1.14,
+          "end": 1.44,
+          "word": "carbon",
+          "probability": 0.4008
+        },
+        {
+          "start": 1.44,
+          "end": 1.84,
+          "word": "steel",
+          "probability": 0.9382
+        },
+        {
+          "start": 1.84,
+          "end": 2.02,
+          "word": "ini,",
+          "probability": 0.4476
+        },
+        {
+          "start": 2.42,
+          "end": 2.84,
+          "word": "sangat",
+          "probability": 0.9744
+        },
+        {
+          "start": 2.84,
+          "end": 3.52,
+          "word": "praktikal",
+          "probability": 0.8896
+        },
+        {
+          "start": 3.52,
+          "end": 3.74,
+          "word": "untuk",
+          "probability": 0.9971
+        },
+        {
+          "start": 3.74,
+          "end": 4.26,
+          "word": "masakkan",
+          "probability": 0.9086
+        },
+        {
+          "start": 4.26,
+          "end": 4.56,
+          "word": "harian",
+          "probability": 0.9638
+        },
+        {
+          "start": 4.56,
+          "end": 4.86,
+          "word": "anda.",
+          "probability": 0.9553
+        },
+        {
+          "start": 5.3,
+          "end": 5.76,
+          "word": "Rekaan",
+          "probability": 0.8306
+        },
+        {
+          "start": 5.76,
+          "end": 6.16,
+          "word": "kukuh",
+          "probability": 0.9559
+        },
+        {
+          "start": 6.16,
+          "end": 6.38,
+          "word": "dengan",
+          "probability": 0.9845
+        },
+        {
+          "start": 6.38,
+          "end": 6.84,
+          "word": "pemegang",
+          "probability": 0.964
+        },
+        {
+          "start": 6.84,
+          "end": 7.2,
+          "word": "kayu",
+          "probability": 0.8033
+        },
+        {
+          "start": 7.2,
+          "end": 7.72,
+          "word": "selesa,",
+          "probability": 0.8929
+        },
+        {
+          "start": 8.22,
+          "end": 9.42,
+          "word": "hidangan",
+          "probability": 0.9267
+        },
+        {
+          "start": 9.42,
+          "end": 9.8,
+          "word": "siap",
+          "probability": 0.9856
+        },
+        {
+          "start": 9.8,
+          "end": 10.3,
+          "word": "dimasak",
+          "probability": 0.9786
+        },
+        {
+          "start": 10.3,
+          "end": 10.44,
+          "word": "dengan",
+          "probability": 0.9677
+        },
+        {
+          "start": 10.44,
+          "end": 11.08,
+          "word": "sempurna.",
+          "probability": 0.9901
+        },
+        {
+          "start": 12.46,
+          "end": 13.26,
+          "word": "Tekan",
+          "probability": 0.878
+        },
+        {
+          "start": 13.26,
+          "end": 13.4,
+          "word": "beg",
+          "probability": 0.2417
+        },
+        {
+          "start": 13.4,
+          "end": 13.88,
+          "word": "kuning.",
+          "probability": 0.9906
+        }
+      ],
+      "speechStart": 0.0,
+      "speechEnd": 13.88,
+      "ctaTimingCandidate": {
+        "start": 12.46,
+        "end": 13.88,
+        "text": "Tekan beg kuning."
+      },
+      "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX27.jpg",
+      "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX27-v2-v3.jpg",
+      "frameTimes": [
+        0.4,
+        2.5,
+        5.0,
+        7.5,
+        10.0,
+        12.5,
+        14.5
+      ],
+      "colorSamples": [
+        {
+          "second": 0.4,
+          "meanRgb": [
+            160.57,
+            154.04,
+            137.66
+          ],
+          "brightMeanRgb": [
+            210.91,
+            207.14,
+            193.0
+          ]
+        },
+        {
+          "second": 2.5,
+          "meanRgb": [
+            152.79,
+            146.01,
+            130.19
+          ],
+          "brightMeanRgb": [
+            209.7,
+            205.51,
+            191.42
+          ]
+        },
+        {
+          "second": 5.0,
+          "meanRgb": [
+            141.92,
+            134.95,
+            119.8
+          ],
+          "brightMeanRgb": [
+            209.84,
+            205.41,
+            192.08
+          ]
+        },
+        {
+          "second": 7.5,
+          "meanRgb": [
+            140.01,
+            131.94,
+            115.09
+          ],
+          "brightMeanRgb": [
+            209.49,
+            204.44,
+            189.61
+          ]
+        },
+        {
+          "second": 10.0,
+          "meanRgb": [
+            137.96,
+            130.01,
+            112.73
+          ],
+          "brightMeanRgb": [
+            209.07,
+            203.93,
+            188.86
+          ]
+        },
+        {
+          "second": 12.5,
+          "meanRgb": [
+            140.81,
+            132.85,
+            115.27
+          ],
+          "brightMeanRgb": [
+            209.87,
+            204.24,
+            188.52
+          ]
+        },
+        {
+          "second": 14.5,
+          "meanRgb": [
+            142.09,
+            134.16,
+            116.02
+          ],
+          "brightMeanRgb": [
+            209.66,
+            204.21,
+            188.26
+          ]
+        }
+      ],
+      "baseline": {
+        "taskId": "72284443073a1428",
+        "credit": 0.3,
+        "promptLength": 25996,
+        "promptSha256": "2e9d61cad4ea4848f97abe89742e4c8631eb34b33e9de9727b30b7620d88c3e5",
+        "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX27-72284443073a1428.mp4",
+        "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX27.json",
+        "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX27.jpg"
+      }
+    }
+  }
+}

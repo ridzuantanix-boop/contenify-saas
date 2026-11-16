@@ -1,0 +1,436 @@
+{
+  "styleId": "NX01",
+  "styleName": "Sembang Kawan Santai",
+  "ctaTarget": "tekan beg kuning",
+  "taskId": "d90ca7de68428053",
+  "supplierCredit": 0.3,
+  "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX01-d90ca7de68428053.mp4",
+  "mp4Sha256": "ef9ab9b74e561dcb53609c8d695a50133314c1e15b2c40b9c25306255532d42c",
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 720,
+        "height": 1280
+      },
+      {
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "48000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "15.040000",
+      "size": "4162747"
+    }
+  },
+  "language": "ms",
+  "languageProbability": 1.0,
+  "transcript": "Korang tengok ni, minyak herbe as herb. Nampak tak ada herbe kayu kat dalam ni. Botol dia comel sangat 30 ml sesuai untuk minyak urut tradisional senang nak bawa ke mana-mana. Baunya pun mempun memang menyegarkan. Kalau korang nak, tekan bet kuning.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.98,
+      "text": "Korang tengok ni, minyak herbe as herb. Nampak tak ada herbe kayu kat dalam ni."
+    },
+    {
+      "start": 4.18,
+      "end": 7.94,
+      "text": "Botol dia comel sangat 30 ml sesuai untuk minyak urut tradisional"
+    },
+    {
+      "start": 7.94,
+      "end": 9.58,
+      "text": "senang nak bawa ke mana-mana."
+    },
+    {
+      "start": 10.06,
+      "end": 14.48,
+      "text": "Baunya pun mempun memang menyegarkan. Kalau korang nak, tekan bet kuning."
+    }
+  ],
+  "words": [
+    {
+      "start": 0.0,
+      "end": 0.4,
+      "word": "Korang",
+      "probability": 0.5949
+    },
+    {
+      "start": 0.4,
+      "end": 0.66,
+      "word": "tengok",
+      "probability": 0.9991
+    },
+    {
+      "start": 0.66,
+      "end": 0.8,
+      "word": "ni,",
+      "probability": 0.9581
+    },
+    {
+      "start": 1.2,
+      "end": 1.44,
+      "word": "minyak",
+      "probability": 0.9884
+    },
+    {
+      "start": 1.44,
+      "end": 1.72,
+      "word": "herbe",
+      "probability": 0.4076
+    },
+    {
+      "start": 1.72,
+      "end": 1.92,
+      "word": "as",
+      "probability": 0.1899
+    },
+    {
+      "start": 1.92,
+      "end": 2.16,
+      "word": "herb.",
+      "probability": 0.2161
+    },
+    {
+      "start": 2.38,
+      "end": 2.68,
+      "word": "Nampak",
+      "probability": 0.9951
+    },
+    {
+      "start": 2.68,
+      "end": 2.8,
+      "word": "tak",
+      "probability": 0.9874
+    },
+    {
+      "start": 2.8,
+      "end": 2.94,
+      "word": "ada",
+      "probability": 0.8303
+    },
+    {
+      "start": 2.94,
+      "end": 3.18,
+      "word": "herbe",
+      "probability": 0.8359
+    },
+    {
+      "start": 3.18,
+      "end": 3.48,
+      "word": "kayu",
+      "probability": 0.9475
+    },
+    {
+      "start": 3.48,
+      "end": 3.58,
+      "word": "kat",
+      "probability": 0.7534
+    },
+    {
+      "start": 3.58,
+      "end": 3.82,
+      "word": "dalam",
+      "probability": 0.9885
+    },
+    {
+      "start": 3.82,
+      "end": 3.98,
+      "word": "ni.",
+      "probability": 0.993
+    },
+    {
+      "start": 4.18,
+      "end": 4.52,
+      "word": "Botol",
+      "probability": 0.8534
+    },
+    {
+      "start": 4.52,
+      "end": 4.6,
+      "word": "dia",
+      "probability": 0.4991
+    },
+    {
+      "start": 4.6,
+      "end": 5.0,
+      "word": "comel",
+      "probability": 0.6656
+    },
+    {
+      "start": 5.0,
+      "end": 5.26,
+      "word": "sangat",
+      "probability": 0.9891
+    },
+    {
+      "start": 5.26,
+      "end": 5.64,
+      "word": "30",
+      "probability": 0.7871
+    },
+    {
+      "start": 5.64,
+      "end": 6.08,
+      "word": "ml",
+      "probability": 0.5502
+    },
+    {
+      "start": 6.08,
+      "end": 6.74,
+      "word": "sesuai",
+      "probability": 0.8608
+    },
+    {
+      "start": 6.74,
+      "end": 6.92,
+      "word": "untuk",
+      "probability": 0.9402
+    },
+    {
+      "start": 6.92,
+      "end": 7.2,
+      "word": "minyak",
+      "probability": 0.9922
+    },
+    {
+      "start": 7.2,
+      "end": 7.4,
+      "word": "urut",
+      "probability": 0.9081
+    },
+    {
+      "start": 7.4,
+      "end": 7.94,
+      "word": "tradisional",
+      "probability": 0.9455
+    },
+    {
+      "start": 7.94,
+      "end": 8.68,
+      "word": "senang",
+      "probability": 0.5791
+    },
+    {
+      "start": 8.68,
+      "end": 8.8,
+      "word": "nak",
+      "probability": 0.9954
+    },
+    {
+      "start": 8.8,
+      "end": 8.98,
+      "word": "bawa",
+      "probability": 0.9573
+    },
+    {
+      "start": 8.98,
+      "end": 9.12,
+      "word": "ke",
+      "probability": 0.9965
+    },
+    {
+      "start": 9.12,
+      "end": 9.28,
+      "word": "mana",
+      "probability": 0.8505
+    },
+    {
+      "start": 9.28,
+      "end": 9.58,
+      "word": "-mana.",
+      "probability": 0.9297
+    },
+    {
+      "start": 10.06,
+      "end": 10.58,
+      "word": "Baunya",
+      "probability": 0.5542
+    },
+    {
+      "start": 10.58,
+      "end": 10.84,
+      "word": "pun",
+      "probability": 0.9991
+    },
+    {
+      "start": 10.84,
+      "end": 11.5,
+      "word": "mempun",
+      "probability": 0.7395
+    },
+    {
+      "start": 11.5,
+      "end": 11.7,
+      "word": "memang",
+      "probability": 0.9437
+    },
+    {
+      "start": 11.7,
+      "end": 12.34,
+      "word": "menyegarkan.",
+      "probability": 0.8187
+    },
+    {
+      "start": 12.74,
+      "end": 12.98,
+      "word": "Kalau",
+      "probability": 0.9309
+    },
+    {
+      "start": 12.98,
+      "end": 13.32,
+      "word": "korang",
+      "probability": 0.9976
+    },
+    {
+      "start": 13.32,
+      "end": 13.5,
+      "word": "nak,",
+      "probability": 0.9978
+    },
+    {
+      "start": 13.72,
+      "end": 14.0,
+      "word": "tekan",
+      "probability": 0.9684
+    },
+    {
+      "start": 14.0,
+      "end": 14.14,
+      "word": "bet",
+      "probability": 0.1945
+    },
+    {
+      "start": 14.14,
+      "end": 14.48,
+      "word": "kuning.",
+      "probability": 0.8748
+    }
+  ],
+  "speechStart": 0.0,
+  "speechEnd": 14.48,
+  "ctaTimingCandidate": {
+    "start": 10.06,
+    "end": 14.48,
+    "text": "Baunya pun mempun memang menyegarkan. Kalau korang nak, tekan bet kuning."
+  },
+  "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX01.jpg",
+  "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX01-v2-v3.jpg",
+  "frameTimes": [
+    0.4,
+    2.5,
+    5.0,
+    7.5,
+    10.0,
+    12.5,
+    14.5
+  ],
+  "colorSamples": [
+    {
+      "second": 0.4,
+      "meanRgb": [
+        99.52,
+        89.33,
+        71.11
+      ],
+      "brightMeanRgb": [
+        226.88,
+        206.41,
+        165.26
+      ]
+    },
+    {
+      "second": 2.5,
+      "meanRgb": [
+        103.96,
+        91.41,
+        72.93
+      ],
+      "brightMeanRgb": [
+        228.88,
+        205.68,
+        162.31
+      ]
+    },
+    {
+      "second": 5.0,
+      "meanRgb": [
+        97.85,
+        87.59,
+        72.56
+      ],
+      "brightMeanRgb": [
+        214.46,
+        213.1,
+        200.45
+      ]
+    },
+    {
+      "second": 7.5,
+      "meanRgb": [
+        96.23,
+        86.61,
+        71.74
+      ],
+      "brightMeanRgb": [
+        217.56,
+        216.3,
+        201.79
+      ]
+    },
+    {
+      "second": 10.0,
+      "meanRgb": [
+        99.03,
+        88.95,
+        73.33
+      ],
+      "brightMeanRgb": [
+        220.59,
+        210.09,
+        182.15
+      ]
+    },
+    {
+      "second": 12.5,
+      "meanRgb": [
+        97.31,
+        87.75,
+        72.9
+      ],
+      "brightMeanRgb": [
+        218.95,
+        216.67,
+        200.68
+      ]
+    },
+    {
+      "second": 14.5,
+      "meanRgb": [
+        101.81,
+        91.32,
+        74.15
+      ],
+      "brightMeanRgb": [
+        219.39,
+        216.34,
+        200.3
+      ]
+    }
+  ],
+  "baseline": {
+    "taskId": "8d0aeb64cde554e3",
+    "credit": 0.3,
+    "promptLength": 24728,
+    "promptSha256": "da0480866f5a0baf01eb3a1aa5fcf6a7ea8f446ea1047175bfd18ee9481af324",
+    "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX01-8d0aeb64cde554e3.mp4",
+    "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX01.json",
+    "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX01.jpg"
+  }
+}

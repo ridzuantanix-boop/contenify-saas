@@ -1,0 +1,329 @@
+{
+  "styleId": "NX27",
+  "styleName": "Kuali Cooking Demo",
+  "ctaTarget": "tekan beg kuning",
+  "taskId": "985afe4a7da45bd5",
+  "supplierCredit": 0.3,
+  "sourceMp4": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\videos\\NX27-985afe4a7da45bd5.mp4",
+  "mp4Sha256": "f568c33f63fb133ac5d7d172e667d33323114acf0673b0800fee39f72c0725ab",
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 720,
+        "height": 1280
+      },
+      {
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "48000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "15.040000",
+      "size": "4479779"
+    }
+  },
+  "language": "ms",
+  "languageProbability": 1.0,
+  "transcript": "Tengok kuali wajan carbon steel ini, sangat praktikal untuk masakkan harian anda. Rekaan kukuh dengan pemegang kayu selesa, hidangan siap dimasak dengan sempurna. Tekan beg kuning.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 4.86,
+      "text": "Tengok kuali wajan carbon steel ini, sangat praktikal untuk masakkan harian anda."
+    },
+    {
+      "start": 5.3,
+      "end": 11.08,
+      "text": "Rekaan kukuh dengan pemegang kayu selesa, hidangan siap dimasak dengan sempurna."
+    },
+    {
+      "start": 12.46,
+      "end": 13.88,
+      "text": "Tekan beg kuning."
+    }
+  ],
+  "words": [
+    {
+      "start": 0.0,
+      "end": 0.4,
+      "word": "Tengok",
+      "probability": 0.8607
+    },
+    {
+      "start": 0.4,
+      "end": 0.78,
+      "word": "kuali",
+      "probability": 0.8299
+    },
+    {
+      "start": 0.78,
+      "end": 1.14,
+      "word": "wajan",
+      "probability": 0.9505
+    },
+    {
+      "start": 1.14,
+      "end": 1.44,
+      "word": "carbon",
+      "probability": 0.4008
+    },
+    {
+      "start": 1.44,
+      "end": 1.84,
+      "word": "steel",
+      "probability": 0.9382
+    },
+    {
+      "start": 1.84,
+      "end": 2.02,
+      "word": "ini,",
+      "probability": 0.4476
+    },
+    {
+      "start": 2.42,
+      "end": 2.84,
+      "word": "sangat",
+      "probability": 0.9744
+    },
+    {
+      "start": 2.84,
+      "end": 3.52,
+      "word": "praktikal",
+      "probability": 0.8896
+    },
+    {
+      "start": 3.52,
+      "end": 3.74,
+      "word": "untuk",
+      "probability": 0.9971
+    },
+    {
+      "start": 3.74,
+      "end": 4.26,
+      "word": "masakkan",
+      "probability": 0.9086
+    },
+    {
+      "start": 4.26,
+      "end": 4.56,
+      "word": "harian",
+      "probability": 0.9638
+    },
+    {
+      "start": 4.56,
+      "end": 4.86,
+      "word": "anda.",
+      "probability": 0.9553
+    },
+    {
+      "start": 5.3,
+      "end": 5.76,
+      "word": "Rekaan",
+      "probability": 0.8306
+    },
+    {
+      "start": 5.76,
+      "end": 6.16,
+      "word": "kukuh",
+      "probability": 0.9559
+    },
+    {
+      "start": 6.16,
+      "end": 6.38,
+      "word": "dengan",
+      "probability": 0.9845
+    },
+    {
+      "start": 6.38,
+      "end": 6.84,
+      "word": "pemegang",
+      "probability": 0.964
+    },
+    {
+      "start": 6.84,
+      "end": 7.2,
+      "word": "kayu",
+      "probability": 0.8033
+    },
+    {
+      "start": 7.2,
+      "end": 7.72,
+      "word": "selesa,",
+      "probability": 0.8929
+    },
+    {
+      "start": 8.22,
+      "end": 9.42,
+      "word": "hidangan",
+      "probability": 0.9267
+    },
+    {
+      "start": 9.42,
+      "end": 9.8,
+      "word": "siap",
+      "probability": 0.9856
+    },
+    {
+      "start": 9.8,
+      "end": 10.3,
+      "word": "dimasak",
+      "probability": 0.9786
+    },
+    {
+      "start": 10.3,
+      "end": 10.44,
+      "word": "dengan",
+      "probability": 0.9677
+    },
+    {
+      "start": 10.44,
+      "end": 11.08,
+      "word": "sempurna.",
+      "probability": 0.9901
+    },
+    {
+      "start": 12.46,
+      "end": 13.26,
+      "word": "Tekan",
+      "probability": 0.878
+    },
+    {
+      "start": 13.26,
+      "end": 13.4,
+      "word": "beg",
+      "probability": 0.2417
+    },
+    {
+      "start": 13.4,
+      "end": 13.88,
+      "word": "kuning.",
+      "probability": 0.9906
+    }
+  ],
+  "speechStart": 0.0,
+  "speechEnd": 13.88,
+  "ctaTimingCandidate": {
+    "start": 12.46,
+    "end": 13.88,
+    "text": "Tekan beg kuning."
+  },
+  "contactSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\contact-sheets\\NX27.jpg",
+  "comparisonSheet": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v3-video-validation\\comparisons\\NX27-v2-v3.jpg",
+  "frameTimes": [
+    0.4,
+    2.5,
+    5.0,
+    7.5,
+    10.0,
+    12.5,
+    14.5
+  ],
+  "colorSamples": [
+    {
+      "second": 0.4,
+      "meanRgb": [
+        160.57,
+        154.04,
+        137.66
+      ],
+      "brightMeanRgb": [
+        210.91,
+        207.14,
+        193.0
+      ]
+    },
+    {
+      "second": 2.5,
+      "meanRgb": [
+        152.79,
+        146.01,
+        130.19
+      ],
+      "brightMeanRgb": [
+        209.7,
+        205.51,
+        191.42
+      ]
+    },
+    {
+      "second": 5.0,
+      "meanRgb": [
+        141.92,
+        134.95,
+        119.8
+      ],
+      "brightMeanRgb": [
+        209.84,
+        205.41,
+        192.08
+      ]
+    },
+    {
+      "second": 7.5,
+      "meanRgb": [
+        140.01,
+        131.94,
+        115.09
+      ],
+      "brightMeanRgb": [
+        209.49,
+        204.44,
+        189.61
+      ]
+    },
+    {
+      "second": 10.0,
+      "meanRgb": [
+        137.96,
+        130.01,
+        112.73
+      ],
+      "brightMeanRgb": [
+        209.07,
+        203.93,
+        188.86
+      ]
+    },
+    {
+      "second": 12.5,
+      "meanRgb": [
+        140.81,
+        132.85,
+        115.27
+      ],
+      "brightMeanRgb": [
+        209.87,
+        204.24,
+        188.52
+      ]
+    },
+    {
+      "second": 14.5,
+      "meanRgb": [
+        142.09,
+        134.16,
+        116.02
+      ],
+      "brightMeanRgb": [
+        209.66,
+        204.21,
+        188.26
+      ]
+    }
+  ],
+  "baseline": {
+    "taskId": "72284443073a1428",
+    "credit": 0.3,
+    "promptLength": 25996,
+    "promptSha256": "2e9d61cad4ea4848f97abe89742e4c8631eb34b33e9de9727b30b7620d88c3e5",
+    "mp4Path": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\videos\\NX27-72284443073a1428.mp4",
+    "transcriptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\transcripts\\NX27.json",
+    "contactSheetPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\affimatik-real-v2-release\\contact-sheets\\NX27.jpg"
+  }
+}
