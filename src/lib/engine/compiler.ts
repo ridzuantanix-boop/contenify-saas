@@ -81,6 +81,31 @@ export const HUMAN_REALISM_MASTERPROMPT_V8 = [
   'Use environment-appropriate believable light, natural skin tones, consistent exposure and white balance, authentic material texture and physical shadows. No yellow cast, teal-orange grade, fake glow, excessive sharpening or plastic skin.',
 ].join(' ');
 
+const EXPANSION_V1_STYLE_IDS = new Set([
+  'NX21', 'NX22', 'NX23', 'NX24', 'NX25',
+  'NX26', 'NX27', 'NX28', 'NX29', 'NX30',
+]);
+
+export const PAWARNA_TRUE_WHITE_PHONE_COLOR_DNA = [
+  '[PAWARNA TRUE-WHITE REAL PHONE COLOR DNA — NX21–NX30]',
+  'Bright, naturally exposed Malaysian smartphone footage. Neutral daylight-balanced white balance.',
+  'White garments, walls, appliances and surfaces remain visually white, not cream or yellow.',
+  'Preserve accurate garment, product and skin colours. Fresh, clean everyday exposure with natural contrast.',
+  'No global yellow, amber, sepia, muddy brown or desaturated colour cast.',
+  'No artificial cinematic colour grading, HDR glow, skin smoothing or additional sharpening.',
+  'Keep the selected style’s own physically relevant environment; do not replace every Fashion and Kitchen setting with one generic room.',
+].join(' ');
+
+export const EXPANSION_ANTI_AI_MALAYSIAN_VOICE_DNA = [
+  '[ANTI-AI MALAYSIAN VOICE — NX21–NX30]',
+  'Speak in authentic contemporary Malaysian Malay, like a real creator explaining something spontaneously to a friend.',
+  'Use conversational sentence structure, natural emphasis, varied pace and meaningful reactions to the visible product. Avoid formulaic promotional phrasing and forced local slang.',
+  'Do not habitually use filler words or stock phrases such as “lah”, “la”, “memang best”, “game changer”, “worth it”, “wajib cuba”, “yang paling best” or “hari ini saya nak kongsikan”.',
+  'Do not repeatedly open videos with the same catchphrase, and do not replace these phrases with a new universal catchphrase.',
+  'Keep delivery natural and age-appropriate for the selected style; not every presenter should sound like a teenager.',
+  'Nexabot remains the sole writer of every spoken sentence; AffiMatik supplies voice direction, not a script.',
+].join(' ');
+
 const VOICE_PERSONALITY_DIRECTIONS: Record<string, string> = {
   friendly: 'Warm and relaxed, like speaking to a friend; soft hook, easy sentence linking and a small reassuring finish.',
   energetic: 'Start quickly with lively but controlled energy, vary pace after the hook and emphasize only the useful product point; never shout.',
@@ -317,7 +342,8 @@ export class DynamicPromptCompiler {
       `Begin immediately in the live physical scene. Treat the uploaded image solely as a product identity reference; never paste it in as a still introductory frame or automatically use it as the first video frame.`,
       `Strictly NO jump cuts, NO push-in zoom, NO camera spin, NO crash pan, NO first-frame flash, NO synthetic colour grading, NO excessive cinematic effects, NO plastic skin, NO AI-generated look.`,
       HUMAN_REALISM_MASTERPROMPT_V8,
-    ].join(' ');
+      EXPANSION_V1_STYLE_IDS.has(style.id) ? PAWARNA_TRUE_WHITE_PHONE_COLOR_DNA : '',
+    ].filter(Boolean).join(' ');
 
     // 4. SHARIAH MODESTY LOCK V5
     let modestyDirectives = '';
@@ -473,6 +499,7 @@ export class DynamicPromptCompiler {
         ].join(' ')
       : [
           MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
+          EXPANSION_V1_STYLE_IDS.has(style.id) ? EXPANSION_ANTI_AI_MALAYSIAN_VOICE_DNA : '',
           '[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]',
           'AffiMatik has not supplied, generated, previewed or approved spoken sentences. Inspect the uploaded product reference and independently write original natural Malaysian Malay dialogue and lip-sync.',
           `Follow the unique ${style.id} scene purpose, opening, buyer situation, product interaction, speaking personality, camera direction and ending. Create a full spontaneous affiliate flow with an attention-grabbing hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or complete natural ending.`,

@@ -37,10 +37,26 @@ describe('Expansion V1 NX21-NX30',()=>{
       expect(prompt).toContain('[PRODUCT SCALE LOCK]');
       expect(prompt).toContain('For larger products, preserve believable real-world dimensions');
       expect(prompt).toContain('Nexabot independently writes the dialogue');
+      expect(prompt).toContain('[PAWARNA TRUE-WHITE REAL PHONE COLOR DNA — NX21–NX30]');
+      expect(prompt).toContain('White garments, walls, appliances and surfaces remain visually white, not cream or yellow.');
+      expect(prompt).toContain('[ANTI-AI MALAYSIAN VOICE — NX21–NX30]');
+      expect(prompt).toContain('Nexabot remains the sole writer of every spoken sentence');
+      expect(prompt).toContain('not every presenter should sound like a teenager');
       expect(prompt).toContain('This CTA is the final spoken utterance');
       expect(prompt).toContain('must not be copied as the first frame');
       expect(prompt).not.toContain('Script:');
     }
+  });
+
+  it('keeps true-white and anti-AI voice refinement scoped to NX21-NX30',()=>{
+    const expansionPrompt=DynamicPromptCompiler.compile(product,getVideoStyle('NX21')!,scene,{callToAction:'tiktok_shop'}).providerPrompt;
+    const productionPrompt=DynamicPromptCompiler.compile(product,getVideoStyle('NX01')!,scene,{callToAction:'tiktok_shop'}).providerPrompt;
+    expect(expansionPrompt).toContain('No global yellow, amber, sepia, muddy brown or desaturated colour cast.');
+    expect(expansionPrompt).toContain('Do not habitually use filler words or stock phrases');
+    expect(expansionPrompt).not.toContain('warm golden cinematic lighting');
+    expect(expansionPrompt).not.toContain('cream-coloured white surfaces');
+    expect(productionPrompt).not.toContain('[PAWARNA TRUE-WHITE REAL PHONE COLOR DNA — NX21–NX30]');
+    expect(productionPrompt).not.toContain('[ANTI-AI MALAYSIAN VOICE — NX21–NX30]');
   });
 
   it('keeps audio contracts non-contradictory and kid presentation faceless',()=>{
