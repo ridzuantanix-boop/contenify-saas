@@ -69,6 +69,18 @@ describe('Expansion V1 NX21-NX30',()=>{
     expect(STYLE_DIRECTORS.NX25.presenterVisibility).toContain('No child face');
   });
 
+  it('applies only the evidence-backed NX23 colour and NX27 CTA timing corrections',()=>{
+    const nx23=DynamicPromptCompiler.compile(product,getVideoStyle('NX23')!,scene,{callToAction:'click_button'}).providerPrompt;
+    const nx27=DynamicPromptCompiler.compile(product,getVideoStyle('NX27')!,scene,{callToAction:'click_button'}).providerPrompt;
+    expect(nx23).toContain('plain neutral daylight dressing wall physically unrelated to the source retail display');
+    expect(nx23).toContain('Do not inherit warm boutique lighting, cream décor or the source-image background');
+    expect(nx27).toContain('complete one practical product point before moving into the CTA');
+    expect(nx27).toContain('do not stack a second claim that crowds the natural closing');
+    expect(nx27).toContain('Give the selected CTA enough unhurried conversational room to finish naturally');
+    expect(nx27).not.toContain('mandatory short script');
+    expect(nx27).not.toContain('fixed silence');
+  });
+
   it('keeps the mobile picker responsive and labels unverified media clearly',()=>{
     const factory=readFileSync('src/app/(dashboard)/factory/page.tsx','utf8');
     const media=readFileSync('src/components/styles/style-poster-media.tsx','utf8');
