@@ -29,9 +29,15 @@ describe('iPhone-compatible public style samples', () => {
     expect(response.body).toBeNull();
   });
 
-  it('serves the owner-approved NX29 preview through the static asset pipeline', async () => {
-    const response = await GET(new NextRequest('https://preview.example/api/style-samples/NX29'), context('NX29'));
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('https://preview.example/style-previews/NX29/sample-demo-v1.mp4?v=demo-replacement-v1-20261115');
+  it('serves every owner-approved expansion preview and rejects unpublished expansion media', async () => {
+    for (const id of ['NX21','NX22','NX23','NX24','NX25','NX26','NX28','NX29']) {
+      const response = await GET(new NextRequest(`https://preview.example/api/style-samples/${id}`), context(id));
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(`https://preview.example/style-previews/${id}/sample-demo-v1.mp4?v=demo-replacement-v1-20261115`);
+    }
+    for (const id of ['NX27','NX30']) {
+      const response = await GET(new NextRequest(`https://preview.example/api/style-samples/${id}`), context(id));
+      expect(response.status).toBe(404);
+    }
   });
 });

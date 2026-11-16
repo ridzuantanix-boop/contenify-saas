@@ -20,11 +20,12 @@ describe('Expansion V1 NX21-NX30',()=>{
     expect(ids.slice(0,6).every(id=>getVideoStyle(id)?.category==='fashion')).toBe(true);
   });
 
-  it('publishes only the owner-approved NX29 media and keeps the other expansion previews as placeholders',()=>{
+  it('publishes only owner-approved expansion media and keeps rejected previews as placeholders',()=>{
+    const approvedIds = new Set(['NX21','NX22','NX23','NX24','NX25','NX26','NX28','NX29']);
     for(const id of ids){
-      const approved = id === 'NX29';
+      const approved = approvedIds.has(id);
       expect(getVideoStyle(id)?.qualityStatus).toBe(approved ? 'video_tested' : 'prompt_validated');
-      expect(getVideoStyle(id)?.previewVideoUrl).toBe(approved ? '/api/style-samples/NX29' : null);
+      expect(getVideoStyle(id)?.previewVideoUrl).toBe(approved ? `/api/style-samples/${id}` : null);
       expect(STYLE_MARKETING_METADATA[id as keyof typeof STYLE_MARKETING_METADATA].previewStatus).toBe(approved ? 'verified_media' : 'development_placeholder');
     }
   });

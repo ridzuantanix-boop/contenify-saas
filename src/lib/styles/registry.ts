@@ -24,7 +24,7 @@ function make(s: Seed): VideoStyle {
     category: s.category, engine: 'nexabot', durationSeconds: 15, audioMode: s.audio ?? 'spoken_bm',
     supportedProductCategories: s.suitable, requiredAssets: ['product_image'], optionalAssets: s.avatar ? ['avatar_reference'] : [],
     actionType: s.action, cameraProfile: s.camera, identityLock: true, realismLock: true, modestyLock: true,
-    promptTemplateVersion: VERSION, qualityStatus: s.validation ?? 'video_tested', publicationStatus: 'published',
+    promptTemplateVersion: VERSION, qualityStatus: marketing.previewStatus === 'verified_media' ? 'video_tested' : (s.validation ?? 'video_tested'), publicationStatus: 'published',
     previewVideoUrl: marketing.previewStatus === 'verified_media' ? marketing.previewPath : null, tags: [...marketing.tags], legacyAliasId: s.legacyAliasId,
     creativeDirection: { targetViewingExperience, openingStrategy, speakingPersonality, humanBehaviour, sceneContext, productInteraction, expectedEnding },
     actionPlan: {

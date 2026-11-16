@@ -9,6 +9,13 @@ import { trackConversion } from '@/lib/analytics/conversion';
 
 const proof = [
   { id: 'NX29', product: 'Panasonic Microwave', source: '/marketing/proof/nx29-microwave-source.webp', title: 'Kitchen Appliance Review', note: 'Gambar microwave dalam ruang dapur biasa ditukar menjadi video presenter yang menerangkan kawalan produk secara natural. Demo Nexabot sebenar ini telah diluluskan oleh owner.' },
+  { id: 'NX21', product: 'Baju Kurung', source: '/marketing/proof/nx21-kurung-source.webp', title: 'Kurung Catwalk', note: 'Imej pakaian asal dijadikan persembahan full-look yang sopan dengan gerakan fabrik dan langkah natural.' },
+  { id: 'NX22', product: 'Kebaya Labuh', source: '/marketing/proof/nx22-kebaya-source.webp', title: 'Kebaya Elegance', note: 'Rujukan kebaya ditukar menjadi showcase elegan yang mengekalkan identiti pakaian dan fokus pada jatuhan fabrik.' },
+  { id: 'NX23', product: 'Tudung', source: '/marketing/proof/nx23-tudung-source.webp', title: 'Tudung Styling', note: 'Imej tudung menjadi video styling dengan drape, liputan aurat dan penyampaian Bahasa Melayu yang natural.' },
+  { id: 'NX24', product: 'Modest OOTD', source: '/marketing/proof/nx24-ootd-source.webp', title: 'OOTD Mirror Review', note: 'Gambar outfit dijadikan review cermin gaya telefon pintar yang terasa seperti kandungan creator sebenar.' },
+  { id: 'NX25', product: 'Kids Outfit', source: '/marketing/proof/nx25-kids-source.webp', title: 'Kids Outfit Showcase', note: 'Pakaian kanak-kanak dipersembahkan secara product-led tanpa memerlukan wajah atau pelakon kanak-kanak.' },
+  { id: 'NX26', product: 'Koleksi Baju Kurung', source: '/marketing/proof/nx26-boutique-source.webp', title: 'Boutique Collection', note: 'Satu imej pakaian ditukar menjadi persembahan butik yang bergerak antara siluet dan detail produk.' },
+  { id: 'NX28', product: 'Air Fryer', source: '/marketing/proof/nx28-air-fryer-source.webp', title: 'Air Fryer Demo', note: 'Imej appliance dijadikan demo dapur praktikal dengan saiz, bentuk dan kawalan produk yang kekal munasabah.' },
   { id: 'NX01', product: 'Minyak Herba S-HERB', source: '/marketing/proof/sherb-source.jpg', title: 'Sembang Kawan Santai', note: 'Screenshot asal produk ditukar menjadi video review gaya sembang santai—sesuai untuk audiens TikTok yang suka penyampaian jujur dan tidak terlalu menjual.' },
   { id: 'NX02', product: 'Vitamin C+E', source: '/marketing/proof/vitamin-ce-source.jpg', title: 'Review Sambil Pegang', note: 'Gambar produk ringkas dijadikan video presenter memegang produk dengan label, warna, dan saiz botol yang kekal kemas serta mudah dikenali penonton.' },
 ];
