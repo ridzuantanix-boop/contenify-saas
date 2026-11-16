@@ -8,9 +8,9 @@ import { AUTHORITATIVE_PLANS, LAUNCH_PACK, effectiveMyrPerVideo } from '@/lib/bi
 import { trackConversion } from '@/lib/analytics/conversion';
 
 const proof = [
+  { id: 'NX29', product: 'Panasonic Microwave', source: '/marketing/proof/nx29-microwave-source.webp', title: 'Kitchen Appliance Review', note: 'Gambar microwave dalam ruang dapur biasa ditukar menjadi video presenter yang menerangkan kawalan produk secara natural. Demo Nexabot sebenar ini telah diluluskan oleh owner.' },
   { id: 'NX01', product: 'Minyak Herba S-HERB', source: '/marketing/proof/sherb-source.jpg', title: 'Sembang Kawan Santai', note: 'Screenshot asal produk ditukar menjadi video review gaya sembang santai—sesuai untuk audiens TikTok yang suka penyampaian jujur dan tidak terlalu menjual.' },
   { id: 'NX02', product: 'Vitamin C+E', source: '/marketing/proof/vitamin-ce-source.jpg', title: 'Review Sambil Pegang', note: 'Gambar produk ringkas dijadikan video presenter memegang produk dengan label, warna, dan saiz botol yang kekal kemas serta mudah dikenali penonton.' },
-  { id: 'NX17', product: 'SERIYA Radiance Serum', source: '/marketing/proof/seriya-source.webp', title: 'Recommend Secara Spontan', note: 'Contoh kategori kecantikan dengan gaya penceritaan semula jadi dan penutup CTA lengkap untuk tarik klik ke beg kuning.' },
 ];
 
 const faqs = [
@@ -80,7 +80,7 @@ export default function LandingPage() {
           </div>
           <div className="mx-auto w-full max-w-xl rounded-[30px] border border-white bg-white p-3 shadow-2xl shadow-violet-200/70">
             <p className="mb-3 px-1 text-xs font-black text-slate-700">Satu gambar produk → satu video affiliate sebenar</p>
-            <div className="grid grid-cols-[.72fr_auto_1fr] items-center gap-2"><div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-violet-50"><Image src="/marketing/proof/seriya-source.webp" alt="Imej sumber produk Seriya" fill priority className="object-cover" sizes="(max-width: 768px) 38vw, 220px" /><span className="absolute bottom-2 left-2 rounded-full bg-white/95 px-2 py-1 text-[9px] font-black">Gambar asal</span></div><ChevronRight className="h-6 w-6 text-violet-600" /><div className="relative overflow-hidden rounded-2xl bg-slate-950"><SoundDemo id="NX17" placement="hero" className="aspect-[9/16] w-full object-cover" poster="/style-posters/NX17.webp" /><span className="pointer-events-none absolute left-2 top-2 rounded-full bg-emerald-500 px-2 py-1 text-[9px] font-black text-white">Video siap</span></div></div>
+            <div className="grid grid-cols-[.72fr_auto_1fr] items-center gap-2"><div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-violet-50"><Image src="/marketing/proof/nx29-microwave-source.webp" alt="Imej sumber microwave Panasonic" fill priority className="object-cover" sizes="(max-width: 768px) 38vw, 220px" /><span className="absolute bottom-2 left-2 rounded-full bg-white/95 px-2 py-1 text-[9px] font-black">Gambar asal</span></div><ChevronRight className="h-6 w-6 text-violet-600" /><div className="relative overflow-hidden rounded-2xl bg-slate-950"><SoundDemo id="NX29" placement="hero" className="aspect-[9/16] w-full object-cover" poster="/style-posters/NX29.webp" /><span className="pointer-events-none absolute left-2 top-2 rounded-full bg-emerald-500 px-2 py-1 text-[9px] font-black text-white">Demo owner-approved</span></div></div>
           </div>
         </div>
       </section>

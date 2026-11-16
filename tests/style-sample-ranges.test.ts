@@ -28,4 +28,10 @@ describe('iPhone-compatible public style samples', () => {
     expect(response.headers.get('content-length')).toBe('0');
     expect(response.body).toBeNull();
   });
+
+  it('serves the owner-approved NX29 preview through the static asset pipeline', async () => {
+    const response = await GET(new NextRequest('https://preview.example/api/style-samples/NX29'), context('NX29'));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://preview.example/style-previews/NX29/sample-demo-v1.mp4?v=demo-replacement-v1-20261115');
+  });
 });

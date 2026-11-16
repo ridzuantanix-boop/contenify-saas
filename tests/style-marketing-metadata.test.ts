@@ -58,7 +58,7 @@ describe('AffiMatik V7.1 style marketing metadata', () => {
 
   it('ships optimized 720x1280 posters and demos only for styles with verified media', () => {
     const verified = ALL_STYLE_MARKETING_METADATA.filter((metadata) => metadata.previewStatus === 'verified_media');
-    expect(verified).toHaveLength(20);
+    expect(verified).toHaveLength(21);
     for (const metadata of verified) {
       const poster = resolve(process.cwd(), 'public', metadata.thumbnailPath.slice(1));
       const sample = resolve(process.cwd(), 'public', 'style-previews', metadata.id, 'sample-demo-v1.mp4');

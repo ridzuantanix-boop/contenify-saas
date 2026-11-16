@@ -3,6 +3,7 @@ const SAMPLE_IDS = new Set([
   'NX01', 'NX02', 'NX03', 'NX05', 'NX07', 'NX09', 'NX10',
   'RH01', 'RH02', 'RH03', 'RH04', 'RH17', 'RH19',
   'NX11', 'NX12', 'NX13', 'NX14', 'NX15', 'NX16', 'NX17',
+  'NX29',
 ]);
 const SAMPLE_RELEASE = 'demo-replacement-v1-20261115';
 

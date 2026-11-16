@@ -31,7 +31,8 @@ describe('AffiMatik Sales Page Conversion V2', () => {
     ]) expect(page).toContain(copy);
     expect(page).toContain('Screenshot biasa → video affiliate');
     expect(page).toContain("Demo {String(index+1).padStart(2,'0')}");
-    for (const id of ['NX17', 'NX01', 'NX02']) expect(page).toContain(id);
+    for (const id of ['NX29', 'NX01', 'NX02']) expect(page).toContain(id);
+    expect(page).toContain('Demo owner-approved');
     expect(page).not.toContain("{ id: 'RH03'");
     expect(page).not.toContain('Nova Lumi Table Lamp');
   });
@@ -43,6 +44,9 @@ describe('AffiMatik Sales Page Conversion V2', () => {
       'public/marketing/proof/seriya-source.webp',
       'public/marketing/proof/sherb-source.jpg',
       'public/marketing/proof/vitamin-ce-source.jpg',
+      'public/marketing/proof/nx29-microwave-source.webp',
+      'public/style-previews/NX29/sample-demo-v1.mp4',
+      'public/style-posters/NX29.webp',
     ];
     for (const file of files) {
       const bytes = fs.readFileSync(path.join(root, file));

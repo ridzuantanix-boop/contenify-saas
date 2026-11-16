@@ -15,7 +15,7 @@ describe('mobile-first affiliate sales page', () => {
   it('shows sound controls for the three proof videos', () => {
     expect(page).toContain('Tekan Untuk Dengar Suara BM');
     expect(page).toContain('Sound On · Suara BM');
-    for (const id of ['NX01', 'NX02', 'NX17']) expect(page).toContain(`id: '${id}'`);
+    for (const id of ['NX29', 'NX01', 'NX02']) expect(page).toContain(`id: '${id}'`);
   });
 
   it('contains the mobile trust grid and no internal implementation jargon', () => {
