@@ -1,4 +1,5 @@
 import json
+import os
 import wave
 from pathlib import Path
 
@@ -6,7 +7,7 @@ import numpy as np
 from faster_whisper import WhisperModel
 
 
-ROOT = Path("output/expansion-v1-real-qa")
+ROOT = Path(os.environ.get("QA_ROOT", "output/expansion-v1-real-qa"))
 AUDIO = ROOT / "audio"
 OUT = ROOT / "transcripts"
 OUT.mkdir(parents=True, exist_ok=True)
