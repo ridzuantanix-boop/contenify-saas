@@ -22,7 +22,17 @@ const headers = { Authorization: `Bearer ${apiKey}`, 'x-api-key': apiKey };
 const now = () => new Date().toISOString();
 const wait = (ms) => new Promise((resolveWait) => setTimeout(resolveWait, ms));
 const sha = (value) => createHash('sha256').update(value).digest('hex');
-const atomic = (path, value) => { const temporary = `${path}.tmp`; writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`); renameSync(temporary, path); };
+const atomic = (path, value) => {
+  const temporary = `${path}.tmp`;
+  writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`);
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    try { renameSync(temporary, path); return; }
+    catch (error) {
+      if (!['EPERM','EACCES'].includes(error?.code) || attempt === 19) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+  }
+};
 async function request(url, options = {}) { const response = await fetch(url, options); const raw = await response.text(); let data; try { data = JSON.parse(raw); } catch { data = { raw: raw.slice(0, 2000) }; } return { response, data }; }
 async function balance() { const { response, data } = await request(`${baseUrl}/api/v1/credits`, { headers }); const value = Number(data.credit ?? data.balance); if (!response.ok || !Number.isFinite(value)) throw new Error(`Provider balance unavailable: HTTP ${response.status}.`); return value; }
 
