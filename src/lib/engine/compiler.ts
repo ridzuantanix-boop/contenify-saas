@@ -22,13 +22,13 @@ import {
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'pawarna-masterprompt-director-v10.2-product-scale-12-18-cta-timing';
+export const GEMS_PROMPT_VERSION = 'affimatik-real-v2-global-quality-30-styles';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT — OWNER CREATIVE INTENT]',
   'Nexabot independently writes the dialogue; AffiMatik supplies no spoken script.',
   'Create a complete energetic Malaysian affiliate conversation across most of the 15-second clip: a spontaneous audience-relevant hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or a complete natural ending.',
-  'Use approximately 40–48 spoken Malay words as an initial creative pacing target, not an inflexible limit. Keep the original fast but believable human rhythm; never force an artificial speed-up, robotic compression or a premature silent gap.',
+  'Use only as much dialogue as this style and product can complete naturally within 15 seconds. Prefer one meaningful product-specific observation over stacked generic benefits. Do not impose a universal word count, force an artificial speed-up, use robotic compression or create a premature silent gap.',
   'Let emphasis, breath, sentence linking and pace vary like a real creator speaking in one take. Preserve persuasive energy and natural imperfection rather than flattening the delivery into cautious category narration.',
   'When a CTA is selected, deliver it conversationally near the natural end and complete it before the clip ends. The CTA is the final spoken utterance: after its last word, add no new word, syllable, phoneme, repetition, thanks, tagline, filler or corrupted speech.',
   'Natural benefit-oriented storytelling is allowed when it follows a recognizable ordinary product purpose or customer-confirmed fact. Never invent an objectively false concrete specification, regulated outcome, price, review count, certification, popularity signal or personal testimonial.',
@@ -81,28 +81,26 @@ export const HUMAN_REALISM_MASTERPROMPT_V8 = [
   'Use environment-appropriate believable light, natural skin tones, consistent exposure and white balance, authentic material texture and physical shadows. No yellow cast, teal-orange grade, fake glow, excessive sharpening or plastic skin.',
 ].join(' ');
 
-const EXPANSION_V1_STYLE_IDS = new Set([
-  'NX21', 'NX22', 'NX23', 'NX24', 'NX25',
-  'NX26', 'NX27', 'NX28', 'NX29', 'NX30',
-]);
-
-export const PAWARNA_TRUE_WHITE_PHONE_COLOR_DNA = [
-  '[PAWARNA TRUE-WHITE REAL PHONE COLOR DNA — NX21–NX30]',
+export const PAWARNA_TRUE_COLOR_REAL_V2 = [
+  '[PAWARNA TRUE COLOR™ — REAL V2 GLOBAL QUALITY FOUNDATION]',
   'Bright, naturally exposed Malaysian smartphone footage. Neutral daylight-balanced white balance.',
-  'White garments, walls, appliances and surfaces remain visually white, not cream or yellow.',
-  'Preserve accurate garment, product and skin colours. Fresh, clean everyday exposure with natural contrast.',
-  'No global yellow, amber, sepia, muddy brown or desaturated colour cast.',
-  'No artificial cinematic colour grading, HDR glow, skin smoothing or additional sharpening.',
-  'Keep the selected style’s own physically relevant environment; do not replace every Fashion and Kitchen setting with one generic room.',
+  'Genuinely neutral-white garments, walls, appliances and surfaces remain visually white, not cream or yellow. If the actual reference product is cream, beige or yellow, preserve that original identity exactly.',
+  'Preserve accurate garment, product and natural skin colours. Use fresh readable exposure, natural contrast and realistic material texture.',
+  'If the source image contains warm tungsten lighting, construct an appropriate neutral-daylight environment instead of inheriting its yellow cast.',
+  'No global yellow, amber, sepia, muddy brown, grey or desaturated cast; no teal-orange treatment.',
+  'No unnecessary cinematic grading, overprocessed HDR glow, plastic beauty enhancement, skin smoothing or artificial sharpening.',
+  'Keep the selected style’s own physically relevant environment; never replace all styles with one generic white room.',
 ].join(' ');
 
-export const EXPANSION_ANTI_AI_MALAYSIAN_VOICE_DNA = [
-  '[ANTI-AI MALAYSIAN VOICE — NX21–NX30]',
+export const PAWARNA_HUMAN_VOICE_REAL_V2 = [
+  '[PAWARNA HUMAN VOICE™ — REAL V2 GLOBAL QUALITY FOUNDATION]',
   'Speak in authentic contemporary Malaysian Malay, like a real creator explaining something spontaneously to a friend.',
   'Use conversational sentence structure, natural emphasis, varied pace and meaningful reactions to the visible product. Avoid formulaic promotional phrasing and forced local slang.',
-  'Do not habitually use filler words or stock phrases such as “lah”, “la”, “memang best”, “game changer”, “worth it”, “wajib cuba”, “yang paling best” or “hari ini saya nak kongsikan”.',
+  'Do not habitually use filler words or stock phrases such as “lah”, “la”, “memang sesuai sangat”, “memang best”, “elok sangat”, “game changer”, “worth it”, “wajib cuba”, “yang paling best”, repeated “nak tengok detail” or “hari ini saya nak kongsikan”.',
+  'Do not repeatedly open unrelated videos with “korang” or another catalogue-wide catchphrase. Formulaic praise without a product-specific observation is not useful dialogue.',
   'Do not repeatedly open videos with the same catchphrase, and do not replace these phrases with a new universal catchphrase.',
   'Keep delivery natural and age-appropriate for the selected style; not every presenter should sound like a teenager.',
+  'Preserve the selected style’s own friendly, energetic, calm, premium, faceless or practical voice identity; this global foundation must not homogenize the catalogue.',
   'Nexabot remains the sole writer of every spoken sentence; AffiMatik supplies voice direction, not a script.',
 ].join(' ');
 
@@ -342,7 +340,7 @@ export class DynamicPromptCompiler {
       `Begin immediately in the live physical scene. Treat the uploaded image solely as a product identity reference; never paste it in as a still introductory frame or automatically use it as the first video frame.`,
       `Strictly NO jump cuts, NO push-in zoom, NO camera spin, NO crash pan, NO first-frame flash, NO synthetic colour grading, NO excessive cinematic effects, NO plastic skin, NO AI-generated look.`,
       HUMAN_REALISM_MASTERPROMPT_V8,
-      EXPANSION_V1_STYLE_IDS.has(style.id) ? PAWARNA_TRUE_WHITE_PHONE_COLOR_DNA : '',
+      PAWARNA_TRUE_COLOR_REAL_V2,
     ].filter(Boolean).join(' ');
 
     // 4. SHARIAH MODESTY LOCK V5
@@ -499,7 +497,7 @@ export class DynamicPromptCompiler {
         ].join(' ')
       : [
           MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
-          EXPANSION_V1_STYLE_IDS.has(style.id) ? EXPANSION_ANTI_AI_MALAYSIAN_VOICE_DNA : '',
+          PAWARNA_HUMAN_VOICE_REAL_V2,
           '[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]',
           'AffiMatik has not supplied, generated, previewed or approved spoken sentences. Inspect the uploaded product reference and independently write original natural Malaysian Malay dialogue and lip-sync.',
           `Follow the unique ${style.id} scene purpose, opening, buyer situation, product interaction, speaking personality, camera direction and ending. Create a full spontaneous affiliate flow with an attention-grabbing hook, natural product introduction, one meaningful supported selling point or buyer benefit, supported FOMO only when evidence exists, then the selected CTA or complete natural ending.`,

@@ -37,7 +37,9 @@ describe('V10 Pawarna Masterprompt Director', () => {
       expect(compiled.providerPrompt, style.id).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
       expect(compiled.providerPrompt, style.id).toMatch(/^\[1\. CRITICAL PRODUCTION CONTRACT\]/);
       expect(compiled.providerPrompt, style.id).toContain('[PAWARNA CREATIVE DNA — TEST A OWNER GOLD STANDARD]');
-      expect(compiled.providerPrompt, style.id).toContain('approximately 40–48 spoken Malay words as an initial creative pacing target, not an inflexible limit');
+      expect(compiled.providerPrompt, style.id).toContain('[PAWARNA TRUE COLOR™ — REAL V2 GLOBAL QUALITY FOUNDATION]');
+      expect(compiled.providerPrompt, style.id).toContain('[PAWARNA HUMAN VOICE™ — REAL V2 GLOBAL QUALITY FOUNDATION]');
+      expect(compiled.providerPrompt, style.id).toContain('Do not impose a universal word count');
       expect(compiled.providerPrompt, style.id).toContain('Pawarna Creative DNA application:');
       expect(compiled.providerPrompt, style.id).not.toContain('second 11.5');
       expect(compiled.providerPrompt, style.id).toContain('Never invent ingredients, efficacy, medical outcomes, certification, price, popularity, review counts, testimonials, discounts or personal experience');
@@ -58,11 +60,12 @@ describe('V10 Pawarna Masterprompt Director', () => {
 
   it('front-loads the provider-owned speech contract without hardcoding dialogue', () => {
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Nexabot independently writes the dialogue');
-    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('40–48 spoken Malay words');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Do not impose a universal word count');
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('supported FOMO only when evidence exists');
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).toContain('Preserve persuasive energy and natural imperfection');
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toContain('two, or at most three');
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toContain('second 11.5');
+    expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toMatch(/\b\d+\s*[–-]\s*\d+\s+spoken Malay words/i);
     expect(NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10).not.toMatch(/[“”"](?:korang|saya|aku|produk)/i);
     const compiled = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene);
     expect(compiled.providerPrompt.indexOf('[PAWARNA 15-SECOND SPOKEN OUTPUT CONTRACT')).toBeLessThan(compiled.providerPrompt.indexOf('[STYLE NX02'));
