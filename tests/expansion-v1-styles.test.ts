@@ -20,8 +20,8 @@ describe('Expansion V1 NX21-NX30',()=>{
     expect(ids.slice(0,6).every(id=>getVideoStyle(id)?.category==='fashion')).toBe(true);
   });
 
-  it('publishes only owner-approved expansion media and keeps rejected previews as placeholders',()=>{
-    const approvedIds = new Set(['NX21','NX22','NX23','NX24','NX25','NX26','NX28','NX29']);
+  it('publishes all owner-approved expansion media',()=>{
+    const approvedIds = new Set(ids);
     for(const id of ids){
       const approved = approvedIds.has(id);
       expect(getVideoStyle(id)?.qualityStatus).toBe(approved ? 'video_tested' : 'prompt_validated');

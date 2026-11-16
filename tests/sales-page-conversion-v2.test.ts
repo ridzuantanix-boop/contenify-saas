@@ -31,7 +31,7 @@ describe('AffiMatik Sales Page Conversion V2', () => {
     ]) expect(page).toContain(copy);
     expect(page).toContain('Screenshot biasa → video affiliate');
     expect(page).toContain("Demo {String(index+1).padStart(2,'0')}");
-    for (const id of ['NX21','NX22','NX23','NX24','NX25','NX26','NX28','NX29','NX01','NX02']) expect(page).toContain(id);
+    for (const id of ['NX21','NX22','NX23','NX24','NX25','NX26','NX27','NX28','NX29','NX30','NX01','NX02']) expect(page).toContain(id);
     expect(page).toContain('Demo owner-approved');
     expect(page).not.toContain("{ id: 'RH03'");
     expect(page).not.toContain('Nova Lumi Table Lamp');
