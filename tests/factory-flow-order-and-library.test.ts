@@ -33,4 +33,13 @@ describe('Jana Video guided order and reusable product assets', () => {
     expect(factory).toContain("event.key === 'Enter' || event.key === ' '");
     expect(factory).not.toContain("{isSelected ? 'Dipilih' : 'Pilih Gaya'}");
   });
+
+  it('confirms the chosen style only after the style picker', () => {
+    const picker = factory.indexOf('id="style-step"');
+    const confirmation = factory.indexOf('data-testid="selected-style-confirmation"');
+    expect(confirmation).toBeGreaterThan(picker);
+    expect(factory).toContain('Gaya dipilih');
+    expect(factory).toContain('Tukar Gaya');
+    expect(factory).toContain('<SummaryRow label="Gaya" value={selectedStyle.name}');
+  });
 });

@@ -743,7 +743,6 @@ function VideoFactoryContent() {
               </div>
             ) : (
               <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={images[0].dataUrl}
                   alt="Product preview"
@@ -812,9 +811,7 @@ function VideoFactoryContent() {
                 </span>
                 <h3 className="text-sm font-bold text-slate-900">Pilih Jenis Video & Gaya</h3>
               </div>
-              <span className="text-xs font-bold text-primary">
-                {selectedStyle.name} ({selectedStyle.durationSeconds}s • {selectedStyle.engine === 'nexabot' ? '10' : '15'} Kredit)
-              </span>
+              <span className="text-[11px] font-semibold text-slate-500">Tekan mana-mana kad untuk pilih</span>
             </div>
 
             <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900 flex items-center gap-2">
@@ -896,6 +893,10 @@ function VideoFactoryContent() {
           {/* STEP 4: NEXABOT NATIVE CREATIVE DIRECTION */}
           <div id="cta-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
             <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">4</span><div><h3 className="text-sm font-bold text-slate-900">Arah Kreatif & CTA</h3><p className="text-[11px] text-slate-500">AffiMatik mengarah gaya dan keselamatan. Nexabot memahami produk lalu mencipta dialog sendiri.</p></div></div>
+            <div data-testid="selected-style-confirmation" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+              <div><span className="block text-[9px] font-black uppercase tracking-wide text-indigo-500">Gaya dipilih</span><strong className="mt-0.5 block text-xs text-indigo-950">{selectedStyle.name}</strong><span className="text-[10px] text-indigo-700">{selectedStyle.durationSeconds}s · {selectedStyle.engine === 'nexabot' ? '10' : '15'} kredit</span></div>
+              <button type="button" onClick={() => document.getElementById('style-step')?.scrollIntoView({behavior:'smooth'})} className="min-h-10 rounded-lg border border-indigo-200 bg-white px-3 text-[10px] font-black text-indigo-700">Tukar Gaya</button>
+            </div>
             <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs leading-relaxed text-slate-700"><strong>Tiada skrip automatik:</strong> dialog tidak dijana atau dipratonton oleh AffiMatik. Produk, gaya dan arahan pilihan dihantar terus sebagai masterprompt.</div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-[11px] font-bold text-slate-700">CTA<select value={callToAction} onChange={(event) => setCallToAction(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="tiktok_shop">TikTok Shop — Beg Kuning</option><option value="click_button">Klik Butang Di Bawah</option><option value="tap_button">Tekan Butang Di Bawah</option><option value="check_bio">Semak Bio</option><option value="dm_info">DM Untuk Info</option><option value="none">Tanpa CTA</option><option value="custom">Custom CTA</option></select></label>
@@ -941,12 +942,10 @@ function VideoFactoryContent() {
                   <div data-testid="official-avatar-collection">
                     <div className="mb-2 flex items-center justify-between gap-2"><div><div className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Koleksi AffiMatik</div><div className="text-[10px] text-slate-500">12 presenter Malaysia · Avatar Beta</div></div><select aria-label="Tapis avatar rasmi" value={avatarCollectionFilter} onChange={(event) => setAvatarCollectionFilter(event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px]"><option value="all">Semua</option><option value="female">Wanita</option><option value="male">Lelaki</option><option value="young">Muda</option><option value="mature">Matang</option><option value="senior">Senior</option></select></div>
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">{filteredOfficialAvatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => {setAvatarId(avatar.id);setSelectedCreatorProfileId('')}} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={avatar.thumbnailUrl || avatar.imageUrl} alt={avatar.name} className="aspect-[3/4] w-full rounded-lg object-cover object-top" /><span className="mt-1 block truncate">{avatar.name}</span>
                     </button>)}</div>
                   </div>
                   <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{avatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => {setAvatarId(avatar.id);setSelectedCreatorProfileId('')}} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={avatar.thumbnailUrl || avatar.imageUrl} alt={avatar.name} className="aspect-[3/4] w-full rounded-lg object-cover object-top" /><span className="mt-1 block truncate">{avatar.name}</span>
                   </button>)}<label className="rounded-xl border border-dashed border-slate-300 p-2 text-center text-[10px] font-semibold text-slate-500 cursor-pointer hover:border-primary"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadAvatar(event.target.files?.[0]); event.target.value = ''; }} /><div className="mx-auto mb-1 flex aspect-[3/4] w-full items-center justify-center rounded-lg bg-slate-50"><Upload className="h-4 w-4" /></div>Upload Baru</label></div>{avatars.length === 0 && <div className="mt-1 text-[10px] text-slate-400">Belum ada avatar peribadi.</div>}</div>
                 </div>
@@ -959,12 +958,10 @@ function VideoFactoryContent() {
                   <div data-testid="official-background-collection">
                     <div className="mb-2 flex items-center justify-between gap-2"><div><div className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Koleksi AffiMatik</div><div className="text-[10px] text-slate-500">18 latar rasmi yang dioptimumkan</div></div><select aria-label="Tapis latar rasmi" value={backgroundCollectionFilter} onChange={(event) => setBackgroundCollectionFilter(event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px]"><option value="all">Semua</option><option value="living">Ruang Rumah</option><option value="kitchen">Dapur</option><option value="beauty">Beauty</option><option value="workspace">Workspace</option><option value="lifestyle">Lifestyle</option><option value="automotive">Automotif</option><option value="outdoor">Outdoor</option></select></div>
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">{filteredOfficialBackgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); setSelectedCreatorProfileId(''); }} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={background.thumbnailUrl || background.imageUrl} alt={background.name} className="aspect-[9/16] w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
                     </button>)}</div>
                   </div>
                   <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div>{backgrounds.length > 0 && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{backgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); setSelectedCreatorProfileId(''); }} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={background.thumbnailUrl || background.imageUrl} alt={background.name} className="aspect-[9/16] w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
                   </button>)}</div>}<label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-600"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadBackground(event.target.files?.[0]); event.target.value = ''; }} /><Upload className="h-3.5 w-3.5" />Upload Latar Sendiri</label>{backgrounds.length === 0 && <div className="mt-1 text-[10px] text-slate-400">Belum ada latar peribadi.</div>}</div>
                 </div>
@@ -1471,7 +1468,6 @@ function VideoFactoryContent() {
 
 function SummaryRow({label,value,image,onEdit}:{label:string;value:string;image?:string;onEdit:()=>void}) {
   return <div className="flex min-h-14 items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/70 p-2">
-    {/* eslint-disable-next-line @next/next/no-img-element */}
     {image ? <img src={image} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400"><ImageIcon className="h-4 w-4"/></div>}
     <div className="min-w-0 flex-1"><span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</span><strong className="block truncate text-xs text-slate-800">{value}</strong></div>
     <button type="button" onClick={onEdit} className="min-h-10 rounded-lg px-2 text-[10px] font-black text-indigo-700">Edit</button>
