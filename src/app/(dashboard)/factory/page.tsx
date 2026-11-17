@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -44,6 +46,17 @@ interface UploadedFilePreview {
   notes?: string;
 }
 
+interface ProductLibraryAsset {
+  id: string;
+  productId: string;
+  name: string;
+  category: string;
+  notes: string;
+  filename: string;
+  createdAt: string;
+  imageUrl: string;
+}
+
 interface ActiveJobDisplay {
   jobId: string;
   providerTaskId?: string;
@@ -84,6 +97,9 @@ function VideoFactoryContent() {
   const [productName, setProductName] = useState('');
   const [images, setImages] = useState<UploadedFilePreview[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [productAssets, setProductAssets] = useState<ProductLibraryAsset[]>([]);
+  const [productLibraryLoading, setProductLibraryLoading] = useState(true);
+  const [showProductLibrary, setShowProductLibrary] = useState(false);
 
   // Step 2: Engine Selector & Selected Video Style
   const [selectedStyleId, setSelectedStyleId] = useState<string>(initialStyleId);
@@ -249,6 +265,31 @@ function VideoFactoryContent() {
       .then((data) => setPublicAvailability({ nexabot: data.availability?.nexabot === true, runninghub: data.availability?.runninghub === true }))
       .catch(() => setPublicAvailability({ nexabot: false, runninghub: false }));
   }, []);
+
+  const loadProductLibrary = useCallback(async () => {
+    setProductLibraryLoading(true);
+    try {
+      const response = await fetch('/api/products', { cache: 'no-store' });
+      if (!response.ok) throw new Error('Product Library tidak dapat dimuatkan.');
+      const data = await response.json();
+      setProductAssets((data.assets || []) as ProductLibraryAsset[]);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Product Library tidak dapat dimuatkan.');
+    } finally {
+      setProductLibraryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void loadProductLibrary(); }, [loadProductLibrary]);
+
+  const selectProductAsset = (asset: ProductLibraryAsset) => {
+    setImages([{ id: asset.id, assetId: asset.id, productId: asset.productId, name: asset.filename,
+      size: 0, dataUrl: asset.imageUrl, category: asset.category || '', notes: asset.notes || '' }]);
+    setProductName(asset.name === 'Produk tanpa nama' ? '' : asset.name);
+    setShowProductLibrary(false);
+    setSubmitError(null);
+    setSubmitSuccess(`Produk “${asset.name}” dipilih daripada Product Library.`);
+  };
 
   async function loadPersonalization() {
     const [avatarResponse, backgroundResponse, presetResponse, profileResponse] = await Promise.all([
@@ -464,6 +505,7 @@ function VideoFactoryContent() {
         if (!response.ok) throw new Error(result.error || 'Imej tidak dapat disimpan.');
         setImages([{ id: crypto.randomUUID(), name: file.name, size: file.size, dataUrl,
           assetId: result.assetId, productId: result.productId, category: '', notes: '' }]);
+        void loadProductLibrary();
         setSubmitError(null);
       } catch (err) {
         setImages([]);
@@ -620,7 +662,7 @@ function VideoFactoryContent() {
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Pilih produk, gaya dan Creator Profile. Semak tetapan sebenar, kemudian jana.
+            Pilih Creator Profile, produk dan gaya. Semak arah kreatif, kemudian jana.
           </p>
         </div>
 
@@ -660,12 +702,23 @@ function VideoFactoryContent() {
         {/* LEFT COLUMN: CREATION STUDIO (7 Cols) */}
         {/* ========================================================================= */}
         <div className="lg:col-span-7 space-y-6">
-          {/* STEP 1: UPLOAD PRODUCT */}
+          {/* STEP 1: CREATOR PROFILE */}
+          <CreatorProfileSelector
+            profiles={creatorProfiles}
+            selectedProfileId={selectedCreatorProfileId}
+            avatars={allAvatarOptions}
+            backgrounds={allBackgroundOptions}
+            createStudioHref={`/creator-profiles?new=1&returnTo=factory&styleId=${encodeURIComponent(selectedStyleId)}${images[0]?.assetId ? `&imageAssetId=${encodeURIComponent(images[0].assetId)}` : ''}`}
+            compatibilityError={personalizationError || undefined}
+            onSelectProfile={applyCreatorProfile}
+          />
+
+          {/* STEP 2: UPLOAD OR REUSE PRODUCT */}
           <div id="product-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                  1
+                  2
                 </span>
                 <h3 className="text-sm font-bold text-slate-900">Gambar & Maklumat Produk</h3>
               </div>
@@ -673,14 +726,21 @@ function VideoFactoryContent() {
             </div>
 
             {images.length === 0 ? (
-              <label className="border-2 border-dashed border-slate-200 hover:border-primary/50 hover:bg-slate-50/50 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all">
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
-                  <Upload className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-bold text-slate-800">Pilih atau Seret Gambar Produk</span>
-                <span className="text-[11px] text-slate-400 mt-0.5">JPG, PNG atau WebP (Maksimum 15MB)</span>
-              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="min-h-40 border-2 border-dashed border-slate-200 hover:border-primary/50 hover:bg-slate-50/50 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all text-center">
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">Upload Gambar Baharu</span>
+                  <span className="text-[11px] text-slate-400 mt-1">JPG, PNG atau WebP · Maksimum 15MB</span>
+                </label>
+                <button type="button" onClick={() => setShowProductLibrary((current) => !current)} className="min-h-40 rounded-2xl border-2 border-indigo-100 bg-indigo-50/60 p-5 text-center transition hover:border-indigo-300 hover:bg-indigo-50">
+                  <span className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm"><Layers className="h-5 w-5" /></span>
+                  <strong className="block text-xs text-slate-900">Pilih dari Product Library</strong>
+                  <span className="mt-1 block text-[11px] text-slate-500">{productLibraryLoading ? 'Sedang memuatkan…' : productAssets.length ? `${productAssets.length} gambar tersimpan` : 'Belum ada gambar tersimpan'}</span>
+                </button>
+              </div>
             ) : (
               <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -699,14 +759,22 @@ function VideoFactoryContent() {
                     <span>Identiti produk dikunci untuk kesinambungan visual</span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setImages([])}
-                  className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-white transition-all"
-                  title="Tukar gambar"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button type="button" onClick={() => setShowProductLibrary((current) => !current)} className="min-h-10 rounded-lg border border-indigo-200 bg-white px-2.5 text-[10px] font-bold text-indigo-700">Pilih Lain</button>
+                  <button type="button" onClick={() => { setImages([]); setProductName(''); }} className="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-white transition-all" title="Buang pilihan produk"><X className="w-4 h-4" /></button>
+                </div>
+              </div>
+            )}
+
+            {showProductLibrary && (
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-3" data-testid="factory-product-library">
+                <div className="mb-3 flex items-center justify-between gap-3"><div><h4 className="text-xs font-black text-slate-900">Product Library Anda</h4><p className="text-[10px] text-slate-500">Pilih gambar yang pernah dimuat naik. Tiada upload semula diperlukan.</p></div><button type="button" onClick={() => setShowProductLibrary(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white" aria-label="Tutup Product Library"><X className="h-4 w-4" /></button></div>
+                {productLibraryLoading ? <div className="flex min-h-24 items-center justify-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Memuatkan produk…</div>
+                  : productAssets.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-center text-xs text-slate-500">Belum ada produk tersimpan. Upload gambar baharu untuk menambahnya ke library.</div>
+                  : <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">{productAssets.map((asset) => <button key={asset.id} type="button" onClick={() => selectProductAsset(asset)} aria-pressed={images[0]?.assetId === asset.id} className={`overflow-hidden rounded-xl border bg-white p-1.5 text-left transition ${images[0]?.assetId === asset.id ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-200 hover:border-indigo-300'}`}>
+                    <img src={asset.imageUrl} alt={asset.name} className="aspect-square w-full rounded-lg bg-slate-50 object-contain" />
+                    <strong className="mt-1.5 block truncate px-1 text-[10px] text-slate-800">{asset.name}</strong><span className="block truncate px-1 pb-1 text-[9px] text-slate-400">{asset.filename}</span>
+                  </button>)}</div>}
               </div>
             )}
 
@@ -735,12 +803,12 @@ function VideoFactoryContent() {
             )}
           </div>
 
-          {/* STEP 2: CHOOSE ENGINE & VIDEO STYLE */}
+          {/* STEP 3: CHOOSE ENGINE & VIDEO STYLE */}
           <div id="style-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                  2
+                  3
                 </span>
                 <h3 className="text-sm font-bold text-slate-900">Pilih Jenis Video & Gaya</h3>
               </div>
@@ -765,7 +833,7 @@ function VideoFactoryContent() {
                 <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya dipaparkan</span>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3" role="radiogroup" aria-label="Pilih gaya video">
                 {displayedStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
                   const metadata = getStyleMarketingMetadata(style.id);
@@ -774,7 +842,17 @@ function VideoFactoryContent() {
                   return (
                     <div
                       key={style.id}
-                      className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                      role="radio"
+                      aria-checked={isSelected}
+                      tabIndex={0}
+                      onClick={() => setSelectedStyleId(style.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedStyleId(style.id);
+                        }
+                      }}
+                      className={`cursor-pointer p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-primary/40 ${
                         isSelected
                           ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
@@ -804,20 +882,9 @@ function VideoFactoryContent() {
                           <span className={`w-1.5 h-1.5 rounded-full ${style.qualityStatus === 'video_tested' ? 'bg-emerald-500' : 'bg-sky-500'}`}></span>
                           {style.qualityStatus === 'video_tested' ? '✓ Sampel Sebenar' : 'Prompt Staging'} ({style.engine === 'nexabot' ? '10' : '15'} Kr)
                         </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedStyleId(style.id);
-                          }}
-                          className={`px-2 py-0.5 rounded font-bold text-[10px] transition-all ${
-                            isSelected
-                              ? 'bg-primary text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          }`}
-                        >
-                          {isSelected ? 'Dipilih' : 'Pilih Gaya'}
-                        </button>
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${isSelected ? 'bg-primary text-white shadow-xs' : 'bg-slate-100 text-slate-600'}`}>
+                          {isSelected ? '✓ Dipilih' : 'Tekan kad untuk pilih'}
+                        </span>
                       </div>
                     </div>
                   );
@@ -825,16 +892,6 @@ function VideoFactoryContent() {
               </div>
             </div>
           </div>
-
-          <CreatorProfileSelector
-            profiles={creatorProfiles}
-            selectedProfileId={selectedCreatorProfileId}
-            avatars={allAvatarOptions}
-            backgrounds={allBackgroundOptions}
-            createStudioHref={`/creator-profiles?new=1&returnTo=factory&styleId=${encodeURIComponent(selectedStyleId)}${images[0]?.assetId ? `&imageAssetId=${encodeURIComponent(images[0].assetId)}` : ''}`}
-            compatibilityError={personalizationError || undefined}
-            onSelectProfile={applyCreatorProfile}
-          />
 
           {/* STEP 4: NEXABOT NATIVE CREATIVE DIRECTION */}
           <div id="cta-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">

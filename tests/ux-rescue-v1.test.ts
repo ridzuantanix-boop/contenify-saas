@@ -19,7 +19,7 @@ describe('AffiMatik UX Rescue V1',()=>{
     expect(page).toContain('CreatorProfileSelector');
     expect(page).toContain('creatorProfileId: selectedCreatorProfileId');
     expect(page).toContain('generation-summary');
-    expect(picker).toContain('Pilih Creator & Background');
+    expect(picker).toContain('Pilih Creator Profile');
     expect(picker).toContain('/creator-profiles?new=1&returnTo=factory');
     expect(picker).toContain('Cipta Creator Baru');
     expect(picker).toContain('Creator Profile digunakan:');
