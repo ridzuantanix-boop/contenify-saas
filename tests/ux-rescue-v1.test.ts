@@ -20,9 +20,10 @@ describe('AffiMatik UX Rescue V1',()=>{
     expect(page).toContain('creatorProfileId: selectedCreatorProfileId');
     expect(page).toContain('generation-summary');
     expect(picker).toContain('Pilih Creator & Background');
-    expect(picker).toContain('Cipta profile tanpa tinggalkan video ini');
+    expect(picker).toContain('/creator-profiles?new=1&returnTo=factory');
+    expect(picker).toContain('Cipta Creator Baru');
     expect(picker).toContain('Creator Profile digunakan:');
-    expect(picker).toContain('Simpan & Gunakan Profile Ini');
+    expect(picker).toContain('Edit di Creator Studio');
   });
 
   it('verifies profile ownership and applies the actual assets server-side',()=>{

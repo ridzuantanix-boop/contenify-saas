@@ -194,22 +194,6 @@ function VideoFactoryContent() {
     setSubmitSuccess(`Creator Profile digunakan: ${profile.name}`);
   }
 
-  async function saveCreatorProfile(name: string) {
-    setAssetActionBusy(true); setSubmitError(null);
-    try {
-      const settings = { ...currentPersonalizationSettings(), avatarId: avatarId || null, backgroundId: backgroundId || null };
-      const response = await fetch('/api/creator-profiles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, settings, isDefault: creatorProfiles.length === 0 }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Creator Profile tidak dapat disimpan.');
-      const created: FactoryCreatorProfile = { id: data.id, name, version: 1, is_default: creatorProfiles.length === 0, settings };
-      setCreatorProfiles((items) => [created, ...items]);
-      applyCreatorProfile(created);
-      await loadPersonalization();
-      setSubmitSuccess(`Creator Profile digunakan: ${name}. Produk dan gaya anda masih kekal.`);
-    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Creator Profile tidak dapat disimpan.'); throw error; }
-    finally { setAssetActionBusy(false); }
-  }
-
   const currentPersonalizationSettings = () => ({
     styleId: selectedStyleId, avatarId: avatarId || null, backgroundId: backgroundId || null,
     builtInSceneId: backgroundId ? null : builtInSceneId || null, niche, voicePersonality,
@@ -847,18 +831,8 @@ function VideoFactoryContent() {
             selectedProfileId={selectedCreatorProfileId}
             avatars={allAvatarOptions}
             backgrounds={allBackgroundOptions}
-            avatarId={avatarId}
-            backgroundId={backgroundId}
-            voicePersonality={voicePersonality}
-            busy={assetActionBusy}
             compatibilityError={personalizationError || undefined}
             onSelectProfile={applyCreatorProfile}
-            onAvatarChange={(id) => { setAvatarId(id); if (selectedCreatorProfileId) setSelectedCreatorProfileId(''); }}
-            onBackgroundChange={(id) => { setBackgroundId(id); setBuiltInSceneId(''); if (selectedCreatorProfileId) setSelectedCreatorProfileId(''); }}
-            onVoiceChange={(value) => { setVoicePersonality(value); if (selectedCreatorProfileId) setSelectedCreatorProfileId(''); }}
-            onAvatarUpload={(file) => void uploadAvatar(file)}
-            onBackgroundUpload={(file) => void uploadBackground(file)}
-            onSaveProfile={saveCreatorProfile}
           />
 
           {/* STEP 4: NEXABOT NATIVE CREATIVE DIRECTION */}
