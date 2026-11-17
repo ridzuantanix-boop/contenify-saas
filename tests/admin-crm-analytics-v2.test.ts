@@ -37,4 +37,22 @@ describe('Admin CRM and first-party analytics dashboard', () => {
     expect(store).toContain('reviewRewardClaimed');
     expect(store).toContain("customerStatus:orders.confirmed>0?'paid'");
   });
+
+  it('uses Asia/Kuala_Lumpur calendar days for owner daily metrics', () => {
+    const result=summarizeAdminDashboard({now:new Date('2026-11-17T09:00:00+08:00'),events:[
+      {event_name:'landing_view',visitor_id:'today',occurred_at:'2026-11-17T00:05:00+08:00'},
+      {event_name:'landing_view',visitor_id:'yesterday',occurred_at:'2026-11-16T23:55:00+08:00'},
+    ],profiles:[{id:'u1',email:'owner@example.com',full_name:'Owner',default_workspace_id:'w1',tier:'pro',created_at:'2026-11-17T00:01:00+08:00'}],orders:[
+      {workspace_id:'w1',plan_id:'plan_pro',status:'PAID',payment_state:'BANK_PAYMENT_VERIFIED',amount_myr:129,created_at:'2026-11-17T00:02:00+08:00'},
+    ],jobs:[
+      {id:'j1',workspace_id:'w1',status:'COMPLETED',provider:'nexabot',preset_id:'NX01',required_credits:10,created_at:'2026-11-17T00:03:00+08:00',completed_at:'2026-11-17T00:05:00+08:00',updated_at:'2026-11-17T00:05:00+08:00'},
+      {id:'j2',workspace_id:'w1',status:'FAILED_FINAL',provider:'nexabot',preset_id:'NX09',required_credits:10,created_at:'2026-11-17T00:06:00+08:00',updated_at:'2026-11-17T00:07:00+08:00'},
+    ],rewards:[]});
+    expect(result.traffic.uniqueVisitorsToday).toBe(1);
+    expect(result.customers).toMatchObject({newToday:1,activeToday:1});
+    expect(result.revenue).toMatchObject({confirmedTodayMyr:129,confirmedOrdersToday:1});
+    expect(result.videos).toMatchObject({submittedToday:2,completedToday:1,failedToday:1,successRateToday:50});
+    expect(result.videos.topStyles[0]).toMatchObject({styleId:'NX01',total:1});
+    expect(result.videos.recentJobs[0]).toMatchObject({customer:'Owner',email:'owner@example.com'});
+  });
 });
