@@ -2,6 +2,7 @@ import {describe,expect,it} from 'vitest';
 import fs from 'node:fs';
 
 const page=fs.readFileSync('src/app/(dashboard)/creator-profiles/page.tsx','utf8');
+const factory=fs.readFileSync('src/app/(dashboard)/factory/page.tsx','utf8');
 const jobs=fs.readFileSync('src/app/api/jobs/route.ts','utf8');
 
 describe('Creator Studio Upgrade',()=>{
@@ -24,7 +25,10 @@ describe('Creator Studio Upgrade',()=>{
  });
  it('saves and returns the exact reusable profile to Video Factory',()=>{
   expect(page).toContain('Simpan & Guna Dalam Video');
-  expect(page).toContain('/factory?profileId=');
+  expect(page).toContain('function factoryHref(profileId:string)');
+  expect(page).toContain("params.set('styleId',returnContext.current.styleId)");
+  expect(page).toContain("params.set('imageAssetId',returnContext.current.imageAssetId)");
+  expect(factory).toContain('createStudioHref={`/creator-profiles?new=1&returnTo=factory&styleId=');
   expect(jobs).toContain('effectiveAvatarId');
   expect(jobs).toContain('effectiveBackgroundId');
   expect(jobs).toContain('creator_profile_id:verifiedCreatorProfile.id');

@@ -831,6 +831,7 @@ function VideoFactoryContent() {
             selectedProfileId={selectedCreatorProfileId}
             avatars={allAvatarOptions}
             backgrounds={allBackgroundOptions}
+            createStudioHref={`/creator-profiles?new=1&returnTo=factory&styleId=${encodeURIComponent(selectedStyleId)}${images[0]?.assetId ? `&imageAssetId=${encodeURIComponent(images[0].assetId)}` : ''}`}
             compatibilityError={personalizationError || undefined}
             onSelectProfile={applyCreatorProfile}
           />
