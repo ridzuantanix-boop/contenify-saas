@@ -20,6 +20,8 @@ describe('AFFIMATIK THE NEXT 10 email campaign', () => {
     expect(runner).toContain("'Idempotency-Key'");
     expect(runner).toContain('/emails/batch');
     expect(runner).toContain('/suppressions');
+    expect(runner).toContain("'PROVIDER_MANAGED'");
+    expect(runner).toContain('ENFORCED_BY_RESEND_COUNT_UNAVAILABLE');
     expect(runner).toContain('/api/email/unsubscribe?token=');
   });
   it('persists opt-outs and delivery progress behind RLS', () => {
