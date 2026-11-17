@@ -5,10 +5,12 @@ describe('AFFIMATIK THE NEXT 10 email campaign', () => {
   const runner = fs.readFileSync('scripts/release/next-10-email-campaign.mjs','utf8');
   const migration = fs.readFileSync('supabase/migrations/00034_next_10_email_campaign.sql','utf8');
   it('uses accurate published capability copy and a hosted optimized poster', () => {
-    expect(runner).toContain('6 gaya Fashion');
-    expect(runner).toContain('4 gaya Kitchen');
+    expect(runner).toContain('6 gaya Fesyen');
+    expect(runner).toContain('4 gaya Dapur');
     expect(runner).toContain('30 gaya video affiliate');
     expect(runner).toContain('gaya yang menyokong');
+    expect(runner).toContain('Cuba Gaya Baru Sekarang');
+    expect(runner).toContain("const copyRevision = 'v2'");
     expect(runner).toContain('/marketing/email/affimatik-the-next-10-launch.jpg');
     expect(fs.statSync('public/marketing/email/affimatik-the-next-10-launch.jpg').size).toBeLessThan(300_000);
   });
