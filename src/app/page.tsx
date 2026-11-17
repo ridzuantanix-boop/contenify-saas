@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowRight, Check, ChevronRight, Clock3, Download, FolderOpen, Images, Layers3, MessageCircleQuestion, Play, RefreshCcw, ShieldCheck, Smartphone, Sparkles, Upload, Video, Volume2, VolumeX, Zap } from 'lucide-react';
 import { AUTHORITATIVE_PLANS, LAUNCH_PACK, effectiveMyrPerVideo } from '@/lib/billing/plans';
 import { trackConversion } from '@/lib/analytics/conversion';
+import { HeatmapTracker } from '@/components/analytics/heatmap-tracker';
 import { PUBLISHED_STYLE_COUNT } from '@/lib/styles/registry';
 
 const proof = [
@@ -57,8 +58,9 @@ function LaunchLink({ placement, className, children }: { placement: string; cla
 
 export default function LandingPage() {
   useEffect(() => {
-    trackConversion('landing_view', 'home', { source: 'direct_or_referral' });
     const params = new URLSearchParams(window.location.search);
+    if (params.get('heatmap_preview') === '1') return;
+    trackConversion('landing_view', 'home', { source: 'direct_or_referral' });
     const code = params.get('ref');
     const campaign = params.get('campaign');
     if (code && /^[A-Za-z0-9_-]{3,50}$/.test(code)) fetch(`/api/affiliate/visit?code=${encodeURIComponent(code)}${campaign ? `&campaign=${encodeURIComponent(campaign.slice(0, 64))}` : ''}`, { cache: 'no-store' }).catch(() => {});
@@ -113,6 +115,7 @@ export default function LandingPage() {
 
       <section className="px-4 py-16 sm:px-8 sm:py-24"><div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] bg-gradient-to-br from-violet-700 to-indigo-700 px-5 py-12 text-center text-white shadow-2xl shadow-violet-200 sm:px-12"><ShieldCheck className="mx-auto h-9 w-9 text-violet-200" /><h2 className="mx-auto mt-4 max-w-3xl text-3xl font-black sm:text-4xl">Produk Dalam Galeri Dah Banyak. Masa Untuk Tukar Jadi Video Beg Kuning Hari Ini.</h2><p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-violet-100">Dengan RM19, anda boleh hasilkan sehingga 15 video tanpa rakam muka, tanpa edit satu-satu, dan tanpa tulis skrip. Silap-silap, satu atau dua jualan dah cukup untuk cover semula modal anda.</p><div className="mx-auto mt-7 grid max-w-3xl gap-2 text-left text-xs font-bold sm:grid-cols-3">{['1. Daftar Akaun','2. Terus Bayar RM19 via QR & Upload Resit','3. Sahkan Emel & Jana Video Pertama'].map(step => <div key={step} className="rounded-xl bg-white/10 px-4 py-3">{step}</div>)}</div><LaunchLink placement="final" className="mt-7 inline-flex min-h-14 items-center gap-2 rounded-2xl bg-white px-7 text-sm font-black text-violet-700">Mula Jana 15 Video Sekarang — RM19 <ArrowRight className="h-4 w-4" /></LaunchLink><p className="mt-4 text-[10px] text-violet-200">RM19 · 150 kredit · sah 180 hari · tiada auto-subscription</p></div></section>
     </main>
+    <HeatmapTracker />
     <footer className="border-t border-slate-200 bg-white px-4 py-10 text-center text-xs text-slate-500"><p className="font-black text-slate-800">AffiMatik by Pawarna Studio © 2026 · Dikendalikan oleh Muhammad Ridzuan bin Ramli</p><p className="mx-auto mt-2 max-w-2xl text-[11px] leading-5">TTGU, Tasek Gelugor, Pulau Pinang · 019-521 6867</p><p className="mx-auto mt-2 max-w-2xl text-[11px] leading-5">Video dijana menggunakan AI. Semak kandungan sebelum diterbitkan.</p><div className="mt-4 flex flex-wrap justify-center gap-4"><a href="mailto:support@affimatik.online" className="font-bold text-violet-700">Sokongan</a><Link href="/privacy" className="font-bold text-slate-700">Notis Privasi</Link><Link href="/terms" className="font-bold text-slate-700">Terma</Link><Link href="/login" className="font-bold text-slate-700">Log Masuk</Link></div></footer>
   </div>;
 }

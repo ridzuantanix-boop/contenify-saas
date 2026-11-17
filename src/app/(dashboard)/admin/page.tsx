@@ -71,6 +71,7 @@ export default function AdminPage(){
     {metrics?.isAvailable===false&&<div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"><strong>Data production tidak dapat disahkan.</strong> {metrics.error}</div>}
 
     <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">{([['overview','Ikhtisar',BarChart3],['customers','CRM Pelanggan',Users],['videos','Video & Queue',Video],['sales','Jualan & Payment',BadgeDollarSign],['system','System',Server]] as const).map(([id,label,Icon])=><button key={id} onClick={()=>chooseTab(id)} className={`flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-black transition ${tab===id?'bg-slate-950 text-white shadow-sm':'text-slate-600 hover:bg-slate-100'}`}><Icon className="h-4 w-4"/>{label}</button>)}</nav>
+    <Link href="/admin/heatmap" className="inline-flex min-h-10 items-center rounded-xl border border-violet-300 bg-violet-50 px-4 text-xs font-black text-violet-800">Lihat heatmap salespage →</Link>
 
     {tab==='overview'&&<div className="space-y-5">
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-8">
