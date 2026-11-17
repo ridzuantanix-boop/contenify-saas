@@ -526,7 +526,7 @@ export async function GET(req: NextRequest) {
             : job.submissionUncertain
               ? 'Status penerimaan Nexabot belum dapat dipastikan. Sistem tidak akan menghantar video berbayar kedua secara automatik.'
               : job.nextRetryAt
-                ? `Gangguan pelayan Nexabot dikesan. Cubaan semula ${job.retryCount || 1}/${job.maxRetries || 3} dijadualkan.`
+                ? 'Gangguan pelayan Nexabot dikesan. AffiMatik akan cuba semula secara berkala sehingga pembekal pulih.'
                 : 'Menunggu dispatch pembekal...',
           queued: job.status === 'QUEUED', submissionUncertain: job.submissionUncertain,
           retryScheduled: Boolean(job.nextRetryAt), retryCount: job.retryCount || 0,

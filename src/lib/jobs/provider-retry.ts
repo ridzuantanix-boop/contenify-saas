@@ -6,6 +6,14 @@ import { customerFailureMessage } from './customer-failure';
 
 const router = new ProviderRouter();
 
+export const PROVIDER_OUTAGE_MAX_RETRIES = 168;
+export const PROVIDER_OUTAGE_RECOVERY_DAYS = 7;
+
+export function isProviderOutageFailure(raw: unknown): boolean {
+  const detail = raw instanceof Error ? raw.message : String(raw || '');
+  return /timeout|timed out|econn|network|fetch failed|http 429|http 5\d\d|gateway|service unavailable|temporar|server (error|down|unavailable)|pelayan .*terganggu|provider unavailable|capacity|overload|busy/i.test(detail);
+}
+
 export function isRetryableProviderFailure(raw: unknown): boolean {
   const detail = raw instanceof Error ? raw.message : String(raw || '');
   // Only explicit permanent/customer-input errors stop immediately. A bare
@@ -75,7 +83,9 @@ export async function scheduleOrFinalizeProviderFailure(jobId: string, expectedT
   if (scheduled.retry_scheduled) return { retryScheduled: true, retryCount: Number(scheduled.retry_count), maxRetries: Number(scheduled.max_retries), nextRetryAt: String(scheduled.next_retry_at) };
   if (scheduled.retry_exhausted) {
     await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_retry_exhausted_${job.id}`);
-    const message = 'Pelayan Nexabot masih tidak dapat menyiapkan video selepas tiga cubaan semula automatik. Kredit tugasan ini telah dipulangkan sepenuhnya.';
+    const message = scheduled.recovery_mode
+      ? `Pelayan Nexabot masih tidak pulih selepas tempoh pemulihan ${PROVIDER_OUTAGE_RECOVERY_DAYS} hari. Kredit tugasan ini telah dipulangkan sepenuhnya dan job boleh dijana semula apabila pembekal stabil.`
+      : 'Pelayan Nexabot masih tidak dapat menyiapkan video selepas tiga cubaan semula automatik. Kredit tugasan ini telah dipulangkan sepenuhnya.';
     await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: message, rawStatus: technical.slice(0,1000) });
     return { retryScheduled: false, finalized: true, creditRestored: true, exhausted: true };
   }

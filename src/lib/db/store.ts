@@ -66,6 +66,8 @@ export interface VideoJobRecord {
   nextRetryAt?: string;
   lastRetryAt?: string;
   lastProviderError?: string;
+  providerRecoveryStartedAt?: string;
+  providerRecoveryDeadline?: string;
   queueSequence?: number;
   enqueuedAt?: string;
   nextDispatchAt?: string;
@@ -867,6 +869,8 @@ export class DurableStore {
       nextRetryAt: row.next_retry_at || undefined,
       lastRetryAt: row.last_retry_at || undefined,
       lastProviderError: row.last_provider_error || undefined,
+      providerRecoveryStartedAt: row.provider_recovery_started_at || undefined,
+      providerRecoveryDeadline: row.provider_recovery_deadline || undefined,
       queueSequence: row.queue_sequence ? Number(row.queue_sequence) : undefined,
       enqueuedAt: row.enqueued_at || undefined,
       nextDispatchAt: row.next_dispatch_at || undefined,
@@ -1224,11 +1228,24 @@ export class DurableStore {
     }
     const job = localDb.jobs[jobId];
     if (!job) return { success: false, error: 'JOB_NOT_FOUND' };
-    if ((job.retryCount || 0) >= (job.maxRetries || 3)) return { success: true, retry_exhausted: true, retry_count: job.retryCount || 0 };
-    job.retryCount = (job.retryCount || 0) + 1; job.maxRetries ||= 3; job.status = 'SUBMITTING'; job.providerTaskId = undefined;
-    job.nextRetryAt = new Date(Date.now() + [0, 120000, 300000, 600000][job.retryCount]).toISOString();
-    job.errorMessage = `Pelayan Nexabot sedang terganggu. Cubaan semula automatik ${job.retryCount} daripada ${job.maxRetries} dijadualkan. Kredit masih ditempah dan tidak dicaj dua kali.`;
-    return { success: true, retry_scheduled: true, retry_count: job.retryCount, max_retries: job.maxRetries, next_retry_at: job.nextRetryAt };
+    const outage = Boolean(job.providerRecoveryDeadline) || /timeout|timed out|econn|network|fetch failed|http 429|http 5\d\d|gateway|service unavailable|temporar|server (error|down|unavailable)|pelayan .*terganggu|provider unavailable|capacity|overload|busy/i.test(providerError);
+    const maxRetries = outage ? 168 : (job.maxRetries || 3);
+    const now = Date.now();
+    if (outage && !job.providerRecoveryDeadline) {
+      job.providerRecoveryStartedAt = new Date(now).toISOString();
+      job.providerRecoveryDeadline = new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
+    }
+    if ((job.retryCount || 0) >= maxRetries || (outage && new Date(job.providerRecoveryDeadline!).getTime() <= now)) {
+      return { success: true, retry_exhausted: true, retry_count: job.retryCount || 0, max_retries: maxRetries, recovery_mode: outage, recovery_deadline: job.providerRecoveryDeadline };
+    }
+    job.retryCount = (job.retryCount || 0) + 1; job.status = 'SUBMITTING'; job.providerTaskId = undefined;
+    const delays = [0, 120000, 300000, 600000, 1200000, 1800000];
+    const delay = outage ? (delays[job.retryCount] || 3600000) : ([0, 120000, 300000, 600000][job.retryCount] || 600000);
+    job.nextRetryAt = new Date(now + delay).toISOString();
+    job.errorMessage = outage
+      ? 'Pelayan Nexabot sedang terganggu. AffiMatik akan cuba semula secara berkala sehingga pembekal pulih. Kredit kekal ditempah sekali sahaja.'
+      : `Pelayan Nexabot sedang terganggu. Cubaan semula automatik ${job.retryCount} daripada ${maxRetries} dijadualkan. Kredit masih ditempah dan tidak dicaj dua kali.`;
+    return { success: true, retry_scheduled: true, retry_count: job.retryCount, max_retries: maxRetries, next_retry_at: job.nextRetryAt, recovery_mode: outage, recovery_deadline: job.providerRecoveryDeadline };
   }
 
   static async claimProviderRetry(jobId: string): Promise<Record<string, any>> {

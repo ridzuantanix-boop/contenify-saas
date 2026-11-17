@@ -1022,7 +1022,7 @@ function VideoFactoryContent() {
                       {activeJob.retryScheduled && (
                         <div className="mx-auto max-w-sm rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-900">
                           <p className="font-bold">Ini gangguan pelayan Nexabot—bukan semestinya masalah prompt atau gambar anda.</p>
-                          <p className="mt-1">AffiMatik akan cuba semula secara automatik ({activeJob.retryCount || 1}/{activeJob.maxRetries || 3}). Kredit masih ditempah dan tidak akan dicaj dua kali.</p>
+                          <p className="mt-1">AffiMatik akan cuba semula secara berkala sehingga Nexabot pulih. Kredit masih ditempah sekali sahaja dan tidak akan dicaj dua kali.</p>
                           {activeJob.nextRetryAt && <p className="mt-1 text-[11px]">Cubaan seterusnya sekitar {new Date(activeJob.nextRetryAt).toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'})}.</p>}
                         </div>
                       )}
