@@ -51,6 +51,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
       '00029_payment_evidence_mobile_formats.sql',
       '00030_payment_first_checkout.sql',
       '00031_review_reward_30_credits.sql',
+      '00033_affimatik_partner_v1.sql',
     ];
 
     for (const file of migrationFiles) {
@@ -917,6 +918,37 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     await db.query(`UPDATE creator_profiles SET version=4,settings='{"voicePersonality":"energetic"}' WHERE id=$1`,[profile]);
     expect((await db.query<{result:any}>(`SELECT claim_auto_factory_item_atomic(300) AS result`)).rows[0].result).toMatchObject({success:true,claimed:true,batch_id:batch,workspace_id:workspace});
     expect((await db.query<{immutable_snapshot:any}>(`SELECT immutable_snapshot FROM auto_factory_items WHERE batch_id=$1`,[batch])).rows[0].immutable_snapshot.creatorProfile.version).toBe(3);
+  });
+
+  it('enforces Partner V1 lifetime eligibility, custom aliases and independent suspension', async () => {
+    const freeUser='b9920000-0000-4000-8000-000000000001',freeWs='a9920000-0000-4000-8000-000000000001';
+    const paidUser='b9920000-0000-4000-8000-000000000002',paidWs='a9920000-0000-4000-8000-000000000002';
+    const secondUser='b9920000-0000-4000-8000-000000000003',secondWs='a9920000-0000-4000-8000-000000000003';
+    for (const [user,ws,email] of [[freeUser,freeWs,'free-partner@example.test'],[paidUser,paidWs,'paid-partner@example.test'],[secondUser,secondWs,'second-partner@example.test']]) {
+      await db.query(`INSERT INTO workspaces(id,name,slug,owner_id,status) VALUES($1,'Partner V1',$2,$3,'active')`,[ws,`partner-${String(user).slice(-4)}`,user]);
+      await db.query(`INSERT INTO profiles(id,email,tier,default_workspace_id) VALUES($1,$2,'free',$3)`,[user,email,ws]);
+    }
+    const apply=(user:string,username:string)=>db.query<{result:any}>(`SELECT apply_affiliate_partner_v1($1,$2,true) AS result`,[user,username]);
+    expect((await apply(freeUser,'free_creator')).rows[0].result.error).toBe('QUALIFYING_SUBSCRIPTION_REQUIRED');
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_state,metadata) VALUES(gen_random_uuid(),$1,$2,'launch_pack',19,150,'PAID','qr_manual','PAYMENT_CONFIRMED','{}')`,[freeWs,freeUser]);
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_state,metadata) VALUES(gen_random_uuid(),$1,$2,'topup_plus',34,300,'PAID','qr_manual','PAYMENT_CONFIRMED','{}')`,[freeWs,freeUser]);
+    expect((await apply(freeUser,'free_creator')).rows[0].result.error).toBe('QUALIFYING_SUBSCRIPTION_REQUIRED');
+    const qualifyingOrder='d9920000-0000-4000-8000-000000000002';
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_state,paid_at,metadata) VALUES($1,$2,$3,'plan_starter',49,500,'PAID','qr_manual','PAYMENT_CONFIRMED',now(),'{}')`,[qualifyingOrder,paidWs,paidUser]);
+    const application=(await apply(paidUser,'Creator88')).rows[0].result;
+    expect(application).toMatchObject({success:true,status:'PENDING',username:'creator88'});
+    const partner=(await db.query<{id:string;referral_code:string}>(`SELECT id,referral_code FROM affiliate_partners WHERE user_id=$1`,[paidUser])).rows[0];
+    expect((await db.query<{result:any}>(`SELECT review_affiliate_partner_v1($1,'APPROVED','owner',NULL) AS result`,[partner.id])).rows[0].result.success).toBe(true);
+    await db.query(`INSERT INTO subscriptions(workspace_id,user_id,plan_id,tier,status,current_period_start,current_period_end) VALUES($1,$2,'plan_starter','starter','expired',now()-interval '60 days',now()-interval '30 days')`,[paidWs,paidUser]);
+    const lifetime=(await db.query<{result:any}>(`SELECT affiliate_partner_state_v1($1) AS result`,[paidUser])).rows[0].result;
+    expect(lifetime).toMatchObject({status:'APPROVED',lifetime_access:true,has_ever_qualified_paid_subscription:true,affiliate_username:'creator88'});
+    expect((await db.query<{id:string}>(`SELECT resolve_affiliate_partner_v1('CREATOR88') AS id`)).rows[0].id).toBe(partner.id);
+    expect((await db.query<{id:string}>(`SELECT resolve_affiliate_partner_v1($1) AS id`,[partner.referral_code])).rows[0].id).toBe(partner.id);
+    await db.query(`INSERT INTO orders(id,workspace_id,user_id,plan_id,amount_myr,credits_granted,status,gateway_provider,payment_state,paid_at,metadata) VALUES(gen_random_uuid(),$1,$2,'plan_pro',129,2000,'PAID','qr_manual','PAYMENT_CONFIRMED',now(),'{}')`,[secondWs,secondUser]);
+    expect((await apply(secondUser,'creator88')).rows[0].result.error).toBe('USERNAME_TAKEN');
+    expect((await apply(secondUser,'CREATOR88')).rows[0].result.error).toBe('USERNAME_TAKEN');
+    expect((await db.query<{result:any}>(`SELECT review_affiliate_partner_v1($1,'SUSPENDED','owner','Verified fraud evidence') AS result`,[partner.id])).rows[0].result.success).toBe(true);
+    expect((await db.query<{id:string|null}>(`SELECT resolve_affiliate_partner_v1('creator88') AS id`)).rows[0].id).toBeNull();
   });
 
   it('grants the 30-credit review reward once after two distinct completed-video downloads', async () => {

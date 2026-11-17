@@ -61,7 +61,7 @@ export default function LandingPage() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('ref');
     const campaign = params.get('campaign');
-    if (code && /^[A-Za-z0-9_-]{4,50}$/.test(code)) fetch(`/api/affiliate/visit?code=${encodeURIComponent(code)}${campaign ? `&campaign=${encodeURIComponent(campaign.slice(0, 64))}` : ''}`, { cache: 'no-store' }).catch(() => {});
+    if (code && /^[A-Za-z0-9_-]{3,50}$/.test(code)) fetch(`/api/affiliate/visit?code=${encodeURIComponent(code)}${campaign ? `&campaign=${encodeURIComponent(campaign.slice(0, 64))}` : ''}`, { cache: 'no-store' }).catch(() => {});
   }, []);
 
   return <div className="min-h-screen overflow-x-hidden bg-[#fbfafc] text-slate-950 selection:bg-violet-600 selection:text-white">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-type Application = { id: string; userId: string; status: string; appliedAt?: string };
+type Application = { id: string; userId: string; status: string; appliedAt?: string; affiliateUsername?: string; qualificationOrderId?: string; approvedAt?: string; hasEverQualifiedPaidSubscription?: boolean };
 type Payout = { id: string; amount_myr: number; status: string; requested_at: string; affiliate_partners?: { user_id: string; payout_bank: string; payout_account_number: string; payout_account_holder: string } };
 
 export default function AdminAffiliatesPage() {
@@ -34,10 +34,12 @@ export default function AdminAffiliatesPage() {
   useEffect(() => { refresh().catch((err) => setError(err.message)); }, []);
 
   async function review(id: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED') {
+    const reason = status === 'SUSPENDED' ? window.prompt('Nyatakan sebab fraud atau pelanggaran serius (direkodkan dalam audit):') : '';
+    if (status === 'SUSPENDED' && (!reason || reason.trim().length < 8)) return;
     setBusy(id);
     setError('');
     try {
-      const response = await fetch('/api/admin/affiliates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) });
+      const response = await fetch('/api/admin/affiliates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status, reason }) });
       if (!response.ok) throw new Error((await response.json()).error || 'Semakan gagal.');
       await refresh();
     } catch (err) { setError(err instanceof Error ? err.message : 'Semakan gagal.'); }
@@ -46,10 +48,10 @@ export default function AdminAffiliatesPage() {
 
   return <div className="space-y-5">
     <h1 className="text-2xl font-bold">Permohonan Affiliate</h1>
-    <p className="text-sm text-slate-600">Kelulusan hanya untuk pemilik sistem. Akaun yang membeli pelan tidak didaftarkan secara automatik.</p>
+    <p className="text-sm text-slate-600">Kelayakan memohon memerlukan satu subscription settled. Selepas diluluskan, tamat atau batal subscription tidak menggantung affiliate secara automatik.</p>
     {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
     <div className="space-y-3">{applications.map((item) => <div key={item.id} className="rounded-xl border bg-white p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-      <div><p className="font-semibold break-all">{item.userId}</p><p className="text-sm text-slate-600">{item.status} · {item.appliedAt ? new Date(item.appliedAt).toLocaleDateString('ms-MY') : 'Tarikh tidak tersedia'}</p></div>
+      <div><p className="font-semibold break-all">{item.affiliateUsername ? `@${item.affiliateUsername}` : 'Username belum dituntut'}</p><p className="text-xs break-all text-slate-500">{item.userId}</p><p className="text-sm text-slate-600">{item.status} · {item.appliedAt ? new Date(item.appliedAt).toLocaleDateString('ms-MY') : 'Tarikh tidak tersedia'}</p><p className={`text-xs ${item.hasEverQualifiedPaidSubscription ? 'text-emerald-700' : 'text-red-700'}`}>{item.hasEverQualifiedPaidSubscription ? 'Subscription settled pernah disahkan' : 'Tiada subscription qualifying yang masih sah'}</p>{item.qualificationOrderId && <p className="text-xs text-slate-500">Order kelayakan: {item.qualificationOrderId}</p>}</div>
       <div className="flex gap-2 flex-wrap">{item.status === 'PENDING' && <><button disabled={busy === item.id} onClick={() => review(item.id, 'APPROVED')} className="rounded bg-emerald-700 px-3 py-2 text-white">Lulus</button><button disabled={busy === item.id} onClick={() => review(item.id, 'REJECTED')} className="rounded bg-slate-700 px-3 py-2 text-white">Tolak</button></>}{item.status === 'APPROVED' && <button disabled={busy === item.id} onClick={() => review(item.id, 'SUSPENDED')} className="rounded bg-red-700 px-3 py-2 text-white">Gantung</button>}</div>
     </div>)}</div>
     {!applications.length && !error && <p className="text-sm text-slate-500">Tiada permohonan direkodkan.</p>}

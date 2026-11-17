@@ -1726,13 +1726,22 @@ export class DurableStore {
   /**
    * Affiliate and Commission operations
    */
-  static async getAffiliatePartner(userIdOrCode: string): Promise<{ id: string; userId: string; referralCode: string; commissionRate: number; status: string } | null> {
+  static async getAffiliatePartner(userIdOrCode: string): Promise<{ id: string; userId: string; referralCode: string; affiliateUsername?: string; commissionRate: number; status: string; approvedAt?: string } | null> {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
       const isUuid = userIdOrCode.includes('-');
-      const filter = isUuid ? `user_id=eq.${encodeURIComponent(userIdOrCode)}` : `referral_code=eq.${encodeURIComponent(userIdOrCode)}`;
-      const url = `${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?${filter}`;
+      let filter = `user_id=eq.${encodeURIComponent(userIdOrCode)}`;
+      if (!isUuid) {
+        const aliasRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_referral_aliases?alias_normalized=eq.${encodeURIComponent(userIdOrCode.trim().toLowerCase())}&is_active=eq.true&select=affiliate_id&limit=1`, {
+          headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        });
+        if (!aliasRes.ok) return null;
+        const aliases = await aliasRes.json() as Array<{ affiliate_id: string }>;
+        if (!aliases[0]?.affiliate_id) return null;
+        filter = `id=eq.${encodeURIComponent(aliases[0].affiliate_id)}`;
+      }
+      const url = `${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?${filter}&select=id,user_id,referral_code,affiliate_username,commission_rate,status,approved_at&limit=1`;
       const res = await fetch(url, {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -1748,8 +1757,10 @@ export class DurableStore {
         id: r.id,
         userId: r.user_id,
         referralCode: r.referral_code,
+        affiliateUsername: r.affiliate_username || undefined,
         commissionRate: Number(r.commission_rate),
         status: r.status,
+        approvedAt: r.approved_at || undefined,
       };
     }
 
@@ -1783,7 +1794,7 @@ export class DurableStore {
           id,
           user_id: userId,
           referral_code: cleanCode,
-          commission_rate: 10.0,
+          commission_rate: 20.0,
           status: 'PENDING',
           applied_at: new Date().toISOString(),
           terms_accepted_at: new Date().toISOString(),
@@ -1803,26 +1814,25 @@ export class DurableStore {
       throw new Error('Database connection unavailable: fail-closed.');
     }
 
-    localDb.affiliates[id] = { id, userId, referralCode: cleanCode, rate: 10.0, status: 'PENDING' };
+    localDb.affiliates[id] = { id, userId, referralCode: cleanCode, rate: 20.0, status: 'PENDING' };
     return { id, referralCode: cleanCode };
   }
 
-  static async reviewAffiliatePartner(id: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED', reviewer: string): Promise<boolean> {
+  static async reviewAffiliatePartner(id: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED', reviewer: string, reason?: string): Promise<boolean> {
     this.checkFailClosed();
     if (this.isSupabaseConfigured()) {
-      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?id=eq.${encodeURIComponent(id)}&status=in.(PENDING,APPROVED)`, {
-        method: 'PATCH',
+      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/review_affiliate_partner_v1`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
           Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: 'return=representation',
         },
-        body: JSON.stringify({ status, reviewed_at: new Date().toISOString(), reviewed_by: reviewer, commission_rate: 10 }),
+        body: JSON.stringify({ p_affiliate_id: id, p_status: status, p_reviewer: reviewer, p_reason: reason || null }),
       });
       if (!res.ok) throw new Error(`Affiliate review failed: HTTP ${res.status}`);
-      const rows = await res.json();
-      return rows.length === 1;
+      const result = await res.json() as { success?: boolean };
+      return result.success === true;
     }
     const partner = localDb.affiliates[id];
     if (!partner || !['PENDING', 'APPROVED'].includes(partner.status)) return false;
@@ -1830,10 +1840,10 @@ export class DurableStore {
     return true;
   }
 
-  static async listAffiliatePartners(): Promise<Array<{ id: string; userId: string; status: string; appliedAt?: string }>> {
+  static async listAffiliatePartners(): Promise<Array<{ id: string; userId: string; status: string; appliedAt?: string; affiliateUsername?: string; qualificationOrderId?: string; approvedAt?: string }>> {
     this.checkFailClosed();
     if (this.isSupabaseConfigured()) {
-      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?select=id,user_id,status,applied_at&order=applied_at.desc&limit=100`, {
+      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/affiliate_partners?select=id,user_id,status,applied_at,affiliate_username,qualification_order_id,approved_at&order=applied_at.desc&limit=100`, {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
           Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
@@ -1841,7 +1851,7 @@ export class DurableStore {
       });
       if (!res.ok) throw new Error(`Affiliate list failed: HTTP ${res.status}`);
       const rows = await res.json();
-      return rows.map((row: { id: string; user_id: string; status: string; applied_at?: string }) => ({ id: row.id, userId: row.user_id, status: row.status, appliedAt: row.applied_at }));
+      return rows.map((row: { id: string; user_id: string; status: string; applied_at?: string; affiliate_username?: string; qualification_order_id?: string; approved_at?: string }) => ({ id: row.id, userId: row.user_id, status: row.status, appliedAt: row.applied_at, affiliateUsername: row.affiliate_username, qualificationOrderId: row.qualification_order_id, approvedAt: row.approved_at }));
     }
     return Object.values(localDb.affiliates).map((partner) => ({ id: partner.id, userId: partner.userId, status: partner.status }));
   }

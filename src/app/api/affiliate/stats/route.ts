@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
 import { DurableStore } from '@/lib/db/store';
-import { affiliateDb } from '@/lib/db/affiliate-ledger';
+import { affiliateDb, affiliateRpc } from '@/lib/db/affiliate-ledger';
+import { AFFILIATE_COMMISSION_RATE } from '@/lib/affiliate/partner-policy';
 
 
 /**
@@ -15,6 +16,17 @@ export async function GET(req: NextRequest) {
   }
 
   const partner = await DurableStore.getAffiliatePartner(session.userId);
+  let partnerState: Record<string, unknown> = {
+    status: partner?.status || 'NOT_APPLIED',
+    affiliate_username: partner?.affiliateUsername || null,
+    has_ever_qualified_paid_subscription: false,
+    can_apply: false,
+    lifetime_access: partner?.status === 'APPROVED',
+  };
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try { partnerState = await affiliateRpc('affiliate_partner_state_v1', { p_user_id: session.userId }); }
+    catch { return NextResponse.json({ error: 'Kelayakan affiliate tidak dapat disemak.' }, { status: 503 }); }
+  }
 
   const commissions = partner ? await DurableStore.listAffiliateCommissions(partner.id) : [];
 
@@ -48,10 +60,15 @@ export async function GET(req: NextRequest) {
   }
 
   const stats = {
-    status: partner?.status || 'NOT_APPLIED',
+    status: String(partnerState.status || partner?.status || 'NOT_APPLIED'),
+    hasEverQualifiedPaidSubscription: partnerState.has_ever_qualified_paid_subscription === true,
+    canApply: partnerState.can_apply === true,
+    lifetimeAccess: partnerState.lifetime_access === true,
+    affiliateUsername: String(partnerState.affiliate_username || partner?.affiliateUsername || ''),
     referralCode: partner?.status === 'APPROVED' ? partner.referralCode : '',
-    referralUrl: partner?.status === 'APPROVED' ? `${baseUrl}/?ref=${partner.referralCode}` : '',
-    commissionRate: partner?.status === 'APPROVED' ? 10.0 : 0,
+    referralUrl: partner?.status === 'APPROVED' ? `${baseUrl}/?ref=${String(partnerState.affiliate_username || partner?.affiliateUsername || partner.referralCode)}` : '',
+    legacyReferralUrl: partner?.status === 'APPROVED' ? `${baseUrl}/?ref=${partner.referralCode}` : '',
+    commissionRate: partner?.status === 'APPROVED' ? AFFILIATE_COMMISSION_RATE : 0,
     clicks,
     registrations,
     qualifiedCustomers,

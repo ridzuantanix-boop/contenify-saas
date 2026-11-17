@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       }
     }
     if (finalReferral) {
-      if (!/^[A-Z0-9_-]{4,50}$/.test(finalReferral)) return NextResponse.json({ error: 'Kod rujukan tidak sah.' }, { status: 400 });
+      if (!/^[A-Z0-9_-]{3,50}$/.test(finalReferral)) return NextResponse.json({ error: 'Kod rujukan tidak sah.' }, { status: 400 });
       const partner = await DurableStore.getAffiliatePartner(finalReferral);
       if (!partner || partner.status !== 'APPROVED' || partner.userId === session.userId) {
         return NextResponse.json({ error: 'Kod rujukan tidak layak.' }, { status: 400 });

@@ -4,9 +4,9 @@ import { affiliateDb } from '@/lib/db/affiliate-ledger';
 
 
 export async function GET(req: NextRequest) {
-  const code = new URL(req.url).searchParams.get('code')?.trim().toUpperCase();
+  const code = new URL(req.url).searchParams.get('code')?.trim();
   const campaign = new URL(req.url).searchParams.get('campaign')?.trim().slice(0, 64) || null;
-  if (!code || !/^[A-Z0-9_-]{4,50}$/.test(code)) return NextResponse.json({ valid: false }, { status: 400 });
+  if (!code || !/^[A-Za-z0-9_-]{3,50}$/.test(code)) return NextResponse.json({ valid: false }, { status: 400 });
   try {
     const partner = await DurableStore.getAffiliatePartner(code);
     if (!partner || partner.status !== 'APPROVED') return NextResponse.json({ valid: false }, { status: 404 });
