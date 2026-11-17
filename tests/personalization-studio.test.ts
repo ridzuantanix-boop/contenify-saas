@@ -102,8 +102,8 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(jobs).toContain('workspace_id=eq.${encodeURIComponent(workspaceId)}');
     expect(jobs).toContain('consent_confirmed=eq.true');
     expect(jobs).toContain('referenceImageKeysOrUrls: personalizationReferences');
-    expect(factory).toContain('avatarId: avatarId || undefined');
-    expect(factory).toContain('backgroundId: backgroundId || undefined');
+    expect(factory).toContain('avatarId: avatarId || null');
+    expect(factory).toContain('backgroundId: backgroundId || null');
     expect(factory).toContain('Simpan sebagai Preset');
     expect(factory).toContain('Jana Video Sekarang');
     expect(factory).toContain('Status Personalisasi Provider');
@@ -119,7 +119,8 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(factory).toContain('syncActiveJobStatus(activeJobId)');
     expect(factory).toContain("document.addEventListener('visibilitychange'");
     expect(factory).toContain('Semak Status Sekarang');
-    expect(factory).toContain('Auto / Tanpa Preset');
+    expect(factory).toContain('Video Settings Lama');
+    expect(factory).toContain('<CreatorProfileSelector');
     expect(factory).toContain('Arah Kreatif & CTA');
     expect(factory).toContain('Ambient — Eksperimental');
     expect(factory).not.toContain('Smart Script');

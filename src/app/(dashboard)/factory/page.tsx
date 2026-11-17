@@ -30,6 +30,8 @@ import { VideoStyle, StyleCategory } from '@/lib/styles/types';
 import { getStyleMarketingMetadata } from '@/lib/styles/marketing-metadata';
 import { StylePosterMedia } from '@/components/styles/style-poster-media';
 import { downloadPrivateMp4 } from '@/lib/download/client-download';
+import { CreatorProfileSelector, FactoryCreatorProfile } from '@/components/factory/creator-profile-selector';
+import Link from 'next/link';
 
 interface UploadedFilePreview {
   id: string;
@@ -110,8 +112,12 @@ function VideoFactoryContent() {
   const [builtInScenes, setBuiltInScenes] = useState<BuiltInSceneOption[]>([]);
   const [presets, setPresets] = useState<CreatorPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState('');
+  const [creatorProfiles, setCreatorProfiles] = useState<FactoryCreatorProfile[]>([]);
+  const [selectedCreatorProfileId, setSelectedCreatorProfileId] = useState('');
   const [assetActionBusy, setAssetActionBusy] = useState(false);
+  const [personalizationLoaded, setPersonalizationLoaded] = useState(false);
   const defaultPresetApplied = useRef(false);
+  const factoryDraftRestored = useRef(false);
   const submitLockRef = useRef(false);
 
   // Status, Wallet & Durable Database Jobs
@@ -137,6 +143,19 @@ function VideoFactoryContent() {
   const filteredOfficialBackgrounds = useMemo(() => officialBackgrounds.filter((item) =>
     backgroundCollectionFilter === 'all' || item.category === backgroundCollectionFilter
   ), [officialBackgrounds, backgroundCollectionFilter]);
+  const allAvatarOptions = useMemo(() => [...officialAvatars, ...avatars], [officialAvatars, avatars]);
+  const allBackgroundOptions = useMemo(() => [...officialBackgrounds, ...backgrounds], [officialBackgrounds, backgrounds]);
+  const selectedCreatorProfile = useMemo(() => creatorProfiles.find((profile) => profile.id === selectedCreatorProfileId) || null, [creatorProfiles, selectedCreatorProfileId]);
+  const selectedAvatar = useMemo(() => allAvatarOptions.find((item) => item.id === avatarId), [allAvatarOptions, avatarId]);
+  const selectedBackground = useMemo(() => allBackgroundOptions.find((item) => item.id === backgroundId), [allBackgroundOptions, backgroundId]);
+  const styleSupportsAvatar = !['hand_demo', 'product_handling', 'pov'].includes(selectedStyle.category) && !selectedStyle.id.startsWith('RH');
+  const personalizationError = avatarId && !styleSupportsAvatar
+    ? `Gaya ${selectedStyle.name} tidak menggunakan avatar presenter. Buang avatar atau pilih gaya presenter seperti NX01.`
+    : avatarId && !selectedAvatar
+      ? 'Avatar profile ini tidak lagi boleh diakses. Pilih avatar lain sebelum menjana.'
+      : backgroundId && !selectedBackground
+        ? 'Background profile ini tidak lagi boleh diakses. Pilih background lain sebelum menjana.'
+        : '';
 
   const openCustomize = () => {
     setMode('advanced');
@@ -145,6 +164,7 @@ function VideoFactoryContent() {
 
   function applyPreset(preset: CreatorPreset) {
     const settings = preset.settings;
+    setSelectedCreatorProfileId('');
     setSelectedPresetId(preset.id); setSelectedStyleId(settings.styleId || 'NX01');
     setAvatarId(settings.avatarId || ''); setBackgroundId(settings.backgroundId || '');
     setBuiltInSceneId(settings.builtInSceneId || ''); setNiche(settings.niche || 'auto');
@@ -154,6 +174,40 @@ function VideoFactoryContent() {
     setIsMuslimahModest(settings.isMuslimahModest !== false);
     setCreativeInstruction(settings.creativeInstruction || '');
     setSubmitSuccess(`Preset “${preset.name}” digunakan. Pilih produk dan jana bila sedia.`);
+  }
+
+  function applyCreatorProfile(profile: FactoryCreatorProfile | null) {
+    if (!profile) {
+      setSelectedCreatorProfileId('');
+      setAvatarId(''); setBackgroundId(''); setVoicePersonality('auto'); setNiche('auto');
+      setSubmitSuccess('Tanpa Creator Profile dipilih. Anda masih boleh jana menggunakan tetapan automatik.');
+      return;
+    }
+    setSelectedCreatorProfileId(profile.id);
+    setSelectedPresetId('');
+    setAvatarId(profile.settings?.avatarId || '');
+    setBackgroundId(profile.settings?.backgroundId || '');
+    setBuiltInSceneId('');
+    setVoicePersonality(profile.settings?.voicePersonality || 'auto');
+    setNiche(profile.settings?.niche || 'auto');
+    if (profile.settings?.creativeInstruction) setCreativeInstruction(profile.settings.creativeInstruction);
+    setSubmitSuccess(`Creator Profile digunakan: ${profile.name}`);
+  }
+
+  async function saveCreatorProfile(name: string) {
+    setAssetActionBusy(true); setSubmitError(null);
+    try {
+      const settings = { ...currentPersonalizationSettings(), avatarId: avatarId || null, backgroundId: backgroundId || null };
+      const response = await fetch('/api/creator-profiles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, settings, isDefault: creatorProfiles.length === 0 }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Creator Profile tidak dapat disimpan.');
+      const created: FactoryCreatorProfile = { id: data.id, name, version: 1, is_default: creatorProfiles.length === 0, settings };
+      setCreatorProfiles((items) => [created, ...items]);
+      applyCreatorProfile(created);
+      await loadPersonalization();
+      setSubmitSuccess(`Creator Profile digunakan: ${name}. Produk dan gaya anda masih kekal.`);
+    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Creator Profile tidak dapat disimpan.'); throw error; }
+    finally { setAssetActionBusy(false); }
   }
 
   const currentPersonalizationSettings = () => ({
@@ -186,7 +240,7 @@ function VideoFactoryContent() {
       const form = new FormData(); form.set('name', name); form.set('gender', 'female'); form.set('consent', 'true'); form.set('image', file);
       const response = await fetch('/api/avatars', { method: 'POST', body: form }); const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Avatar tidak dapat disimpan.');
-      setAvatarId(data.id); await loadPersonalization(); setSubmitSuccess(`Avatar “${name}” disimpan dan dipilih.`);
+      setAvatarId(data.id); setSelectedCreatorProfileId(''); await loadPersonalization(); setSubmitSuccess(`Avatar “${name}” disimpan dan dipilih.`);
     } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Avatar tidak dapat disimpan.'); }
     finally { setAssetActionBusy(false); }
   };
@@ -200,7 +254,7 @@ function VideoFactoryContent() {
       const form = new FormData(); form.set('name', name); form.set('image', file);
       const response = await fetch('/api/backgrounds', { method: 'POST', body: form }); const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Latar tidak dapat disimpan.');
-      setBackgroundId(data.id); setBuiltInSceneId(''); await loadPersonalization(); setSubmitSuccess(`Latar “${name}” disimpan dan dipilih.`);
+      setBackgroundId(data.id); setSelectedCreatorProfileId(''); setBuiltInSceneId(''); await loadPersonalization(); setSubmitSuccess(`Latar “${name}” disimpan dan dipilih.`);
     } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Latar tidak dapat disimpan.'); }
     finally { setAssetActionBusy(false); }
   };
@@ -213,10 +267,11 @@ function VideoFactoryContent() {
   }, []);
 
   async function loadPersonalization() {
-    const [avatarResponse, backgroundResponse, presetResponse] = await Promise.all([
+    const [avatarResponse, backgroundResponse, presetResponse, profileResponse] = await Promise.all([
       fetch('/api/avatars', { cache: 'no-store' }),
       fetch('/api/backgrounds', { cache: 'no-store' }),
       fetch('/api/creator-presets', { cache: 'no-store' }),
+      fetch('/api/creator-profiles', { cache: 'no-store' }),
     ]);
     if (avatarResponse.ok) {
       const data = await avatarResponse.json();
@@ -231,17 +286,50 @@ function VideoFactoryContent() {
       const items = (data.presets || []) as CreatorPreset[];
       setPresets(items);
       const requestedPreset = items.find((item) => item.id === searchParams.get('presetId'));
-      const defaultPreset = requestedPreset || items.find((item) => item.isDefault);
-      if (defaultPreset && !defaultPresetApplied.current && (!searchParams.get('styleId') || requestedPreset)) {
+      if (requestedPreset && !defaultPresetApplied.current) {
         defaultPresetApplied.current = true;
-        applyPreset(defaultPreset);
+        applyPreset(requestedPreset);
       }
     }
+    if (profileResponse.ok) {
+      const data = await profileResponse.json();
+      const items = (data.profiles || []) as FactoryCreatorProfile[];
+      setCreatorProfiles(items);
+      const requested = items.find((item) => item.id === searchParams.get('profileId'));
+      if (requested) applyCreatorProfile(requested);
+    }
+    setPersonalizationLoaded(true);
   }
 
   // Load workspace-scoped creator assets and the optional default preset.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadPersonalization().catch(() => {}); }, [searchParams]);
+
+  useEffect(() => {
+    if (!personalizationLoaded || factoryDraftRestored.current) return;
+    factoryDraftRestored.current = true;
+    try {
+      const draft = JSON.parse(localStorage.getItem('affimatik:factory:draft-v1') || 'null');
+      if (!draft) return;
+      if (!searchParams.get('styleId') && getVideoStyle(draft.styleId)) setSelectedStyleId(draft.styleId);
+      const savedProfile = creatorProfiles.find((profile) => profile.id === draft.creatorProfileId);
+      if (!searchParams.get('profileId') && savedProfile) applyCreatorProfile(savedProfile);
+      else if (!savedProfile) {
+        if (allAvatarOptions.some((item) => item.id === draft.avatarId)) setAvatarId(draft.avatarId);
+        if (allBackgroundOptions.some((item) => item.id === draft.backgroundId)) setBackgroundId(draft.backgroundId);
+        if (typeof draft.voicePersonality === 'string') setVoicePersonality(draft.voicePersonality);
+      }
+      if (typeof draft.callToAction === 'string') setCallToAction(draft.callToAction);
+      if (draft.imageAssetId && !searchParams.get('imageAssetId')) {
+        fetch('/api/products',{cache:'no-store'}).then(async(response)=>{if(!response.ok)return;const data=await response.json(),asset=data.assets?.find((item:{id:string})=>item.id===draft.imageAssetId);if(asset)setImages([{id:asset.id,assetId:asset.id,productId:asset.productId,name:asset.filename,size:0,dataUrl:asset.imageUrl,category:asset.category||'',notes:asset.notes||''}])}).catch(()=>undefined);
+      }
+    } catch { localStorage.removeItem('affimatik:factory:draft-v1'); }
+  }, [personalizationLoaded, creatorProfiles, allAvatarOptions, allBackgroundOptions, searchParams]);
+
+  useEffect(() => {
+    if (!factoryDraftRestored.current) return;
+    localStorage.setItem('affimatik:factory:draft-v1', JSON.stringify({ imageAssetId:images[0]?.assetId||null, styleId:selectedStyleId, creatorProfileId:selectedCreatorProfileId||null, avatarId:avatarId||null, backgroundId:backgroundId||null, voicePersonality, callToAction }));
+  }, [images, selectedStyleId, selectedCreatorProfileId, avatarId, backgroundId, voicePersonality, callToAction]);
 
   useEffect(() => {
     const selectedAssetId = searchParams.get('imageAssetId');
@@ -259,7 +347,7 @@ function VideoFactoryContent() {
 
   const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
   const hasActiveSubmission = Boolean(activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'));
-  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || hasActiveSubmission || providerCooldownSeconds > 0;
+  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || hasActiveSubmission || providerCooldownSeconds > 0 || Boolean(personalizationError);
 
   useEffect(() => {
     if (providerCooldownSeconds <= 0) return;
@@ -468,8 +556,8 @@ function VideoFactoryContent() {
         creativeInstruction: creativeInstruction.trim() || undefined,
         isMuslimahModest,
         imageAssetId: images[0].assetId,
-        avatarId: avatarId || undefined,
-        backgroundId: backgroundId || undefined,
+        avatarId: avatarId || null,
+        backgroundId: backgroundId || null,
         builtInSceneId: backgroundId ? undefined : builtInSceneId || undefined,
         niche,
         voicePersonality,
@@ -478,6 +566,7 @@ function VideoFactoryContent() {
         audioTreatment,
         customCta: callToAction === 'custom' ? customCta.trim() : undefined,
         creatorPresetId: selectedPresetId || undefined,
+        creatorProfileId: selectedCreatorProfileId || undefined,
       };
 
       const res = await fetch('/api/jobs', {
@@ -540,14 +629,14 @@ function VideoFactoryContent() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-              AffiMatik Creator Studio
+              Jana Video
             </h1>
             <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">
-              Masterprompt V10.1
+              4 Langkah Mudah
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Quick Create untuk hasil pantas, atau Customize avatar, latar dan cara penyampaian.
+            Pilih produk, gaya dan Creator Profile. Semak tetapan sebenar, kemudian jana.
           </p>
         </div>
 
@@ -561,7 +650,7 @@ function VideoFactoryContent() {
                 mode === 'quick' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              Quick Mode
+              Simple
             </button>
             <button
               type="button"
@@ -570,7 +659,7 @@ function VideoFactoryContent() {
                 mode === 'advanced' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              Customize
+              Advanced
             </button>
           </div>
 
@@ -588,7 +677,7 @@ function VideoFactoryContent() {
         {/* ========================================================================= */}
         <div className="lg:col-span-7 space-y-6">
           {/* STEP 1: UPLOAD PRODUCT */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div id="product-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
@@ -662,21 +751,12 @@ function VideoFactoryContent() {
             )}
           </div>
 
-          {/* STEP 2: PRESET-FIRST QUICK CREATE */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-            <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</span><div><h3 className="text-sm font-bold text-slate-900">Pilih Preset</h3><p className="text-[11px] text-slate-500">Setup creator boleh guna semula tanpa menukar produk yang baru dipilih.</p></div></div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button type="button" onClick={() => setSelectedPresetId('')} className={`shrink-0 rounded-xl border px-3 py-2 text-left text-[11px] ${!selectedPresetId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-600'}`}><span className="block font-bold">Auto / Tanpa Preset</span><span className="text-[10px]">Ikut pilihan semasa</span></button>
-              {presets.map((preset) => <button key={preset.id} type="button" onClick={() => applyPreset(preset)} className={`shrink-0 rounded-xl border px-3 py-2 text-left text-[11px] ${selectedPresetId === preset.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-600'}`}><span className="block font-bold">{preset.name}{preset.isDefault ? ' · Default' : ''}</span><span className="text-[10px]">{preset.settings.styleId} · {preset.settings.voicePersonality === 'auto' ? 'Suara ikut gaya' : preset.settings.voicePersonality}</span></button>)}
-            </div>
-          </div>
-
-          {/* STEP 3: CHOOSE ENGINE & VIDEO STYLE */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          {/* STEP 2: CHOOSE ENGINE & VIDEO STYLE */}
+          <div id="style-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                  3
+                  2
                 </span>
                 <h3 className="text-sm font-bold text-slate-900">Pilih Jenis Video & Gaya</h3>
               </div>
@@ -687,7 +767,7 @@ function VideoFactoryContent() {
 
             <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900 flex items-center gap-2">
               <Volume2 className="w-4 h-4 text-primary shrink-0" />
-              <span><strong>AffiMatik Voice V10.1 · Nexabot 15s</strong> — 20 personaliti kreatif BM Malaysia, 10 kredit setiap video.</span>
+              <span><strong>AffiMatik Voice · Nexabot 15s</strong> — {PUBLISHED_STYLE_COUNT} gaya video BM Malaysia, 10 kredit setiap video.</span>
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -762,8 +842,27 @@ function VideoFactoryContent() {
             </div>
           </div>
 
+          <CreatorProfileSelector
+            profiles={creatorProfiles}
+            selectedProfileId={selectedCreatorProfileId}
+            avatars={allAvatarOptions}
+            backgrounds={allBackgroundOptions}
+            avatarId={avatarId}
+            backgroundId={backgroundId}
+            voicePersonality={voicePersonality}
+            busy={assetActionBusy}
+            compatibilityError={personalizationError || undefined}
+            onSelectProfile={applyCreatorProfile}
+            onAvatarChange={(id) => { setAvatarId(id); if (selectedCreatorProfileId) setSelectedCreatorProfileId(''); }}
+            onBackgroundChange={(id) => { setBackgroundId(id); setBuiltInSceneId(''); if (selectedCreatorProfileId) setSelectedCreatorProfileId(''); }}
+            onVoiceChange={(value) => { setVoicePersonality(value); if (selectedCreatorProfileId) setSelectedCreatorProfileId(''); }}
+            onAvatarUpload={(file) => void uploadAvatar(file)}
+            onBackgroundUpload={(file) => void uploadBackground(file)}
+            onSaveProfile={saveCreatorProfile}
+          />
+
           {/* STEP 4: NEXABOT NATIVE CREATIVE DIRECTION */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+          <div id="cta-step" className="scroll-mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
             <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">4</span><div><h3 className="text-sm font-bold text-slate-900">Arah Kreatif & CTA</h3><p className="text-[11px] text-slate-500">AffiMatik mengarah gaya dan keselamatan. Nexabot memahami produk lalu mencipta dialog sendiri.</p></div></div>
             <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs leading-relaxed text-slate-700"><strong>Tiada skrip automatik:</strong> dialog tidak dijana atau dipratonton oleh AffiMatik. Produk, gaya dan arahan pilihan dihantar terus sebagai masterprompt.</div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -797,7 +896,7 @@ function VideoFactoryContent() {
               )}
 
               {presets.length > 0 && <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Preset Tersimpan</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Video Settings Lama <span className="font-normal text-slate-400">(Preset — compatibility)</span></label>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {presets.map((preset) => <button key={preset.id} type="button" onClick={() => applyPreset(preset)} className={`shrink-0 rounded-lg border px-3 py-2 text-[11px] font-semibold ${selectedPresetId === preset.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-600'}`}>{preset.name}{preset.isDefault ? ' · Default' : ''}</button>)}
                 </div>
@@ -806,15 +905,15 @@ function VideoFactoryContent() {
               <div>
                 <label className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700"><UserRound className="h-3.5 w-3.5" />Avatar / Presenter <span className="font-normal text-slate-400">(Pilihan)</span></label>
                 <div className="space-y-3">
-                  <div><div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Auto</div><button type="button" onClick={() => setAvatarId('')} className={`rounded-xl border px-3 py-2 text-[10px] font-semibold ${!avatarId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}><Sparkles className="mr-1 inline h-3.5 w-3.5" />Auto Presenter</button></div>
+                  <div><div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Auto</div><button type="button" onClick={() => {setAvatarId('');setSelectedCreatorProfileId('')}} className={`rounded-xl border px-3 py-2 text-[10px] font-semibold ${!avatarId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}><Sparkles className="mr-1 inline h-3.5 w-3.5" />Auto Presenter</button></div>
                   <div data-testid="official-avatar-collection">
                     <div className="mb-2 flex items-center justify-between gap-2"><div><div className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Koleksi AffiMatik</div><div className="text-[10px] text-slate-500">12 presenter Malaysia · Avatar Beta</div></div><select aria-label="Tapis avatar rasmi" value={avatarCollectionFilter} onChange={(event) => setAvatarCollectionFilter(event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px]"><option value="all">Semua</option><option value="female">Wanita</option><option value="male">Lelaki</option><option value="young">Muda</option><option value="mature">Matang</option><option value="senior">Senior</option></select></div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">{filteredOfficialAvatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => setAvatarId(avatar.id)} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">{filteredOfficialAvatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => {setAvatarId(avatar.id);setSelectedCreatorProfileId('')}} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={avatar.thumbnailUrl || avatar.imageUrl} alt={avatar.name} className="aspect-[3/4] w-full rounded-lg object-cover object-top" /><span className="mt-1 block truncate">{avatar.name}</span>
                     </button>)}</div>
                   </div>
-                  <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{avatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => setAvatarId(avatar.id)} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
+                  <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{avatars.map((avatar) => <button key={avatar.id} type="button" onClick={() => {setAvatarId(avatar.id);setSelectedCreatorProfileId('')}} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${avatarId === avatar.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={avatar.thumbnailUrl || avatar.imageUrl} alt={avatar.name} className="aspect-[3/4] w-full rounded-lg object-cover object-top" /><span className="mt-1 block truncate">{avatar.name}</span>
                   </button>)}<label className="rounded-xl border border-dashed border-slate-300 p-2 text-center text-[10px] font-semibold text-slate-500 cursor-pointer hover:border-primary"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadAvatar(event.target.files?.[0]); event.target.value = ''; }} /><div className="mx-auto mb-1 flex aspect-[3/4] w-full items-center justify-center rounded-lg bg-slate-50"><Upload className="h-4 w-4" /></div>Upload Baru</label></div>{avatars.length === 0 && <div className="mt-1 text-[10px] text-slate-400">Belum ada avatar peribadi.</div>}</div>
@@ -824,15 +923,15 @@ function VideoFactoryContent() {
               <div>
                 <label className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700"><ImageIcon className="h-3.5 w-3.5" />Latar / Babak <span className="font-normal text-slate-400">(Pilihan)</span></label>
                 <div className="space-y-3">
-                  <div><div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Auto</div><div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><button type="button" onClick={() => { setBackgroundId(''); setBuiltInSceneId(''); }} className={`rounded-xl border p-2 text-[10px] font-semibold ${!backgroundId && !builtInSceneId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>Auto Sesuai Produk</button>{builtInScenes.map((scene) => <button key={scene.id} type="button" onClick={() => { setBuiltInSceneId(scene.id); setBackgroundId(''); }} title={scene.directive} className={`rounded-xl border p-2 text-[10px] font-semibold ${builtInSceneId === scene.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>{scene.name}</button>)}</div></div>
+                  <div><div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Auto</div><div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><button type="button" onClick={() => { setBackgroundId(''); setBuiltInSceneId(''); setSelectedCreatorProfileId(''); }} className={`rounded-xl border p-2 text-[10px] font-semibold ${!backgroundId && !builtInSceneId ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>Auto Sesuai Produk</button>{builtInScenes.map((scene) => <button key={scene.id} type="button" onClick={() => { setBuiltInSceneId(scene.id); setBackgroundId(''); setSelectedCreatorProfileId(''); }} title={scene.directive} className={`rounded-xl border p-2 text-[10px] font-semibold ${builtInSceneId === scene.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>{scene.name}</button>)}</div></div>
                   <div data-testid="official-background-collection">
                     <div className="mb-2 flex items-center justify-between gap-2"><div><div className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Koleksi AffiMatik</div><div className="text-[10px] text-slate-500">18 latar rasmi yang dioptimumkan</div></div><select aria-label="Tapis latar rasmi" value={backgroundCollectionFilter} onChange={(event) => setBackgroundCollectionFilter(event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px]"><option value="all">Semua</option><option value="living">Ruang Rumah</option><option value="kitchen">Dapur</option><option value="beauty">Beauty</option><option value="workspace">Workspace</option><option value="lifestyle">Lifestyle</option><option value="automotive">Automotif</option><option value="outdoor">Outdoor</option></select></div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">{filteredOfficialBackgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); }} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">{filteredOfficialBackgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); setSelectedCreatorProfileId(''); }} className={`overflow-hidden rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/10' : 'border-slate-200'}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={background.thumbnailUrl || background.imageUrl} alt={background.name} className="aspect-[9/16] w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
                     </button>)}</div>
                   </div>
-                  <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div>{backgrounds.length > 0 && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{backgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); }} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
+                  <div><div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Milik Saya</div>{backgrounds.length > 0 && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{backgrounds.map((background) => <button key={background.id} type="button" onClick={() => { setBackgroundId(background.id); setBuiltInSceneId(''); setSelectedCreatorProfileId(''); }} className={`rounded-xl border p-1.5 text-[10px] font-semibold ${backgroundId === background.id ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200'}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={background.thumbnailUrl || background.imageUrl} alt={background.name} className="aspect-[9/16] w-full rounded-lg object-cover" /><span className="mt-1 block truncate">{background.name}</span>
                   </button>)}</div>}<label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-600"><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={assetActionBusy} onChange={(event) => { uploadBackground(event.target.files?.[0]); event.target.value = ''; }} /><Upload className="h-3.5 w-3.5" />Upload Latar Sendiri</label>{backgrounds.length === 0 && <div className="mt-1 text-[10px] text-slate-400">Belum ada latar peribadi.</div>}</div>
@@ -841,7 +940,7 @@ function VideoFactoryContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="text-[11px] font-bold text-slate-700">Niche / Kategori<select value={niche} onChange={(e) => setNiche(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto ikut imej</option><option value="wellness">Supplement & Wellness</option><option value="beauty">Beauty & Kosmetik</option><option value="kitchen">Produk Dapur</option><option value="automotive">Aksesori Automotif</option><option value="gadgets">Gajet</option><option value="home">Home Living</option><option value="fashion">Fesyen</option><option value="gardening">Gardening</option></select></label>
-                <label className="text-[11px] font-bold text-slate-700">Personaliti Suara<select value={voicePersonality} onChange={(e) => setVoicePersonality(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Ikut gaya dipilih</option><option value="friendly">Mesra macam kawan</option><option value="confident">Yakin</option><option value="calm">Tenang</option><option value="energetic">Bertenaga</option><option value="helpful">Membantu</option><option value="premium">Premium & kemas</option></select></label>
+                <label className="text-[11px] font-bold text-slate-700">Personaliti Suara<select value={voicePersonality} onChange={(e) => {setVoicePersonality(e.target.value);setSelectedCreatorProfileId('')}} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Ikut gaya dipilih</option><option value="friendly">Mesra macam kawan</option><option value="confident">Yakin</option><option value="calm">Tenang</option><option value="energetic">Bertenaga</option><option value="helpful">Membantu</option><option value="premium">Premium & kemas</option></select></label>
                 <label className="text-[11px] font-bold text-slate-700">Storyboard<select value={storyboard} onChange={(e) => setStoryboard(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="auto">Auto ikut gaya</option><option value="conversation">Sembang presenter</option><option value="problem_demo">Masalah → demo</option><option value="step_by_step">Langkah demi langkah</option><option value="before_after_context">Konteks sebelum/selepas</option><option value="q_and_a">Soalan & jawapan</option><option value="product_showcase">Showcase produk</option></select></label>
                 <label className="text-[11px] font-bold text-slate-700">CTA<select value={callToAction} onChange={(e) => setCallToAction(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"><option value="tiktok_shop">TikTok Shop — Beg Kuning</option><option value="click_button">Klik Butang Di Bawah</option><option value="tap_button">Tekan Butang Di Bawah</option><option value="check_bio">Semak Bio</option><option value="dm_info">DM Untuk Info</option><option value="none">Tanpa CTA</option><option value="custom">Custom CTA</option></select></label>
                 <div className="md:col-span-2">
@@ -885,6 +984,18 @@ function VideoFactoryContent() {
 
           {/* GENERATE ACTION BUTTON */}
           <div className="space-y-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" data-testid="generation-summary">
+              <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-black text-slate-900">Semak Sebelum Jana</h3><p className="text-[11px] text-slate-500">Ini tetapan sebenar yang akan dihantar kepada Nexabot.</p></div><Link href={`/auto-factory?profileId=${encodeURIComponent(selectedCreatorProfileId)}&styleId=${encodeURIComponent(selectedStyleId)}`} className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-[11px] font-black text-indigo-700">Jana Banyak Video</Link></div>
+              <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                <SummaryRow label="Produk" value={images[0]?.name || 'Belum dipilih'} image={images[0]?.dataUrl} onEdit={() => document.getElementById('product-step')?.scrollIntoView({behavior:'smooth'})}/>
+                <SummaryRow label="Gaya" value={selectedStyle.name} onEdit={() => document.getElementById('style-step')?.scrollIntoView({behavior:'smooth'})}/>
+                <SummaryRow label="Creator Profile" value={selectedCreatorProfile?.name || 'Tanpa Profile'} onEdit={() => document.getElementById('creator-step')?.scrollIntoView({behavior:'smooth'})}/>
+                <SummaryRow label="Avatar" value={selectedAvatar?.name || 'Tiada / Automatik'} image={selectedAvatar?.thumbnailUrl || selectedAvatar?.imageUrl} onEdit={() => document.getElementById('creator-step')?.scrollIntoView({behavior:'smooth'})}/>
+                <SummaryRow label="Background" value={selectedBackground?.name || 'Automatik'} image={selectedBackground?.thumbnailUrl || selectedBackground?.imageUrl} onEdit={() => document.getElementById('creator-step')?.scrollIntoView({behavior:'smooth'})}/>
+                <SummaryRow label="CTA" value={callToAction === 'tiktok_shop' ? 'Tekan beg kuning' : callToAction === 'none' ? 'Tanpa CTA' : callToAction.replaceAll('_',' ')} onEdit={() => document.getElementById('cta-step')?.scrollIntoView({behavior:'smooth'})}/>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs"><span>{selectedStyle.durationSeconds}s · <strong>{requiredCredits} kredit</strong></span><span>Baki tersedia: <strong className="text-indigo-700">{userBalance ?? '—'} kredit</strong></span></div>
+            </div>
             {!selectedAvailable && (
               <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
                 {selectedStyle.engine === 'nexabot' ? 'AffiMatik Voice' : 'AffiMatik Motion'} belum tersedia untuk pelanggan. Semakan kualiti dan pembekal masih berjalan; tiada kredit akan ditolak.
@@ -1324,6 +1435,15 @@ function VideoFactoryContent() {
       </div>
     </div>
   );
+}
+
+function SummaryRow({label,value,image,onEdit}:{label:string;value:string;image?:string;onEdit:()=>void}) {
+  return <div className="flex min-h-14 items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/70 p-2">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    {image ? <img src={image} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400"><ImageIcon className="h-4 w-4"/></div>}
+    <div className="min-w-0 flex-1"><span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</span><strong className="block truncate text-xs text-slate-800">{value}</strong></div>
+    <button type="button" onClick={onEdit} className="min-h-10 rounded-lg px-2 text-[10px] font-black text-indigo-700">Edit</button>
+  </div>;
 }
 
 export default function VideoFactoryPage() {

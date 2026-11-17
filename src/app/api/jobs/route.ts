@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
       customCta,
       productFact,
       creatorPresetId,
+      creatorProfileId,
     } = body;
 
     // Mandate clientRequestId to prevent accidental non-idempotent job creation
@@ -158,13 +159,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Pembekal tidak sepadan dengan gaya yang dipilih.' }, { status: 400 });
     }
 
+    let verifiedCreatorProfile: { id:string; name:string; version:number; settings:ReturnType<typeof sanitizePersonalizationSettings> } | null = null;
+    if (creatorProfileId) {
+      if (typeof creatorProfileId !== 'string' || !/^[0-9a-f-]{36}$/i.test(creatorProfileId) || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return NextResponse.json({ error: 'Creator Profile tidak sah.' }, { status: 400 });
+      }
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/creator_profiles?id=eq.${encodeURIComponent(creatorProfileId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,name,version,settings&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (!response.ok) return NextResponse.json({ error: 'Pengesahan Creator Profile gagal.' }, { status: 503 });
+      const rows = await response.json() as Array<{id:string;name:string;version:number;settings:unknown}>;
+      if (!rows.length) return NextResponse.json({ error: 'Creator Profile tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
+      verifiedCreatorProfile = { ...rows[0], settings: sanitizePersonalizationSettings(rows[0].settings) };
+    }
+    const hasOwn = (key:string) => Object.prototype.hasOwnProperty.call(body,key);
+    const effectiveAvatarId = hasOwn('avatarId') ? avatarId : verifiedCreatorProfile?.settings.avatarId;
+    const effectiveBackgroundId = hasOwn('backgroundId') ? backgroundId : verifiedCreatorProfile?.settings.backgroundId;
+    const effectiveVoicePersonality = hasOwn('voicePersonality') ? voicePersonality : verifiedCreatorProfile?.settings.voicePersonality;
+    const effectiveNiche = hasOwn('niche') ? niche : verifiedCreatorProfile?.settings.niche;
+    const effectiveCreativeInstruction = hasOwn('creativeInstruction') ? creativeInstruction : verifiedCreatorProfile?.settings.creativeInstruction;
+
     const personalization = sanitizePersonalizationSettings({
-      styleId: style.id, avatarId, backgroundId, builtInSceneId, niche, voicePersonality,
+      styleId: style.id, avatarId:effectiveAvatarId, backgroundId:effectiveBackgroundId, builtInSceneId, niche:effectiveNiche, voicePersonality:effectiveVoicePersonality,
       storyboard, callToAction, audioTreatment, customCta, productFact,
-      isMuslimahModest, creativeInstruction,
+      isMuslimahModest, creativeInstruction:effectiveCreativeInstruction,
     });
-    if (avatarId && !personalization.avatarId) return NextResponse.json({ error: 'Avatar yang dipilih tidak sah.' }, { status: 400 });
-    if (backgroundId && !personalization.backgroundId) return NextResponse.json({ error: 'Latar yang dipilih tidak sah.' }, { status: 400 });
+    if (effectiveAvatarId && !personalization.avatarId) return NextResponse.json({ error: 'Avatar yang dipilih tidak sah.' }, { status: 400 });
+    if (effectiveBackgroundId && !personalization.backgroundId) return NextResponse.json({ error: 'Latar yang dipilih tidak sah.' }, { status: 400 });
     if (builtInSceneId && !getBuiltInScene(personalization.builtInSceneId)) return NextResponse.json({ error: 'Pilihan babak tidak sah.' }, { status: 400 });
     if (personalization.avatarId && (style.category === 'hand_demo' || style.category === 'product_handling' || style.category === 'pov' || style.id.startsWith('RH'))) {
       return NextResponse.json({ error: 'Gaya tangan/produk ini tidak menggunakan avatar presenter. Pilih Auto Presenter atau gaya presenter.' }, { status: 400 });
@@ -280,8 +300,8 @@ export async function POST(req: NextRequest) {
     };
 
     let resolvedCreativeInstruction: string | undefined = undefined;
-    if (typeof creativeInstruction === 'string' && creativeInstruction.trim().length > 0) {
-      resolvedCreativeInstruction = creativeInstruction.trim();
+    if (typeof personalization.creativeInstruction === 'string' && personalization.creativeInstruction.trim().length > 0) {
+      resolvedCreativeInstruction = personalization.creativeInstruction.trim();
     } else if (style.engine === 'runninghub' && typeof customPrompt === 'string' && customPrompt.trim().length > 0) {
       resolvedCreativeInstruction = customPrompt.trim();
     }
@@ -350,6 +370,9 @@ export async function POST(req: NextRequest) {
         promptArchitecture: 'pawarna-masterprompt-director-v10',
         legacyScriptFieldsIgnored: true,
         creatorPresetId: verifiedCreatorPresetId,
+        creatorProfileId: verifiedCreatorProfile?.id || null,
+        creatorProfileVersion: verifiedCreatorProfile?.version || null,
+        creatorProfileName: verifiedCreatorProfile?.name || null,
       },
     });
 
@@ -375,6 +398,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: admission.error }, { status: 402 });
       }
       return NextResponse.json({ error: admission.error || 'Ralat pendaftaran tugasan video.' }, { status: 400 });
+    }
+
+    if (verifiedCreatorProfile && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const snapshot = { creatorProfile: { id: verifiedCreatorProfile.id, name: verifiedCreatorProfile.name, version: verifiedCreatorProfile.version, settings: personalization }, styleId: style.id, admittedAt: new Date().toISOString() };
+      const linked = await fetch(`${process.env.SUPABASE_URL}/rest/v1/video_jobs?id=eq.${encodeURIComponent(jobId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}`, { method:'PATCH', headers:{ apikey:key, Authorization:`Bearer ${key}`, 'Content-Type':'application/json' }, body:JSON.stringify({ creator_profile_id:verifiedCreatorProfile.id, generation_snapshot:snapshot }) });
+      if (!linked.ok) console.warn(`[AffiMatik profile snapshot] job=${jobId} profile link HTTP ${linked.status}; immutable input_options remain available.`);
     }
 
     // 8. Nexabot always enters the database-backed global queue first.
