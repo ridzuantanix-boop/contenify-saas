@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({}));
-  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  const contentType = req.headers.get('content-type') || '';
+  const body = contentType.includes('application/json') ? await req.json().catch(() => ({})) : {};
+  const token = (typeof body.token === 'string' ? body.token : new URL(req.url).searchParams.get('token') || '').trim();
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
     return NextResponse.json({ error: 'Pautan berhenti langgan tidak sah.' }, { status: 400 });
   }
