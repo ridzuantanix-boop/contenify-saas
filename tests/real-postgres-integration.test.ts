@@ -113,7 +113,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(result.rows.every((row) => row.relrowsecurity)).toBe(true);
   });
 
-  it('provisions only confirmed identities once and preserves the 20-credit welcome grant', async () => {
+  it('provisions only confirmed identities once without reactivating free-trial credits', async () => {
     const userId = 'b2222222-2222-4222-8222-222222222222';
     await db.query(`INSERT INTO auth.users(id,email) VALUES($1,'verified@example.test')`, [userId]);
     const invoke = () => db.query<{ result: { success: boolean; workspace_id?: string } }>(
@@ -126,7 +126,7 @@ describe('Real PostgreSQL Integration & Migration Acceptance Suite (PGlite)', ()
     expect(first.success).toBe(true);
     expect(second.workspace_id).toBe(first.workspace_id);
     const wallet = await db.query<{ balance: number }>(`SELECT balance FROM credit_wallets WHERE workspace_id=$1`, [first.workspace_id]);
-    expect(wallet.rows[0].balance).toBe(20);
+    expect(wallet.rows[0].balance).toBe(0);
     const grants = await db.query(`SELECT id FROM credit_ledger WHERE workspace_id=$1 AND event_type='GRANT'`, [first.workspace_id]);
     expect(grants.rows).toHaveLength(1);
   });

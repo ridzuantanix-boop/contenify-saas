@@ -184,7 +184,9 @@ BEGIN
   INSERT INTO profiles(id,email,full_name,whatsapp,tier,default_workspace_id) VALUES(p_user_id,lower(p_email),left(p_full_name,255),left(p_whatsapp,50),'free',v_workspace)
    ON CONFLICT(id) DO UPDATE SET default_workspace_id=coalesce(profiles.default_workspace_id,excluded.default_workspace_id);
   INSERT INTO workspace_members(workspace_id,user_id,role) VALUES(v_workspace,p_user_id,'owner') ON CONFLICT(workspace_id,user_id) DO NOTHING;
-  IF NOT EXISTS(SELECT 1 FROM credit_wallets WHERE workspace_id=v_workspace) THEN PERFORM provision_wallet_atomic(v_workspace,20);END IF;
+  -- Free Trial is disabled in the current production baseline. Referral
+  -- attribution must not reintroduce signup credits while replacing this RPC.
+  IF NOT EXISTS(SELECT 1 FROM credit_wallets WHERE workspace_id=v_workspace) THEN PERFORM provision_wallet_atomic(v_workspace,0);END IF;
   IF nullif(trim(p_referral_code),'') IS NOT NULL THEN
     v_partner:=public.resolve_affiliate_partner_v1(p_referral_code);
     IF v_partner IS NOT NULL AND NOT EXISTS(SELECT 1 FROM affiliate_partners WHERE id=v_partner AND user_id=p_user_id) THEN

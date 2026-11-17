@@ -8,6 +8,12 @@ import {
 } from '@/lib/affiliate/partner-policy';
 
 describe('AffiMatik Partner V1 owner policy', () => {
+  it('preserves zero-credit registration while adding referral aliases', () => {
+    const sql = fs.readFileSync('supabase/migrations/00033_affimatik_partner_v1.sql', 'utf8');
+    expect(sql).toContain('provision_wallet_atomic(v_workspace,0)');
+    expect(sql).not.toContain('provision_wallet_atomic(v_workspace,20)');
+  });
+
   it('qualifies only genuinely settled subscriptions, never Launch Pack or top-ups', () => {
     expect(isQualifyingSettledSubscription({ planId: 'plan_starter', status: 'PAID', paymentState: 'PAYMENT_CONFIRMED' })).toBe(true);
     expect(isQualifyingSettledSubscription({ planId: 'plan_pro', status: 'PAID', paymentState: 'BANK_PAYMENT_VERIFIED' })).toBe(true);
