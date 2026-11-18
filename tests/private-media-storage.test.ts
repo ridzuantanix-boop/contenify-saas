@@ -87,6 +87,25 @@ describe('Private provider media ingestion', () => {
     expect(request).toHaveBeenCalledTimes(3);
   });
 
+  it('accepts a rotated Nexabot Supabase media host only through a trusted Nexabot redirect', async () => {
+    process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
+    const mp4 = mp4Fixture();
+    const rotated = 'https://bwcqhtntrfntnkjokihp.supabase.co/storage/v1/object/public/storage/media/2026/11/48fae41b-146b-49ff-8d4b-e336ec8ef704.mp4';
+    const request = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 307, headers: { location: rotated } }))
+      .mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockResolvedValueOnce(new Response(mp4.buffer as ArrayBuffer, { status: 200 }));
+    vi.stubGlobal('fetch', request);
+    const result = await ingestProviderMp4('nexabot', 'https://nexabot.id/api/v1/jobs/job-1/download', 'ws-1', 'job-1');
+    expect(result.sizeBytes).toBe(mp4.length);
+    expect(request).toHaveBeenCalledTimes(4);
+
+    vi.stubGlobal('fetch', vi.fn());
+    await expect(ingestProviderMp4('nexabot', rotated, 'ws-1', 'job-2')).rejects.toThrow(/tidak dibenarkan/);
+  });
+
   it('rejects other paths on the Nexabot storage host and lookalike hosts', async () => {
     const request = vi.fn();
     vi.stubGlobal('fetch', request);

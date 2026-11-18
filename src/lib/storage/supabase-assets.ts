@@ -158,18 +158,25 @@ export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mo
   let response: Response | null = null;
   for (let redirect = 0; redirect < 3; redirect++) {
     const hostname = current.hostname.toLowerCase();
-    if (current.protocol !== 'https:' || current.username || current.password || ![...allowed, ...extra].some((host) =>
-      nexabotStorageHosts.includes(host) ? hostname === host : hostname === host || hostname.endsWith(`.${host}`))) {
+    const isKnownHost = [...allowed, ...extra].some((host) =>
+      nexabotStorageHosts.includes(host) ? hostname === host : hostname === host || hostname.endsWith(`.${host}`));
+    // Nexabot rotates its Supabase storage project. Accept a new project only
+    // when nexabot.id itself redirected us there and only for its exact public
+    // dated media-object path. A caller cannot supply an arbitrary Supabase URL.
+    const isNexabotStorageRedirect = provider === 'nexabot' && redirect > 0 &&
+      /^[a-z0-9]{20}\.supabase\.co$/.test(hostname) &&
+      /^\/storage\/v1\/object\/public\/storage\/media\/\d{4}\/\d{2}\/[0-9a-f-]{36}\.mp4$/i.test(current.pathname);
+    if (current.protocol !== 'https:' || current.username || current.password || (!isKnownHost && !isNexabotStorageRedirect)) {
       throw new Error('Domain sumber video tidak dibenarkan.');
     }
-    if (provider === 'nexabot' && nexabotStorageHosts.includes(hostname) &&
+    if (provider === 'nexabot' && (nexabotStorageHosts.includes(hostname) || isNexabotStorageRedirect) &&
         (!current.pathname.startsWith('/storage/v1/object/public/storage/media/') || !current.pathname.toLowerCase().endsWith('.mp4'))) {
       throw new Error('Laluan sumber video Nexabot tidak dibenarkan.');
     }
     response = await fetch(current, {
       redirect: 'manual',
       headers: provider === 'nexabot' && hostname === 'nexabot.id' && process.env.NEXABOT_API_KEY
-        ? { Authorization: `Bearer ${process.env.NEXABOT_API_KEY}` }
+        ? { Authorization: `Bearer ${process.env.NEXABOT_API_KEY}`, 'x-api-key': process.env.NEXABOT_API_KEY }
         : undefined,
     });
     if (![301, 302, 303, 307, 308].includes(response.status)) break;
