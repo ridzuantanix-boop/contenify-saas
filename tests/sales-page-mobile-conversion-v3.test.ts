@@ -6,9 +6,10 @@ const page = fs.readFileSync(path.join(process.cwd(), 'src/app/page.tsx'), 'utf8
 
 describe('mobile-first affiliate sales page', () => {
   it('uses customer-first copy and keeps Launch Pack intent on every sales CTA', () => {
-    expect(page).toContain('30 Gaya Video Affiliate');
-    expect(page).toContain('RM19 Sekali Bayar');
-    expect(page).toContain('Mula Jana 15 Video Sekarang — RM19');
+    expect(page).toContain('Banyak Produk Nak Promote');
+    expect(page).toContain('PUBLISHED_STYLE_COUNT');
+    expect(page).toContain('RM19 sekali bayar');
+    expect(page).toContain('Cuba 15 Video — RM19');
     expect(page).toContain('/register?intent=launch_pack&source=${placement}');
   });
 

@@ -33,15 +33,15 @@ describe('Payment-first conversion Phase 2', () => {
     vi.unstubAllEnvs();
   });
 
-  it('ships the revised conversion copy, style tags, clean MP4 and QR-only WhatsApp help', () => {
+  it('ships accurate V3 conversion copy, clean MP4 guidance and QR-only WhatsApp help', () => {
     const page = read('src/app/page.tsx');
     const billing = read('src/app/(dashboard)/billing/page.tsx');
     const register = read('src/app/register/page.tsx');
     for (const copy of [
-      'Daftar akaun dan terus bayar melalui QR', 'PUBLISHED_STYLE_COUNT - 8', 'Clean MP4 (9:16)',
-      'Buat Sendiri vs Guna AffiMatik', 'Akses Awal (Soft Launch)', '3. Sahkan Emel & Jana Video Pertama',
+      'Jika diminta, sahkan emel dan log masuk', 'PUBLISHED_STYLE_COUNT', 'Clean MP4 9:16',
+      'Apa Yang Jadi Lebih Senang?', 'RM19 sekali bayar', 'Pilih Launch Pack, bayar QR & upload resit',
     ]) expect(page).toContain(copy);
-    expect(register).toContain('Cipta Akaun & Terus ke QR');
+    expect(register).toContain('Cipta Akaun & Lihat Bayaran');
     expect(register).not.toContain('Nombor WhatsApp');
     expect(billing).toContain('Perlukan bantuan bayaran QR? WhatsApp Admin');
     expect(page).not.toContain('Pawarna Studio ialah nama jenama dan belum merupakan syarikat atau enterprise berdaftar');
