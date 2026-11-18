@@ -41,6 +41,14 @@ describe('Nexabot persistent retry policy',()=>{
     expect(recovery).toContain('provider_recovery_deadline');
     expect(recovery).not.toMatch(/DELETE FROM video_jobs|DROP TABLE|DROP COLUMN/i);
   });
+  it('limits a no-task-id submission uncertainty to five minutes',()=>{
+    const migration=fs.readFileSync('supabase/migrations/00037_short_uncertain_submission_window.sql','utf8');
+    expect(migration).toContain("interval '5 minutes'");
+    expect(migration).toContain('submission_uncertain=true');
+    expect(migration).not.toMatch(/DELETE FROM|DROP TABLE|DROP COLUMN/i);
+    const store=fs.readFileSync('src/lib/db/store.ts','utf8');
+    expect(store).toContain('Date.now()+300000');
+  });
   it('tells customers this is a provider disruption and protects the single credit reservation',()=>{
     const factory=fs.readFileSync('src/app/(dashboard)/factory/page.tsx','utf8');
     expect(factory).toContain('Ini gangguan pelayan Nexabot—bukan semestinya masalah prompt atau gambar anda.');

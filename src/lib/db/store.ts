@@ -1197,7 +1197,7 @@ export class DurableStore {
   static async failNexabotDispatch(jobId: string, dispatchToken: string, failureClass: 'AMBIGUOUS'|'TRANSIENT'|'TERMINAL', error: string): Promise<Record<string, any>> {
     if (this.isSupabaseConfigured()) return this.queueRpc('fail_nexabot_dispatch_atomic', { p_job_id: jobId, p_dispatch_token: dispatchToken, p_failure_class: failureClass, p_error: error.slice(0,1000) });
     const job=localDb.jobs[jobId];if(!job||job.dispatchToken!==dispatchToken)return {success:false,error:'DISPATCH_CLAIM_LOST'};
-    if(failureClass==='AMBIGUOUS'){job.submissionUncertain=true;job.dispatchLeaseUntil=new Date(Date.now()+2700000).toISOString();return{success:true,submission_uncertain:true};}
+    if(failureClass==='AMBIGUOUS'){job.submissionUncertain=true;job.dispatchLeaseUntil=new Date(Date.now()+300000).toISOString();return{success:true,submission_uncertain:true};}
     if(failureClass==='TRANSIENT'){job.status='QUEUED';job.dispatchToken=undefined;job.dispatchLeaseUntil=undefined;job.nextDispatchAt=new Date(Date.now()+60000).toISOString();return{success:true,requeued:true};}
     return{success:true,finalize_required:true};
   }
