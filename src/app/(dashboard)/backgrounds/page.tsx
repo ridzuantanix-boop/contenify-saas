@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
+import { prepareImageUpload } from '@/lib/client/image-upload';
 
 type Background = { id: string; name: string; description?: string | null; imageUrl: string; thumbnailUrl?: string; category?: string };
 type Scene = { id: string; name: string; directive: string };
@@ -18,7 +19,7 @@ export default function BackgroundLibraryPage() {
   async function upload(file?: File) {
     if (!file) return; const name = window.prompt('Nama latar:')?.trim(); if (!name) return;
     setBusy(true); setMessage('');
-    try { const form = new FormData(); form.set('name', name); form.set('image', file); const response = await fetch('/api/backgrounds', { method: 'POST', body: form }); const data = await response.json(); if (!response.ok) throw new Error(data.error); await load(); setMessage('Latar berjaya disimpan.'); }
+    try { const prepared=await prepareImageUpload(file,'background'); const form = new FormData(); form.set('name', name); form.set('image', prepared); const response = await fetch('/api/backgrounds', { method: 'POST', body: form }); const data = await response.json(); if (!response.ok) throw new Error(data.error); await load(); setMessage('Latar berjaya disimpan.'); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'Upload gagal.'); } finally { setBusy(false); }
   }
   async function remove(item: Background) {

@@ -9,7 +9,7 @@ function dbHeaders() {
   return { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
 }
 
-const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 1536 * 1024;
 
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req);
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get('image');
     if (!(file instanceof File) || file.size === 0 || file.size > MAX_IMAGE_BYTES) {
-      return NextResponse.json({ error: 'Imej mesti bersaiz 1 bait hingga 15 MB.' }, { status: 400 });
+      return NextResponse.json({ error: 'Imej produk mesti telah dioptimumkan hingga 1.5 MB.' }, { status: 400 });
     }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       return NextResponse.json({ error: 'Hanya JPEG, PNG dan WebP dibenarkan.' }, { status: 400 });

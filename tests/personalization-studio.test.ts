@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NextRequest } from 'next/server';
@@ -56,7 +56,8 @@ describe('AffiMatik V7 Personalization Studio', () => {
       jobId: 'job', idempotencyKey: 'idem', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
       aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT',
       referenceImageKeysOrUrls: ['data:image/png;base64,AVATAR', 'data:image/png;base64,BACKGROUND'],
-    }) as { mode: string; media: string[] };
+    }) as { model: string; mode: string; media: string[] };
+    expect(payload.model).toBe('omni_flash');
     expect(payload.mode).toBe('i2v');
     expect(payload.media).toEqual(['data:image/png;base64,PRODUCT', 'data:image/png;base64,AVATAR', 'data:image/png;base64,BACKGROUND']);
     expect(() => adapter.preparePayload({
@@ -68,6 +69,18 @@ describe('AffiMatik V7 Personalization Studio', () => {
       jobId: 'job', idempotencyKey: 'idem', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
       aspectRatio: '9:16', mainImageKeyOrUrl: 'data:image/png;base64,PRODUCT', referenceImageKeysOrUrls: ['invalid-reference'],
     })).toThrow('no selected reference was silently omitted');
+  });
+
+  it('stops an oversized base64 request before contacting Nexabot', async () => {
+    const request = vi.fn();
+    vi.stubGlobal('fetch', request);
+    const adapter = new NexabotAdapter({ apiKey: 'test' });
+    await expect(adapter.submit({
+      jobId: 'large', idempotencyKey: 'idem-large', workspaceId: 'ws', prompt: 'full prompt', durationSeconds: 15,
+      aspectRatio: '9:16', mainImageKeyOrUrl: `data:image/png;base64,${'A'.repeat(8 * 1024 * 1024)}`,
+    })).rejects.toThrow(/Invalid image payload/);
+    expect(request).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('uses spare media capacity for a duplicate product without dropping one selected reference', () => {

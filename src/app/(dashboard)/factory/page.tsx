@@ -33,6 +33,7 @@ import { getStyleMarketingMetadata } from '@/lib/styles/marketing-metadata';
 import { StylePosterMedia } from '@/components/styles/style-poster-media';
 import { downloadPrivateMp4 } from '@/lib/download/client-download';
 import { CreatorProfileSelector, FactoryCreatorProfile } from '@/components/factory/creator-profile-selector';
+import { prepareImageUpload } from '@/lib/client/image-upload';
 import Link from 'next/link';
 
 interface UploadedFilePreview {
@@ -237,7 +238,8 @@ function VideoFactoryContent() {
     if (!window.confirm('Saya mengesahkan saya mempunyai hak dan keizinan individu dewasa dalam imej ini untuk digunakan sebagai avatar video.')) return;
     setAssetActionBusy(true); setSubmitError(null);
     try {
-      const form = new FormData(); form.set('name', name); form.set('gender', 'female'); form.set('consent', 'true'); form.set('image', file);
+      const prepared = await prepareImageUpload(file, 'avatar');
+      const form = new FormData(); form.set('name', name); form.set('gender', 'female'); form.set('consent', 'true'); form.set('image', prepared);
       const response = await fetch('/api/avatars', { method: 'POST', body: form }); const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Avatar tidak dapat disimpan.');
       setAvatarId(data.id); setSelectedCreatorProfileId(''); await loadPersonalization(); setSubmitSuccess(`Avatar “${name}” disimpan dan dipilih.`);
@@ -251,7 +253,8 @@ function VideoFactoryContent() {
     if (!name) return;
     setAssetActionBusy(true); setSubmitError(null);
     try {
-      const form = new FormData(); form.set('name', name); form.set('image', file);
+      const prepared = await prepareImageUpload(file, 'background');
+      const form = new FormData(); form.set('name', name); form.set('image', prepared);
       const response = await fetch('/api/backgrounds', { method: 'POST', body: form }); const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Latar tidak dapat disimpan.');
       setBackgroundId(data.id); setSelectedCreatorProfileId(''); setBuiltInSceneId(''); await loadPersonalization(); setSubmitSuccess(`Latar “${name}” disimpan dan dipilih.`);
@@ -480,7 +483,7 @@ function VideoFactoryContent() {
   }, [activeJobId, activeJobStatus, syncActiveJobStatus]);
 
   // Image upload handler
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -490,20 +493,24 @@ function VideoFactoryContent() {
       return;
     }
 
-    const reader = new FileReader();
     setSubmitError(null);
     setSubmitSuccess(null);
     setIsUploadingImage(true);
-    reader.onload = async (event) => {
-      const dataUrl = event.target?.result as string;
-      try {
+    try {
+        const prepared = await prepareImageUpload(file, 'product');
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(new Error('Imej tidak dapat dibaca.'));
+          reader.readAsDataURL(prepared);
+        });
         const form = new FormData();
-        form.append('image', file);
+        form.append('image', prepared);
         if (productName.trim()) form.append('name', productName.trim());
         const response = await fetch('/api/products', { method: 'POST', body: form });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Imej tidak dapat disimpan.');
-        setImages([{ id: crypto.randomUUID(), name: file.name, size: file.size, dataUrl,
+        setImages([{ id: crypto.randomUUID(), name: prepared.name, size: prepared.size, dataUrl,
           assetId: result.assetId, productId: result.productId, category: '', notes: '' }]);
         void loadProductLibrary();
         setSubmitError(null);
@@ -511,9 +518,6 @@ function VideoFactoryContent() {
         setImages([]);
         setSubmitError(err instanceof Error ? err.message : 'Imej tidak dapat disimpan.');
       } finally { setIsUploadingImage(false); }
-    };
-    reader.onerror = () => { setIsUploadingImage(false); setSubmitError('Imej tidak dapat dibaca.'); };
-    reader.readAsDataURL(file);
   };
 
   // Filtered styles catalogue

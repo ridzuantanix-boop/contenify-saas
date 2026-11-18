@@ -1,7 +1,7 @@
 import { DurableStore, VideoJobRecord } from '@/lib/db/store';
 import { ProviderRouter } from '@/lib/providers/router';
 import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
-import { privateImageDataUri } from '@/lib/storage/supabase-assets';
+import { privateProviderImageDataUri } from '@/lib/storage/supabase-assets';
 import { customerFailureMessage } from './customer-failure';
 
 const router = new ProviderRouter();
@@ -72,9 +72,9 @@ export async function resolvePersistedProviderReferences(job: VideoJobRecord) {
   const options = job.inputOptions || {};
   const imageAssetId = typeof options.imageAssetId === 'string' ? options.imageAssetId : '';
   if (!/^[0-9a-f-]{36}$/i.test(imageAssetId)) throw new Error('Stored product image reference is unavailable for retry.');
-  const product = await databaseRows(`product_images?id=eq.${encodeURIComponent(imageAssetId)}&workspace_id=eq.${encodeURIComponent(job.workspaceId)}&select=r2_key,mime_type&limit=1`);
+  const product = await databaseRows(`product_images?id=eq.${encodeURIComponent(imageAssetId)}&workspace_id=eq.${encodeURIComponent(job.workspaceId)}&select=r2_key,mime_type,provider_r2_key,provider_mime_type&limit=1`);
   if (!product.length) throw new Error('Stored product image no longer exists for retry.');
-  const mainImage = await privateImageDataUri(String(product[0].r2_key), String(product[0].mime_type));
+  const mainImage = await privateProviderImageDataUri(String(product[0].provider_r2_key || product[0].r2_key), String(product[0].provider_mime_type || product[0].mime_type), 'product');
   const references: string[] = [];
 
   const avatarId = typeof options.avatarId === 'string' ? options.avatarId : '';
@@ -82,9 +82,11 @@ export async function resolvePersistedProviderReferences(job: VideoJobRecord) {
     const official = findOfficialAvatar(avatarId);
     if (official) references.push(await officialSource(official.referenceUrl));
     else {
-      const rows = await databaseRows(`avatars?id=eq.${encodeURIComponent(avatarId)}&workspace_id=eq.${encodeURIComponent(job.workspaceId)}&consent_confirmed=eq.true&select=image_r2_key&limit=1`);
+      const rows = await databaseRows(`avatars?id=eq.${encodeURIComponent(avatarId)}&workspace_id=eq.${encodeURIComponent(job.workspaceId)}&consent_confirmed=eq.true&select=image_r2_key,provider_r2_key,provider_mime_type&limit=1`);
       if (!rows.length) throw new Error('Stored avatar no longer exists for retry.');
-      const key = String(rows[0].image_r2_key); references.push(await privateImageDataUri(key, key.endsWith('.png') ? 'image/png' : key.endsWith('.webp') ? 'image/webp' : 'image/jpeg'));
+      const key = String(rows[0].provider_r2_key || rows[0].image_r2_key);
+      const mime = String(rows[0].provider_mime_type || (key.endsWith('.png') ? 'image/png' : key.endsWith('.webp') ? 'image/webp' : 'image/jpeg'));
+      references.push(await privateProviderImageDataUri(key, mime, 'avatar'));
     }
   }
   const backgroundId = typeof options.backgroundId === 'string' ? options.backgroundId : '';
@@ -92,9 +94,9 @@ export async function resolvePersistedProviderReferences(job: VideoJobRecord) {
     const official = findOfficialBackground(backgroundId);
     if (official) references.push(await officialSource(official.referenceUrl));
     else {
-      const rows = await databaseRows(`background_assets?id=eq.${encodeURIComponent(backgroundId)}&workspace_id=eq.${encodeURIComponent(job.workspaceId)}&select=image_r2_key,mime_type&limit=1`);
+      const rows = await databaseRows(`background_assets?id=eq.${encodeURIComponent(backgroundId)}&workspace_id=eq.${encodeURIComponent(job.workspaceId)}&select=image_r2_key,mime_type,provider_r2_key,provider_mime_type&limit=1`);
       if (!rows.length) throw new Error('Stored background no longer exists for retry.');
-      references.push(await privateImageDataUri(String(rows[0].image_r2_key), String(rows[0].mime_type)));
+      references.push(await privateProviderImageDataUri(String(rows[0].provider_r2_key || rows[0].image_r2_key), String(rows[0].provider_mime_type || rows[0].mime_type), 'background'));
     }
   }
   return { mainImage, references };

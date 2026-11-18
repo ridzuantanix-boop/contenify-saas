@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { prepareImageUpload } from '@/lib/client/image-upload';
 
 type Avatar = { id: string; name: string; description: string | null; gender: string; imageUrl: string; thumbnailUrl?: string; createdAt?: string; official?: boolean; ageGroup?: string; personality?: string };
 
@@ -29,8 +30,9 @@ export default function AvatarsPage() {
     if (!file || !consent) return;
     setBusy(true); setError('');
     try {
+      const prepared = await prepareImageUpload(file, 'avatar');
       const body = new FormData();
-      body.set('image', file); body.set('name', name); body.set('description', description);
+      body.set('image', prepared); body.set('name', name); body.set('description', description);
       body.set('gender', gender); body.set('consent', 'true');
       const response = await fetch('/api/avatars', { method: 'POST', body });
       if (!response.ok) throw new Error((await response.json()).error || 'Muat naik gagal.');

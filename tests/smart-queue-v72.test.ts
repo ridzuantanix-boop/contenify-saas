@@ -24,6 +24,8 @@ describe('AffiMatik V7.2 smart queue and pricing locks',()=>{
   for(const column of ['next_retry_at','last_retry_at','last_provider_error','raw_status']){
    expect(queue).toContain(`ADD COLUMN IF NOT EXISTS ${column}`);
   }
+  const dispatchDiagnostics=fs.readFileSync('supabase/migrations/00038_capture_nexabot_dispatch_errors.sql','utf8');
+  expect(dispatchDiagnostics).toContain("last_provider_error=left(COALESCE(p_error,''),1000)");
   const billing=fs.readFileSync('supabase/migrations/00023_v72_pricing_and_credit_buckets.sql','utf8');
   expect(billing).toContain("now()+interval '180 days'");expect(billing).toContain('automatic_credit_grant');
   expect(billing).not.toMatch(/provisional_credits.*GRANT/i);

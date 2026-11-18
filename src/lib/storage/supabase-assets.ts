@@ -73,6 +73,34 @@ export async function privateImageDataUri(path: string, mimeType: string): Promi
   return `data:${mimeType};base64,${btoa(chunks.join(''))}`;
 }
 
+export type ProviderImageRole = 'product' | 'avatar' | 'background';
+
+/**
+ * Build a provider-safe base64 image without overwriting the customer's
+ * original upload. Nexabot's public API accepts base64 media (not remote URLs),
+ * while a near-10 MB PNG expands by roughly one third inside JSON. Customer
+ * originals remain untouched; this reads the separate, deterministic provider
+ * transport copy created at upload/backfill time.
+ */
+export async function privateProviderImageDataUri(path: string, mimeType: string, role: ProviderImageRole): Promise<string> {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) throw new Error('Jenis imej rujukan tidak sah.');
+  const response = await privateAssetResponse(path);
+  if (!response.ok) throw new Error('Imej rujukan tersimpan tidak dapat dibaca.');
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > 1536 * 1024) {
+    throw new Error(`Invalid image payload: imej ${role} melebihi had penghantaran selamat.`);
+  }
+  return bytesToImageDataUri(bytes, mimeType);
+}
+
+function bytesToImageDataUri(bytes: Uint8Array, mimeType: string): string {
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    chunks.push(String.fromCharCode(...Array.from(bytes.subarray(offset, offset + 0x8000))));
+  }
+  return `data:${mimeType};base64,${btoa(chunks.join(''))}`;
+}
+
 export function inspectMp4(bytes: ArrayBuffer): { durationSeconds: number; hasVideo: boolean; hasAudio: boolean } {
   const view = new DataView(bytes);
   const decoder = new TextDecoder();

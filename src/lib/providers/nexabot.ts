@@ -13,6 +13,8 @@ export interface NexabotConfig {
   baseUrl?: string;
 }
 
+export const MAX_NEXABOT_REQUEST_BYTES = 8 * 1024 * 1024;
+
 export class NexabotAdapter implements IProviderAdapter {
   readonly name = 'nexabot' as const;
   private apiKey: string;
@@ -55,8 +57,9 @@ export class NexabotAdapter implements IProviderAdapter {
   preparePayload(input: ProviderJobInput): Record<string, unknown> {
     const images: string[] = [];
     const maxReferenceImages = this.getCapabilities().maxReferenceImages;
-    const isValidImage = (src?: string) =>
-      src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:image/')) && !src.includes('mock');
+    // Nexabot's documented video API requires base64 data URIs for media.
+    // Reject remote URLs locally rather than creating a paid but invalid job.
+    const isValidImage = (src?: string) => src && src.startsWith('data:image/') && !src.includes('mock');
 
     if (input.mainImageKeyOrUrl && !isValidImage(input.mainImageKeyOrUrl)) {
       throw new Error('Nexabot product reference image is invalid; generation was not submitted.');
@@ -99,6 +102,7 @@ export class NexabotAdapter implements IProviderAdapter {
     const ratio = input.aspectRatio === '9:16' ? 2 : 1;
 
     return {
+      model: 'omni_flash',
       mode,
       prompt: input.prompt,
       telegram_id: 'web',
@@ -119,6 +123,11 @@ export class NexabotAdapter implements IProviderAdapter {
     const payload = this.preparePayload(input);
     const endpoint = `${this.baseUrl}/api/v1/api`;
 
+    const body = JSON.stringify(payload);
+    if (new TextEncoder().encode(body).byteLength > MAX_NEXABOT_REQUEST_BYTES) {
+      throw new Error('Invalid image payload: jumlah imej rujukan masih terlalu besar selepas pengoptimuman.');
+    }
+
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -127,7 +136,7 @@ export class NexabotAdapter implements IProviderAdapter {
         'x-api-key': this.apiKey,
         'X-Idempotency-Key': input.idempotencyKey,
       },
-      body: JSON.stringify(payload),
+      body,
     });
 
     if (!res.ok) {

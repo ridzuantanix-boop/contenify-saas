@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
     if (!name || name.length > 100 || !['female', 'male', 'faceless'].includes(gender) || form.get('consent') !== 'true') {
       return NextResponse.json({ error: 'Nama, jenis dan pengesahan hak/keizinan avatar diperlukan.' }, { status: 400 });
     }
-    if (!(file instanceof File) || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 8 || file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Imej avatar mesti JPEG, PNG atau WebP hingga 10 MB.' }, { status: 400 });
+    if (!(file instanceof File) || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 8 || file.size > 1536 * 1024) {
+      return NextResponse.json({ error: 'Imej avatar mesti JPEG, PNG atau WebP yang telah dioptimumkan hingga 1.5 MB.' }, { status: 400 });
     }
     const bytes = await file.arrayBuffer();
     const head = new Uint8Array(bytes.slice(0, 12));

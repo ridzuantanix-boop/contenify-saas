@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ingestProviderMp4, inspectMp4, privateImageDataUri, signPrivateAsset } from '../src/lib/storage/supabase-assets';
+import { ingestProviderMp4, inspectMp4, privateImageDataUri, privateProviderImageDataUri, signPrivateAsset } from '../src/lib/storage/supabase-assets';
 
 function mp4Fixture(): Uint8Array {
   const box = (type: string, payload: Uint8Array) => {
@@ -174,5 +174,29 @@ describe('Private provider media ingestion', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(png, { status: 200 })));
     const image = await privateImageDataUri('workspaces/ws-1/inputs/a.png', 'image/png');
     expect(image).toBe(`data:image/png;base64,${Buffer.from(png).toString('base64')}`);
+  });
+
+  it('encodes a safely sized stored image for Nexabot without overwriting it', async () => {
+    process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
+    const optimized = new Uint8Array([137,80,78,71,13,10,26,10]);
+    const request = vi.fn().mockResolvedValue(new Response(optimized, { status: 200, headers: { 'content-type': 'image/png' } }));
+    vi.stubGlobal('fetch', request);
+    const image = await privateProviderImageDataUri('workspaces/ws-1/avatars/large.png', 'image/png', 'avatar');
+    expect(image).toBe(`data:image/png;base64,${Buffer.from(optimized).toString('base64')}`);
+    const url = String(request.mock.calls[0][0]);
+    expect(url).toContain('/storage/v1/object/authenticated/affimatik-assets/workspaces/ws-1/avatars/large.png');
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks a multi-megabyte original before constructing a huge provider request', async () => {
+    process.env.SUPABASE_URL = 'https://unit-test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
+    const large = new Uint8Array(1536 * 1024 + 1);
+    const request = vi.fn().mockResolvedValue(new Response(large, { status: 200 }));
+    vi.stubGlobal('fetch', request);
+    await expect(privateProviderImageDataUri('workspaces/ws-1/avatars/large.png', 'image/png', 'avatar'))
+      .rejects.toThrow(/Invalid image payload/);
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });

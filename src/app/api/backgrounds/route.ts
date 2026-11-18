@@ -12,7 +12,7 @@ function dbConfig() {
 }
 
 function validImage(file: File, bytes: ArrayBuffer) {
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 8 || file.size > 15 * 1024 * 1024) return false;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 8 || file.size > 1536 * 1024) return false;
   const head = new Uint8Array(bytes.slice(0, 12));
   return file.type === 'image/jpeg' ? head[0] === 255 && head[1] === 216 && head[2] === 255
     : file.type === 'image/png' ? [137,80,78,71,13,10,26,10].every((v, i) => head[i] === v)
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const description = String(form.get('description') || '').trim().slice(0, 1000);
     if (!name || name.length > 100 || !(file instanceof File)) return NextResponse.json({ error: 'Nama dan imej latar diperlukan.' }, { status: 400 });
     const bytes = await file.arrayBuffer();
-    if (!validImage(file, bytes)) return NextResponse.json({ error: 'Imej latar mesti JPEG, PNG atau WebP sah hingga 15 MB.' }, { status: 400 });
+    if (!validImage(file, bytes)) return NextResponse.json({ error: 'Imej latar mesti JPEG, PNG atau WebP yang telah dioptimumkan hingga 1.5 MB.' }, { status: 400 });
     const id = crypto.randomUUID();
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
     const key = `workspaces/${session.workspaceId}/backgrounds/${id}.${ext}`;

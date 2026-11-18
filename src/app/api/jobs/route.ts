@@ -7,7 +7,7 @@ import { ProviderRouter } from '@/lib/providers/router';
 import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { getSessionFromRequest, isEmailVerificationPending } from '@/lib/auth/session';
 import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
-import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
+import { signPrivateAsset } from '@/lib/storage/supabase-assets';
 import { persistCompletedVideo, persistLateCompletedVideo } from '@/lib/orchestration/persist-video';
 import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personalization/config';
 import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
@@ -123,9 +123,11 @@ export async function POST(req: NextRequest) {
       if (!lookup.ok) return NextResponse.json({ error: 'Pengesahan aset imej gagal.' }, { status: 503 });
       const rows = await lookup.json() as Array<{ r2_key: string; mime_type: string }>;
       if (!rows.length) return NextResponse.json({ error: 'Aset imej tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
-      savedImageUrl = requestedProvider === 'nexabot' || (!requestedProvider && (styleId || presetId || 'NX01').startsWith('NX'))
-        ? await privateImageDataUri(rows[0].r2_key, rows[0].mime_type)
-        : await signPrivateAsset(rows[0].r2_key);
+      // Nexabot jobs are dispatched by the durable queue, which resolves the
+      // reference once at dispatch time. Avoid reading/encoding large customer
+      // images twice during the initial request.
+      const queuesThroughNexabot = requestedProvider === 'nexabot' || (!requestedProvider && (styleId || presetId || 'NX01').startsWith('NX'));
+      savedImageUrl = queuesThroughNexabot ? undefined : await signPrivateAsset(rows[0].r2_key);
     } else if (process.env.NODE_ENV === 'production' && !Boolean(process.env.VITEST)) {
       return NextResponse.json({ error: 'Simpan imej dalam Pustaka Produk sebelum menjana video.' }, { status: 400 });
     }
@@ -220,8 +222,7 @@ export async function POST(req: NextRequest) {
         if (!response.ok) return NextResponse.json({ error: 'Pengesahan avatar gagal.' }, { status: 503 });
         const rows = await response.json() as Array<{ id: string; name: string; image_r2_key: string }>;
         if (!rows.length) return NextResponse.json({ error: 'Avatar tidak ditemui atau keizinan tidak disahkan.' }, { status: 404 });
-        const mime = rows[0].image_r2_key.endsWith('.png') ? 'image/png' : rows[0].image_r2_key.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
-        avatarReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? await privateImageDataUri(rows[0].image_r2_key, mime) : await signPrivateAsset(rows[0].image_r2_key) };
+        avatarReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? '' : await signPrivateAsset(rows[0].image_r2_key) };
       }
     }
     if (personalization.backgroundId) {
@@ -239,7 +240,7 @@ export async function POST(req: NextRequest) {
         if (!response.ok) return NextResponse.json({ error: 'Pengesahan latar gagal.' }, { status: 503 });
         const rows = await response.json() as Array<{ id: string; name: string; image_r2_key: string; mime_type: string }>;
         if (!rows.length) return NextResponse.json({ error: 'Latar tidak ditemui dalam ruang kerja ini.' }, { status: 404 });
-        backgroundReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? await privateImageDataUri(rows[0].image_r2_key, rows[0].mime_type) : await signPrivateAsset(rows[0].image_r2_key) };
+        backgroundReference = { id: rows[0].id, name: rows[0].name, source: style.engine === 'nexabot' ? '' : await signPrivateAsset(rows[0].image_r2_key) };
       }
     }
 
