@@ -43,7 +43,6 @@ export async function deferProvisionalProviderFailure(job: VideoJobRecord, raw: 
     await DurableStore.updateJobStatus(job.id, {
       status: 'PROCESSING',
       rawStatus: PROVIDER_TERMINAL_GRACE_STATUS,
-      errorMessage: 'Nexabot memberi status sementara yang belum muktamad. AffiMatik masih menjejak tugasan asal; anda tidak perlu jana semula dan kredit kekal selamat.',
     });
   }
 

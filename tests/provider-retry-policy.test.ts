@@ -76,7 +76,7 @@ describe('Nexabot provisional terminal status',()=>{
     const spy=vi.spyOn(DurableStore,'updateJobStatus').mockResolvedValue({...job,rawStatus:PROVIDER_TERMINAL_GRACE_STATUS});
     const result=await deferProvisionalProviderFailure(job,'Generation failed on Nexabot',Date.parse('2026-11-18T00:02:00.000Z'));
     expect(result.deferred).toBe(true);
-    expect(spy).toHaveBeenCalledWith(job.id,expect.objectContaining({status:'PROCESSING',rawStatus:PROVIDER_TERMINAL_GRACE_STATUS}));
+    expect(spy).toHaveBeenCalledWith(job.id,{status:'PROCESSING',rawStatus:PROVIDER_TERMINAL_GRACE_STATUS});
     spy.mockRestore();
   });
 

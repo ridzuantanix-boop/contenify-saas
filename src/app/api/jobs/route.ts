@@ -611,7 +611,7 @@ export async function GET(req: NextRequest) {
         if (grace.deferred) return NextResponse.json({
           jobId: job.id, providerTaskId: activeTaskId, provider: job.provider,
           status: 'PROCESSING', progress: statusRes.progressPercent,
-          rawStatus: 'Nexabot memberi status sementara. AffiMatik masih menjejak tugasan asal; jangan jana semula.',
+          rawStatus: 'Sedang menjana video AI...',
           terminalConfirmationPending: true, retryAfterMs: grace.retryAfterMs,
         });
         const failure = describeCustomerFailure(statusRes.errorMessage || statusRes.rawStatus);
