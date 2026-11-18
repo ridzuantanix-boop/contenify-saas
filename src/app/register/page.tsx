@@ -69,7 +69,7 @@ export default function RegisterPage() {
       }
 
       trackConversion('registration_completed', 'register-session-ready', { source: 'session_ready' });
-      setSuccessMsg('Akaun berjaya dicipta. Sedang membawa anda terus ke pembayaran QR...');
+      setSuccessMsg('Akaun berjaya dicipta. Sedang membuka halaman Billing untuk pilih Launch Pack...');
       setTimeout(() => {
         router.push('/billing?intent=launch_pack');
       }, 1200);
@@ -93,7 +93,7 @@ export default function RegisterPage() {
           Cipta Akaun AffiMatik
         </h2>
         <p className="text-xs text-slate-500">
-          Daftar dengan emel dan kata laluan, kemudian terus bayar Launch Pack RM19 melalui QR.
+          Daftar dengan emel dan kata laluan. Selepas itu pilih Launch Pack RM19 di Billing, bayar melalui QR dan muat naik resit. Sahkan emel sebelum menjana video.
         </p>
       </div>
 
@@ -211,7 +211,7 @@ export default function RegisterPage() {
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>{isLoading ? 'Mendaftar Akaun...' : 'Cipta Akaun & Terus ke QR'}</span>
+              <span>{isLoading ? 'Mendaftar Akaun...' : 'Cipta Akaun & Lihat Bayaran'}</span>
             </button>
           </form>
 
