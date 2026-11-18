@@ -63,6 +63,12 @@ describe('Nexabot persistent retry policy',()=>{
     expect(persistence).toContain('settleReservation: boolean');
     expect(persistence).toContain('LATE_PROVIDER_COMPLETION');
   });
+  it('keeps failed attempts out of customer history without deleting audit or recovery records',()=>{
+    const store=fs.readFileSync('src/lib/db/store.ts','utf8');
+    expect(store).toContain('status=neq.FAILED');
+    expect(store).toContain("j.status !== 'FAILED'");
+    expect(store).toContain('listFailedNexabotJobsForLateRecovery');
+  });
 });
 
 describe('Nexabot provisional terminal status',()=>{

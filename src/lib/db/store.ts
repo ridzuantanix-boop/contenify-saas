@@ -1039,7 +1039,10 @@ export class DurableStore {
     this.checkFailClosed();
 
     if (this.isSupabaseConfigured()) {
-      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc&limit=${limit}&select=*`;
+      // Customer history is intentionally outcome-focused. Failed attempts stay
+      // in the database for audit, credit integrity and late-provider recovery,
+      // but are not surfaced as a wall of red cards in the user's queue.
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=neq.FAILED&order=created_at.desc&limit=${limit}&select=*`;
       const res = await fetch(url, {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -1061,7 +1064,7 @@ export class DurableStore {
     }
 
     return Object.values(localDb.jobs)
-      .filter((j) => j.workspaceId === workspaceId)
+      .filter((j) => j.workspaceId === workspaceId && j.status !== 'FAILED')
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
   }
