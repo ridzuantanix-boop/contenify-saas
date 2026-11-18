@@ -658,7 +658,10 @@ export async function GET(req: NextRequest) {
   // 2. Fetch User's Recent Production Queue
   if (listMode && session) {
     const jobs = await DurableStore.listJobs(session.workspaceId, 20);
-    return NextResponse.json({ jobs });
+    return NextResponse.json({ jobs: jobs.map((job) => ({
+      ...job,
+      styleName: getVideoStyle(job.styleId)?.name || job.styleName,
+    })) });
   }
 
   // 3. Public Service & Style Registry Catalogue Summary

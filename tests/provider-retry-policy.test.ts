@@ -51,9 +51,9 @@ describe('Nexabot persistent retry policy',()=>{
     expect(route).toContain('retryScheduled: true');
     expect(route).toContain('{ status: 202 }');
     const queue=fs.readFileSync('src/app/(dashboard)/queue/page.tsx','utf8');
-    expect(queue).toContain('Pelayan AI Terganggu · Auto Retry Aktif');
-    expect(queue).toContain('Tak perlu buat apa-apa. Sistem cloud akan retry walaupun anda tutup browser.');
-    expect(queue).toContain('Tempahan kredit dibuat sekali sahaja dan tidak akan dicaj dua kali.');
+    expect(queue).toContain('video sedang dicuba semula secara automatik');
+    expect(queue).toContain('Tak perlu jana semula atau biarkan browser terbuka.');
+    expect(queue).toContain('Kredit kekal selamat');
   });
   it('rechecks recent failed provider task IDs and can deliver late output without another debit',()=>{
     const reconcile=fs.readFileSync('src/app/api/jobs/reconcile/route.ts','utf8');
