@@ -8,6 +8,8 @@ const router = new ProviderRouter();
 
 export const PROVIDER_OUTAGE_MAX_RETRIES = 168;
 export const PROVIDER_OUTAGE_RECOVERY_DAYS = 7;
+export const PROVIDER_TERMINAL_GRACE_MS = 3 * 60 * 1000;
+export const PROVIDER_TERMINAL_GRACE_STATUS = 'PROVIDER_TERMINAL_GRACE';
 
 export function isProviderOutageFailure(raw: unknown): boolean {
   const detail = raw instanceof Error ? raw.message : String(raw || '');
@@ -19,6 +21,36 @@ export function isRetryableProviderFailure(raw: unknown): boolean {
   // Only explicit permanent/customer-input errors stop immediately. A bare
   // "failed" or "rejected" from Nexabot is treated as provider-side transient.
   return !/unauthori[sz]ed|invalid api key|insufficient credit|payment required|moderation|policy violation|unsafe content|invalid (image|media|mime)|unsupported (mode|format)|missing required|http 400|stored .* (unavailable|no longer exists)|reference is unavailable/i.test(detail);
+}
+
+/**
+ * Nexabot can briefly report a task as failed before the same task becomes done.
+ * Keep tracking the original paid task during a short confirmation window so we
+ * do not submit a duplicate generation or refund a video that is still finishing.
+ */
+export async function deferProvisionalProviderFailure(job: VideoJobRecord, raw: unknown, now = Date.now()) {
+  if (job.provider !== 'nexabot' || !job.providerTaskId || !isRetryableProviderFailure(raw)) {
+    return { deferred: false };
+  }
+
+  const alreadyDeferred = job.rawStatus === PROVIDER_TERMINAL_GRACE_STATUS;
+  const firstObservedAt = alreadyDeferred ? new Date(job.updatedAt).getTime() : now;
+  if (alreadyDeferred && Number.isFinite(firstObservedAt) && now - firstObservedAt >= PROVIDER_TERMINAL_GRACE_MS) {
+    return { deferred: false };
+  }
+
+  if (!alreadyDeferred) {
+    await DurableStore.updateJobStatus(job.id, {
+      status: 'PROCESSING',
+      rawStatus: PROVIDER_TERMINAL_GRACE_STATUS,
+      errorMessage: 'Nexabot memberi status sementara yang belum muktamad. AffiMatik masih menjejak tugasan asal; anda tidak perlu jana semula dan kredit kekal selamat.',
+    });
+  }
+
+  return {
+    deferred: true,
+    retryAfterMs: Math.max(0, PROVIDER_TERMINAL_GRACE_MS - (now - firstObservedAt)),
+  };
 }
 
 async function databaseRows(path: string) {
@@ -72,7 +104,13 @@ export async function resolvePersistedProviderReferences(job: VideoJobRecord) {
 export async function scheduleOrFinalizeProviderFailure(jobId: string, expectedTaskId: string | null, raw: unknown) {
   const job = await DurableStore.getJob(jobId);
   if (!job) return { retryScheduled: false, finalized: false, error: 'JOB_NOT_FOUND' };
-  const technical = raw instanceof Error ? raw.message : String(raw || 'provider failure');
+  const observed = raw instanceof Error ? raw.message : String(raw || 'provider failure');
+  // Nexabot's bare terminal message carries no customer-input diagnosis. Treat
+  // it as provider availability so the durable seven-day policy applies rather
+  // than exhausting the three ordinary retries during an outage.
+  const technical = /^(failed|error|generation failed on nexabot)$/i.test(observed.trim())
+    ? `provider unavailable or delayed: ${observed}`
+    : observed;
   if (job.provider !== 'nexabot' || !isRetryableProviderFailure(technical)) {
     await DurableStore.releaseCredits(job.workspaceId, job.id, `rel_terminal_${job.id}`);
     await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: customerFailureMessage(technical), rawStatus: technical.slice(0,1000) });

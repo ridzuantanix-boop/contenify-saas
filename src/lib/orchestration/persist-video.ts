@@ -3,7 +3,7 @@ import { ingestProviderMp4 } from '@/lib/storage/supabase-assets';
 import { customerFailureMessage } from '@/lib/jobs/customer-failure';
 import { recordServerConversion } from '@/lib/analytics/conversion';
 
-export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string): Promise<boolean> {
+async function persistProviderVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string, settleReservation: boolean): Promise<boolean> {
   let objectKey = job.videoObjectKey;
   let videoDetails: { actualDurationSeconds?: number; outputHasAudio?: boolean; outputSizeBytes?: number } = {};
   if (process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider !== 'mock' && !objectKey) {
@@ -34,8 +34,10 @@ export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: st
     await DurableStore.updateJobStatus(job.id, { status: 'FAILED', errorMessage: customerFailureMessage('Video pembekal tidak menepati tempoh atau audio gaya Voice.') });
     return false;
   }
-  const settled = await DurableStore.settleCredits(job.workspaceId, job.id, job.requiredCredits, `stl_${job.id}`);
-  if (!settled.success) return false;
+  if (settleReservation) {
+    const settled = await DurableStore.settleCredits(job.workspaceId, job.id, job.requiredCredits, `stl_${job.id}`);
+    if (!settled.success) return false;
+  }
   await DurableStore.updateJobStatus(job.id, {
     status: 'COMPLETED',
     videoObjectKey: objectKey,
@@ -45,4 +47,14 @@ export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: st
   });
   await recordServerConversion({eventName:'first_video_completed',dedupeKey:`job:${job.id}`,workspaceId:job.workspaceId,metadata:{provider:job.provider,styleId:job.styleId,source:'video_persisted'}}).catch(()=>false);
   return true;
+}
+
+export async function persistCompletedVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string): Promise<boolean> {
+  return persistProviderVideo(job, providerUrl, rawStatus, true);
+}
+
+/** Recover a late MP4 without re-debiting credits already returned to the user. */
+export async function persistLateCompletedVideo(job: VideoJobRecord, providerUrl: string, rawStatus: string): Promise<boolean> {
+  if (job.status !== 'FAILED' || job.provider !== 'nexabot') return false;
+  return persistProviderVideo(job, providerUrl, `LATE_PROVIDER_COMPLETION:${rawStatus}`, false);
 }

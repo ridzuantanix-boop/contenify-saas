@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
-import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
+import { persistCompletedVideo, persistLateCompletedVideo } from '@/lib/orchestration/persist-video';
 import { ProviderRouter } from '@/lib/providers/router';
 import { customerFailureMessage } from '@/lib/jobs/customer-failure';
-import { dispatchDueProviderRetry, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
+import { deferProvisionalProviderFailure, dispatchDueProviderRetry, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
 import { dispatchAutoFactoryCapacity, materializeDueDailyRuns } from '@/lib/auto-factory/core';
 
@@ -51,6 +51,14 @@ export async function POST(req: NextRequest) {
     const uncertainExpiry = await DurableStore.expireUncertainNexabotJobs();
     const queueBefore = await dispatchNexabotQueueCapacity();
     const pendingJobs = await DurableStore.listPendingJobsForReconciliation();
+    let failedJobsForLateRecovery = [] as Awaited<ReturnType<typeof DurableStore.listPendingJobsForReconciliation>>;
+    try {
+      failedJobsForLateRecovery = await DurableStore.listFailedNexabotJobsForLateRecovery();
+    } catch (error) {
+      // Late recovery is additive. Never block normal settlement/reconciliation
+      // if an older deployment or a transient database error cannot list it.
+      console.warn('[Reconcile] Late recovery listing skipped:', error instanceof Error ? error.message : String(error));
+    }
     const results = {
       totalPending: pendingJobs.length,
       settled: 0,
@@ -67,6 +75,8 @@ export async function POST(req: NextRequest) {
       autoFactoryFailed: autoFactoryBefore.failed,
       dailyRunsCreated: dailyAuto.created,
       dailyRunsSkipped: dailyAuto.skipped,
+      lateRecoveryChecked: failedJobsForLateRecovery.length,
+      lateRecovered: 0,
       autoFactoryError: autoBefore.error,
     };
 
@@ -115,6 +125,11 @@ export async function POST(req: NextRequest) {
             }
           }
         } else if (statusRes.normalizedStatus === 'FAILED') {
+          const grace = await deferProvisionalProviderFailure(job, statusRes.errorMessage || statusRes.rawStatus);
+          if (grace.deferred) {
+            results.stillProcessing++;
+            continue;
+          }
           const retry = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId, statusRes.errorMessage || statusRes.rawStatus);
           if (retry.retryScheduled) results.retryScheduled++;
           else if (retry.finalized) results.released++;
@@ -152,6 +167,27 @@ export async function POST(req: NextRequest) {
           // Transient network error while polling provider: keep processing
           results.stillProcessing++;
         }
+      }
+    }
+
+    // Nexabot has been observed changing a terminal-looking `failed` task to
+    // `done` later. Recheck recent failures at a bounded cadence. A recovered
+    // video is delivered without charging credits that were already returned.
+    for (const job of failedJobsForLateRecovery) {
+      try {
+        const adapter = router.resolveProvider(job.durationSeconds as 10 | 15, job.provider, true);
+        const statusRes = await adapter.getStatus(job.providerTaskId!);
+        if (statusRes.normalizedStatus === 'COMPLETED') {
+          const outputs = await adapter.getOutputs(job.providerTaskId!);
+          if (outputs?.videoUrl && await persistLateCompletedVideo(job, outputs.videoUrl, statusRes.rawStatus)) {
+            results.lateRecovered++;
+          }
+        } else {
+          await DurableStore.updateJobStatus(job.id, { rawStatus: 'LATE_RECOVERY_PENDING' });
+        }
+      } catch (error) {
+        console.warn('[Reconcile] Late completion check deferred:', error instanceof Error ? error.message : String(error));
+        await DurableStore.updateJobStatus(job.id, { rawStatus: 'LATE_RECOVERY_PENDING' }).catch(() => null);
       }
     }
 

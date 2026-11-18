@@ -1308,6 +1308,31 @@ export class DurableStore {
     );
   }
 
+  static async listFailedNexabotJobsForLateRecovery(): Promise<VideoJobRecord[]> {
+    this.checkFailClosed();
+
+    if (this.isSupabaseConfigured()) {
+      const cutoff = encodeURIComponent(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      const nextCheck = encodeURIComponent(new Date(Date.now() - 2 * 60 * 1000).toISOString());
+      const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?provider=eq.nexabot&status=eq.FAILED&provider_task_id=not.is.null&created_at=gte.${cutoff}&updated_at=lte.${nextCheck}&order=updated_at.asc&limit=20&select=*`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+      if (!res.ok) throw new Error(`Late recovery query HTTP ${res.status}: ${(await res.text()).slice(0, 500)}`);
+      const rows = await res.json();
+      return rows.map((r: Record<string, any>) => this.mapJobFromDb(r));
+    }
+
+    return Object.values(localDb.jobs).filter((job) =>
+      job.provider === 'nexabot' && job.status === 'FAILED' && Boolean(job.providerTaskId) &&
+      Date.now() - new Date(job.createdAt).getTime() <= 24 * 60 * 60 * 1000 &&
+      Date.now() - new Date(job.updatedAt).getTime() >= 2 * 60 * 1000
+    ).slice(0, 20);
+  }
+
   static async getLedgerHistory(workspaceId: string, limit = 20): Promise<CreditLedgerRecord[]> {
     this.checkFailClosed();
 

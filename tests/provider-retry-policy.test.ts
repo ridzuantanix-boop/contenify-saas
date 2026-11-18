@@ -1,6 +1,7 @@
-import { describe,expect,it } from 'vitest';
+import { describe,expect,it,vi } from 'vitest';
 import fs from 'node:fs';
-import { isProviderOutageFailure, isRetryableProviderFailure, PROVIDER_OUTAGE_MAX_RETRIES } from '../src/lib/jobs/provider-retry';
+import { deferProvisionalProviderFailure, isProviderOutageFailure, isRetryableProviderFailure, PROVIDER_OUTAGE_MAX_RETRIES, PROVIDER_TERMINAL_GRACE_MS, PROVIDER_TERMINAL_GRACE_STATUS } from '../src/lib/jobs/provider-retry';
+import { DurableStore, VideoJobRecord } from '../src/lib/db/store';
 
 describe('Nexabot persistent retry policy',()=>{
   it('retries ambiguous/server-side rejection but stops explicit permanent errors',()=>{
@@ -11,6 +12,11 @@ describe('Nexabot persistent retry policy',()=>{
     for(const value of ['HTTP 503','HTTP 429','ECONNRESET','service unavailable','provider capacity busy']) expect(isProviderOutageFailure(value),value).toBe(true);
     for(const value of ['moderation','invalid image format','prompt rejected']) expect(isProviderOutageFailure(value),value).toBe(false);
     expect(PROVIDER_OUTAGE_MAX_RETRIES).toBe(168);
+  });
+  it('classifies Nexabot bare terminal responses as provider recovery rather than customer failure',()=>{
+    const source=fs.readFileSync('src/lib/jobs/provider-retry.ts','utf8');
+    expect(source).toContain('provider unavailable or delayed');
+    expect(isProviderOutageFailure('provider unavailable or delayed: Generation failed on Nexabot')).toBe(true);
   });
   it('ships bounded atomic scheduling and a non-destructive rollback',()=>{
     const sql=fs.readFileSync('supabase/migrations/00021_nexabot_provider_retry.sql','utf8');
@@ -48,5 +54,35 @@ describe('Nexabot persistent retry policy',()=>{
     expect(queue).toContain('Pelayan AI Terganggu · Auto Retry Aktif');
     expect(queue).toContain('Tak perlu buat apa-apa. Sistem cloud akan retry walaupun anda tutup browser.');
     expect(queue).toContain('Tempahan kredit dibuat sekali sahaja dan tidak akan dicaj dua kali.');
+  });
+  it('rechecks recent failed provider task IDs and can deliver late output without another debit',()=>{
+    const reconcile=fs.readFileSync('src/app/api/jobs/reconcile/route.ts','utf8');
+    const persistence=fs.readFileSync('src/lib/orchestration/persist-video.ts','utf8');
+    expect(reconcile).toContain('listFailedNexabotJobsForLateRecovery');
+    expect(reconcile).toContain('persistLateCompletedVideo');
+    expect(persistence).toContain('settleReservation: boolean');
+    expect(persistence).toContain('LATE_PROVIDER_COMPLETION');
+  });
+});
+
+describe('Nexabot provisional terminal status',()=>{
+  const job: VideoJobRecord = {
+    id:'00000000-0000-4000-8000-000000000099', workspaceId:'00000000-0000-4000-8000-000000000001', userId:'user',
+    styleId:'NX01', styleName:'NX01', provider:'nexabot', providerTaskId:'provider-task', durationSeconds:15,
+    status:'PROCESSING', requiredCredits:10, createdAt:'2026-11-18T00:00:00.000Z', updatedAt:'2026-11-18T00:01:00.000Z',
+  };
+
+  it('holds a bare provider failure before scheduling a paid retry',async()=>{
+    const spy=vi.spyOn(DurableStore,'updateJobStatus').mockResolvedValue({...job,rawStatus:PROVIDER_TERMINAL_GRACE_STATUS});
+    const result=await deferProvisionalProviderFailure(job,'Generation failed on Nexabot',Date.parse('2026-11-18T00:02:00.000Z'));
+    expect(result.deferred).toBe(true);
+    expect(spy).toHaveBeenCalledWith(job.id,expect.objectContaining({status:'PROCESSING',rawStatus:PROVIDER_TERMINAL_GRACE_STATUS}));
+    spy.mockRestore();
+  });
+
+  it('allows retry only after the confirmation grace expires',async()=>{
+    const deferredJob={...job,rawStatus:PROVIDER_TERMINAL_GRACE_STATUS,updatedAt:'2026-11-18T00:01:00.000Z'};
+    const result=await deferProvisionalProviderFailure(deferredJob,'failed',Date.parse('2026-11-18T00:01:00.000Z')+PROVIDER_TERMINAL_GRACE_MS+1);
+    expect(result.deferred).toBe(false);
   });
 });

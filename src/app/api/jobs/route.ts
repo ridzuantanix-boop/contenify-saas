@@ -8,11 +8,11 @@ import { JobStateMachine } from '@/lib/orchestration/state-machine';
 import { getSessionFromRequest, isEmailVerificationPending } from '@/lib/auth/session';
 import { DurableStore, PLAN_CONCURRENCY_LIMITS } from '@/lib/db/store';
 import { privateImageDataUri, signPrivateAsset } from '@/lib/storage/supabase-assets';
-import { persistCompletedVideo } from '@/lib/orchestration/persist-video';
+import { persistCompletedVideo, persistLateCompletedVideo } from '@/lib/orchestration/persist-video';
 import { getBuiltInScene, sanitizePersonalizationSettings } from '@/lib/personalization/config';
 import { findOfficialAvatar, findOfficialBackground, officialAssetDataUri } from '@/lib/personalization/official-assets';
 import { customerFailureMessage, describeCustomerFailure } from '@/lib/jobs/customer-failure';
-import { isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
+import { deferProvisionalProviderFailure, isRetryableProviderFailure, scheduleOrFinalizeProviderFailure } from '@/lib/jobs/provider-retry';
 import { dispatchNexabotQueueCapacity } from '@/lib/jobs/smart-queue';
 import { getWorkspacePaymentControl } from '@/lib/billing/payment-control';
 
@@ -533,6 +533,26 @@ export async function GET(req: NextRequest) {
     if (job.status === 'COMPLETED' && job.videoObjectKey) {
       return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'COMPLETED', output: { videoUrl: `/api/videos/${job.id}/stream` } });
     }
+    if (job.status === 'FAILED' && job.provider === 'nexabot' && job.providerTaskId &&
+        Date.now() - new Date(job.createdAt).getTime() <= 24 * 60 * 60 * 1000) {
+      try {
+        const recoveryAdapter = router.resolveProvider(job.durationSeconds as 10 | 15, job.provider, session.role === 'superadmin');
+        const recoveryStatus = await recoveryAdapter.getStatus(job.providerTaskId);
+        if (recoveryStatus.normalizedStatus === 'COMPLETED') {
+          const recoveryOutput = await recoveryAdapter.getOutputs(job.providerTaskId);
+          if (recoveryOutput?.videoUrl && await persistLateCompletedVideo(job, recoveryOutput.videoUrl, recoveryStatus.rawStatus)) {
+            return NextResponse.json({
+              jobId: job.id, provider: job.provider, status: 'COMPLETED',
+              output: { videoUrl: `/api/videos/${job.id}/stream` }, lateRecovery: true,
+              creditRestored: true,
+              message: 'Video siap lewat dan berjaya diselamatkan. Kredit yang telah dipulangkan tidak dicaj semula.',
+            });
+          }
+        }
+      } catch (recoveryError) {
+        console.warn('[Jobs] Late Nexabot completion check failed:', recoveryError instanceof Error ? recoveryError.message : String(recoveryError));
+      }
+    }
     if (job.status === 'QA_PENDING' || job.status === 'REJECTED' || job.status === 'FAILED') {
       const failure = job.status === 'FAILED' ? describeCustomerFailure(job.errorMessage) : undefined;
       return NextResponse.json({
@@ -587,6 +607,13 @@ export async function GET(req: NextRequest) {
           }
         }
       } else if (statusRes.normalizedStatus === 'FAILED') {
+        const grace = await deferProvisionalProviderFailure(job, statusRes.errorMessage || statusRes.rawStatus);
+        if (grace.deferred) return NextResponse.json({
+          jobId: job.id, providerTaskId: activeTaskId, provider: job.provider,
+          status: 'PROCESSING', progress: statusRes.progressPercent,
+          rawStatus: 'Nexabot memberi status sementara. AffiMatik masih menjejak tugasan asal; jangan jana semula.',
+          terminalConfirmationPending: true, retryAfterMs: grace.retryAfterMs,
+        });
         const failure = describeCustomerFailure(statusRes.errorMessage || statusRes.rawStatus);
         const retry = await scheduleOrFinalizeProviderFailure(job.id, activeTaskId, statusRes.errorMessage || statusRes.rawStatus);
         if (retry.retryScheduled || retry.staleObservation) return NextResponse.json({
