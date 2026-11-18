@@ -26,6 +26,10 @@ import {
   UserRound,
   ImageIcon,
   BookmarkPlus,
+  ArrowUp,
+  LayoutDashboard,
+  ListVideo,
+  Plus,
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, PUBLISHED_STYLE_COUNT, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
@@ -136,6 +140,7 @@ function VideoFactoryContent() {
   const defaultPresetApplied = useRef(false);
   const factoryDraftRestored = useRef(false);
   const submitLockRef = useRef(false);
+  const statusSectionRef = useRef<HTMLDivElement>(null);
 
   // Status, Wallet & Durable Database Jobs
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,6 +152,7 @@ function VideoFactoryContent() {
   const [recentJobs, setRecentJobs] = useState<ActiveJobDisplay[]>([]);
   const [pollElapsedTime, setPollElapsedTime] = useState<number>(0);
   const [providerCooldownSeconds, setProviderCooldownSeconds] = useState(0);
+  const [showFloatingNavigation, setShowFloatingNavigation] = useState(false);
 
   // Selected Style Reference
   const selectedStyle = useMemo(() => {
@@ -374,8 +380,15 @@ function VideoFactoryContent() {
   }, [searchParams]);
 
   const requiredCredits = selectedStyle.engine === 'nexabot' ? 10 : 15;
-  const hasActiveSubmission = Boolean(activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING'));
-  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || hasActiveSubmission || providerCooldownSeconds > 0 || Boolean(personalizationError);
+  const hasActiveSubmission = Boolean(activeJob && ['QUEUED', 'SUBMITTING', 'PROCESSING', 'QA_PENDING'].includes(activeJob.status));
+  const generationBlocked = !selectedAvailable || isSubmitting || isUploadingImage || images.length === 0 || providerCooldownSeconds > 0 || Boolean(personalizationError);
+
+  useEffect(() => {
+    const updateFloatingNavigation = () => setShowFloatingNavigation(window.scrollY > 360);
+    updateFloatingNavigation();
+    window.addEventListener('scroll', updateFloatingNavigation, { passive: true });
+    return () => window.removeEventListener('scroll', updateFloatingNavigation);
+  }, []);
 
   useEffect(() => {
     if (providerCooldownSeconds <= 0) return;
@@ -632,6 +645,7 @@ function VideoFactoryContent() {
       setActiveJob(newJobDisplay);
       setRecentJobs((prev) => [newJobDisplay, ...prev.filter((j) => j.jobId !== newJobDisplay.jobId)]);
       refreshAccountBalance();
+      window.setTimeout(() => statusSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setSubmitError(msg);
@@ -652,8 +666,27 @@ function VideoFactoryContent() {
     setSubmitError(null);
   };
 
+  const prepareNextVideo = () => {
+    setImages([]);
+    setProductName('');
+    setShowProductLibrary(false);
+    setActiveJob(null);
+    setSubmitSuccess(null);
+    setSubmitError(null);
+    setPollElapsedTime(0);
+    window.setTimeout(() => document.getElementById('product-step')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
+
+  const handlePrimaryAction = () => {
+    if (hasActiveSubmission) {
+      prepareNextVideo();
+      return;
+    }
+    void handleGenerateVideo();
+  };
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-24 md:pb-12">
+    <div id="factory-top" className="max-w-7xl mx-auto space-y-6 pb-24 md:pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
@@ -1082,16 +1115,21 @@ function VideoFactoryContent() {
 
             <button
               type="button"
-              onClick={handleGenerateVideo}
-              disabled={generationBlocked}
-              aria-busy={isUploadingImage || isSubmitting || hasActiveSubmission}
+              onClick={handlePrimaryAction}
+              disabled={!hasActiveSubmission && generationBlocked}
+              aria-busy={isUploadingImage || isSubmitting}
               className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
-                generationBlocked
+                !hasActiveSubmission && generationBlocked
                   ? 'bg-slate-400 cursor-not-allowed'
                   : 'bg-primary hover:bg-primary/95 active:scale-[0.99]'
               }`}
             >
-              {!selectedAvailable ? (
+              {hasActiveSubmission ? (
+                <>
+                  <Plus className="w-4 h-4" />
+                  <span>Jana Video Lain</span>
+                </>
+              ) : !selectedAvailable ? (
                 <span>Penjanaan Belum Tersedia</span>
               ) : isUploadingImage ? (
                 <>
@@ -1110,11 +1148,6 @@ function VideoFactoryContent() {
                   <Clock className="w-4 h-4" />
                   <span>Pelayan AI Sedang Pulih ({Math.ceil(providerCooldownSeconds / 60)} min)</span>
                 </>
-              ) : activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING') ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Sedang Memproses Video Di Pelayan AI...</span>
-                </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
@@ -1132,10 +1165,15 @@ function VideoFactoryContent() {
         {/* ========================================================================= */}
         <div className="lg:col-span-5 space-y-6">
           {/* ACTIVE GENERATION STATUS / COMPLETED WORKSPACE */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div id="generation-status" ref={statusSectionRef} className="scroll-mt-20 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <span className="text-xs font-bold text-slate-800">Ruang Status & Hasil Video</span>
-              {activeJob && (
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => document.getElementById('factory-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-[10px] font-bold text-slate-500 hover:bg-white hover:text-indigo-700" aria-label="Kembali ke atas">
+                  <ArrowUp className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Ke Atas</span>
+                </button>
+                {activeJob && (
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                   activeJob.status === 'COMPLETED'
                     ? 'bg-emerald-100 text-emerald-800'
@@ -1145,7 +1183,8 @@ function VideoFactoryContent() {
                 }`}>
                   {activeJob.status === 'COMPLETED' ? 'Video Siap' : activeJob.status === 'QA_PENDING' ? 'Menunggu Semakan' : activeJob.status === 'FAILED' || activeJob.status === 'REJECTED' ? 'Gangguan Pelayan' : 'Sedang Menjana'}
                 </span>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="p-5 space-y-4">
@@ -1188,6 +1227,15 @@ function VideoFactoryContent() {
                       <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
                         Status turut diselaraskan apabila anda kembali ke tab ini dan oleh sistem latar belakang.
                       </p>
+                      <button
+                        type="button"
+                        onClick={prepareNextVideo}
+                        className="mx-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Jana Video Lain
+                      </button>
+                      <p className="text-[10px] text-slate-400 max-w-xs mx-auto">Video ini terus diproses di background dan kekal dalam Senarai Tugasan.</p>
                     </div>
                   )}
 
@@ -1395,6 +1443,21 @@ function VideoFactoryContent() {
         </div>
       )}
 
+      {/* Contextual quick navigation for long creation pages. */}
+      {showFloatingNavigation && (
+        <nav aria-label="Navigasi pantas Jana Video" className="fixed bottom-24 right-3 z-40 flex flex-col gap-2 md:bottom-6 md:right-6">
+          <Link href="/dashboard" className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:border-indigo-300 hover:text-indigo-700" aria-label="Pergi ke Dashboard" title="Dashboard">
+            <LayoutDashboard className="h-4 w-4" />
+          </Link>
+          <button type="button" onClick={() => statusSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-indigo-200 bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700" aria-label="Pergi ke Ruang Status dan Hasil Video" title="Status video">
+            <ListVideo className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => document.getElementById('factory-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:border-indigo-300 hover:text-indigo-700" aria-label="Kembali ke atas" title="Ke atas">
+            <ArrowUp className="h-4 w-4" />
+          </button>
+        </nav>
+      )}
+
       {/* PERSISTENT MOBILE BOTTOM ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-lg pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {submitError && (
@@ -1424,16 +1487,21 @@ function VideoFactoryContent() {
 
           <button
             type="button"
-            onClick={handleGenerateVideo}
-            disabled={generationBlocked}
-            aria-busy={isUploadingImage || isSubmitting || hasActiveSubmission}
+            onClick={handlePrimaryAction}
+            disabled={!hasActiveSubmission && generationBlocked}
+            aria-busy={isUploadingImage || isSubmitting}
             className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 ${
-              generationBlocked
+              !hasActiveSubmission && generationBlocked
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-primary hover:bg-primary/95 active:scale-95'
             }`}
           >
-            {!selectedAvailable ? (
+            {hasActiveSubmission ? (
+              <>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Video Lain</span>
+              </>
+            ) : !selectedAvailable ? (
               <span>Belum Tersedia</span>
             ) : isUploadingImage ? (
               <>
@@ -1451,11 +1519,6 @@ function VideoFactoryContent() {
               <>
                 <Clock className="w-3.5 h-3.5" />
                 <span>AI Pulih {Math.ceil(providerCooldownSeconds / 60)}m</span>
-              </>
-            ) : activeJob && (activeJob.status === 'PROCESSING' || activeJob.status === 'SUBMITTING') ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Memproses...</span>
               </>
             ) : (
               <>

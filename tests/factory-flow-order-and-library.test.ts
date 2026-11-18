@@ -42,4 +42,19 @@ describe('Jana Video guided order and reusable product assets', () => {
     expect(factory).toContain('Tukar Gaya');
     expect(factory).toContain('<SummaryRow label="Gaya" value={selectedStyle.name}');
   });
+
+  it('keeps long mobile journeys navigable and moves users to live status after submission', () => {
+    expect(factory).toContain('aria-label="Navigasi pantas Jana Video"');
+    expect(factory).toContain('aria-label="Pergi ke Dashboard"');
+    expect(factory).toContain('id="generation-status"');
+    expect(factory).toContain("statusSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })");
+    expect(factory).toContain('aria-label="Kembali ke atas"');
+  });
+
+  it('lets users prepare another video without cancelling the background job', () => {
+    expect(factory).toContain('const prepareNextVideo = () =>');
+    expect(factory).toContain('Jana Video Lain');
+    expect(factory).toContain('Video ini terus diproses di background dan kekal dalam Senarai Tugasan.');
+    expect(factory).not.toContain('images.length === 0 || hasActiveSubmission');
+  });
 });
