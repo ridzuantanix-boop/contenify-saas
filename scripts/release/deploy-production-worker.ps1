@@ -26,6 +26,7 @@ try {
     NEXABOT_API_KEY = Read-LocalSecret 'nexabot-api-key'
     RESEND_API_KEY = Read-LocalSecret 'resend-api-key'
     TUTORIAL_GUEST_ACCESS_TOKEN = Read-LocalSecret 'tutorial-guest-access-token'
+    AD_PILOT_REPORT_SECRET = Read-LocalSecret 'ad-pilot-report-secret'
   }
   [IO.File]::WriteAllText($tempFile, ($secrets | ConvertTo-Json -Compress), [Text.UTF8Encoding]::new($false))
   $wrangler = Join-Path $repo 'node_modules\.bin\wrangler.cmd'

@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
 
   const point = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
   const event: Record<string, unknown> = { session_id: body.sessionId, event_seq: seq, kind, device };
+  const campaign = new URL(req.headers.get('referer')!).searchParams.get('utm_campaign') || '';
+  if (/^[a-zA-Z0-9_.-]{1,100}$/.test(campaign)) event.campaign_key = campaign;
   if (kind === 'click') {
     if (!point(body.x) || !point(body.y) || !targetTypes.has(String(body.targetType)))
       return NextResponse.json({ error: 'Koordinat tidak sah.' }, { status: 400 });

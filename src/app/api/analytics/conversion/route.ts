@@ -13,6 +13,15 @@ function safeRefererPath(referer: string | null) {
   }
 }
 
+function attributionFromReferer(req: NextRequest, key: 'utm_campaign' | 'utm_content') {
+  try {
+    const url = new URL(req.headers.get('referer') || '');
+    if (url.origin !== new URL(req.url).origin || url.pathname !== '/') return '';
+    const value = url.searchParams.get(key) || '';
+    return /^[a-zA-Z0-9_.-]{1,100}$/.test(value) ? value : '';
+  } catch { return ''; }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const eventName = String(body.eventName || '') as ConversionEvent;
@@ -23,6 +32,14 @@ export async function POST(req: NextRequest) {
   const suppliedMeta = body.metadata && typeof body.metadata === 'object' ? body.metadata as Record<string, unknown> : {};
   const metadata = Object.fromEntries(Object.entries(suppliedMeta).filter(([key, value]) =>
     ALLOWED_META.has(key) && (value === null || ['string', 'number', 'boolean'].includes(typeof value))));
+  const taggedCampaign = attributionFromReferer(req, 'utm_campaign');
+  const taggedContent = attributionFromReferer(req, 'utm_content');
+  const previousCampaign = req.cookies.get('affimatik_campaign')?.value || '';
+  const previousContent = req.cookies.get('affimatik_content')?.value || '';
+  const campaign = taggedCampaign || (/^[a-zA-Z0-9_.-]{1,100}$/.test(previousCampaign) ? previousCampaign : '');
+  const content = taggedContent || (!taggedCampaign && /^[a-zA-Z0-9_.-]{1,100}$/.test(previousContent) ? previousContent : '');
+  if (campaign) metadata.utmCampaign = campaign;
+  if (content) metadata.utmContent = content;
   const session = await getSessionFromRequest(req).catch(() => null);
   const suppliedVisitor = req.cookies.get('affimatik_visitor')?.value || '';
   const visitorId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedVisitor) ? suppliedVisitor : crypto.randomUUID();
@@ -47,5 +64,8 @@ export async function POST(req: NextRequest) {
   if (!response.ok && response.status !== 409) return NextResponse.json({ recorded: false }, { status: 202 });
   const result = NextResponse.json({ recorded: true }, { status: 201 });
   if (visitorId !== suppliedVisitor) result.cookies.set('affimatik_visitor', visitorId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 180 * 24 * 60 * 60 });
+  if (taggedCampaign && eventName === 'landing_view') result.cookies.set('affimatik_campaign', taggedCampaign, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 });
+  if (taggedContent && eventName === 'landing_view') result.cookies.set('affimatik_content', taggedContent, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 });
+  if (taggedCampaign && !taggedContent && eventName === 'landing_view') result.cookies.delete('affimatik_content');
   return result;
 }
