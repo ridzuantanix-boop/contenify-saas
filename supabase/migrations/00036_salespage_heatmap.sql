@@ -1,4 +1,4 @@
--- Opt-in, first-party interaction coordinates for the public AffiMatik sales page.
+-- Anonymous, first-party interaction coordinates for the public AffiMatik sales page.
 -- No text, form values, IP addresses or account identifiers are stored.
 CREATE TABLE IF NOT EXISTS public.salespage_heatmap_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
