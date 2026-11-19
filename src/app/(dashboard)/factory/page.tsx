@@ -30,6 +30,8 @@ import {
   LayoutDashboard,
   ListVideo,
   Plus,
+  Search,
+  Star,
 } from 'lucide-react';
 import { VIDEO_STYLES_REGISTRY, PUBLISHED_STYLE_COUNT, getVideoStyle, filterVideoStyles, STYLE_CATEGORIES_V6 } from '@/lib/styles/registry';
 import { VideoStyle, StyleCategory } from '@/lib/styles/types';
@@ -111,6 +113,12 @@ function VideoFactoryContent() {
   const [styleCategoryFilter, setStyleCategoryFilter] = useState<StyleCategory>('all');
   const [styleSearch, setStyleSearch] = useState('');
   const [modalPreviewStyle, setModalPreviewStyle] = useState<VideoStyle | null>(null);
+  const [styleCollection, setStyleCollection] = useState<'all' | 'favorites' | 'recent'>('all');
+  const [favoriteStyleIds, setFavoriteStyleIds] = useState<string[]>([]);
+  const [recentStyleIds, setRecentStyleIds] = useState<string[]>([]);
+  const [stylePreferencesLoaded, setStylePreferencesLoaded] = useState(false);
+  const [stylePickerExpanded, setStylePickerExpanded] = useState(true);
+  const [showAllStyles, setShowAllStyles] = useState(false);
 
   // Step 3: Optional provider direction & safety controls
   const [isMuslimahModest, setIsMuslimahModest] = useState(true);
@@ -274,6 +282,34 @@ function VideoFactoryContent() {
       .then((data) => setPublicAvailability({ nexabot: data.availability?.nexabot === true, runninghub: data.availability?.runninghub === true }))
       .catch(() => setPublicAvailability({ nexabot: false, runninghub: false }));
   }, []);
+
+  useEffect(() => {
+    const validIds = new Set(VIDEO_STYLES_REGISTRY.map((style) => style.id));
+    const readStyleIds = (key: string) => {
+      try {
+        const stored = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(stored)
+          ? stored.filter((id): id is string => typeof id === 'string' && validIds.has(id)).slice(0, 12)
+          : [];
+      } catch {
+        localStorage.removeItem(key);
+        return [];
+      }
+    };
+    setFavoriteStyleIds(readStyleIds('affimatik:style-favorites-v1'));
+    setRecentStyleIds(readStyleIds('affimatik:recent-styles-v1'));
+    setStylePreferencesLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!stylePreferencesLoaded) return;
+    localStorage.setItem('affimatik:style-favorites-v1', JSON.stringify(favoriteStyleIds));
+  }, [favoriteStyleIds, stylePreferencesLoaded]);
+
+  useEffect(() => {
+    if (!stylePreferencesLoaded) return;
+    localStorage.setItem('affimatik:recent-styles-v1', JSON.stringify(recentStyleIds));
+  }, [recentStyleIds, stylePreferencesLoaded]);
 
   const loadProductLibrary = useCallback(async () => {
     setProductLibraryLoading(true);
@@ -533,14 +569,43 @@ function VideoFactoryContent() {
       } finally { setIsUploadingImage(false); }
   };
 
+  const selectVideoStyle = useCallback((styleId: string) => {
+    setSelectedStyleId(styleId);
+    setRecentStyleIds((current) => [styleId, ...current.filter((id) => id !== styleId)].slice(0, 5));
+    setStylePickerExpanded(false);
+  }, []);
+
+  const toggleFavoriteStyle = useCallback((styleId: string) => {
+    setFavoriteStyleIds((current) => current.includes(styleId)
+      ? current.filter((id) => id !== styleId)
+      : [styleId, ...current]);
+  }, []);
+
+  const openStylePicker = useCallback(() => {
+    setStylePickerExpanded(true);
+    window.setTimeout(() => document.getElementById('style-step')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }, []);
+
   // Filtered styles catalogue
   const displayedStyles = useMemo(() => {
-    return filterVideoStyles({
+    const filtered = filterVideoStyles({
       engine: 'nexabot',
       category: styleCategoryFilter === 'all' ? undefined : styleCategoryFilter,
       searchQuery: styleSearch,
     });
-  }, [styleCategoryFilter, styleSearch]);
+    if (styleCollection === 'favorites') return filtered.filter((style) => favoriteStyleIds.includes(style.id));
+    if (styleCollection === 'recent') {
+      return recentStyleIds
+        .map((id) => filtered.find((style) => style.id === id))
+        .filter((style): style is VideoStyle => Boolean(style));
+    }
+    return filtered;
+  }, [styleCategoryFilter, styleSearch, styleCollection, favoriteStyleIds, recentStyleIds]);
+
+  const visibleStyles = useMemo(
+    () => showAllStyles ? displayedStyles : displayedStyles.slice(0, 6),
+    [displayedStyles, showAllStyles],
+  );
 
   // Primary Action: Submit Generation Task
   const handleGenerateVideo = async () => {
@@ -856,20 +921,48 @@ function VideoFactoryContent() {
               <span><strong>AffiMatik Voice · Nexabot 15s</strong> — {PUBLISHED_STYLE_COUNT} gaya video BM Malaysia, 10 kredit setiap video.</span>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {STYLE_CATEGORIES_V6.map((item) => <button key={item.id} type="button" onClick={() => setStyleCategoryFilter(item.id)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold ${styleCategoryFilter === item.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'}`}>{item.label}</button>)}
-            </div>
-
-            {/* Poster-first style gallery; video is requested only on hover/Preview. */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span>Pilih daripada {PUBLISHED_STYLE_COUNT} Gaya Video Rasmi:</span>
-                <span className="text-[11px] text-slate-400">{displayedStyles.length} gaya dipaparkan</span>
+            {!stylePickerExpanded ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/5 p-3">
+                <div className="min-w-0">
+                  <span className="block text-[9px] font-black uppercase tracking-wide text-primary">Gaya dipilih</span>
+                  <strong className="block truncate text-sm text-slate-950">{selectedStyle.name}</strong>
+                  <span className="text-[10px] text-slate-600">{selectedStyle.durationSeconds}s · 10 kredit</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => toggleFavoriteStyle(selectedStyle.id)} aria-label={`${favoriteStyleIds.includes(selectedStyle.id) ? 'Buang' : 'Tambah'} ${selectedStyle.name} daripada kegemaran`} className={`grid min-h-10 min-w-10 place-items-center rounded-lg border ${favoriteStyleIds.includes(selectedStyle.id) ? 'border-amber-300 bg-amber-50 text-amber-500' : 'border-slate-200 bg-white text-slate-400'}`}><Star className={`h-4 w-4 ${favoriteStyleIds.includes(selectedStyle.id) ? 'fill-current' : ''}`} /></button>
+                  <button type="button" onClick={openStylePicker} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 text-[11px] font-black text-indigo-700">Tukar Gaya <ChevronDown className="h-3.5 w-3.5" /></button>
+                </div>
+              </div>
+            ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2" aria-label="Koleksi gaya pantas">
+                {[
+                  { id: 'all', label: 'Semua', icon: Layers, count: PUBLISHED_STYLE_COUNT },
+                  { id: 'favorites', label: 'Kegemaran', icon: Star, count: favoriteStyleIds.length },
+                  { id: 'recent', label: 'Baru Digunakan', icon: Clock, count: recentStyleIds.length },
+                ].map((item) => { const Icon = item.icon; const active = styleCollection === item.id; return <button key={item.id} type="button" onClick={() => { setStyleCollection(item.id as 'all' | 'favorites' | 'recent'); setStyleCategoryFilter('all'); setShowAllStyles(false); }} className={`min-h-14 rounded-xl border px-2 py-2 text-center transition ${active ? 'border-primary bg-primary text-white shadow-sm' : 'border-slate-200 bg-white text-slate-600'}`}><Icon className="mx-auto h-4 w-4" /><span className="mt-1 block text-[10px] font-black leading-tight">{item.label}</span><span className={`text-[9px] ${active ? 'text-white/75' : 'text-slate-400'}`}>{item.count}</span></button>; })}
               </div>
 
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input value={styleSearch} onChange={(event) => { setStyleSearch(event.target.value); setShowAllStyles(false); }} placeholder="Cari gaya, contoh: review, tudung, dapur..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Tapis gaya mengikut kategori">
+                {STYLE_CATEGORIES_V6.map((item) => <button key={item.id} type="button" onClick={() => { setStyleCollection('all'); setStyleCategoryFilter(item.id); setShowAllStyles(false); }} className={`min-h-9 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold ${styleCollection === 'all' && styleCategoryFilter === item.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'}`}>{item.label}</button>)}
+              </div>
+
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                <span>{styleCollection === 'favorites' ? 'Gaya kegemaran anda' : styleCollection === 'recent' ? 'Gaya yang baru digunakan' : styleCategoryFilter === 'all' ? 'Pilihan gaya video' : STYLE_CATEGORIES_V6.find((item) => item.id === styleCategoryFilter)?.label}</span>
+                <span className="text-[11px] text-slate-400">{Math.min(visibleStyles.length, displayedStyles.length)} daripada {displayedStyles.length}</span>
+              </div>
+
+              {displayedStyles.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-7 text-center"><Star className="mx-auto h-5 w-5 text-slate-400" /><p className="mt-2 text-xs font-bold text-slate-700">{styleCollection === 'favorites' ? 'Belum ada gaya kegemaran.' : styleCollection === 'recent' ? 'Belum ada gaya yang digunakan.' : 'Tiada gaya sepadan.'}</p><p className="mt-1 text-[10px] text-slate-500">{styleCollection === 'favorites' ? 'Tekan ikon bintang pada mana-mana kad untuk simpan di sini.' : 'Pilih kategori lain atau kosongkan carian.'}</p></div> : null}
+
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3" role="radiogroup" aria-label="Pilih gaya video">
-                {displayedStyles.map((style) => {
+                {visibleStyles.map((style) => {
                   const isSelected = style.id === selectedStyle.id;
+                  const isFavorite = favoriteStyleIds.includes(style.id);
                   const metadata = getStyleMarketingMetadata(style.id);
                   if (!metadata) return null;
 
@@ -879,11 +972,11 @@ function VideoFactoryContent() {
                       role="radio"
                       aria-checked={isSelected}
                       tabIndex={0}
-                      onClick={() => setSelectedStyleId(style.id)}
+                      onClick={() => selectVideoStyle(style.id)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
-                          setSelectedStyleId(style.id);
+                          selectVideoStyle(style.id);
                         }
                       }}
                       className={`cursor-pointer p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-primary/40 ${
@@ -892,6 +985,7 @@ function VideoFactoryContent() {
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
+                      <button type="button" onClick={(event) => { event.stopPropagation(); toggleFavoriteStyle(style.id); }} aria-label={`${isFavorite ? 'Buang' : 'Tambah'} ${metadata.title} daripada kegemaran`} className={`absolute right-5 top-5 z-20 grid h-9 w-9 place-items-center rounded-full border shadow-sm ${isFavorite ? 'border-amber-300 bg-amber-50 text-amber-500' : 'border-white/80 bg-white/90 text-slate-500'}`}><Star className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} /></button>
                       <div className="mb-2 overflow-hidden rounded-xl">
                         <StylePosterMedia metadata={metadata} onPreview={() => setModalPreviewStyle(style)} compact />
                       </div>
@@ -924,7 +1018,9 @@ function VideoFactoryContent() {
                   );
                 })}
               </div>
+              {displayedStyles.length > 6 && <button type="button" onClick={() => setShowAllStyles((current) => !current)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-black text-slate-700">{showAllStyles ? 'Tunjuk Lebih Sedikit' : `Lihat Semua ${displayedStyles.length} Gaya`} {showAllStyles ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</button>}
             </div>
+            )}
           </div>
 
           {/* STEP 4: NEXABOT NATIVE CREATIVE DIRECTION */}
@@ -932,7 +1028,7 @@ function VideoFactoryContent() {
             <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">4</span><div><h3 className="text-sm font-bold text-slate-900">Arah Kreatif & CTA</h3><p className="text-[11px] text-slate-500">AffiMatik mengarah gaya dan keselamatan. Nexabot memahami produk lalu mencipta dialog sendiri.</p></div></div>
             <div data-testid="selected-style-confirmation" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
               <div><span className="block text-[9px] font-black uppercase tracking-wide text-indigo-500">Gaya dipilih</span><strong className="mt-0.5 block text-xs text-indigo-950">{selectedStyle.name}</strong><span className="text-[10px] text-indigo-700">{selectedStyle.durationSeconds}s · {selectedStyle.engine === 'nexabot' ? '10' : '15'} kredit</span></div>
-              <button type="button" onClick={() => document.getElementById('style-step')?.scrollIntoView({behavior:'smooth'})} className="min-h-10 rounded-lg border border-indigo-200 bg-white px-3 text-[10px] font-black text-indigo-700">Tukar Gaya</button>
+              <button type="button" onClick={openStylePicker} className="min-h-10 rounded-lg border border-indigo-200 bg-white px-3 text-[10px] font-black text-indigo-700">Tukar Gaya</button>
             </div>
             <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs leading-relaxed text-slate-700"><strong>Tiada skrip automatik:</strong> dialog tidak dijana atau dipratonton oleh AffiMatik. Produk, gaya dan arahan pilihan dihantar terus sebagai masterprompt.</div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -1054,7 +1150,7 @@ function VideoFactoryContent() {
               <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-black text-slate-900">Semak Sebelum Jana</h3><p className="text-[11px] text-slate-500">Ini tetapan sebenar yang akan dihantar kepada Nexabot.</p></div><Link href={`/auto-factory?profileId=${encodeURIComponent(selectedCreatorProfileId)}&styleId=${encodeURIComponent(selectedStyleId)}`} className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-[11px] font-black text-indigo-700">Jana Banyak Video</Link></div>
               <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
                 <SummaryRow label="Produk" value={images[0]?.name || 'Belum dipilih'} image={images[0]?.dataUrl} onEdit={() => document.getElementById('product-step')?.scrollIntoView({behavior:'smooth'})}/>
-                <SummaryRow label="Gaya" value={selectedStyle.name} onEdit={() => document.getElementById('style-step')?.scrollIntoView({behavior:'smooth'})}/>
+                <SummaryRow label="Gaya" value={selectedStyle.name} onEdit={openStylePicker}/>
                 <SummaryRow label="Creator Profile" value={selectedCreatorProfile?.name || 'Tanpa Profile'} onEdit={() => document.getElementById('creator-step')?.scrollIntoView({behavior:'smooth'})}/>
                 <SummaryRow label="Avatar" value={selectedAvatar?.name || 'Tiada / Automatik'} image={selectedAvatar?.thumbnailUrl || selectedAvatar?.imageUrl} onEdit={() => document.getElementById('creator-step')?.scrollIntoView({behavior:'smooth'})}/>
                 <SummaryRow label="Background" value={selectedBackground?.name || 'Automatik'} image={selectedBackground?.thumbnailUrl || selectedBackground?.imageUrl} onEdit={() => document.getElementById('creator-step')?.scrollIntoView({behavior:'smooth'})}/>
@@ -1431,7 +1527,7 @@ function VideoFactoryContent() {
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedStyleId(modalPreviewStyle.id);
+                  selectVideoStyle(modalPreviewStyle.id);
                   setModalPreviewStyle(null);
                 }}
                 className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/95 text-white font-bold text-xs shadow-sm transition-all"

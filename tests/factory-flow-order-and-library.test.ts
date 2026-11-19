@@ -29,9 +29,20 @@ describe('Jana Video guided order and reusable product assets', () => {
   it('selects a style from the whole accessible card', () => {
     expect(factory).toContain('role="radiogroup"');
     expect(factory).toContain('role="radio"');
-    expect(factory).toContain('onClick={() => setSelectedStyleId(style.id)}');
+    expect(factory).toContain('onClick={() => selectVideoStyle(style.id)}');
     expect(factory).toContain("event.key === 'Enter' || event.key === ' '");
     expect(factory).not.toContain("{isSelected ? 'Dipilih' : 'Pilih Gaya'}");
+  });
+
+  it('keeps the 30-style picker short with favorites, recent styles and category filters', () => {
+    expect(factory).toContain('Kegemaran');
+    expect(factory).toContain('Baru Digunakan');
+    expect(factory).toContain('affimatik:style-favorites-v1');
+    expect(factory).toContain('affimatik:recent-styles-v1');
+    expect(factory).toContain('displayedStyles.slice(0, 6)');
+    expect(factory).toContain('Lihat Semua ${displayedStyles.length} Gaya');
+    expect(factory).toContain('setStyleCategoryFilter(item.id)');
+    expect(factory).toContain('setStylePickerExpanded(false)');
   });
 
   it('confirms the chosen style only after the style picker', () => {

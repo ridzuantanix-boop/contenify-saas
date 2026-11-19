@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -26,8 +26,26 @@ export default function VideoStylesPage() {
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'with_voice' | 'no_voice'>('all');
   const [durationFilter, setDurationFilter] = useState<'all' | '10' | '15'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [favorites, setFavorites] = useState<string[]>(['NX01']);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const [previewStyle, setPreviewStyle] = useState<VideoStyle | null>(null);
+
+  useEffect(() => {
+    try {
+      const validIds = new Set(VIDEO_STYLES_REGISTRY.map((style) => style.id));
+      const stored = JSON.parse(localStorage.getItem('affimatik:style-favorites-v1') || '[]');
+      setFavorites(Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string' && validIds.has(id)) : []);
+    } catch {
+      localStorage.removeItem('affimatik:style-favorites-v1');
+    } finally {
+      setFavoritesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!favoritesLoaded) return;
+    localStorage.setItem('affimatik:style-favorites-v1', JSON.stringify(favorites));
+  }, [favorites, favoritesLoaded]);
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
