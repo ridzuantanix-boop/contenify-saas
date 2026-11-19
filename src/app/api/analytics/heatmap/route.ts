@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (raw.length > 1600) return NextResponse.json({ error: 'Data terlalu besar.' }, { status: 413 });
   let body: Record<string, unknown> | null = null;
   try { body = JSON.parse(raw) as Record<string, unknown>; } catch { /* Invalid JSON is rejected below. */ }
-  if (!body || body.consent !== true || typeof body.sessionId !== 'string' || !uuid.test(body.sessionId))
+  if (!body || body.anonymous !== true || typeof body.sessionId !== 'string' || !uuid.test(body.sessionId))
     return NextResponse.json({ error: 'Data tidak sah.' }, { status: 400 });
   const seq = body.seq;
   const kind = body.kind;
