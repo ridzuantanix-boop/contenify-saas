@@ -179,8 +179,20 @@ export class NexabotAdapter implements IProviderAdapter {
     const data = await res.json() as Record<string, unknown>;
     const job = (data.job || data) as Record<string, unknown>;
     const rawStatus = String(job.status || data.status || 'unknown').toLowerCase();
+    const hasDownloadableFile = job.has_file === true || Boolean(job.storage_url || job.video_url);
 
     if (rawStatus === 'done' || rawStatus === 'completed' || rawStatus === 'succeeded') {
+      // Nexabot can report `done` while its own status text still says
+      // "Downloading result…" and has_file=false. Treat that as processing;
+      // the download endpoint returns HTTP 410 until the MP4 is actually ready.
+      if (!hasDownloadableFile) {
+        return {
+          providerTaskId,
+          normalizedStatus: 'RUNNING',
+          progressPercent: 90,
+          rawStatus: 'done_pending_file',
+        };
+      }
       return {
         providerTaskId,
         normalizedStatus: 'COMPLETED',

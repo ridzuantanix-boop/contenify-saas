@@ -144,7 +144,7 @@ export function inspectMp4(bytes: ArrayBuffer): { durationSeconds: number; hasVi
   return { durationSeconds, hasVideo, hasAudio };
 }
 
-export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mock', sourceUrl: string, workspaceId: string, jobId: string): Promise<{ objectKey: string; sizeBytes: number; durationSeconds: number; hasAudio: boolean }> {
+export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mock', sourceUrl: string, workspaceId: string, jobId: string, trustedProviderOutput = false): Promise<{ objectKey: string; sizeBytes: number; durationSeconds: number; hasAudio: boolean }> {
   // Historical and current Nexabot outputs use these observed Supabase projects.
   // Keep those exact hosts and their media path instead of trusting *.supabase.co.
   const nexabotStorageHosts = [
@@ -166,10 +166,16 @@ export async function ingestProviderMp4(provider: 'nexabot' | 'runninghub' | 'mo
     const isNexabotStorageRedirect = provider === 'nexabot' && redirect > 0 &&
       /^[a-z0-9]{20}\.supabase\.co$/.test(hostname) &&
       /^\/storage\/v1\/object\/public\/storage\/media\/\d{4}\/\d{2}\/[0-9a-f-]{36}\.mp4$/i.test(current.pathname);
-    if (current.protocol !== 'https:' || current.username || current.password || (!isKnownHost && !isNexabotStorageRedirect)) {
+    // A URL read directly from an authenticated Nexabot task response is also
+    // trusted, but only for Nexabot's exact UUID-based public MP4 path. This
+    // supports safe storage-project rotation without allowing arbitrary URLs.
+    const isTrustedNexabotStorageOutput = provider === 'nexabot' && trustedProviderOutput &&
+      /^[a-z0-9]{20}\.supabase\.co$/.test(hostname) &&
+      /^\/storage\/v1\/object\/public\/storage\/media\/\d{4}\/\d{2}\/[0-9a-f-]{36}\.mp4$/i.test(current.pathname);
+    if (current.protocol !== 'https:' || current.username || current.password || (!isKnownHost && !isNexabotStorageRedirect && !isTrustedNexabotStorageOutput)) {
       throw new Error('Domain sumber video tidak dibenarkan.');
     }
-    if (provider === 'nexabot' && (nexabotStorageHosts.includes(hostname) || isNexabotStorageRedirect) &&
+    if (provider === 'nexabot' && (nexabotStorageHosts.includes(hostname) || isNexabotStorageRedirect || isTrustedNexabotStorageOutput) &&
         (!current.pathname.startsWith('/storage/v1/object/public/storage/media/') || !current.pathname.toLowerCase().endsWith('.mp4'))) {
       throw new Error('Laluan sumber video Nexabot tidak dibenarkan.');
     }

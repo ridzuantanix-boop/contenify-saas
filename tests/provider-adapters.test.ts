@@ -117,12 +117,22 @@ describe('Nexabot Adapter', () => {
   });
 
   it('reads the actual duration field returned by live Nexabot i2v jobs', async () => {
-    const response = { ok: true, job: { status: 'done', mode: 'i2v', duration: 15, storage_url: 'https://nexabot.id/api/v1/jobs/job/download' } };
+    const response = { ok: true, job: { status: 'done', mode: 'i2v', duration: 15, has_file: true, storage_url: 'https://nexabot.id/api/v1/jobs/job/download' } };
     vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(response), { status: 200 }))));
     try {
       const output = await adapter.getOutputs('job');
       expect(output.durationSeconds).toBe(15);
       expect(output.videoUrl).toContain('/download');
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it('does not treat Nexabot done as complete until the MP4 file exists', async () => {
+    const response = { ok: true, job: { status: 'done', progress: 'Downloading result…', has_file: false, storage_url: null } };
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(response), { status: 200 }))));
+    try {
+      const status = await adapter.getStatus('job-pending-file');
+      expect(status).toMatchObject({ normalizedStatus: 'RUNNING', rawStatus: 'done_pending_file' });
+      await expect(adapter.getOutputs('job-pending-file')).rejects.toThrow(/not ready/);
     } finally { vi.unstubAllGlobals(); }
   });
 });

@@ -9,7 +9,7 @@ async function persistProviderVideo(job: VideoJobRecord, providerUrl: string, ra
   if (process.env.NODE_ENV === 'production' && !process.env.VITEST && job.provider !== 'mock' && !objectKey) {
     let stored;
     try {
-      stored = await ingestProviderMp4(job.provider, providerUrl, job.workspaceId, job.id);
+      stored = await ingestProviderMp4(job.provider, providerUrl, job.workspaceId, job.id, true);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/bukan MP4|trek video|Saiz MP4|Domain sumber video|Kandungan video tersimpan tidak sepadan|Saiz video tersimpan tidak sepadan|Video tersimpan tidak lengkap/i.test(message)) {

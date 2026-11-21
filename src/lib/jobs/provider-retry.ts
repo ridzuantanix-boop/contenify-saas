@@ -8,7 +8,10 @@ const router = new ProviderRouter();
 
 export const PROVIDER_OUTAGE_MAX_RETRIES = 168;
 export const PROVIDER_OUTAGE_RECOVERY_DAYS = 7;
-export const PROVIDER_TERMINAL_GRACE_MS = 3 * 60 * 1000;
+// Nexabot has repeatedly changed `failed` or file-less `done` tasks into a
+// downloadable result hours later. Once a real provider task ID exists, keep
+// polling that same paid task throughout the bounded outage-recovery window.
+export const PROVIDER_TERMINAL_GRACE_MS = PROVIDER_OUTAGE_RECOVERY_DAYS * 24 * 60 * 60 * 1000;
 export const PROVIDER_TERMINAL_GRACE_STATUS = 'PROVIDER_TERMINAL_GRACE';
 
 export function isProviderOutageFailure(raw: unknown): boolean {

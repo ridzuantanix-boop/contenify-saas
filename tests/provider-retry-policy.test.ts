@@ -86,7 +86,7 @@ describe('Nexabot provisional terminal status',()=>{
     status:'PROCESSING', requiredCredits:10, createdAt:'2026-11-18T00:00:00.000Z', updatedAt:'2026-11-18T00:01:00.000Z',
   };
 
-  it('holds a bare provider failure before scheduling a paid retry',async()=>{
+  it('keeps tracking the original paid task throughout the bounded recovery window',async()=>{
     const spy=vi.spyOn(DurableStore,'updateJobStatus').mockResolvedValue({...job,rawStatus:PROVIDER_TERMINAL_GRACE_STATUS});
     const result=await deferProvisionalProviderFailure(job,'Generation failed on Nexabot',Date.parse('2026-11-18T00:02:00.000Z'));
     expect(result.deferred).toBe(true);
@@ -94,7 +94,7 @@ describe('Nexabot provisional terminal status',()=>{
     spy.mockRestore();
   });
 
-  it('allows retry only after the confirmation grace expires',async()=>{
+  it('allows terminal recovery handling only after the seven-day window expires',async()=>{
     const deferredJob={...job,rawStatus:PROVIDER_TERMINAL_GRACE_STATUS,updatedAt:'2026-11-18T00:01:00.000Z'};
     const result=await deferProvisionalProviderFailure(deferredJob,'failed',Date.parse('2026-11-18T00:01:00.000Z')+PROVIDER_TERMINAL_GRACE_MS+1);
     expect(result.deferred).toBe(false);
