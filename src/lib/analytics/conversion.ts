@@ -45,7 +45,7 @@ export function trackConversion(eventName: ConversionEvent, dedupeKey: string, m
     body: payload,
     keepalive: true,
   }).then(response => {
-    if (response.ok) window.sessionStorage.setItem(storageKey, 'sent');
+    if (response.status === 201) window.sessionStorage.setItem(storageKey, 'sent');
     else window.sessionStorage.removeItem(storageKey);
   }).catch(() => window.sessionStorage.removeItem(storageKey));
 }

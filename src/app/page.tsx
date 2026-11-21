@@ -74,18 +74,18 @@ export default function LandingPage() {
     </header>
 
     <main>
-      <section className="relative overflow-hidden px-4 pb-16 pt-10 sm:px-8 sm:pb-24 sm:pt-16">
+      <section className="relative overflow-hidden px-4 pb-16 pt-6 sm:px-8 sm:pb-24 sm:pt-16">
         <div className="absolute inset-x-0 top-0 -z-10 h-[600px] bg-[radial-gradient(circle_at_45%_0%,rgba(124,58,237,0.16),transparent_65%)]" />
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_.95fr]">
+        <div className="mx-auto grid max-w-7xl items-center gap-6 lg:grid-cols-[1.05fr_.95fr] lg:gap-10">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-1.5 text-[10px] font-black text-violet-700 shadow-sm sm:text-[11px]"><Sparkles className="h-4 w-4" /> RM19 sekali bayar · sehingga 15 video</div>
             <h1 className="max-w-3xl text-[2.15rem] font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl lg:text-[4rem]">Banyak Produk Nak Promote, <span className="text-violet-700">Tapi Tak Sempat Nak Buat Video?</span></h1>
             <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-slate-700 sm:mt-5 sm:text-lg sm:leading-7">Kalau buat affiliate TikTok atau Shopee, mesti faham. Gambar produk dah banyak simpan, tapi nak buat video satu-satu memang makan masa.</p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">Dengan AffiMatik, upload gambar produk, pilih gaya, dan AI bantu hasilkan video siap dengan suara BM untuk gaya yang menyokongnya. Tak perlu rakam muka atau fikir skrip dari kosong.</p>
-            <div className="mt-5 grid gap-2 sm:grid-cols-3">{[[Sparkles,`${PUBLISHED_STYLE_COUNT} gaya video affiliate`],[Images,'Avatar & background sendiri'],[Layers3,'Boleh buat banyak video']].map(([Icon,label]) => { const I=Icon as typeof Sparkles; return <div key={String(label)} className="flex min-h-12 items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-slate-800 shadow-sm"><I className="h-4 w-4 shrink-0 text-violet-600" />{String(label)}</div>; })}</div>
-            <div className="mt-5 rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 text-center text-xs font-black leading-5 text-violet-800 shadow-sm sm:text-sm">RM19 · 150 kredit · sehingga 15 video · sah 180 hari · tiada caj automatik</div>
+            <div className="mt-5 hidden gap-2 sm:grid sm:grid-cols-3">{[[Sparkles,`${PUBLISHED_STYLE_COUNT} gaya video affiliate`],[Images,'Avatar & background sendiri'],[Layers3,'Boleh buat banyak video']].map(([Icon,label]) => { const I=Icon as typeof Sparkles; return <div key={String(label)} className="flex min-h-12 items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-slate-800 shadow-sm"><I className="h-4 w-4 shrink-0 text-violet-600" />{String(label)}</div>; })}</div>
+            <div className="mt-5 hidden rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 text-center text-xs font-black leading-5 text-violet-800 shadow-sm sm:block sm:text-sm">RM19 · 150 kredit · sehingga 15 video · sah 180 hari · tiada caj automatik</div>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row"><LaunchLink placement="hero" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-violet-600 px-7 text-sm font-black text-white shadow-xl shadow-violet-200 transition hover:-translate-y-0.5 hover:bg-violet-700">Cuba 15 Video — RM19 <ArrowRight className="h-4 w-4" /></LaunchLink><Link href="#contoh" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 text-sm font-black text-slate-800 shadow-sm"><Play className="h-4 w-4 fill-violet-600 text-violet-600" /> Tengok Contoh Video Dulu</Link></div>
-            <p className="mt-4 text-[11px] font-semibold leading-5 text-slate-600">Daftar akaun. Jika diminta, sahkan emel dan log masuk. Kemudian pilih Launch Pack di Billing, bayar QR dan upload resit.</p>
+            <p className="mt-3 text-[11px] font-semibold leading-5 text-slate-600">Daftar, pilih Launch Pack, bayar QR dan upload resit. Sahkan emel sebelum jana video.</p>
           </div>
           <div className="mx-auto w-full max-w-xl rounded-[30px] border border-white bg-white p-3 shadow-2xl shadow-violet-200/70">
             <p className="mb-3 px-1 text-xs font-black text-slate-700">Satu gambar produk → terus jadi video affiliate</p>
