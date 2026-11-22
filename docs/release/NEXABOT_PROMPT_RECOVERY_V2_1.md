@@ -31,4 +31,11 @@ All 30 styles passed mandatory-semantics checks and both candidates fit under 1,
 
 The provider's published Omni Flash price is 0.30 credits per video. A future four-job controlled comparison would therefore cost about 1.20 supplier credits at that rate, subject to a fresh balance/price check and separate owner authorization. No Nexabot submission or customer-wallet debit occurred in this recovery.
 
-**Production: BLOCKED pending real-video validation.** Staging deployment and test results are recorded in the release report after validation.
+## Validation and release
+
+- Focused prompt/personalization/legacy creative tests: 36/36 passed, including the Unicode boundary test.
+- TypeScript: passed. ESLint: passed with six pre-existing `<img>` warnings in the tutorial page. OpenNext Worker build: passed.
+- Full regression at the first pass: 329 passed, 3 skipped, 4 failed. Two failures were assertions tied to the retired prompt wording and passed after test correction. The other two were an unrelated payment-page copy assertion and a local PostgreSQL `initdb` bootstrap failure. They were not changed as part of this prompt release.
+- Staging Worker `bf19ed83-092f-4041-8778-204737a8588f` deployed. Authenticated `GET /api/styles` returned HTTP 200. No provider job was submitted.
+
+**Production: BLOCKED pending real-video validation.** The staging build proves prompt construction, not voice, scale or CTA quality.

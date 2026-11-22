@@ -1,0 +1,1926 @@
+{
+  "generatedAt": "2026-11-22T23:25:23.877Z",
+  "countRule": "max(UTF-16 code units, Unicode code points, UTF-8 bytes) <= 1000 for the parsed JSON prompt field",
+  "styleCount": 30,
+  "failedCount": 0,
+  "allStyles": [
+    {
+      "styleId": "NX01",
+      "name": "Sembang Kawan Santai",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "e94b32f23f12cb80d4d092a5c6fdaf840c30cadffe074cd1361662a562a86ddb",
+          "budget": {
+            "global": 555,
+            "style": 118,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 885,
+            "codePoints": 885,
+            "utf8Bytes": 885
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "022c8256df45b875a66416b1b54a9c473671b35419368f0fe67b5451d184b33d",
+          "budget": {
+            "global": 555,
+            "style": 118,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 895,
+            "codePoints": 895,
+            "utf8Bytes": 895
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX02",
+      "name": "Review Sambil Pegang",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "342b197a6c2dbdaa56f389eaacb3760b25a85616159d4fc2e7f0ab98eb14bb3c",
+          "budget": {
+            "global": 555,
+            "style": 113,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 880,
+            "codePoints": 880,
+            "utf8Bytes": 880
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "4e17e616e0c4872754569c3a6938de9113ee6020ae79bb19fa4fe00d11259ccd",
+          "budget": {
+            "global": 555,
+            "style": 113,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 890,
+            "codePoints": 890,
+            "utf8Bytes": 890
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX03",
+      "name": "Reaksi Pandang Pertama",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "4fb8ea84508cca016bdbf7eea3aa75b76e54bd43587b85c4156adb356194f705",
+          "budget": {
+            "global": 555,
+            "style": 122,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 889,
+            "codePoints": 889,
+            "utf8Bytes": 889
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "d0c96d8608b122aca420baede94433b7fd0ca36595ab1c5b1787396456905082",
+          "budget": {
+            "global": 555,
+            "style": 122,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 899,
+            "codePoints": 899,
+            "utf8Bytes": 899
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX05",
+      "name": "Masalah Harian & Produk",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "15017762b2b681606f6780c675e6d4307ba75f0855449ce90571bdfb69e10feb",
+          "budget": {
+            "global": 555,
+            "style": 152,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 919,
+            "codePoints": 919,
+            "utf8Bytes": 919
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "1baf1dfde9a1d5150848a33a95b6bf61705099bbc8a4d895bb0a27bcaf8d942b",
+          "budget": {
+            "global": 555,
+            "style": 152,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 929,
+            "codePoints": 929,
+            "utf8Bytes": 929
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX07",
+      "name": "Soalan Buyer, Jawapan Ringkas",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "5ea432b7240e4ca6e1fd0b7ce8b8912835fbbd5cb99824cba69d19bf9d983915",
+          "budget": {
+            "global": 555,
+            "style": 105,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 872,
+            "codePoints": 872,
+            "utf8Bytes": 872
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "f70ce804339fcbb1564980d258f56c30d56703aece573a14b6294ab22fd26c6e",
+          "budget": {
+            "global": 555,
+            "style": 105,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 882,
+            "codePoints": 882,
+            "utf8Bytes": 882
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX09",
+      "name": "Produk Bergerak + Voiceover",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "d6ac5a3c21c1c04cda5134724351c60b28879058d929a90fe01cc1f55855e0c6",
+          "budget": {
+            "global": 518,
+            "style": 131,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 850,
+            "codePoints": 850,
+            "utf8Bytes": 850
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "9ebbb914a11f09b833df3adcb67033ebfaa274e504772a63e77a4f9f86a5914f",
+          "budget": {
+            "global": 518,
+            "style": 131,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 860,
+            "codePoints": 860,
+            "utf8Bytes": 860
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX10",
+      "name": "Fakta Pada Label",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "e99bc502d957aacf7f2559b513ea3bc9ce6794eaf41b50e28bb01e0c7395d396",
+          "budget": {
+            "global": 518,
+            "style": 121,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 840,
+            "codePoints": 840,
+            "utf8Bytes": 840
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "2e46e975daf0679863411e84f1d918364185bef22b7e36783e14307540c95d1f",
+          "budget": {
+            "global": 518,
+            "style": 121,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 850,
+            "codePoints": 850,
+            "utf8Bytes": 850
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "RH01",
+      "name": "Goyang Produk Natural",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "eecd31b3a3c48812874655fcd051889f1de8cad8c75f125b309b8e13fb599710",
+          "budget": {
+            "global": 518,
+            "style": 117,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 836,
+            "codePoints": 836,
+            "utf8Bytes": 836
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "a79683946e7e340882a04451d1b2523f6d5eac6fac71f5affb95cf56b93ee5a3",
+          "budget": {
+            "global": 518,
+            "style": 117,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 846,
+            "codePoints": 846,
+            "utf8Bytes": 846
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "RH02",
+      "name": "Putar Sudut Produk Perlahan",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "d275399c16831639922147d4fc916d0627d0061ef1183d4d1e7fbb24fe39eb18",
+          "budget": {
+            "global": 518,
+            "style": 142,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 861,
+            "codePoints": 861,
+            "utf8Bytes": 861
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "688ff910b8ddff6e872ccd77d275f17a488a32e92e54929ff0f9d2b5a9c74318",
+          "budget": {
+            "global": 518,
+            "style": 142,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 871,
+            "codePoints": 871,
+            "utf8Bytes": 871
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "RH03",
+      "name": "Ambil, Pegang & Letak",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "f7693580593c8124d58cb5f7532e0a17e11447237ee7f7a44bc4ca588b595693",
+          "budget": {
+            "global": 518,
+            "style": 136,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 855,
+            "codePoints": 855,
+            "utf8Bytes": 855
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "395e5fa8644fd74423a3530e742e81daaa906ea32646e5853b59ff773a7d7f1f",
+          "budget": {
+            "global": 518,
+            "style": 136,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 865,
+            "codePoints": 865,
+            "utf8Bytes": 865
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "RH04",
+      "name": "Ambil Produk Dari Rak",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "280951146a34f9b8f95d8fb8551874327918795c023a6b4007ce278eaef26e53",
+          "budget": {
+            "global": 518,
+            "style": 120,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 839,
+            "codePoints": 839,
+            "utf8Bytes": 839
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "bc07c5c0e07bd70947b49a982041d2ee2729bcf35b39ae1c159c696836b2d22c",
+          "budget": {
+            "global": 518,
+            "style": 120,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 849,
+            "codePoints": 849,
+            "utf8Bytes": 849
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "RH17",
+      "name": "Produk Dalam Setup Meja",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "e17fd2ea22ddab46ace983cd5a41344c3b44ebd0e4262e317816ec144511baca",
+          "budget": {
+            "global": 518,
+            "style": 129,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 848,
+            "codePoints": 848,
+            "utf8Bytes": 848
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "58f2dedc45c2438a9723bfb4914c8b398a9ea609a519b6b01b42410c8fa5283f",
+          "budget": {
+            "global": 518,
+            "style": 129,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 858,
+            "codePoints": 858,
+            "utf8Bytes": 858
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "RH19",
+      "name": "Produk Dalam Cahaya Tingkap",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "66f6e1799cfed2a2c3a5c0d6b59a024f8fa862b7696b7d6b8b8e8a538bee9aaf",
+          "budget": {
+            "global": 518,
+            "style": 109,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 828,
+            "codePoints": 828,
+            "utf8Bytes": 828
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "5644659885b65bda2a1dcdd47cd960ad176317f1e1ee1f7637f215b9bf904cb6",
+          "budget": {
+            "global": 518,
+            "style": 109,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 838,
+            "codePoints": 838,
+            "utf8Bytes": 838
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX11",
+      "name": "POV Tengok Produk",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "44437613346e0f0a9d384e5dba994b3cfbd98fd9f838d7c562f78e47714db910",
+          "budget": {
+            "global": 518,
+            "style": 128,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 847,
+            "codePoints": 847,
+            "utf8Bytes": 847
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "c50a860a89e1ba98bd2b0445f81d384495916d51dd6fa6ad423fc29d0771ebe6",
+          "budget": {
+            "global": 518,
+            "style": 128,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 857,
+            "codePoints": 857,
+            "utf8Bytes": 857
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX12",
+      "name": "Jumpa Barang Menarik",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "e198a863941471b3511dbc5d180f4cbec2c8d8ab4010c70d14cac67a62c509f4",
+          "budget": {
+            "global": 555,
+            "style": 125,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 892,
+            "codePoints": 892,
+            "utf8Bytes": 892
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "a5c33ccb6eb0f62e649ae0586f4790b501abc31470213bf90d2b2c370d0daf36",
+          "budget": {
+            "global": 555,
+            "style": 125,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 902,
+            "codePoints": 902,
+            "utf8Bytes": 902
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX13",
+      "name": "Borak Santai Di Dapur",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "19e1f2a5cc37c833af2be2e1ba1bd8502682433e7656b99cd66787e4ab12f212",
+          "budget": {
+            "global": 555,
+            "style": 153,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 920,
+            "codePoints": 920,
+            "utf8Bytes": 920
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "0279667a3e7b847e52423a25edca695bdb34c8b0bba362ad0e28780f9884474b",
+          "budget": {
+            "global": 555,
+            "style": 153,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 930,
+            "codePoints": 930,
+            "utf8Bytes": 930
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX14",
+      "name": "Review Di Meja Kerja",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "d84260e8ac66e586ef7e19248014ab9dab8db552c78a3a7accedbcf8428b6bd7",
+          "budget": {
+            "global": 555,
+            "style": 128,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 895,
+            "codePoints": 895,
+            "utf8Bytes": 895
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "1dda44469b2f6cfd8d241d69e73a1ad06a66615363f723da7d02c8d047b6419a",
+          "budget": {
+            "global": 555,
+            "style": 128,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 905,
+            "codePoints": 905,
+            "utf8Bytes": 905
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX15",
+      "name": "Cerita Masalah Pendek",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "34ee12179901d830400d0af374ec12bcae929c1cc20a7b1eab3448352abe10d0",
+          "budget": {
+            "global": 555,
+            "style": 125,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 892,
+            "codePoints": 892,
+            "utf8Bytes": 892
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "b97692481d6f6a226bf3321a2e72e27f336304aa0e5a67f54fa7907bf0cbb931",
+          "budget": {
+            "global": 555,
+            "style": 125,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 902,
+            "codePoints": 902,
+            "utf8Bytes": 902
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX16",
+      "name": "Soft Sell Tanpa Paksa",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "a7c298547abdc6d19f9de817cdd0035d2cfb785d475ab137e2d544f1c36c4532",
+          "budget": {
+            "global": 555,
+            "style": 112,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 879,
+            "codePoints": 879,
+            "utf8Bytes": 879
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "8e537d8507fb32e6f0ea5a5845318401e2e0d72852452d0a0f4c632f2b5379fc",
+          "budget": {
+            "global": 555,
+            "style": 112,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 889,
+            "codePoints": 889,
+            "utf8Bytes": 889
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX17",
+      "name": "Recommend Secara Spontan",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "17a655e4479b9037ad1378d33d96b9f4e808e4de3401a719f799210d003708d6",
+          "budget": {
+            "global": 555,
+            "style": 133,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 900,
+            "codePoints": 900,
+            "utf8Bytes": 900
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "52177c1345f4a5718d97d372a75bf4f39533649e92d8c0856ecaf92106650e53",
+          "budget": {
+            "global": 555,
+            "style": 133,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 910,
+            "codePoints": 910,
+            "utf8Bytes": 910
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX21",
+      "name": "Kurung Catwalk",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "9c43f6ec3cd7e3f801a72c44edc606511ccdbea7ba9018917796325d6bcd89f4",
+          "budget": {
+            "global": 555,
+            "style": 151,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 918,
+            "codePoints": 918,
+            "utf8Bytes": 918
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "b8db1bd5135f6433c8bda04d2dbc458eb83b5084c00d0c305b8fe70f05be69cd",
+          "budget": {
+            "global": 555,
+            "style": 151,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 928,
+            "codePoints": 928,
+            "utf8Bytes": 928
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX22",
+      "name": "Kebaya Elegance",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "ce97932c7819919e6c75a11131f2379af2b54a24ee56f81a6623254cfd04e63a",
+          "budget": {
+            "global": 555,
+            "style": 171,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 938,
+            "codePoints": 938,
+            "utf8Bytes": 938
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "ca357293f537efc92d8555293451d8f38fc488f1276ab928550d8ce027dc0026",
+          "budget": {
+            "global": 555,
+            "style": 171,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 948,
+            "codePoints": 948,
+            "utf8Bytes": 948
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX23",
+      "name": "Tudung Styling",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "4eefaf30388579bbb212fa861721d36dfb5ca33793032f4c581fef96d30d6d27",
+          "budget": {
+            "global": 555,
+            "style": 172,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 939,
+            "codePoints": 939,
+            "utf8Bytes": 939
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "61d6e87e2b37dd4fda48a61444d3bd1f274eb7757fa8e41cae25007684bcf398",
+          "budget": {
+            "global": 555,
+            "style": 172,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 949,
+            "codePoints": 949,
+            "utf8Bytes": 949
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX24",
+      "name": "OOTD Mirror Review",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "4708b8a092e2697e8109c272668b56d2ccd4a728abe683acd51150ae34be9a06",
+          "budget": {
+            "global": 555,
+            "style": 146,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 913,
+            "codePoints": 913,
+            "utf8Bytes": 913
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "36f14273c3843e261771c70cc931b5c2df2dc95f9dd33433d098cba34ee19f23",
+          "budget": {
+            "global": 555,
+            "style": 146,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 923,
+            "codePoints": 923,
+            "utf8Bytes": 923
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX25",
+      "name": "Kids Outfit Showcase",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "c0246741bd1ff7600273e1347b24c4dcc3aa94f7aa8f68da98ca9af30e518046",
+          "budget": {
+            "global": 555,
+            "style": 198,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 11,
+            "utf16": 955,
+            "codePoints": 955,
+            "utf8Bytes": 955
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "412a8c3cdf4fc612b26166dbb024ba419f000f657cedb05b657dbd3bfeb43d85",
+          "budget": {
+            "global": 555,
+            "style": 198,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 11,
+            "utf16": 965,
+            "codePoints": 965,
+            "utf8Bytes": 965
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX26",
+      "name": "Boutique Collection",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "736dacd65fd225ff57ff13021ff3cbb32c84abe050b803afd7f4bbb126ee4522",
+          "budget": {
+            "global": 555,
+            "style": 156,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 912,
+            "codePoints": 912,
+            "utf8Bytes": 912
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "746252d9bacfe679bfff8e6a4ba63ee6be17760111c4d644671d325806224578",
+          "budget": {
+            "global": 555,
+            "style": 156,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 922,
+            "codePoints": 922,
+            "utf8Bytes": 922
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX27",
+      "name": "Kuali Cooking Demo",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "5e95d2b8842036d0bf13804eb366d3160adfea01856402168c49fb3df522d9aa",
+          "budget": {
+            "global": 555,
+            "style": 148,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 904,
+            "codePoints": 904,
+            "utf8Bytes": 904
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "2feaade22251de4a5bdc39dbf4dac6791865f5f68e64d5864e46c1e92ebd0a4d",
+          "budget": {
+            "global": 555,
+            "style": 148,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 914,
+            "codePoints": 914,
+            "utf8Bytes": 914
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX28",
+      "name": "Air Fryer Demo",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "dc3b2190c71063f69122dfb438c134eef722963123a3f5cdb7acf70fd4535cd6",
+          "budget": {
+            "global": 555,
+            "style": 152,
+            "cta": 135,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 908,
+            "codePoints": 908,
+            "utf8Bytes": 908
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "fb27468e6226bb1013231c73854f361e036b66a64b1b9a9935405a4d86ecb127",
+          "budget": {
+            "global": 555,
+            "style": 152,
+            "cta": 145,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 918,
+            "codePoints": 918,
+            "utf8Bytes": 918
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX29",
+      "name": "Kitchen Appliance Review",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "ed481b8df5be5a2588ea29db53f9cde13c583dff56d592d1d5ac4a28856ba3cc",
+          "budget": {
+            "global": 555,
+            "style": 156,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 923,
+            "codePoints": 923,
+            "utf8Bytes": 923
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "83560405e8a8c96778fd4caf649b1f2c1967e197cfdbb1b202577cb6364cfb32",
+          "budget": {
+            "global": 555,
+            "style": 156,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 933,
+            "codePoints": 933,
+            "utf8Bytes": 933
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    },
+    {
+      "styleId": "NX30",
+      "name": "Dapur Problem Solver",
+      "results": [
+        {
+          "candidate": "A",
+          "hash": "c7cc68684dc73c7ebe96a715dc5997ced666289ce9188d4d4fabb612f2f31d41",
+          "budget": {
+            "global": 555,
+            "style": 159,
+            "cta": 146,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 926,
+            "codePoints": 926,
+            "utf8Bytes": 926
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        },
+        {
+          "candidate": "B",
+          "hash": "a46ecd31251bb8d710984f0d1c7d6d5401378e836766630db68a96e249d59e96",
+          "budget": {
+            "global": 555,
+            "style": 159,
+            "cta": 156,
+            "context": 17,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 936,
+            "codePoints": 936,
+            "utf8Bytes": 936
+          },
+          "errors": [],
+          "containsMandatory": {
+            "selling": true,
+            "identity": true,
+            "scale": true,
+            "modesty": true,
+            "cta": true,
+            "nativeCreative": true
+          }
+        }
+      ]
+    }
+  ],
+  "four": [
+    {
+      "slot": "A",
+      "styleId": "NX01",
+      "previousPromptLength": 920,
+      "previousPromptSha256": "328d1e8130dc84d8bb9ba9fe8d5652f790f22f5d4eeb03d932dc0465f4230777",
+      "results": [
+        {
+          "candidate": "A",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\A-A-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX01] A useful product find shared in the easy rhythm of a trusted friend. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tekan beg kuning\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: Minyak Herba S-HERB.",
+          "hash": "3a846d30334f96b92ba780ed3c95f4e6c6a8569efc597f744af67d6cee1e8184",
+          "budget": {
+            "global": 487,
+            "style": 118,
+            "cta": 111,
+            "context": 29,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 794,
+            "codePoints": 794,
+            "utf8Bytes": 794
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+              "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+              "bafb3b9d8fac1569fe8c5b4c5eca7cfeb04dfc052a5c4b0514191982583ce01f"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX01] A useful product find shared in the easy rhythm of a trusted friend. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tekan beg kuning\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: Minyak Herba S-HERB."
+          },
+          "serializedPayloadBytes": 584478
+        },
+        {
+          "candidate": "B",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\A-B-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX01] A useful product find shared in the easy rhythm of a trusted friend. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tekan beg kuning\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: Minyak Herba S-HERB.",
+          "hash": "64e38abe302848ff0c9393e63c72b4e410f1db73101d0be671fca787d02ee3f7",
+          "budget": {
+            "global": 487,
+            "style": 118,
+            "cta": 121,
+            "context": 29,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 804,
+            "codePoints": 804,
+            "utf8Bytes": 804
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+              "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+              "bafb3b9d8fac1569fe8c5b4c5eca7cfeb04dfc052a5c4b0514191982583ce01f"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX01] A useful product find shared in the easy rhythm of a trusted friend. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tekan beg kuning\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: Minyak Herba S-HERB."
+          },
+          "serializedPayloadBytes": 584488
+        }
+      ]
+    },
+    {
+      "slot": "B",
+      "styleId": "NX07",
+      "previousPromptLength": 910,
+      "previousPromptSha256": "ebc419b83d6e06b7f5775385013b9a5a93395785da294b52ba740764d0c4cd6d",
+      "results": [
+        {
+          "candidate": "A",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\B-A-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX07] One real buyer question answered narrowly and usefully. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tekan butang di bawah\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: Kapsul Resdung SB.",
+          "hash": "4d5fa5a8a32ddba8152d37cdc8cabb7b961dd3df3aea0b07db1fbbbcada6582d",
+          "budget": {
+            "global": 487,
+            "style": 105,
+            "cta": 116,
+            "context": 27,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 784,
+            "codePoints": 784,
+            "utf8Bytes": 784
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1",
+              "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1",
+              "925d0cc94ee2cea76513fedaee05f0d8742ea85d66ebdd0cd8afb2453e07945d"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX07] One real buyer question answered narrowly and usefully. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tekan butang di bawah\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: Kapsul Resdung SB."
+          },
+          "serializedPayloadBytes": 559768
+        },
+        {
+          "candidate": "B",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\B-B-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX07] One real buyer question answered narrowly and usefully. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tekan butang di bawah\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: Kapsul Resdung SB.",
+          "hash": "dc1ce57c44554e13fc59d67410a4a5945a519863a0c6aab0486a4ea2127f2166",
+          "budget": {
+            "global": 487,
+            "style": 105,
+            "cta": 126,
+            "context": 27,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 794,
+            "codePoints": 794,
+            "utf8Bytes": 794
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1",
+              "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1",
+              "925d0cc94ee2cea76513fedaee05f0d8742ea85d66ebdd0cd8afb2453e07945d"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX07] One real buyer question answered narrowly and usefully. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tekan butang di bawah\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: Kapsul Resdung SB."
+          },
+          "serializedPayloadBytes": 559778
+        }
+      ]
+    },
+    {
+      "slot": "C",
+      "styleId": "NX03",
+      "previousPromptLength": 994,
+      "previousPromptSha256": "dcba11a24c3205bbc4ebc819240bd364b23e51ea0c8e2765156cff9b75700968",
+      "results": [
+        {
+          "candidate": "A",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\C-A-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX03] A genuine first-look reaction grounded in what can actually be observed. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Muslimah: hijab covers hair, neck, chest; loose opaque clothes and covered wrists. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tengok detail dekat beg kuning\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: MakeScents Vanilla 28.",
+          "hash": "06360a134078826129cea5ac8fdffe1858e06d5f9010284329c46be5b7e5b40d",
+          "budget": {
+            "global": 547,
+            "style": 122,
+            "cta": 125,
+            "context": 31,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 874,
+            "codePoints": 874,
+            "utf8Bytes": 874
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01",
+              "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01",
+              "87a3563f9e42da15cd325fc2ca0d33162fb36448b0a4fb81f6a4a3e194f2980d"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX03] A genuine first-look reaction grounded in what can actually be observed. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Muslimah: hijab covers hair, neck, chest; loose opaque clothes and covered wrists. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tengok detail dekat beg kuning\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: MakeScents Vanilla 28."
+          },
+          "serializedPayloadBytes": 323774
+        },
+        {
+          "candidate": "B",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\C-B-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX03] A genuine first-look reaction grounded in what can actually be observed. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Muslimah: hijab covers hair, neck, chest; loose opaque clothes and covered wrists. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tengok detail dekat beg kuning\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: MakeScents Vanilla 28.",
+          "hash": "f4158b0ba9dbd992fe8798dce339900af927a12eeca887140366bc59c06d9ae6",
+          "budget": {
+            "global": 547,
+            "style": 122,
+            "cta": 135,
+            "context": 31,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 884,
+            "codePoints": 884,
+            "utf8Bytes": 884
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01",
+              "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01",
+              "87a3563f9e42da15cd325fc2ca0d33162fb36448b0a4fb81f6a4a3e194f2980d"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX03] A genuine first-look reaction grounded in what can actually be observed. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Muslimah: hijab covers hair, neck, chest; loose opaque clothes and covered wrists. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tengok detail dekat beg kuning\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: MakeScents Vanilla 28."
+          },
+          "serializedPayloadBytes": 323784
+        }
+      ]
+    },
+    {
+      "slot": "D",
+      "styleId": "NX02",
+      "previousPromptLength": 907,
+      "previousPromptSha256": "f4669cef013f17175bbd9834ffb30c6044a5170200f2c8c81e24abfb8071e5ff",
+      "results": [
+        {
+          "candidate": "A",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\D-A-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX02] A concise practical review focused on one buying consideration. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tekan beg kuning\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: Vitamin C+E.",
+          "hash": "0dce0b611e921bbb87789d41472204b37d01d68ded69eafe78d550e0e7a31a22",
+          "budget": {
+            "global": 487,
+            "style": 113,
+            "cta": 111,
+            "context": 21,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 781,
+            "codePoints": 781,
+            "utf8Bytes": 781
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf",
+              "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf",
+              "6508f2d470bb9a1874080e4fa74816747ee7fe344dfca19ebbc295f248c76f4b"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX02] A concise practical review focused on one buying consideration. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. Final CTA once: \"tekan beg kuning\". Finish naturally by ~13s; no more words. Presenter stops; smile if visible. Product: Vitamin C+E."
+          },
+          "serializedPayloadBytes": 732837
+        },
+        {
+          "candidate": "B",
+          "promptPath": "C:\\Users\\user\\Documents\\New project\\contenify-saas\\output\\nexabot-prompt-recovery-v2-1\\D-B-prompt.txt",
+          "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX02] A concise practical review focused on one buying consideration. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tekan beg kuning\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: Vitamin C+E.",
+          "hash": "f91e8762b702a34dd1fe65ab56cde59233a2ff227553f60e51427b17cbff6d8d",
+          "budget": {
+            "global": 487,
+            "style": 113,
+            "cta": 121,
+            "context": 21,
+            "niqab": 39,
+            "separators": 10,
+            "utf16": 791,
+            "codePoints": 791,
+            "utf8Bytes": 791
+          },
+          "errors": [],
+          "transportValid": true,
+          "payload": {
+            "model": "omni_flash",
+            "mode": "i2v",
+            "ratio": 2,
+            "resolution": 720,
+            "duration": 15,
+            "media": [
+              "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf",
+              "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf",
+              "6508f2d470bb9a1874080e4fa74816747ee7fe344dfca19ebbc295f248c76f4b"
+            ],
+            "prompt": "15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech. [NX02] A concise practical review focused on one buying consideration. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour and avatar; no source UI, captions or layout. Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed. Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use. Neutral daylight, true whites, natural motion; no sharpening. Modest everyday dress. If niqab: keep coverage; friendly eyes. Lively BM Malaysia presenter; natural pace. CTA once: \"tekan beg kuning\". Start by 11s, finish by ~13s; no repeat or speech after. Presenter stops; smile if visible. Product: Vitamin C+E."
+          },
+          "serializedPayloadBytes": 732847
+        }
+      ]
+    }
+  ]
+}
