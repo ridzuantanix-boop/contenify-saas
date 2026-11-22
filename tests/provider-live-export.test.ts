@@ -33,14 +33,13 @@ describe('real-provider QA prompt export', () => {
     };
     for (const prompt of Object.values(prompts)) {
       expect(prompt.length).toBeLessThanOrEqual(1000);
-      expect(prompt).toContain('Preserve product shape, label, colour');
-      expect(prompt).toContain('Identity refs, not start frames');
+      expect(prompt).toContain('Keep product/label/colour');
+      expect(prompt).toContain('not start frames');
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
-      expect(prompt).toContain('Nexabot creates the hook, story, speech and actions');
-      expect(prompt).toContain('no script supplied');
-      expect(prompt).toContain('No unsupported results or fake self-use');
+      expect(prompt).toContain('Nexabot writes hook, story and speech');
+      expect(prompt).toContain('No invented benefits/results or fake self-use');
       expect(prompt).not.toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
       expect(prompt).not.toMatch(/ordinary buyer benefit|supported FOMO|mandatory benefit/i);
     }

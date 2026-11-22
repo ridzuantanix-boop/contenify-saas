@@ -24,13 +24,13 @@ describe('REAL V3 Nexabot creative autonomy', () => {
       expect(compiled.spokenScript).toBeUndefined();
       expect(compiled.preflightValid, style.id).toBe(true);
       expect(compiled.providerPrompt.length, style.id).toBeLessThanOrEqual(1000);
-      expect(compiled.providerPrompt).toContain(`[STYLE ${style.id}]`);
-      expect(compiled.providerPrompt).toContain('Nexabot creates the hook, story, speech and actions');
-      expect(compiled.providerPrompt).toContain('8–12% frame height');
-      expect(compiled.providerPrompt).toContain('Keep unseen contents closed');
-      expect(compiled.providerPrompt).toContain('No unsupported results or fake self-use');
+      expect(compiled.providerPrompt).toContain(`[${style.id}]`);
+      expect(compiled.providerPrompt).toContain('Nexabot writes hook, story and speech');
+      expect(compiled.providerPrompt).toContain('8-12% frame, max 15%');
+      expect(compiled.providerPrompt).toContain('unseen contents closed');
+      expect(compiled.providerPrompt).toContain('No invented benefits/results or fake self-use');
       expect(compiled.providerPrompt).toContain('Neutral daylight, true whites');
-      expect(compiled.providerPrompt).toContain('Final spoken CTA once before cut');
+      expect(compiled.providerPrompt).toContain('Final CTA once');
       return compiled.providerPrompt;
     });
     expect(new Set(prompts).size).toBe(30);
@@ -48,8 +48,7 @@ describe('REAL V3 Nexabot creative autonomy', () => {
 
   it('gives Nexabot sole ownership of hooks and dialogue', () => {
     const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene).providerPrompt;
-    expect(prompt).toContain('Nexabot creates the hook, story, speech and actions');
-    expect(prompt).toContain('no script supplied');
+    expect(prompt).toContain('Nexabot writes hook, story and speech');
     expect(prompt).not.toContain('Script:');
   });
 
@@ -61,8 +60,8 @@ describe('REAL V3 Nexabot creative autonomy', () => {
     const grounded: ProductProfile = {...product,name:'POTONGGO Manual Chopper',observedPhysicalFacts:['clear container'],confirmedFeatures:['manual pull handle']};
     const compiled = DynamicPromptCompiler.compile(grounded,getVideoStyle('NX17')!,scene);
     expect(compiled.preflightValid).toBe(true);
-    expect(compiled.providerPrompt).toContain('Visible fact: clear container.');
-    expect(compiled.providerPrompt).toContain('Customer fact: manual pull handle.');
+    expect(compiled.providerPrompt).toContain('Visible: clear container.');
+    expect(compiled.providerPrompt).toContain('Confirmed: manual pull handle.');
     expect(compiled.providerPrompt).not.toContain('Script:');
   });
 
@@ -71,8 +70,8 @@ describe('REAL V3 Nexabot creative autonomy', () => {
     const payload = new NexabotAdapter({apiKey:'test-key'}).preparePayload({jobId:'job',idempotencyKey:'idem',workspaceId:'workspace',prompt:compiled.providerPrompt,durationSeconds:15,aspectRatio:'9:16',mainImageKeyOrUrl:image}) as {mode:string;prompt:string;media:string[]};
     expect(payload.mode).toBe('i2v');
     expect(payload.media).toEqual([image,image]);
-    expect(payload.prompt).toContain('Refs 1&2: same product');
-    expect(payload.prompt).toContain('Identity refs, not start frames');
+    expect(payload.prompt).toContain('Refs 1&2 same product');
+    expect(payload.prompt).toContain('not start frames');
   });
 
   it('keeps one source specification per style and excludes legacy creative prose from active prompts', () => {
@@ -89,10 +88,10 @@ describe('REAL V3 Nexabot creative autonomy', () => {
 
   it('uses one non-contradictory effective audio mode', () => {
     const spoken = DynamicPromptCompiler.compile(product,getVideoStyle('NX01')!,scene,{audioTreatment:'asmr'}).providerPrompt;
-    expect(spoken).toContain('Presenter: lively, natural BM Malaysia');
+    expect(spoken).toContain('Lively BM Malaysia presenter');
     expect(spoken).not.toContain('Only synchronized handling ASMR');
     const asmr = DynamicPromptCompiler.compile(product,getVideoStyle('RH03')!,scene,{audioTreatment:'asmr'}).providerPrompt;
-    expect(asmr).toContain('Only synchronized handling ASMR; no speech');
+    expect(asmr).toContain('Only natural handling ASMR; no speech');
     expect(asmr).not.toContain('Final spoken CTA');
   });
 

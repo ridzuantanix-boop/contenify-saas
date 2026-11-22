@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DynamicPromptCompiler } from '../src/lib/engine/compiler';
 import { NexabotAdapter } from '../src/lib/providers/nexabot';
+import { nexabotPromptCounts } from '../src/lib/engine/compact-nexabot';
 import { VIDEO_STYLES_REGISTRY, getVideoStyle } from '../src/lib/styles/registry';
 import type { ProductProfile, ScenePlan } from '../src/lib/engine/types';
 
@@ -38,6 +39,15 @@ describe('owner-confirmed Nexabot 1000-character limit', () => {
   it('rejects an overlong stored prompt at the provider transport boundary', () => {
     const adapter = new NexabotAdapter({apiKey:'test-key'});
     const checked = adapter.validateInput({jobId:'job',idempotencyKey:'idem',workspaceId:'workspace',prompt:'x'.repeat(1001),durationSeconds:15,aspectRatio:'9:16',mainImageKeyOrUrl:'data:image/png;base64,AA=='});
+    expect(checked.isValid).toBe(false);
+    expect(checked.error).toContain('1000-character limit');
+  });
+
+  it('rejects Unicode text that exceeds 1000 UTF-8 bytes even when shorter in JavaScript characters', () => {
+    const adapter = new NexabotAdapter({apiKey:'test-key'});
+    const prompt = 'é'.repeat(501);
+    expect(nexabotPromptCounts(prompt)).toMatchObject({utf16:501,codePoints:501,utf8Bytes:1002});
+    const checked = adapter.validateInput({jobId:'unicode',idempotencyKey:'idem',workspaceId:'workspace',prompt,durationSeconds:15,aspectRatio:'9:16',mainImageKeyOrUrl:'data:image/png;base64,AA=='});
     expect(checked.isValid).toBe(false);
     expect(checked.error).toContain('1000-character limit');
   });

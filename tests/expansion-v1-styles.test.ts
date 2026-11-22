@@ -36,9 +36,9 @@ describe('Expansion V1 NX21-NX30',()=>{
     for(const [index,item] of prompts.entries()){
       expect(item.preflightValid,ids[index]).toBe(true);
       expect(item.providerPrompt.length,ids[index]).toBeLessThanOrEqual(1000);
-      expect(item.providerPrompt).toContain(`[STYLE ${ids[index]}]`);
-      expect(item.providerPrompt).toContain('Compact products 8–12% frame height');
-      expect(item.providerPrompt).toContain('Final spoken CTA once before cut');
+      expect(item.providerPrompt).toContain(`[${ids[index]}]`);
+      expect(item.providerPrompt).toContain('compact product 8-12% frame, max 15%');
+      expect(item.providerPrompt).toContain('Final CTA once');
     }
   });
 
@@ -55,10 +55,10 @@ describe('Expansion V1 NX21-NX30',()=>{
     for(const id of ids){
       const prompt=DynamicPromptCompiler.compile(product,getVideoStyle(id)!,scene).providerPrompt;
       const voiceover=['NX25','NX26','NX27','NX28'].includes(id);
-      expect(prompt).toContain(voiceover?'Lively off-camera BM Malaysia voice':'Presenter: lively, natural BM Malaysia');
+      expect(prompt).toContain(voiceover?'Lively BM Malaysia voiceover':'Lively BM Malaysia presenter');
       expect(prompt).not.toContain('Only synchronized handling ASMR');
     }
-    expect(DynamicPromptCompiler.compile(product,getVideoStyle('NX25')!,scene).providerPrompt).toContain('No child actor; show garment only');
+    expect(DynamicPromptCompiler.compile(product,getVideoStyle('NX25')!,scene).providerPrompt).toContain('No child actor; garment only');
   });
 
   it('preserves NX23 and NX27 style identities without old long prose',()=>{
@@ -68,8 +68,8 @@ describe('Expansion V1 NX21-NX30',()=>{
     expect(nx27).toContain(STYLE_DIRECTORS.NX27.concept);
     for(const prompt of [nx23,nx27]){
       expect(prompt).toContain('Neutral daylight, true whites');
-      expect(prompt).toContain('wrists covered');
-      expect(prompt).toContain('Final spoken CTA once before cut');
+      expect(prompt).toContain('covered wrists');
+      expect(prompt).toContain('Final CTA once');
       expect(prompt.length).toBeLessThanOrEqual(1000);
     }
   });

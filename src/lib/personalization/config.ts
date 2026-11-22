@@ -75,7 +75,7 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
     customCta: typeof input.customCta === 'string' ? input.customCta.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 80) : '',
     productFact: typeof input.productFact === 'string' ? input.productFact.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 180) : '',
     isMuslimahModest: input.isMuslimahModest !== false,
-    creativeInstruction: typeof input.creativeInstruction === 'string' ? input.creativeInstruction.trim().slice(0, 1000) : '',
+    creativeInstruction: typeof input.creativeInstruction === 'string' ? input.creativeInstruction.trim() : '',
   };
 }
 

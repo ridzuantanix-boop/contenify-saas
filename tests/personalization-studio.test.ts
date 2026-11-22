@@ -23,11 +23,11 @@ const scene: ScenePlan = {
 };
 
 describe('AffiMatik V7 Personalization Studio', () => {
-  it('keeps all personalization fields optional and rejects malformed IDs or unbounded instructions', () => {
+  it('keeps all personalization fields optional without silently shortening customer instructions', () => {
     expect(sanitizePersonalizationSettings({})).toMatchObject({ styleId: 'NX01', avatarId: null, backgroundId: null, niche: 'auto', scriptVariant: 'style', audioTreatment: 'voiceover' });
     const settings = sanitizePersonalizationSettings({ avatarId: '../../other-workspace', backgroundId: 'bad', builtInSceneId: 'scene:unknown', creativeInstruction: 'x'.repeat(2000) });
     expect(settings.avatarId).toBeNull(); expect(settings.backgroundId).toBeNull(); expect(settings.builtInSceneId).toBeNull();
-    expect(settings.creativeInstruction).toHaveLength(1000);
+    expect(settings.creativeInstruction).toHaveLength(2000);
   });
 
   it('requires authentication for both new persistent libraries', async () => {
@@ -41,11 +41,11 @@ describe('AffiMatik V7 Personalization Studio', () => {
       storyboard: 'step_by_step', callToAction: 'none', creativeInstruction: 'Demonstrate one safe ordinary action.',
     });
     expect(compiled.providerPrompt).toContain('Refs: 1 product, 2 avatar, 3 background');
-    expect(compiled.providerPrompt).toContain('Identity refs, not start frames');
+    expect(compiled.providerPrompt).toContain('not start frames');
     expect(compiled.providerPrompt).toContain('Flow: step_by_step');
     expect(compiled.providerPrompt).toContain('No CTA selected; do not invent one');
     expect(compiled.spokenScript).toBeUndefined();
-    expect(compiled.providerPrompt).toContain('no script supplied');
+    expect(compiled.providerPrompt).toContain('Nexabot writes hook, story and speech');
   });
 
   it('orders and caps Nexabot media exactly as product, avatar, background', () => {
