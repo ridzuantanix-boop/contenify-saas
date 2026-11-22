@@ -42,4 +42,13 @@ No automatic quality retry or compensation is enabled or implemented in the cust
 | Automatic quality retry | BLOCKED, OFF | No validated CTA detector or approved repeat supplier expenditure. |
 | Automatic credit compensation | BLOCKED, OFF | No reviewed entitlement and finance transaction path for subjective or uncertain output. |
 
+## Executed staging checks — 22 November 2026
+
+- Application commit `b94a6eb41ad377641bc0d1d213225a3301e94cf6` deployed to the configured staging Worker `affimatik-launch-lite-staging`, version `54dac5c9-4434-4f75-af57-05acec2c167f`. Its `SUPABASE_URL` points to the staging project `bymorrozeokshzuzcdro`. Production was not deployed.
+- Migration 00042 applied to the staging database. Both tables exist with RLS enabled; `anon` cannot insert reports, `authenticated` cannot directly select reports, and `service_role` can insert. The staging wallet table contained 14 rows at verification; the migration has no wallet statements.
+- Authenticated QA login succeeded. The account had no completed MP4 in Video Library, so a real report submission could not be exercised. A browser-mocked video row displayed the mobile report modal without horizontal overflow or JavaScript errors. This screenshot is **UI-only mock evidence**, not a real customer video.
+- An authenticated POST for a nonexistent video returned HTTP 404 and created no report. The admin quality API returned HTTP 200 with zero reports using staging admin credentials. Unauthenticated customer and admin API checks returned 401 and 403 respectively.
+- Focused quality and access tests: 9/9 PASS. The full suite: 336/337 PASS; the single failure is an older sales-page test asserting a phrase absent in the starting commit, unrelated to this change. TypeScript and OpenNext Worker build passed. ESLint completed with zero errors and six pre-existing `img` warnings.
+- The quality gate flag `OUTPUT_QUALITY_GATE_V2_ENABLED` remains unset/OFF. No automatic quality retry or credit compensation is active. No Nexabot supplier credits were spent.
+
 No production release or supplier submission is part of this implementation.
