@@ -8,21 +8,19 @@
 
 import { ProductProfile, ScenePlan, CompiledGenerationPrompt } from './types';
 import { VideoStyle } from '../styles/types';
-import { getBuiltInScene } from '../personalization/config';
+import { compileCompactNexabotPrompt } from './compact-nexabot';
 import {
   STYLE_DIRECTORS,
-  compileEffectiveAudioDirective,
   compileStyleDirector,
   resolveEffectiveAudioMode,
 } from './style-directors';
 import {
   CtaMode,
-  resolveCtaPhrase,
   validateCustomCta,
   validateCustomerFact,
 } from './cta-control';
 
-export const GEMS_PROMPT_VERSION = 'affimatik-real-v3-creative-freedom-no-fake-self-use';
+export const GEMS_PROMPT_VERSION = 'affimatik-real-v3-compact-1000';
 
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[REAL V3 NATIVE SPEECH CONTRACT]',
@@ -342,145 +340,30 @@ export class DynamicPromptCompiler {
     promptModules: UniversalPromptModules,
     preflight: { isValid: boolean; errors: string[] }
   ): CompiledGenerationPrompt {
-    const selectedCta = resolveCtaPhrase(options.callToAction || 'none', options.customCta || '');
-    const styleDirector = STYLE_DIRECTORS[style.id];
-    if (!styleDirector) {
+    void scenePlan;
+    void promptModules;
+    const director = STYLE_DIRECTORS[style.id];
+    if (!director) {
       preflight.errors.push(`Gaya ${style.id} tiada masterprompt rasmi.`);
       preflight.isValid = false;
     }
-    const effectiveAudioMode = styleDirector
-      ? resolveEffectiveAudioMode(styleDirector, options.audioTreatment)
-      : 'no_speech';
-    const hasSpeech = effectiveAudioMode === 'spoken_presenter' || effectiveAudioMode === 'off_camera_voiceover';
-    const styleSpecificPrompt = styleDirector ? compileStyleDirector(styleDirector, product.name) : '';
-    const effectiveAudioDirective = styleDirector
-      ? `[AUTHORITATIVE EFFECTIVE AUDIO MODE] ${compileEffectiveAudioDirective(styleDirector, effectiveAudioMode)}`
-      : '[AUTHORITATIVE EFFECTIVE AUDIO MODE] Effective audio mode: NO SPEECH.';
-    const audioDirective = effectiveAudioMode === 'ambient'
-      ? 'Natural room ambience only; no speech, voiceover, narration or lip-sync.'
-      : effectiveAudioMode === 'asmr'
-        ? 'Natural synchronized product-handling ASMR only; no speech, voiceover, narration or lip-sync.'
-        : effectiveAudioMode === 'spoken_presenter'
-          ? 'Visible presenter creates original product-specific Malaysian Malay dialogue with accurate lip-sync.'
-          : effectiveAudioMode === 'off_camera_voiceover'
-            ? 'Off-camera narrator creates original product-specific Malaysian Malay dialogue; no visible mouth speaks.'
-            : 'No spoken dialogue, voiceover, narration or lip-sync.';
-    const productContextDirective = product.usageContext?.trim()
-      ? `Customer-confirmed usage context: “${product.usageContext.trim()}”. Use it only when compatible with the product image and selected style.`
-      : 'No customer-confirmed usage context. Nexabot chooses a believable Malaysian setting from the image, recognized category and selected style; use a neutral everyday setting when uncertain.';
-    const observedPhysicalFacts = (product.observedPhysicalFacts || []).map((fact) => fact.trim()).filter(Boolean).slice(0, 10);
-    const customerConfirmedFacts = (product.confirmedFeatures || []).map((fact) => fact.trim()).filter(Boolean).slice(0, 10);
-    const unsupportedClaims = [...(product.unknownFields || []), ...(product.prohibitedClaims || [])].map((fact) => fact.trim()).filter(Boolean).slice(0, 20);
-    const productEvidenceContract = [
-      '[PRODUCT FACT BOUNDARY]',
-      `Customer-supplied identity metadata: “${product.name}”; category: “${product.category}”. Verify identity against the image. Category identifies ordinary function only and proves no result or quality.`,
-      observedPhysicalFacts.length
-        ? `Customer-supplied visible facts: ${observedPhysicalFacts.map((fact) => `“${fact}”`).join('; ')}.`
-        : 'No customer-supplied visible facts.',
-      customerConfirmedFacts.length
-        ? `Explicit customer facts: ${customerConfirmedFacts.map((fact) => `“${fact}”`).join('; ')}. They are context, not prewritten dialogue and not permission to infer another claim.`
-        : 'No explicit customer fact was supplied. AffiMatik supplies no benefit, hook, FOMO or selling claim; Nexabot creates the product-specific presentation from the image and style context.',
-      unsupportedClaims.length
-        ? `Unverified customer metadata: ${unsupportedClaims.map((fact) => `“${fact}”`).join('; ')}. Do not present it as customer-confirmed fact or verified research.`
-        : 'No additional customer-confirmed product facts were supplied.',
-    ].join(' ');
-
-    const selectedScene = getBuiltInScene(options.builtInSceneId);
-    const hasAvatarReference = Boolean(options.avatarName);
-    const hasBackgroundReference = Boolean(options.backgroundName);
-    const duplicateProductReference = Number(hasAvatarReference) + Number(hasBackgroundReference) < 2;
-    const avatarReferenceIndex = duplicateProductReference ? 3 : 2;
-    const backgroundReferenceIndex = hasAvatarReference ? 3 : (duplicateProductReference ? 3 : 2);
-    const personalizationDirectives = [
-      '[CUSTOMER CONFIGURATION]',
-      duplicateProductReference
-        ? 'References 1 and 2 are identical copies of one product identity; never create two products.'
-        : 'Reference 1 is the product identity.',
-      options.avatarName
-        ? `Reference ${avatarReferenceIndex} is presenter identity “${options.avatarName}”; preserve the adult face, skin tone and modest appearance without copying its background.`
-        : 'No presenter reference; create an adult Malaysian presenter only if the style needs one.',
-      options.backgroundName
-        ? `Reference ${backgroundReferenceIndex} is environment “${options.backgroundName}”; use its setting only, never its objects as product or presenter.`
-        : selectedScene
-          ? `Customer-selected environment: ${selectedScene.directive}`
-          : '',
-      options.niche && options.niche !== 'auto' ? `Customer niche: ${options.niche}.` : '',
-      options.voicePersonality && options.voicePersonality !== 'auto' ? `Voice personality: ${options.voicePersonality}. ${VOICE_PERSONALITY_DIRECTIONS[options.voicePersonality] || ''}` : '',
-      options.storyboard && options.storyboard !== 'auto' ? `Storyboard preference: ${options.storyboard}.` : '',
-    ].filter(Boolean).join(' ');
-
-    const commonTruthfulness = [
-      '[NO FAKE SELF-USE TESTIMONIAL — STRICT]',
-      'Never state or imply that the presenter personally used, tried, tested, consumed, applied or experienced results from the product unless that experience was explicitly supplied by the customer as true.',
-      'Never invent first-person outcomes such as a problem being solved or the product working for the presenter. Ordinary product handling, wearing, styling or demonstration is allowed and is not automatically a personal-use testimonial.',
-      'Outside this strict rule, Nexabot retains broad freedom to create product-relevant hooks, storytelling, selling angles, subjective enthusiasm and FOMO while preserving the visible product identity and customer-selected style.',
-    ].join(' ');
-
-    const providerDialogueDirective = !hasSpeech
-      ? [
-          `[SOUND-ONLY EXECUTION CONTRACT]`,
-          effectiveAudioMode === 'ambient'
-            ? 'Create only believable low-level room ambience that matches the visible environment.'
-            : effectiveAudioMode === 'asmr'
-              ? 'Create only subtle, physically synchronized product-handling sounds from the visible grip, contact and placement.'
-              : 'Create no dialogue, narration or lip-sync.',
-          'Strictly no spoken dialogue, no voiceover, no lip-sync speech, no music and no artificial sound effects. Do not narrate the hand, camera, packaging or movement.',
-        ].join(' ')
-      : [
-          MALAYSIAN_AFFILIATE_VOICE_DNA_V6,
-          PAWARNA_HUMAN_VOICE_REAL_V2,
-          '[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]',
-          `Nexabot independently creates the ${style.id} hook, dialogue, selling approach and visual actions from the product image and customer facts. AffiMatik provides no spoken sentences.`,
-          selectedCta ? `Customer CTA: “${selectedCta}”. Speak it naturally once as the final utterance, fully before the cut, with no later word or repetition.` : 'Customer selected no CTA. Do not invent one.',
-          options.creativeInstruction ? 'Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue.' : '',
-        ].filter(Boolean).join(' ');
-
-    const endingDirective = !hasSpeech
-      ? ''
-      : effectiveAudioMode === 'spoken_presenter'
-        ? [SPEAKING_AVATAR_ENDING, hasAvatarReference ? NIQAB_REFERENCE_LOCK : ''].filter(Boolean).join(' ')
-        : FACELESS_ENDING;
-
-    const criticalContract = [
-      promptModules.criticalContract,
-      hasSpeech ? NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 : '',
-    ].filter(Boolean).join(' ');
-    const productAndContext = [
-      promptModules.productUnderstanding,
-      productEvidenceContract,
-      productContextDirective,
-      personalizationDirectives,
-      options.creativeInstruction ? `Customer Creative Directive (verbatim): ${options.creativeInstruction}` : '',
-    ].filter(Boolean).join(' ');
-    const visualPrompt = [
-      criticalContract,
-      styleSpecificPrompt,
-      productAndContext,
-      promptModules.humanPerformance,
-      effectiveAudioDirective,
-      providerDialogueDirective,
-      endingDirective,
-      promptModules.safetyLocks,
-      commonTruthfulness,
-    ].filter(Boolean).join(' ');
-    const fullPayload = visualPrompt;
-
+    const isMuslimah = options.isMuslimahModest ?? style.modestyLock;
+    const isHandOnly = style.category === 'hand_demo' || style.category === 'product_handling' || style.category === 'pov' || style.id.startsWith('RH');
+    const compiled = director
+      ? compileCompactNexabotPrompt(product, director, options, isMuslimah, isHandOnly)
+      : { prompt: '', audioDirective: '', errors: [] as string[] };
+    if (compiled.errors.length) {
+      preflight.errors.push(...compiled.errors);
+      preflight.isValid = false;
+    }
     return {
       provider: 'nexabot',
-      providerPrompt: fullPayload,
-      visualPrompt,
+      providerPrompt: compiled.prompt,
+      visualPrompt: compiled.prompt,
       spokenScript: undefined,
       continuityAnchor: product.name,
-      audioDirective,
-      safetyRules: [
-        `AffiMatik Voice (15s) effective audio mode: ${effectiveAudioMode}`,
-        'AffiMatik REAL V3 compact provider contract enforced',
-        'No Indonesia loanwords or slang',
-        'Zero UI, no TikTok logo, no phone frame',
-        'No unverified medical or cosmetic claims',
-        'Product Identity Max Lock enforced',
-        'Shariah Modesty Lock V5 enforced',
-      ],
+      audioDirective: compiled.audioDirective,
+      safetyRules: ['Nexabot compact prompt limit enforced', 'Product identity, realistic scale and modesty preserved'],
       preflightValid: preflight.isValid,
       validationErrors: preflight.errors,
       promptVersion: GEMS_PROMPT_VERSION,

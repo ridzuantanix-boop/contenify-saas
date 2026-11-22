@@ -673,7 +673,7 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
         callToAction: 'click_button',
       });
       expect(compiledGood.preflightValid).toBe(true);
-      expect(compiledGood.providerPrompt).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
+      expect(compiledGood.providerPrompt).toContain('no script supplied');
     });
   });
 

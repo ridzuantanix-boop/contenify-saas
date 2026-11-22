@@ -51,6 +51,9 @@ export class NexabotAdapter implements IProviderAdapter {
     if (!input.prompt || input.prompt.trim().length === 0) {
       return { isValid: false, error: 'Prompt snapshot is required for Nexabot' };
     }
+    if (input.prompt.length > 1000) {
+      return { isValid: false, error: `Nexabot prompt exceeds the owner-confirmed 1000-character limit (${input.prompt.length}); submission stopped before provider charge.` };
+    }
     return { isValid: true };
   }
 
