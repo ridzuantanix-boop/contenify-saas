@@ -29,7 +29,7 @@ export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   'Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO, Malaysian delivery and visual actions. AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt.',
   'Use natural contemporary Bahasa Melayu Malaysia with spontaneous affiliate energy, varied pace and clear product and CTA pronunciation. Choose the wording and persuasive structure freely for the product and selected style rather than following a fixed dialogue formula.',
   'Never fabricate the presenter’s personal use, testing, consumption or personal result. Ordinary visible handling, possession and demonstration are not automatically personal-use testimonials.',
-  'Fit the original dialogue naturally within 15 seconds. When selected, speak the customer CTA once and complete it before the cut without corrupted speech afterward.',
+  'Fit the dialogue naturally within 15 seconds. In spoken styles, aim to finish speech around 12.5–13 seconds where practical, leaving roughly 1.5–2 seconds for a natural closing beat. Nexabot should choose fewer spoken points when needed, not rush or start a sentence that cannot finish. When selected, speak the customer CTA once as a complete natural final utterance before the cut, without corrupted speech afterward.',
 ].join(' ');
 
 export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
