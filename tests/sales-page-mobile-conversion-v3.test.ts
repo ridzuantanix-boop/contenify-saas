@@ -13,10 +13,11 @@ describe('mobile-first affiliate sales page', () => {
     expect(page).toContain('/register?intent=launch_pack&source=${placement}');
   });
 
-  it('shows sound controls for all owner-approved proof videos', () => {
+  it('shows sound controls for the retained proof videos', () => {
     expect(page).toContain('Tekan Untuk Dengar Suara BM');
     expect(page).toContain('Sound On · Suara BM');
-    for (const id of ['NX21','NX23','NX25','NX28','NX29','NX30','NX01','NX02']) expect(page).toContain(`id: '${id}'`);
+    for (const id of ['NX28','NX30','NX01','NX02']) expect(page).toContain(`id: '${id}'`);
+    for (const id of ['NX21','NX23','NX25','NX29']) expect(page).not.toContain(`id: '${id}'`);
     expect(page).not.toContain("id: 'NX27'");
   });
 

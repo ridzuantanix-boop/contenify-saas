@@ -32,7 +32,8 @@ describe('AffiMatik Sales Page Conversion V3', () => {
     ]) expect(page).toContain(copy);
     expect(page).toContain('Gambar asal di sebelah, video di sebelah');
     expect(page).toContain("Contoh {String(index+1).padStart(2,'0')}");
-    for (const id of ['NX21','NX23','NX25','NX28','NX29','NX30','NX01','NX02']) expect(page).toContain(id);
+    for (const id of ['NX28','NX30','NX01','NX02']) expect(page).toContain(`id: '${id}'`);
+    for (const id of ['NX21','NX23','NX25','NX29']) expect(page).not.toContain(`id: '${id}'`);
     expect(page).not.toContain("{ id: 'NX27'");
     expect(page).not.toContain("{ id: 'RH03'");
     expect(page).not.toContain('Nova Lumi Table Lamp');

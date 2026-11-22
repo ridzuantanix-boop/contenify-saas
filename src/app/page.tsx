@@ -11,10 +11,6 @@ import { FomoBonusOffer } from '@/components/marketing/fomo-bonus-offer';
 import { PUBLISHED_STYLE_COUNT } from '@/lib/styles/registry';
 
 const proof = [
-  { id: 'NX29', category: 'Barang dapur', product: 'Microwave Panasonic', source: '/marketing/proof/nx29-microwave-source.webp', title: 'Review barang dapur', note: 'Daripada gambar microwave, jadi video review dengan suara BM.' },
-  { id: 'NX21', category: 'Fesyen', product: 'Baju kurung', source: '/marketing/proof/nx21-kurung-source.webp', title: 'Baju kurung catwalk', note: 'Daripada gambar baju kurung, jadi video catwalk yang sopan.' },
-  { id: 'NX23', category: 'Tudung', product: 'Tudung', source: '/marketing/proof/nx23-tudung-source.webp', title: 'Tudung styling', note: 'Gambar tudung pun boleh dibuat jadi video styling.' },
-  { id: 'NX25', category: 'Faceless', product: 'Baju kanak-kanak', source: '/marketing/proof/nx25-kids-source.webp', title: 'Baju tanpa tunjuk muka', note: 'Pakaian ditunjukkan pada hanger atau mannequin, tanpa pelakon kanak-kanak.' },
   { id: 'NX28', category: 'Barang dapur', product: 'Air fryer', source: '/marketing/proof/nx28-air-fryer-source.webp', title: 'Demo air fryer', note: 'Satu gambar produk boleh jadi video demo ringkas.' },
   { id: 'NX30', category: 'Alat dapur', product: 'POTONGGO Chopper', source: '/marketing/proof/nx30-chopper-source.webp', title: 'Masalah dapur harian', note: 'Gambar chopper jadi video yang tunjuk kegunaan biasa produk.' },
   { id: 'NX01', category: 'Produk wellness', product: 'Minyak Herba S-HERB', source: '/marketing/proof/sherb-source.jpg', title: 'Sembang macam kawan', note: 'Screenshot produk jadi video sembang santai dengan suara BM.' },
@@ -90,7 +86,7 @@ export default function LandingPage() {
           </div>
           <div className="mx-auto w-full max-w-xl rounded-[30px] border border-white bg-white p-3 shadow-2xl shadow-violet-200/70">
             <p className="mb-3 px-1 text-xs font-black text-slate-700">Satu gambar produk → terus jadi video affiliate</p>
-            <div className="grid grid-cols-[.72fr_auto_1fr] items-center gap-2"><div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-violet-50"><Image src="/marketing/proof/nx29-microwave-source.webp" alt="Gambar asal microwave Panasonic" fill priority className="object-cover" sizes="(max-width: 768px) 38vw, 220px" /><span className="absolute bottom-2 left-2 rounded-full bg-white/95 px-2 py-1 text-[9px] font-black">Gambar asal</span></div><ChevronRight className="h-6 w-6 text-violet-600" /><div className="relative overflow-hidden rounded-2xl bg-slate-950"><SoundDemo id="NX29" placement="hero" className="aspect-[9/16] w-full object-cover" poster="/style-posters/NX29.webp" /><span className="pointer-events-none absolute left-2 top-2 rounded-full bg-emerald-500 px-2 py-1 text-[9px] font-black text-white">Video siap</span></div></div>
+             <div className="grid grid-cols-[.72fr_auto_1fr] items-center gap-2"><div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-violet-50"><Image src="/marketing/proof/nx28-air-fryer-source.webp" alt="Gambar asal air fryer" fill priority className="object-cover" sizes="(max-width: 768px) 38vw, 220px" /><span className="absolute bottom-2 left-2 rounded-full bg-white/95 px-2 py-1 text-[9px] font-black">Gambar asal</span></div><ChevronRight className="h-6 w-6 text-violet-600" /><div className="relative overflow-hidden rounded-2xl bg-slate-950"><SoundDemo id="NX28" placement="hero" className="aspect-[9/16] w-full object-cover" poster="/style-posters/NX28.webp" /><span className="pointer-events-none absolute left-2 top-2 rounded-full bg-emerald-500 px-2 py-1 text-[9px] font-black text-white">Video siap</span></div></div>
           </div>
         </div>
       </section>
