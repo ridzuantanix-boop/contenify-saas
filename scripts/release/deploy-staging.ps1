@@ -22,6 +22,7 @@ try {
     ADMIN_ACCESS_KEY = Read-LocalSecret 'staging-admin-access-key'
     CRON_SECRET = Read-LocalSecret 'staging-cron-secret'
     NEXABOT_API_KEY = Read-LocalSecret 'nexabot-api-key'
+    RESEND_API_KEY = Read-LocalSecret 'resend-api-key'
     STAGING_GATE_SECRET = Read-LocalSecret 'staging-gate-secret'
   }
   [IO.File]::WriteAllText($tempFile, ($secrets | ConvertTo-Json -Compress), [Text.UTF8Encoding]::new($false))

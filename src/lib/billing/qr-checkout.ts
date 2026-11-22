@@ -118,7 +118,7 @@ function database() {
   return { base: process.env.SUPABASE_URL.replace(/\/$/, ''), headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' } };
 }
 
-export async function qrRpc(name: 'create_qr_order_atomic' | 'provision_qr_order_atomic' | 'verify_qr_order_payment_atomic' | 'reject_qr_provisional_order_atomic' | 'reactivate_workspace_payment_atomic', body: Record<string, unknown>) {
+export async function qrRpc(name: 'create_qr_order_atomic' | 'create_qr_order_fomo_v1' | 'provision_qr_order_atomic' | 'provision_qr_order_fomo_v1' | 'verify_qr_order_payment_atomic' | 'reject_qr_provisional_order_atomic' | 'reactivate_workspace_payment_atomic', body: Record<string, unknown>) {
   const { base, headers } = database();
   const response = await fetch(`${base}/rest/v1/rpc/${name}`, { method: 'POST', headers, body: JSON.stringify(body) });
   const result = await response.json().catch(() => ({})) as Record<string, unknown>;
@@ -128,6 +128,10 @@ export async function qrRpc(name: 'create_qr_order_atomic' | 'provision_qr_order
 
 export async function createQrOrderAtomic(input:{workspaceId:string;userId:string;orderId:string;planId:string;referralCode?:string}){
   return qrRpc('create_qr_order_atomic',{p_workspace_id:input.workspaceId,p_user_id:input.userId,p_order_id:input.orderId,p_plan_id:input.planId,p_referral_code:input.referralCode||null});
+}
+
+export async function createQrOrderFomoAtomic(input:{workspaceId:string;userId:string;orderId:string;claimId:string;visitorId:string;referralCode?:string}){
+  return qrRpc('create_qr_order_fomo_v1',{p_workspace_id:input.workspaceId,p_user_id:input.userId,p_order_id:input.orderId,p_claim_id:input.claimId,p_visitor_id:input.visitorId,p_referral_code:input.referralCode||null});
 }
 
 export async function listQrOrders(workspaceId: string, limit = 30): Promise<Array<OrderRecord & { paymentState: QrPaymentState; evidenceSubmittedAt?: string; provisionalGrantedAt?: string; bankVerifiedAt?: string }>> {

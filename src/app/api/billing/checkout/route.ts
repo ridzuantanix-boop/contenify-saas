@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
       planId,
       paymentMethod: 'qr',
       referralCode: finalReferral,
+      fomoVisitorId: req.cookies.get('affimatik_visitor')?.value,
     });
 
     return NextResponse.json(result);

@@ -5,6 +5,7 @@ import { DurableStore } from '@/lib/db/store';
 import { getQrConfig, inspectEvidence, qrRpc, sha256Hex } from '@/lib/billing/qr-checkout';
 import { deletePrivateAsset, uploadPrivateAsset } from '@/lib/storage/supabase-assets';
 import { sendPaymentEventEmail } from '@/lib/billing/payment-control';
+import { recordFomoEvent, visitorIdFromRequest } from '@/lib/billing/fomo-bonus';
 import { recordServerConversion } from '@/lib/analytics/conversion';
 
 export async function POST(req: NextRequest) {
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
     objectKey = `workspaces/${session.workspaceId}/payment-evidence/${orderId}.${inspected.extension}`;
     await uploadPrivateAsset(objectKey, bytes, inspected.mimeType);
     uploaded = true;
-    const result = await qrRpc('provision_qr_order_atomic', {
+    const isFomoOrder=order.metadata?.promotion_code==='fomo_v1';
+    const result = await qrRpc(isFomoOrder?'provision_qr_order_fomo_v1':'provision_qr_order_atomic', {
       p_order_id: orderId, p_receipt_sha256: hash, p_receipt_object_key: objectKey,
       p_receipt_mime_type: inspected.mimeType, p_receipt_size_bytes: bytes.byteLength,
     });
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: code === 'RECEIPT_ALREADY_USED' ? 'Bukti pembayaran ini telah digunakan pada pesanan lain.' : 'Bukti pembayaran tidak dapat diproses.', code }, { status: 409 });
     }
     await recordServerConversion({eventName:'qr_evidence_submitted',dedupeKey:`receipt:${orderId}`,userId:session.userId,workspaceId:session.workspaceId,metadata:{planId:order.planId,source:'qr'}}).catch(()=>false);
+    if(isFomoOrder)await recordFomoEvent({visitorId:visitorIdFromRequest(req),userId:session.userId,workspaceId:session.workspaceId,orderId,eventName:'fomo_receipt_uploaded',dedupeKey:`receipt:${orderId}`,source:'server'}).catch(()=>false);
     if(result.provisional_granted===true)await Promise.allSettled([
       sendPaymentEventEmail({to:session.email,event:'PAYMENT_DECLARATION_RECEIVED',orderId,amountMyr:order.amountMyr}),
       sendPaymentEventEmail({to:session.email,event:'PAYMENT_PROVISIONAL_ACTIVE',orderId,credits:Number(result.credits_granted||order.creditsGranted)}),

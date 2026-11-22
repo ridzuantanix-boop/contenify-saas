@@ -1,6 +1,7 @@
 import { AUTHORITATIVE_PLANS, LAUNCH_PACK, LaunchPackage, PricingPlan, TOP_UP_PACKAGES, TopUpPackage } from './plans';
 import { DurableStore, OrderRecord } from '@/lib/db/store';
-import { createQrOrderAtomic, publicQrConfig } from './qr-checkout';
+import { createQrOrderAtomic, createQrOrderFomoAtomic, publicQrConfig } from './qr-checkout';
+import { eligibleClaimForCheckout } from './fomo-bonus';
 
 export interface CheckoutRequest {
   workspaceId: string;
@@ -9,6 +10,7 @@ export interface CheckoutRequest {
   paymentMethod?: 'qr';
   referralCode?: string;
   callbackUrl?: string;
+  fomoVisitorId?: string;
 }
 
 export interface CheckoutResult {
@@ -29,6 +31,7 @@ export interface CheckoutResult {
     instructions: string;
   };
   error?: string;
+  promotion?: { code: 'fomo_v1'; baseCredits: number; bonusCredits: number; totalCredits: number };
 }
 
 /**
@@ -49,7 +52,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
       throw new Error('TOPUP_REQUIRES_ACTIVE_PAID_SUBSCRIPTION');
     }
   }
-  const creditsGranted = subscriptionPlan ? subscriptionPlan.monthlyCredits : launchPack ? launchPack.credits : topUp!.credits;
+  let creditsGranted = subscriptionPlan ? subscriptionPlan.monthlyCredits : launchPack ? launchPack.credits : topUp!.credits;
 
   const orderId = crypto.randomUUID();
   const paymentMethod = 'qr';
@@ -61,9 +64,15 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
 
   // 3. Persist order record in database
   let persistedOrderId=orderId;
+  let promotion: CheckoutResult['promotion'];
   if(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY&&!process.env.VITEST){
-    const created=await createQrOrderAtomic({workspaceId:req.workspaceId,userId:req.userId,orderId,planId:plan.id,referralCode:req.referralCode});
+    const claim=launchPack&&req.fomoVisitorId?await eligibleClaimForCheckout(req.fomoVisitorId,req.userId):null;
+    const created=claim
+      ?await createQrOrderFomoAtomic({workspaceId:req.workspaceId,userId:req.userId,orderId,claimId:claim.id,visitorId:req.fomoVisitorId!,referralCode:req.referralCode})
+      :await createQrOrderAtomic({workspaceId:req.workspaceId,userId:req.userId,orderId,planId:plan.id,referralCode:req.referralCode});
     if(created.success!==true)throw new Error(String(created.error||'QR_ORDER_CREATE_FAILED'));
+    creditsGranted=Number(created.credits_granted||creditsGranted);
+    if(created.promotion_code==='fomo_v1')promotion={code:'fomo_v1',baseCredits:Number(created.base_credits||150),bonusCredits:Number(created.bonus_credits||100),totalCredits:creditsGranted};
   }else{
     const order=await DurableStore.createOrder({id:orderId,workspaceId:req.workspaceId,userId:req.userId,planId:plan.id,amountMyr:plan.priceMyr,creditsGranted,gatewayProvider:'qr_manual',gatewayReference:referenceCode,paymentMethod,referralCode:req.referralCode,metadata:{planName:plan.name,referenceCode,voiceVideos:subscriptionPlan?subscriptionPlan.voiceVideoAllowance:Math.floor(creditsGranted/10),purchaseType:launchPack?'LAUNCH_PACK':topUp?'TOP_UP':'SUBSCRIPTION',creditValidityDays:subscriptionPlan?null:180,paymentAuthority:'CUSTOMER_RECEIPT_UNVERIFIED',renewalType:subscriptionPlan?'manual_30_day':'none'}});persistedOrderId=order.id;
   }
@@ -74,6 +83,7 @@ export async function createCheckout(req: CheckoutRequest): Promise<CheckoutResu
     plan,
     amountMyr: plan.priceMyr,
     creditsGranted,
+    ...(promotion?{promotion}:{}),
     paymentMethod,
     qrCheckout: {
       merchantName: config.merchantName,
