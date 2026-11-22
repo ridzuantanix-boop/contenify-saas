@@ -19,8 +19,21 @@ export async function uploadPrivateAsset(path: string, bytes: ArrayBuffer, conte
     body: bytes,
   });
   if (!response.ok) {
-    const duplicate = allowExisting && (response.status === 409 || (response.status === 400 && (await response.text()).includes('ResourceAlreadyExists')));
-    if (!duplicate) throw new Error(`Muat naik storan gagal (HTTP ${response.status}).`);
+    // Storage may return HTTP 400 after the object was already committed. For
+    // video recovery, accept only an exact byte-for-byte existing object; the
+    // ingest path independently verifies the same bytes again before settlement.
+    if (allowExisting && [400, 409].includes(response.status)) {
+      const existing = await privateAssetResponse(path);
+      if (existing.ok) {
+        const saved = new Uint8Array(await existing.arrayBuffer());
+        const expected = new Uint8Array(bytes);
+        if (saved.length === expected.length && saved.every((value, index) => value === expected[index])) return;
+      }
+    }
+    const body = await response.text().catch(() => '');
+    let code = '';
+    try { code = String((JSON.parse(body) as { error?: string; code?: string }).code || (JSON.parse(body) as { error?: string }).error || ''); } catch { /* non-JSON storage response */ }
+    throw new Error(`Muat naik storan gagal (HTTP ${response.status}${code ? `, ${code.slice(0, 64)}` : ''}).`);
   }
 }
 

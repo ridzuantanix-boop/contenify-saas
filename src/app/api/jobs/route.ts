@@ -645,6 +645,10 @@ export async function GET(req: NextRequest) {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      if (/Muat naik storan gagal|Video tersimpan tidak dapat dibaca semula/i.test(msg)) {
+        return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'PROCESSING',
+          rawStatus: 'Video sudah dijana. AffiMatik sedang menyimpan hasil dan akan cuba semula secara automatik.' });
+      }
       if (!isRetryableProviderFailure(msg)) {
         const final = await scheduleOrFinalizeProviderFailure(job.id, job.providerTaskId || null, err);
         return NextResponse.json({ jobId: job.id, provider: job.provider, status: 'FAILED',
