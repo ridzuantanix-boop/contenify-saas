@@ -32,23 +32,19 @@ describe('real-provider QA prompt export', () => {
       lampMotion: compileFor('NOVA LAMP', 'RH01'),
     };
     for (const prompt of Object.values(prompts)) {
-      expect(prompt.length).toBeGreaterThan(2000);
-      expect(prompt).toContain('[PRODUCT IDENTITY LOCK]');
-      expect(prompt).toContain('References are not start frames or composition templates');
-      expect(prompt).toContain('[CLEAN VIDEO LOCK]');
+      expect(prompt.length).toBeLessThanOrEqual(1000);
+      expect(prompt).toContain('Preserve product shape, label, colour');
+      expect(prompt).toContain('Identity refs, not start frames');
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
-      expect(prompt).toContain('[NEXABOT NATIVE PRODUCT INTERPRETATION]');
-      expect(prompt).toContain('Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO');
-      expect(prompt).toContain('AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt');
-      expect(prompt).toContain('[NO FAKE SELF-USE TESTIMONIAL — STRICT]');
-      expect(prompt).toContain('Never state or imply that the presenter personally used, tried, tested, consumed, applied or experienced results');
-      expect(prompt).toContain('Ordinary product handling, wearing, styling or demonstration is allowed');
+      expect(prompt).toContain('Nexabot creates the hook, story, speech and actions');
+      expect(prompt).toContain('no script supplied');
+      expect(prompt).toContain('No unsupported results or fake self-use');
       expect(prompt).not.toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
       expect(prompt).not.toMatch(/ordinary buyer benefit|supported FOMO|mandatory benefit/i);
     }
-    expect(prompts.lampMotion).toContain('[NEXABOT NATIVE DIALOGUE — NO AFFIMATIK SCRIPT]');
+    expect(prompts.lampMotion).toContain('BM Malaysia');
     if (process.env.AFFIMATIK_QA_EXPORT === '1') {
       const directory = resolve(process.cwd(), 'output', 'provider-qa');
       mkdirSync(directory, { recursive: true });
