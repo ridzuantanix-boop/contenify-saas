@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 type Event = { event_name: string; visitor_id: string | null; occurred_at: string; metadata?: { utmCampaign?: string; utmContent?: string } };
-type Heat = { session_id: string; kind: string; device: string; x_pct: number | null; y_pct: number | null; scroll_pct: number | null; target_type: string | null; occurred_at: string; campaign_key?: string | null };
+type Heat = { session_id: string; kind: string; device: string; x_pct: number | null; y_pct: number | null; scroll_pct: number | null; target_type: string | null; target_key?: string | null; page_variant?: string | null; occurred_at: string; campaign_key?: string | null };
 type Order = { status: string; payment_state: string | null; amount_myr: number; created_at: string };
 
 function equal(a: string, b: string) {
@@ -53,8 +53,8 @@ export function summarize(events: Event[], heat: Heat[], orders: Order[], includ
   }
   for (const order of orders) { const row = day(order.created_at); row.orders++; if (confirmed.includes(order)) row.verifiedOrders++; }
   const timeline = [...days.values()].sort((a, b) => a.date.localeCompare(b.date)).map(row => ({ date: row.date, visitors: row.visitors.size, demo: row.demo.size, cta: row.cta.size, registrations: row.registrations.size, checkout: row.checkout.size, orders: row.orders, verifiedOrders: row.verifiedOrders }));
-  const heatmap = ['all', 'mobile', 'desktop'].map(device => {
-    const scoped = device === 'all' ? heat : heat.filter(row => row.device === device);
+  const makeHeatmap = (source: Heat[]) => ['all', 'mobile', 'desktop'].map(device => {
+    const scoped = device === 'all' ? source : source.filter(row => row.device === device);
     const sessions = new Set(scoped.map(row => row.session_id)).size;
     const clicks = scoped.filter(row => row.kind === 'click' && row.x_pct !== null && row.y_pct !== null);
     const bins = new Map<string, { x: number; y: number; clicks: number; button: number; link: number; video: number; other: number }>();
@@ -70,6 +70,13 @@ export function summarize(events: Event[], heat: Heat[], orders: Order[], includ
     }
     return { device, sessions, clicks: clicks.length, bins: [...bins.values()], scroll: [25, 50, 75, 90, 100].map(depth => ({ depth, sessions: new Set(scoped.filter(row => row.kind === 'scroll' && Number(row.scroll_pct) === depth).map(row => row.session_id)).size })) };
   });
+  const heatmap = makeHeatmap(heat);
+  const heatmapByVariant = {
+    bonus_v1: makeHeatmap(heat.filter(row => row.page_variant === 'bonus_v1')),
+    base_v1: makeHeatmap(heat.filter(row => row.page_variant === 'base_v1')),
+    legacy: makeHeatmap(heat.filter(row => row.page_variant == null)),
+  };
+  const bonusFunnel = Object.fromEntries(['section_view', 'bonus_claim', 'bonus_register', 'bonus_help_open', 'bonus_help_submit'].map(action => [action, new Set(heat.filter(row => row.page_variant === 'bonus_v1' && (action === 'section_view' ? row.kind === 'section_view' : row.kind === 'click' && row.target_key === action)).map(row => row.session_id)).size]));
   const campaignKeys = includeCampaigns ? [...new Set([
     ...events.map(row => row.metadata?.utmCampaign),
     ...heat.map(row => row.campaign_key),
@@ -77,7 +84,7 @@ export function summarize(events: Event[], heat: Heat[], orders: Order[], includ
   const byCampaign = campaignKeys.map(key => ({ key, ...summarize(events.filter(row => row.metadata?.utmCampaign === key), heat.filter(row => row.campaign_key === key), [], false) }));
   const contentKeys = includeCampaigns ? [...new Set(events.filter(row => typeof row.metadata?.utmContent === 'string' && /^[a-zA-Z0-9_.-]{1,100}$/.test(row.metadata.utmContent)).map(row => `${row.metadata?.utmCampaign || ''}\u0000${row.metadata?.utmContent}`))].sort() : [];
   const byCreative = contentKeys.map(pair => { const [campaignKey, key] = pair.split('\u0000'); return { key, campaignKey, ...summarize(events.filter(row => row.metadata?.utmCampaign === campaignKey && row.metadata?.utmContent === key), [], [], false) }; });
-  return { funnel, orders: { created: orders.length, verified: confirmed.length, pending: pending.length, verifiedAmountMyr: Math.round(confirmed.reduce((sum, row) => sum + Number(row.amount_myr || 0), 0) * 100) / 100 }, heatmap, timeline, byCampaign, byCreative, attribution: 'CAMPAIGN_AND_CREATIVE_FOR_WEB_EVENTS_ONLY_PAYMENT_AND_HEATMAP_UNLINKED' };
+  return { funnel, orders: { created: orders.length, verified: confirmed.length, pending: pending.length, verifiedAmountMyr: Math.round(confirmed.reduce((sum, row) => sum + Number(row.amount_myr || 0), 0) * 100) / 100 }, heatmap, heatmapByVariant, bonusFunnel, timeline, byCampaign, byCreative, attribution: 'CAMPAIGN_AND_CREATIVE_FOR_WEB_EVENTS_ONLY_PAYMENT_AND_HEATMAP_UNLINKED' };
 }
 
 export async function GET(req: NextRequest) {
@@ -91,7 +98,7 @@ export async function GET(req: NextRequest) {
   try {
     const [events, heat, orders] = await Promise.all([
       readRows<Event>('conversion_events', 'event_name,visitor_id,occurred_at,metadata', from, to),
-      readRows<Heat>('salespage_heatmap_events', 'session_id,kind,device,x_pct,y_pct,scroll_pct,target_type,occurred_at,campaign_key', from, to),
+      readRows<Heat>('salespage_heatmap_events', 'session_id,kind,device,x_pct,y_pct,scroll_pct,target_type,target_key,page_variant,occurred_at,campaign_key', from, to),
       readRows<Order>('orders', 'status,payment_state,amount_myr,created_at', from, to),
     ]);
     return NextResponse.json({ ok: true, product: 'AffiMatik', range: { from, to }, generatedAt: new Date().toISOString(), capped: events.capped || heat.capped || orders.capped, ...summarize(events.rows, heat.rows, orders.rows) }, { headers: { 'Cache-Control': 'private, no-store' } });

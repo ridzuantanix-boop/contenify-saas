@@ -60,7 +60,8 @@ export function FomoBonusOffer() {
     return () => window.clearInterval(timer);
   }, [state]);
 
-  if (!state || !state.enabled || state.cohort !== 'OFFER') return null;
+  if (!state) return <span hidden data-heatmap-variant="pending" />;
+  if (!state.enabled || state.cohort !== 'OFFER') return <span hidden data-heatmap-variant="base_v1" />;
   const claimed = state.claim && ['CLAIMED', 'ORDER_LINKED', 'GRANTED', 'PURCHASE_CONFIRMED'].includes(state.claim.status);
   const expired = !claimed && remaining <= 0;
 
@@ -88,7 +89,7 @@ export function FomoBonusOffer() {
     finally { setBusy(false); }
   }
 
-  return <section id="bonus-launch-pack" className="px-4 pb-16 sm:px-8 sm:pb-24">
+  return <section id="bonus-launch-pack" data-heatmap-variant="bonus_v1" data-heatmap-region="bonus" className="px-4 pb-16 sm:px-8 sm:pb-24">
     <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-amber-300 bg-[radial-gradient(circle_at_top_right,_rgba(250,204,21,.28),_transparent_42%),linear-gradient(135deg,#2e1065,#5b21b6_55%,#312e81)] p-5 text-white shadow-2xl shadow-violet-200 sm:p-9">
       <div className="grid gap-7 lg:grid-cols-[1fr_.72fr] lg:items-center">
         <div>
@@ -103,9 +104,9 @@ export function FomoBonusOffer() {
           {!claimed && !expired && <><p className="mt-4 text-center text-xs font-bold text-slate-500">Tempoh claim bonus yang tinggal</p><div className="mt-2 flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 font-mono text-3xl font-black text-amber-300" role="timer"><Clock3 className="h-6 w-6"/>{clock(remaining)}</div></>}
           {expired && <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-center text-xs leading-5 text-slate-600">Tempoh bonus untuk sesi ini telah tamat dan tidak akan dimulakan semula. Launch Pack biasa RM19 masih tersedia.</div>}
           {claimed && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center text-xs font-bold leading-5 text-emerald-800">Bonus sudah ditempah. Selesaikan pembayaran sebelum {new Intl.DateTimeFormat('ms-MY',{timeZone:'Asia/Kuala_Lumpur',dateStyle:'medium',timeStyle:'short'}).format(new Date(state.claim!.paymentExpiresAt))}.</div>}
-          {!expired && !claimed && <button type="button" onClick={claim} disabled={busy} className="mt-4 min-h-12 w-full rounded-xl bg-amber-400 px-5 text-sm font-black text-violet-950 shadow-sm hover:bg-amber-300 disabled:opacity-60">{busy ? 'Menyimpan claim…' : 'Claim 100 Kredit Bonus'}</button>}
-          {claimed && <Link href="/register?intent=launch_pack&promo=fomo_v1&source=fomo_bonus" className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-5 text-sm font-black text-white">Teruskan Daftar & Bayar QR</Link>}
-          <button type="button" onClick={() => setAssistOpen(value => !value)} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-xs font-black text-slate-700"><MessageCircle className="h-4 w-4"/> Tanya Dulu di WhatsApp</button>
+          {!expired && !claimed && <button type="button" data-heatmap-action="bonus_claim" onClick={claim} disabled={busy} className="mt-4 min-h-12 w-full rounded-xl bg-amber-400 px-5 text-sm font-black text-violet-950 shadow-sm hover:bg-amber-300 disabled:opacity-60">{busy ? 'Menyimpan claim…' : 'Claim 100 Kredit Bonus'}</button>}
+          {claimed && <Link href="/register?intent=launch_pack&promo=fomo_v1&source=fomo_bonus" data-heatmap-action="bonus_register" className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-5 text-sm font-black text-white">Teruskan Daftar & Bayar QR</Link>}
+          <button type="button" data-heatmap-action="bonus_help_open" onClick={() => setAssistOpen(value => !value)} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-xs font-black text-slate-700"><MessageCircle className="h-4 w-4"/> Tanya Dulu di WhatsApp</button>
           <p className="mt-4 text-center text-[10px] leading-4 text-slate-500">Bayaran sekali sahaja · Tiada auto-renew · Kredit sah 180 hari</p>
         </div>
       </div>
@@ -113,7 +114,7 @@ export function FomoBonusOffer() {
         <label className="text-xs font-bold">Nombor WhatsApp<input value={phone} onChange={event => setPhone(event.target.value)} placeholder="Contoh: 0195216867" className="mt-1 block min-h-11 w-full rounded-xl border border-white/20 bg-white px-3 text-slate-950" required/></label>
         <label className="mt-3 flex items-start gap-2 text-[11px] leading-5 text-violet-100"><input type="checkbox" checked={privacyAccepted} onChange={event => setPrivacyAccepted(event.target.checked)} required className="mt-1"/>Saya setuju nombor ini digunakan untuk menjawab pertanyaan bantuan ini. Rujuk <Link href="/privacy" className="font-bold underline">Notis Privasi</Link>.</label>
         <label className="mt-2 flex items-start gap-2 text-[11px] leading-5 text-violet-100"><input type="checkbox" checked={marketingConsent} onChange={event => setMarketingConsent(event.target.checked)} className="mt-1"/>Saya juga setuju menerima mesej pemasaran (pilihan, tidak wajib untuk checkout).</label>
-        <button disabled={busy} className="mt-3 min-h-11 rounded-xl bg-emerald-500 px-5 text-xs font-black text-white disabled:opacity-60">Hantar Permintaan & Buka WhatsApp</button>
+        <button disabled={busy} data-heatmap-action="bonus_help_submit" className="mt-3 min-h-11 rounded-xl bg-emerald-500 px-5 text-xs font-black text-white disabled:opacity-60">Hantar Permintaan & Buka WhatsApp</button>
       </form>}
       {message && <p aria-live="polite" className="mt-4 rounded-xl bg-white/10 p-3 text-xs font-bold leading-5 text-white"><ShieldCheck className="mr-2 inline h-4 w-4"/>{message}</p>}
     </div>

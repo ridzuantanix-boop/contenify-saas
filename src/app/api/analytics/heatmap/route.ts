@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const thresholds = new Set([25, 50, 75, 90, 100]);
 const targetTypes = new Set(['link', 'button', 'video', 'other']);
+const pageVariants = new Set(['pending', 'base_v1', 'bonus_v1']);
+const bonusActions = new Set(['bonus_claim', 'bonus_register', 'bonus_help_open', 'bonus_help_submit']);
 
 function sameOrigin(req: NextRequest) {
   const origin = req.headers.get('origin');
@@ -25,11 +27,19 @@ export async function POST(req: NextRequest) {
   const seq = body.seq;
   const kind = body.kind;
   const device = body.device;
-  if (!Number.isInteger(seq) || Number(seq) < 1 || Number(seq) > 40 || !['click', 'scroll'].includes(String(kind)) || !['mobile', 'desktop'].includes(String(device)))
+  if (!Number.isInteger(seq) || Number(seq) < 1 || Number(seq) > 40 || !['click', 'scroll', 'section_view'].includes(String(kind)) || !['mobile', 'desktop'].includes(String(device)) || !pageVariants.has(String(body.pageVariant)))
     return NextResponse.json({ error: 'Data tidak sah.' }, { status: 400 });
 
   const point = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
-  const event: Record<string, unknown> = { session_id: body.sessionId, event_seq: seq, kind, device };
+  const event: Record<string, unknown> = { session_id: body.sessionId, event_seq: seq, kind, device, page_variant: body.pageVariant };
+  if (body.regionKey !== undefined) {
+    if (body.regionKey !== 'bonus' || body.pageVariant !== 'bonus_v1') return NextResponse.json({ error: 'Kawasan tidak sah.' }, { status: 400 });
+    event.region_key = 'bonus';
+  }
+  if (body.targetKey !== undefined) {
+    if (kind !== 'click' || body.regionKey !== 'bonus' || !bonusActions.has(String(body.targetKey))) return NextResponse.json({ error: 'Tindakan tidak sah.' }, { status: 400 });
+    event.target_key = body.targetKey;
+  }
   const campaign = new URL(req.headers.get('referer')!).searchParams.get('utm_campaign') || '';
   if (/^[a-zA-Z0-9_.-]{1,100}$/.test(campaign)) event.campaign_key = campaign;
   if (kind === 'click') {
@@ -38,9 +48,11 @@ export async function POST(req: NextRequest) {
     event.x_pct = body.x;
     event.y_pct = body.y;
     event.target_type = body.targetType;
-  } else {
+  } else if (kind === 'scroll') {
     if (!thresholds.has(Number(body.depth))) return NextResponse.json({ error: 'Scroll tidak sah.' }, { status: 400 });
     event.scroll_pct = body.depth;
+  } else if (body.regionKey !== 'bonus' || body.pageVariant !== 'bonus_v1') {
+    return NextResponse.json({ error: 'Bahagian tidak sah.' }, { status: 400 });
   }
   const base = process.env.SUPABASE_URL?.replace(/\/$/, '');
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
