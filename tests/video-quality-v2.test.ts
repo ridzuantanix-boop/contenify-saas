@@ -33,6 +33,10 @@ describe('V2 all-style prompt safety', () => {
     for (const prompt of prompts) {
       expect(prompt).toContain('plausible smartphone 1x framing');
       expect(prompt).toContain('[PRODUCT SCALE LOCK]');
+      expect(prompt).toContain('about 8–12% of full frame height');
+      expect(prompt).toContain('[UNSEEN PRODUCT CONTENTS LOCK]');
+      expect(prompt).toContain('keep the package closed');
+      expect(prompt).not.toContain('12–18% of frame height');
     }
   });
   it('protects a niqab reference and does not ask to show its lips', () => {
@@ -40,6 +44,16 @@ describe('V2 all-style prompt safety', () => {
     expect(prompt).toContain('[ABSOLUTE NIQAB REFERENCE LOCK]');
     expect(prompt).toContain('visible eyes');
     expect(prompt).toContain('CTA completion takes priority');
+  });
+  it('keeps unseen contents closed even for an appliance style with an opening action', () => {
+    const nx28 = DynamicPromptCompiler.compile(product, getVideoStyle('NX28')!, scene).providerPrompt;
+    const nx29 = DynamicPromptCompiler.compile(product, getVideoStyle('NX29')!, scene).providerPrompt;
+    expect(nx28).toContain('Open the basket only if its interior and movement are visibly shown');
+    expect(nx29).toContain('Open or operate it only when the supplied product reference also shows the resulting interior');
+    for (const prompt of [nx28, nx29]) {
+      expect(prompt).toContain('If the actual interior or contents are not shown');
+      expect(prompt).toContain('handle the visible exterior instead');
+    }
   });
   it('does not force speech or a smile on explicitly silent output', () => {
     const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('NX09')!, scene, {audioTreatment:'asmr'}).providerPrompt;

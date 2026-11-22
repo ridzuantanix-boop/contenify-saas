@@ -86,8 +86,10 @@ const VOICE_PERSONALITY_DIRECTIONS: Record<string, string> = {
 
 function productScaleDirective(product: ProductProfile): string {
   void product;
-  return '[PRODUCT SCALE LOCK] Keep believable real-world scale against hands, body, furniture and surroundings. Compact handheld products should occupy approximately 12–18% of frame height, preferably about 15%; larger products retain their plausible real dimensions. Never enlarge for emphasis or label readability. Keep scale stable while moving.';
+  return '[PRODUCT SCALE LOCK] Keep real-world scale against hands, face and furniture. Compact handheld products such as supplement and serum bottles should appear about 8–12% of full frame height, never over 15% when lifted. If a presenter is visible, the bottle stays smaller than their face and fits one adult hand. No pushing toward the lens, tight crop or zoom to enlarge it. Unknown dimensions: choose the smaller plausible scale; larger products retain their plausible real dimensions. Keep scale stable during motion.';
 }
+
+const UNSEEN_PRODUCT_CONTENTS_LOCK = '[UNSEEN PRODUCT CONTENTS LOCK] Show physical details only when visible in a supplied product image. If the actual interior or contents are not shown, keep the package closed. Do not invent tablets, capsules, liquids, creams, packaged food contents, accessories or internal mechanisms. Printed text/icons and category knowledge do not prove their shape, colour or size. Do not pour, dispense, taste, swallow or apply unseen contents. If a style calls for opening or use, handle the visible exterior instead.';
 
 /**
  * Internal Provider to AffiMatik White-Label Display Name Mapping
@@ -254,6 +256,7 @@ export class DynamicPromptCompiler {
       '[PRODUCT IDENTITY LOCK]',
       `The uploaded image is the authority for “${product.name}”. Preserve its recognizable shape, geometry, packaging, label, logo, colours and visible components consistently.`,
       productScaleDirective(product),
+      UNSEEN_PRODUCT_CONTENTS_LOCK,
       'No morphing, duplication, missing components, changed label, invented printed detail or floating object. Leave unreadable text indistinct.',
     ].join(' ');
 
