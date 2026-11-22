@@ -48,6 +48,7 @@ const NAV_ITEMS = [
   { name: 'Kelulusan Affiliate', href: '/admin/affiliates', icon: ShieldCheck, badge: 'Owner' },
   { name: 'Pulih MP4 Lama', href: '/admin/recovery', icon: Film, badge: 'Owner' },
   { name: 'Refund & Clawback', href: '/admin/finance-ops', icon: CreditCard, badge: 'Owner' },
+  { name: 'Semakan Kualiti Video', href: '/admin/video-quality', icon: Film, badge: 'Owner' },
   { name: 'Admin Console', href: '/admin', icon: ShieldCheck, badge: 'Owner' },
 ];
 

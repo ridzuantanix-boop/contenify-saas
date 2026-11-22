@@ -27,9 +27,9 @@ export const GEMS_PROMPT_VERSION = 'affimatik-real-v3-creative-freedom-no-fake-s
 export const NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 = [
   '[REAL V3 NATIVE SPEECH CONTRACT]',
   'Nexabot alone creates the product-specific hook, story, dialogue, selling angle, FOMO, Malaysian delivery and visual actions. AffiMatik supplies no script, benefit sentence, FOMO sentence, hook wording or per-product creative prompt.',
-  'Use natural contemporary Bahasa Melayu Malaysia with spontaneous affiliate energy, varied pace and clear product and CTA pronunciation. Choose the wording and persuasive structure freely for the product and selected style rather than following a fixed dialogue formula.',
+  'Use conversational Bahasa Melayu Malaysia with spontaneous affiliate energy, natural pauses, varied emphasis and clear product and CTA pronunciation. Keep one consistent speaker and avoid announcer cadence, forced slang or mechanical word-by-word delivery. Choose the wording and persuasive structure freely for the product and selected style.',
   'Never fabricate the presenter’s personal use, testing, consumption or personal result. Ordinary visible handling, possession and demonstration are not automatically personal-use testimonials.',
-  'Fit the dialogue naturally within 15 seconds. In spoken styles, aim to finish speech around 12.5–13 seconds where practical, leaving roughly 1.5–2 seconds for a natural closing beat. Nexabot should choose fewer spoken points when needed, not rush or start a sentence that cannot finish. When selected, speak the customer CTA once as a complete natural final utterance before the cut, without corrupted speech afterward.',
+  'Fit the dialogue naturally within 15 seconds. Aim to finish speech around 12.5–13 seconds where practical, leaving roughly 1.5–2 seconds for a natural closing beat. Choose fewer spoken points when needed, not rush or start a sentence that cannot finish; CTA completion takes priority over another selling point. Speak the selected CTA once as the complete final utterance without fading an unfinished word or adding speech afterward.',
 ].join(' ');
 
 export const MASTERPROMPT_PRIORITY_SYSTEM_V10 = [
@@ -53,9 +53,15 @@ export const MALAYSIAN_AFFILIATE_VOICE_DNA_V6 = [
 
 export const HUMAN_REALISM_MASTERPROMPT_V8 = [
   '[REALISTIC HUMAN AND PRODUCT PHYSICS]',
-  'Use ordinary Malaysian creator behaviour, natural gaze, breathing and restrained gestures. Keep anatomy, grip, object weight, geometry, labels, contact shadows and movement physically believable and stable.',
-  'Use natural smartphone 1x perspective and one continuous take; no floating objects, impossible camera travel, morphing or frozen final pose.',
+  'Use ordinary Malaysian creator behaviour, natural gaze, blinking, breathing and purposeful restrained gestures. Keep face, hands, grip, object weight, geometry, labels, contact shadows and background stable and physically believable.',
+  'Use plausible smartphone 1x framing and everyday light; no floating camera, unnecessary dramatic motion, morphing, plastic skin or artificial sharpening. Natural stillness is allowed.',
 ].join(' ');
+
+const NIQAB_REFERENCE_LOCK = '[ABSOLUTE NIQAB REFERENCE LOCK] If the supplied presenter reference wears a niqab, preserve the same opaque niqab over nose, mouth, lips, chin and lower face in every frame, including speech and ending. Never remove, lift, replace, make transparent or reveal the face for lip-sync or smiling; the reference takes priority over generic wardrobe styling. After the CTA, stop speaking and convey a friendly expression only through visible eyes while keeping full coverage.';
+
+const SPEAKING_AVATAR_ENDING = '[SPEAKING AVATAR ENDING] After the final CTA, stop speech and mouth movement; relax into a subtle friendly expression and comfortable pose until the cut. No new gesture, exaggerated smile or frozen animation loop. For a niqab reference, follow the absolute niqab lock instead of showing lips or teeth.';
+
+const FACELESS_ENDING = '[FACELESS ENDING] Finish narration if selected, then hold a stable natural product presentation without introducing a face or new action.';
 
 export const PAWARNA_TRUE_COLOR_REAL_V2 = [
   '[TRUE-WHITE REAL PHONE COLOUR]',
@@ -426,6 +432,12 @@ export class DynamicPromptCompiler {
           options.creativeInstruction ? 'Preserve the customer-authored Creative Directive unchanged as direction; do not quote it automatically as dialogue.' : '',
         ].filter(Boolean).join(' ');
 
+    const endingDirective = !hasSpeech
+      ? ''
+      : effectiveAudioMode === 'spoken_presenter'
+        ? [SPEAKING_AVATAR_ENDING, hasAvatarReference ? NIQAB_REFERENCE_LOCK : ''].filter(Boolean).join(' ')
+        : FACELESS_ENDING;
+
     const criticalContract = [
       promptModules.criticalContract,
       hasSpeech ? NEXABOT_SPOKEN_OUTPUT_CONTRACT_V10 : '',
@@ -444,6 +456,7 @@ export class DynamicPromptCompiler {
       promptModules.humanPerformance,
       effectiveAudioDirective,
       providerDialogueDirective,
+      endingDirective,
       promptModules.safetyLocks,
       commonTruthfulness,
     ].filter(Boolean).join(' ');

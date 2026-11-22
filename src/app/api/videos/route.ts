@@ -19,6 +19,14 @@ export async function GET(req: NextRequest) {
     const response = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
     if (!response.ok) throw new Error('Video query failed');
     const rows = await response.json() as Array<Record<string, unknown>>;
+    const qualityByJob = new Map<string, string>();
+    if (process.env.OUTPUT_QUALITY_GATE_V2_ENABLED === 'true' && rows.length) {
+      const ids = rows.map(row => String(row.id)).filter(id => /^[0-9a-f-]{36}$/i.test(id));
+      const qualityResponse = await fetch(`${process.env.SUPABASE_URL}/rest/v1/video_quality_assessments?job_id=in.(${ids.join(',')})&select=job_id,state`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(2500), cache: 'no-store' }).catch(() => null);
+      if (qualityResponse?.ok) {
+        for (const item of await qualityResponse.json() as Array<{job_id:string;state:string}>) qualityByJob.set(item.job_id, item.state);
+      }
+    }
     return NextResponse.json({ videos: rows.map((row) => ({
       id: row.id,
       styleId: row.preset_id,
@@ -28,6 +36,7 @@ export async function GET(req: NextRequest) {
       hasAudio: row.output_has_audio,
       createdAt: row.created_at,
       completedAt: row.completed_at,
+      qualityState: qualityByJob.get(String(row.id)) || null,
       imageAssetId: (row.input_options as { imageAssetId?: string } | null)?.imageAssetId || null,
       batchId: row.auto_factory_batch_id || null,
       creatorProfileId: row.creator_profile_id || null,

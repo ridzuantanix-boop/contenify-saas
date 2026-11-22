@@ -4,8 +4,14 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { downloadPrivateMp4 } from '@/lib/download/client-download';
 
-type Video = { id: string; styleId: string; provider: string; durationSeconds: number; durationVerified: boolean; createdAt: string; imageAssetId?: string; batchId?: string; creatorProfileId?: string; productFolderId?: string; streamUrl: string; downloadUrl: string };
+type Video = { id: string; styleId: string; provider: string; durationSeconds: number; durationVerified: boolean; qualityState?: string | null; createdAt: string; imageAssetId?: string; batchId?: string; creatorProfileId?: string; productFolderId?: string; streamUrl: string; downloadUrl: string };
 type RewardState = { downloadCount: number; eligible: boolean; claimed: boolean; credits: number };
+const qualityCategories = [
+  ['cta_cutoff','CTA terpotong'],['dialogue_cutoff','Dialog tak habis'],['robotic_voice','Suara terlalu robotik'],
+  ['lip_sync','Lip-sync tak natural'],['visual_motion','Wajah atau pergerakan nampak janggal'],
+  ['product_identity','Produk berubah daripada gambar asal'],['niqab_exposure','Niqab berubah atau terbuka'],
+  ['audio_broken','Audio hilang atau rosak'],['other','Masalah lain'],
+] as const;
 
 export default function LibraryPage() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -22,6 +28,23 @@ export default function LibraryPage() {
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [rewardMessage, setRewardMessage] = useState('');
   const [rewardSubmitting, setRewardSubmitting] = useState(false);
+  const [reportVideoId, setReportVideoId] = useState('');
+  const [reportCategory, setReportCategory] = useState<string>('cta_cutoff');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportMessage, setReportMessage] = useState('');
+
+  async function submitVideoReport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setReportSubmitting(true); setReportMessage('');
+    try {
+      const response = await fetch('/api/videos/report', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: reportVideoId, category: reportCategory, description: reportDescription }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Laporan tidak dapat dihantar.');
+      setReportMessage(result.message); setReportVideoId(''); setReportDescription('');
+    } catch (reason) { setReportMessage(reason instanceof Error ? reason.message : 'Laporan tidak dapat dihantar.'); }
+    finally { setReportSubmitting(false); }
+  }
 
   async function loadReward() {
     const response = await fetch('/api/review-reward', { cache: 'no-store' });
@@ -88,8 +111,10 @@ export default function LibraryPage() {
     {!loading && !videos.length && !error && <p className="rounded-xl border bg-white p-8 text-center text-sm text-slate-600">Belum ada MP4 yang disimpan kekal. <Link href="/queue" className="underline text-indigo-700">Semak sejarah tugasan</Link>.</p>}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{filtered.map((video) => <article key={video.id} className="rounded-xl border bg-white overflow-hidden">
       <video controls preload="metadata" playsInline src={video.streamUrl} className="w-full aspect-video bg-black" />
-      <div className="p-4 space-y-3"><div><h2 className="font-semibold">{video.styleId} · {video.provider}</h2><p className="text-xs text-slate-500">{new Date(video.createdAt).toLocaleString('ms-MY')} · {video.durationVerified ? 'Tempoh disahkan' : 'Tempoh sasaran'} {Number(video.durationSeconds).toFixed(1)}s{video.batchId?' · Cloud Batch':''}</p></div><div className="flex flex-wrap gap-2"><button type="button" disabled={downloadingId===video.id} onClick={()=>void downloadVideo(video)} className="rounded-lg bg-indigo-600 px-4 py-3 text-white text-sm disabled:opacity-60">{downloadingId===video.id?'Menyediakan MP4…':'Muat Turun MP4'}</button><a href={video.streamUrl} target="_blank" rel="noreferrer" className="rounded-lg border px-4 py-3 text-sm">Buka untuk Share/Files</a>{video.imageAssetId && <Link href={`/factory?imageAssetId=${encodeURIComponent(video.imageAssetId)}&styleId=${encodeURIComponent(video.styleId)}`} className="rounded-lg border px-4 py-3 text-sm">Guna Semula</Link>}{video.batchId&&<button onClick={()=>setBatchId(video.batchId||'')} className="rounded-lg border px-4 py-3 text-sm">Batch ini</button>}</div><p className="text-xs text-slate-500">Pada iPhone, jika muat turun tidak muncul, buka video lalu pilih Share → Save to Files.</p></div>
+      <div className="p-4 space-y-3"><div><h2 className="font-semibold">{video.styleId} · {video.provider}</h2><p className="text-xs text-slate-500">{new Date(video.createdAt).toLocaleString('ms-MY')} · {video.durationVerified ? 'Tempoh disahkan' : 'Tempoh sasaran'} {Number(video.durationSeconds).toFixed(1)}s{video.batchId?' · Cloud Batch':''}</p>{video.qualityState==='QUALITY_UNCERTAIN'&&<p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">Video sudah siap. Sila semak hasil sebelum digunakan. Jika ada masalah audio atau visual, anda boleh laporkannya.</p>}</div><div className="flex flex-wrap gap-2"><button type="button" disabled={downloadingId===video.id} onClick={()=>void downloadVideo(video)} className="rounded-lg bg-indigo-600 px-4 py-3 text-white text-sm disabled:opacity-60">{downloadingId===video.id?'Menyediakan MP4…':'Muat Turun MP4'}</button><a href={video.streamUrl} target="_blank" rel="noreferrer" className="rounded-lg border px-4 py-3 text-sm">Buka untuk Share/Files</a>{video.imageAssetId && <Link href={`/factory?imageAssetId=${encodeURIComponent(video.imageAssetId)}&styleId=${encodeURIComponent(video.styleId)}`} className="rounded-lg border px-4 py-3 text-sm">Guna Semula</Link>}{video.batchId&&<button onClick={()=>setBatchId(video.batchId||'')} className="rounded-lg border px-4 py-3 text-sm">Batch ini</button>}<button type="button" onClick={()=>{setReportVideoId(video.id);setReportMessage('');}} className="rounded-lg border border-rose-200 px-4 py-3 text-sm text-rose-800">Laporkan Masalah Video</button></div><p className="text-xs text-slate-500">Pada iPhone, jika muat turun tidak muncul, buka video lalu pilih Share → Save to Files.</p></div>
     </article>)}</div>
+    {reportVideoId && <div role="dialog" aria-modal="true" aria-label="Laporkan Masalah Video" className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-3 sm:items-center"><form onSubmit={submitVideoReport} className="w-full max-w-lg space-y-4 rounded-2xl bg-white p-5 shadow-xl"><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Laporkan Masalah Video</h2><button type="button" onClick={()=>setReportVideoId('')} className="rounded-lg border px-3 py-2" aria-label="Tutup laporan">Tutup</button></div><p className="text-sm text-slate-600">Laporan ini akan disemak. Tiada kredit diberi secara automatik.</p><label className="block text-sm font-semibold">Jenis masalah<select value={reportCategory} onChange={event=>setReportCategory(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-3">{qualityCategories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label className="block text-sm font-semibold">Butiran (pilihan)<textarea value={reportDescription} onChange={event=>setReportDescription(event.target.value)} maxLength={2000} rows={3} className="mt-1 w-full rounded-lg border px-3 py-3" placeholder="Contoh: CTA terhenti pada saat akhir video" /></label><button disabled={reportSubmitting} className="w-full rounded-lg bg-violet-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{reportSubmitting?'Menghantar…':'Hantar Laporan'}</button></form></div>}
+    {reportMessage&&<p role="status" className="rounded-lg border bg-white p-3 text-sm">{reportMessage}</p>}
     <div className="flex justify-between"><button disabled={page === 0} onClick={() => setPage((value) => value - 1)} className="rounded border px-4 py-2 disabled:opacity-50">Sebelum</button><span className="text-sm text-slate-500">Halaman {page + 1}</span><button disabled={!hasMore} onClick={() => setPage((value) => value + 1)} className="rounded border px-4 py-2 disabled:opacity-50">Seterusnya</button></div>
   </div>;
 }
