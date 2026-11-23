@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { createSessionToken } from '../src/lib/auth/session';
 import { GET, POST, PATCH } from '../src/app/api/admin/video-qa/flags/route';
+import { GET as listQaJobs } from '../src/app/api/admin/video-qa/route';
 import { DurableStore } from '../src/lib/db/store';
 import { GET as streamVideo } from '../src/app/api/videos/[id]/stream/route';
 
@@ -23,6 +24,18 @@ function request(method: 'GET' | 'POST' | 'PATCH', c: string, body?: unknown) {
 
 describe('non-blocking human quality flags', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+  it('lists QA jobs using columns present in the production schema', async () => {
+    process.env.SUPABASE_URL = 'https://db.example.test'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    vi.stubGlobal('fetch', fetchMock);
+    const response = await listQaJobs(new NextRequest('http://localhost/api/admin/video-qa', { headers: { cookie: await cookie('superadmin') } }));
+    expect(response.status).toBe(200);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('qa_started_at:created_at');
+    expect(url).toContain('order=created_at.asc');
+    expect(url).not.toContain('order=qa_started_at.asc');
+  });
 
   it('blocks non-admin reads, writes and review-status changes before database access', async () => {
     const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
