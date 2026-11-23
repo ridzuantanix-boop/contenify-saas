@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { summarize } from '../src/app/api/internal/ad-pilot-report/route';
+import { NextRequest } from 'next/server';
+import { GET, summarize } from '../src/app/api/internal/ad-pilot-report/route';
 
 describe('AD PILOT aggregate report', () => {
   it('counts visitors once, separates pending orders and bins repeated heatmap clicks', () => {
@@ -42,5 +43,54 @@ describe('AD PILOT aggregate report', () => {
     expect(report.byCreative[1].funnel.registration_completed.visitors).toBe(1);
     expect(report.byCreative[0].orders.verified).toBe(0);
     expect(report.orders.verified).toBe(1);
+  });
+
+  it('attributes verified revenue to payment date when checkout and payment span days', () => {
+    const createdAt = '2026-11-22T10:00:00.000Z';
+    const paidAt = '2026-11-23T03:00:00.000Z';
+    const order = { status: 'PAID', payment_state: 'BANK_PAYMENT_VERIFIED', amount_myr: 19, created_at: createdAt, paid_at: paidAt };
+    const checkoutDay = summarize([], [], [order], true, []);
+    const paymentDay = summarize([], [], [], true, [order]);
+    expect(checkoutDay.orders.verified).toBe(0);
+    expect(paymentDay.orders.verified).toBe(1);
+    expect(paymentDay.orders.verifiedAmountMyr).toBe(19);
+    expect(paymentDay.paymentDateBasis).toBe('paid_at');
+    expect(paymentDay.timeline[0].date).toBe('2026-11-23');
+  });
+
+  it('queries paid_at separately from created_at for the requested reporting day', async () => {
+    const previous = {
+      fetch: globalThis.fetch,
+      key: process.env.AD_PILOT_REPORT_SECRET,
+      base: process.env.SUPABASE_URL,
+      role: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    };
+    process.env.AD_PILOT_REPORT_SECRET = 'test-report-secret';
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role';
+    const seen: string[] = [];
+    globalThis.fetch = async input => {
+      const url = new URL(String(input));
+      seen.push(url.search);
+      if (url.pathname.endsWith('/orders') && url.searchParams.has('paid_at'))
+        return Response.json([{ status: 'PAID', payment_state: 'BANK_PAYMENT_VERIFIED', amount_myr: 19, created_at: '2026-11-19T10:00:00Z', paid_at: '2026-11-20T10:00:00Z' }]);
+      return Response.json([]);
+    };
+    try {
+      const req = new NextRequest('https://affimatik.online/api/internal/ad-pilot-report?from=2026-11-19T16%3A00%3A00Z&to=2026-11-20T16%3A00%3A00Z',
+        { headers: { 'x-ad-pilot-report-key': 'test-report-secret' } });
+      const response = await GET(req);
+      const report = await response.json();
+      expect(response.status).toBe(200);
+      expect(seen.some(query => query.includes('paid_at=gte.'))).toBe(true);
+      expect(seen.some(query => query.includes('created_at=gte.'))).toBe(true);
+      expect(report.orders.verified).toBe(1);
+      expect(report.paymentDateBasis).toBe('paid_at');
+    } finally {
+      globalThis.fetch = previous.fetch;
+      for (const [name, value] of [['AD_PILOT_REPORT_SECRET', previous.key], ['SUPABASE_URL', previous.base], ['SUPABASE_SERVICE_ROLE_KEY', previous.role]] as const) {
+        if (value === undefined) delete process.env[name]; else process.env[name] = value;
+      }
+    }
   });
 });
