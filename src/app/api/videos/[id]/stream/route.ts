@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth/session';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { DurableStore } from '@/lib/db/store';
 import { privateAssetResponse } from '@/lib/storage/supabase-assets';
 
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: 'Sila log masuk.' }, { status: 401 });
+  const admin = await verifyAdminAccess(req);
+  if (!session && !(admin.isAuthorized && admin.role === 'superadmin')) return NextResponse.json({ error: 'Sila log masuk.' }, { status: 401 });
   const { id } = await context.params;
   const job = await DurableStore.getJob(id);
-  const adminQaPreview = session.role === 'superadmin' && job?.status === 'QA_PENDING';
-  if (!job || (!adminQaPreview && job.workspaceId !== session.workspaceId) || !job.videoObjectKey || (job.status !== 'COMPLETED' && !adminQaPreview)) {
+  const adminQaPreview = admin.isAuthorized && admin.role === 'superadmin' && (job?.status === 'QA_PENDING' || job?.status === 'COMPLETED');
+  if (!job || (!adminQaPreview && job.workspaceId !== session?.workspaceId) || !job.videoObjectKey || (job.status !== 'COMPLETED' && !adminQaPreview)) {
     return NextResponse.json({ error: 'Video tidak ditemui.' }, { status: 404 });
   }
   try {
