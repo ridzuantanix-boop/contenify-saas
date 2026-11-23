@@ -32,6 +32,6 @@ All 30 styles passed the static audit for both candidates. The largest revised p
 
 ## Release status
 
-Focused regression: 41/41 passed. Full regression: 340 passed and one unrelated payment-page copy assertion failed (`tests/payment-first-conversion-phase2.test.ts` expects wording absent from the existing sales flow). TypeScript passed. Build and staging results are recorded in the release handoff.
+Focused regression: 41/41 passed. Full regression: 340 passed and one unrelated payment-page copy assertion failed (`tests/payment-first-conversion-phase2.test.ts` expects wording absent from the existing sales flow). TypeScript, full ESLint and OpenNext Worker build passed. Staging Worker `7fcd44a0-2d21-4d87-8c01-afb817b5714e` was deployed; an authenticated `/api/styles` request returned HTTP 200.
 
 No Nexabot generation, automatic retry, wallet change or production deployment is part of this correction. Prompt construction is not proof of MP4 quality. A bounded real-video A/B should compare selling relevance, claims, scale, CTA and speech ending before any production release.
