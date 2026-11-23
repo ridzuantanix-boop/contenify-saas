@@ -109,7 +109,7 @@ export async function reserveFomoAssistance(input: {
   workspaceId?: string; claimId?: string; testRequest: boolean; phoneCountry: string;
 }) {
   const { base, headers } = database();
-  const response = await fetch(`${base}/rest/v1/fomo_offer_events?select=dedupe_key`, {
+  const response = await fetch(`${base}/rest/v1/fomo_offer_events?on_conflict=dedupe_key&select=dedupe_key`, {
     method: 'POST',
     headers: { ...headers, Prefer: 'resolution=ignore-duplicates,return=representation' },
     body: JSON.stringify({
