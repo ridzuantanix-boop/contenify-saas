@@ -8,7 +8,7 @@ import { getBuiltInScene } from '../personalization/config';
 // Owner-confirmed video limit. Public Nexabot docs expose one `prompt` field but
 // do not state its counting rule, so enforce the strictest common measurement.
 export const NEXABOT_VIDEO_PROMPT_MAX_CHARS = 1000;
-export type CompactPromptCandidate = 'A' | 'B';
+export type CompactPromptCandidate = 'A' | 'B' | 'C';
 type Part = { kind: 'global' | 'style' | 'cta' | 'context' | 'niqab'; text: string };
 
 export function nexabotPromptCounts(prompt: string) {
@@ -75,7 +75,9 @@ export function compileCompactNexabotPrompt(
     ? cta
       ? candidate === 'B'
         ? `CTA once: "${cta}". Start ~11s, end ~13s; no repeat/tail speech. ${mode === 'spoken_presenter' ? 'Presenter settles; smile if visible.' : 'Hands settle.'}`
-        : `Final CTA once: "${cta}". End by ~13s; no more words. ${mode === 'spoken_presenter' ? 'Presenter settles; smile if visible.' : 'Hands settle.'}`
+        : candidate === 'C'
+          ? `One complete CTA: "${cta}" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. ${mode === 'spoken_presenter' ? 'Presenter settles; smile if visible.' : 'Hands settle.'}`
+          : `Final CTA once: "${cta}". End by ~13s; no more words. ${mode === 'spoken_presenter' ? 'Presenter settles; smile if visible.' : 'Hands settle.'}`
       : 'No CTA selected; do not invent one.'
     : cta ? '' : 'End with a natural physical settle; no speech.';
   const parts = [

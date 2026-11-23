@@ -1,0 +1,479 @@
+{
+  "generatedAt": "2026-11-23T03:41:38.580Z",
+  "candidate": "C",
+  "paidSubmissions": 0,
+  "four": [
+    {
+      "slot": "A",
+      "styleId": "NX01",
+      "cta": "tekan beg kuning",
+      "beforeSha256": "eecfa80810900174a150e263b5acc0c5b9d9cc116fe8b519eba4cb7967326a79",
+      "afterSha256": "2ae8359553b6da4c87f0b82f5a63dc76bc2cde6138908997679624ff9c4dbdd7",
+      "beforeCounts": {
+        "utf16": 816,
+        "codePoints": 816,
+        "utf8Bytes": 816
+      },
+      "afterCounts": {
+        "utf16": 863,
+        "codePoints": 863,
+        "utf8Bytes": 863
+      },
+      "diff": {
+        "removed": "Final CTA once: \"tekan beg kuning\". End by ~13s; no more words. Presenter settles; smile if visible.",
+        "added": "One complete CTA: \"tekan beg kuning\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible."
+      },
+      "mediaHashes": [
+        "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+        "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824",
+        "bafb3b9d8fac1569fe8c5b4c5eca7cfeb04dfc052a5c4b0514191982583ce01f"
+      ],
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "prompt": "15s 9:16 UGC. Nexabot writes hook and speech. [NX01] A useful product find shared in the easy rhythm of a trusted friend. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour/avatar; no source UI/layout. 1x; compact product 8-12% frame, max 15%; no close-up. Real scale; unseen contents closed. Label purpose/ingredients/use and category context guide buyer need, supported benefit and angle. Label claims aren't proof. No packaging monologue, fake self-use/reviews/sales, cures, guarantees or false facts. Daylight, true whites, natural motion; no sharpening. Modest everyday dress. Niqab: full cover; friendly eyes. Lively BM Malaysia presenter; natural pace. One complete CTA: \"tekan beg kuning\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible. Product: Minyak Herba S-HERB.",
+        "telegram_id": "web",
+        "media": [
+          {
+            "position": 1,
+            "sha256": "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824"
+          },
+          {
+            "position": 2,
+            "sha256": "9257fcbe6ceeab2b95bcd7e1ac32fb2a45b63f6913df98446b931d290e305824"
+          },
+          {
+            "position": 3,
+            "sha256": "bafb3b9d8fac1569fe8c5b4c5eca7cfeb04dfc052a5c4b0514191982583ce01f"
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      }
+    },
+    {
+      "slot": "B",
+      "styleId": "NX07",
+      "cta": "tekan butang di bawah",
+      "beforeSha256": "a014dbeb79fe5ca2c9f058f004a5fd03bfca41b1ff44de820a4f07f252930d66",
+      "afterSha256": "1d9371679bc630130f34802a9314841a3a77212eab6e9dc02b9b011ef64a66b4",
+      "beforeCounts": {
+        "utf16": 806,
+        "codePoints": 806,
+        "utf8Bytes": 806
+      },
+      "afterCounts": {
+        "utf16": 853,
+        "codePoints": 853,
+        "utf8Bytes": 853
+      },
+      "diff": {
+        "removed": "Final CTA once: \"tekan butang di bawah\". End by ~13s; no more words. Presenter settles; smile if visible.",
+        "added": "One complete CTA: \"tekan butang di bawah\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible."
+      },
+      "mediaHashes": [
+        "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1",
+        "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1",
+        "925d0cc94ee2cea76513fedaee05f0d8742ea85d66ebdd0cd8afb2453e07945d"
+      ],
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "prompt": "15s 9:16 UGC. Nexabot writes hook and speech. [NX07] One real buyer question answered narrowly and usefully. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour/avatar; no source UI/layout. 1x; compact product 8-12% frame, max 15%; no close-up. Real scale; unseen contents closed. Label purpose/ingredients/use and category context guide buyer need, supported benefit and angle. Label claims aren't proof. No packaging monologue, fake self-use/reviews/sales, cures, guarantees or false facts. Daylight, true whites, natural motion; no sharpening. Modest everyday dress. Niqab: full cover; friendly eyes. Lively BM Malaysia presenter; natural pace. One complete CTA: \"tekan butang di bawah\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible. Product: Kapsul Resdung SB.",
+        "telegram_id": "web",
+        "media": [
+          {
+            "position": 1,
+            "sha256": "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1"
+          },
+          {
+            "position": 2,
+            "sha256": "ae9535a103494f9150a6743c0e45ab90dfb5c577f6db98d48569057aadbfb5a1"
+          },
+          {
+            "position": 3,
+            "sha256": "925d0cc94ee2cea76513fedaee05f0d8742ea85d66ebdd0cd8afb2453e07945d"
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      }
+    },
+    {
+      "slot": "C",
+      "styleId": "NX03",
+      "cta": "tengok detail dekat beg kuning",
+      "beforeSha256": "a4d3dae8f0ee2399df1adb6bec3896f99b8a7f49bca3d1ecc2b1babc532cc57c",
+      "afterSha256": "dbae261254a80496eba7326b68faccd772e40e87b1dea943d7bb4d06716abcc4",
+      "beforeCounts": {
+        "utf16": 891,
+        "codePoints": 891,
+        "utf8Bytes": 891
+      },
+      "afterCounts": {
+        "utf16": 938,
+        "codePoints": 938,
+        "utf8Bytes": 938
+      },
+      "diff": {
+        "removed": "Final CTA once: \"tengok detail dekat beg kuning\". End by ~13s; no more words. Presenter settles; smile if visible.",
+        "added": "One complete CTA: \"tengok detail dekat beg kuning\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible."
+      },
+      "mediaHashes": [
+        "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01",
+        "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01",
+        "87a3563f9e42da15cd325fc2ca0d33162fb36448b0a4fb81f6a4a3e194f2980d"
+      ],
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "prompt": "15s 9:16 UGC. Nexabot writes hook and speech. [NX03] A genuine first-look reaction grounded in what can actually be observed. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour/avatar; no source UI/layout. 1x; compact product 8-12% frame, max 15%; no close-up. Real scale; unseen contents closed. Label purpose/ingredients/use and category context guide buyer need, supported benefit and angle. Label claims aren't proof. No packaging monologue, fake self-use/reviews/sales, cures, guarantees or false facts. Daylight, true whites, natural motion; no sharpening. Muslimah: hijab covers hair/neck/chest; loose opaque clothes, wrists covered. Niqab: full cover; friendly eyes. Lively BM Malaysia presenter; natural pace. One complete CTA: \"tengok detail dekat beg kuning\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible. Product: MakeScents Vanilla 28.",
+        "telegram_id": "web",
+        "media": [
+          {
+            "position": 1,
+            "sha256": "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01"
+          },
+          {
+            "position": 2,
+            "sha256": "fe3f353c9fb71ec28727257554f84cb86b547c1579789e8411d19f5b1958cc01"
+          },
+          {
+            "position": 3,
+            "sha256": "87a3563f9e42da15cd325fc2ca0d33162fb36448b0a4fb81f6a4a3e194f2980d"
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      }
+    },
+    {
+      "slot": "D",
+      "styleId": "NX02",
+      "cta": "tekan beg kuning",
+      "beforeSha256": "90754f37025d1e3e6eb648769a7611c32c90ec2ff7f0a850d710d91392785792",
+      "afterSha256": "bd087a1ba63c5a522940166c9d4757e8c55793fe5d08b4ac15cccfca9cd02380",
+      "beforeCounts": {
+        "utf16": 803,
+        "codePoints": 803,
+        "utf8Bytes": 803
+      },
+      "afterCounts": {
+        "utf16": 850,
+        "codePoints": 850,
+        "utf8Bytes": 850
+      },
+      "diff": {
+        "removed": "Final CTA once: \"tekan beg kuning\". End by ~13s; no more words. Presenter settles; smile if visible.",
+        "added": "One complete CTA: \"tekan beg kuning\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible."
+      },
+      "mediaHashes": [
+        "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf",
+        "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf",
+        "6508f2d470bb9a1874080e4fa74816747ee7fe344dfca19ebbc295f248c76f4b"
+      ],
+      "sanitizedPayload": {
+        "model": "omni_flash",
+        "mode": "i2v",
+        "prompt": "15s 9:16 UGC. Nexabot writes hook and speech. [NX02] A concise practical review focused on one buying consideration. Refs 1&2 same product, 3 avatar; not start frames. Keep product/label/colour/avatar; no source UI/layout. 1x; compact product 8-12% frame, max 15%; no close-up. Real scale; unseen contents closed. Label purpose/ingredients/use and category context guide buyer need, supported benefit and angle. Label claims aren't proof. No packaging monologue, fake self-use/reviews/sales, cures, guarantees or false facts. Daylight, true whites, natural motion; no sharpening. Modest everyday dress. Niqab: full cover; friendly eyes. Lively BM Malaysia presenter; natural pace. One complete CTA: \"tekan beg kuning\" ends speech ~13s. Then visual-only to 15s: no voice/lip-sync; room sound. Presenter settles; smile if visible. Product: Vitamin C+E.",
+        "telegram_id": "web",
+        "media": [
+          {
+            "position": 1,
+            "sha256": "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf"
+          },
+          {
+            "position": 2,
+            "sha256": "e0171198741bc52988aa1406f5c724279eedfc249f3a11712ce002dad82cd5cf"
+          },
+          {
+            "position": 3,
+            "sha256": "6508f2d470bb9a1874080e4fa74816747ee7fe344dfca19ebbc295f248c76f4b"
+          }
+        ],
+        "ratio": 2,
+        "resolution": 720,
+        "duration": 15,
+        "use_unlimited": false
+      }
+    }
+  ],
+  "allStyles": [
+    {
+      "styleId": "NX01",
+      "counts": {
+        "utf16": 931,
+        "codePoints": 931,
+        "utf8Bytes": 931
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX02",
+      "counts": {
+        "utf16": 926,
+        "codePoints": 926,
+        "utf8Bytes": 926
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX03",
+      "counts": {
+        "utf16": 935,
+        "codePoints": 935,
+        "utf8Bytes": 935
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX05",
+      "counts": {
+        "utf16": 965,
+        "codePoints": 965,
+        "utf8Bytes": 965
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX07",
+      "counts": {
+        "utf16": 918,
+        "codePoints": 918,
+        "utf8Bytes": 918
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX09",
+      "counts": {
+        "utf16": 921,
+        "codePoints": 921,
+        "utf8Bytes": 921
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX10",
+      "counts": {
+        "utf16": 911,
+        "codePoints": 911,
+        "utf8Bytes": 911
+      },
+      "errors": []
+    },
+    {
+      "styleId": "RH01",
+      "counts": {
+        "utf16": 907,
+        "codePoints": 907,
+        "utf8Bytes": 907
+      },
+      "errors": []
+    },
+    {
+      "styleId": "RH02",
+      "counts": {
+        "utf16": 932,
+        "codePoints": 932,
+        "utf8Bytes": 932
+      },
+      "errors": []
+    },
+    {
+      "styleId": "RH03",
+      "counts": {
+        "utf16": 926,
+        "codePoints": 926,
+        "utf8Bytes": 926
+      },
+      "errors": []
+    },
+    {
+      "styleId": "RH04",
+      "counts": {
+        "utf16": 910,
+        "codePoints": 910,
+        "utf8Bytes": 910
+      },
+      "errors": []
+    },
+    {
+      "styleId": "RH17",
+      "counts": {
+        "utf16": 919,
+        "codePoints": 919,
+        "utf8Bytes": 919
+      },
+      "errors": []
+    },
+    {
+      "styleId": "RH19",
+      "counts": {
+        "utf16": 899,
+        "codePoints": 899,
+        "utf8Bytes": 899
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX11",
+      "counts": {
+        "utf16": 918,
+        "codePoints": 918,
+        "utf8Bytes": 918
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX12",
+      "counts": {
+        "utf16": 938,
+        "codePoints": 938,
+        "utf8Bytes": 938
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX13",
+      "counts": {
+        "utf16": 966,
+        "codePoints": 966,
+        "utf8Bytes": 966
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX14",
+      "counts": {
+        "utf16": 941,
+        "codePoints": 941,
+        "utf8Bytes": 941
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX15",
+      "counts": {
+        "utf16": 938,
+        "codePoints": 938,
+        "utf8Bytes": 938
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX16",
+      "counts": {
+        "utf16": 925,
+        "codePoints": 925,
+        "utf8Bytes": 925
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX17",
+      "counts": {
+        "utf16": 946,
+        "codePoints": 946,
+        "utf8Bytes": 946
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX21",
+      "counts": {
+        "utf16": 964,
+        "codePoints": 964,
+        "utf8Bytes": 964
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX22",
+      "counts": {
+        "utf16": 984,
+        "codePoints": 984,
+        "utf8Bytes": 984
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX23",
+      "counts": {
+        "utf16": 985,
+        "codePoints": 985,
+        "utf8Bytes": 985
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX24",
+      "counts": {
+        "utf16": 959,
+        "codePoints": 959,
+        "utf8Bytes": 959
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX25",
+      "counts": {
+        "utf16": 989,
+        "codePoints": 989,
+        "utf8Bytes": 989
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX26",
+      "counts": {
+        "utf16": 946,
+        "codePoints": 946,
+        "utf8Bytes": 946
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX27",
+      "counts": {
+        "utf16": 938,
+        "codePoints": 938,
+        "utf8Bytes": 938
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX28",
+      "counts": {
+        "utf16": 942,
+        "codePoints": 942,
+        "utf8Bytes": 942
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX29",
+      "counts": {
+        "utf16": 969,
+        "codePoints": 969,
+        "utf8Bytes": 969
+      },
+      "errors": []
+    },
+    {
+      "styleId": "NX30",
+      "counts": {
+        "utf16": 972,
+        "codePoints": 972,
+        "utf8Bytes": 972
+      },
+      "errors": []
+    }
+  ]
+}
