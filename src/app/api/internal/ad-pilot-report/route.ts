@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 type Event = { event_name: string; visitor_id: string | null; occurred_at: string; metadata?: { utmCampaign?: string; utmContent?: string } };
 type Heat = { session_id: string; kind: string; device: string; x_pct: number | null; y_pct: number | null; scroll_pct: number | null; target_type: string | null; target_key?: string | null; page_variant?: string | null; occurred_at: string; campaign_key?: string | null };
-type Order = { status: string; payment_state: string | null; amount_myr: number; created_at: string };
+type Order = { status: string; payment_state: string | null; amount_myr: number; created_at: string; paid_at?: string | null };
 
 function equal(a: string, b: string) {
   let difference = a.length ^ b.length;
@@ -16,7 +16,7 @@ function myDate(value: string) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
 }
 
-async function readRows<T>(table: string, columns: string, from: string, to: string): Promise<{ rows: T[]; capped: boolean }> {
+async function readRows<T>(table: string, columns: string, from: string, to: string, orderTimestamp: 'created_at' | 'paid_at' = 'created_at'): Promise<{ rows: T[]; capped: boolean }> {
   const base = process.env.SUPABASE_URL?.replace(/\/$/, '');
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!base || !key) throw new Error('AffiMatik analytics database unavailable');
@@ -24,7 +24,7 @@ async function readRows<T>(table: string, columns: string, from: string, to: str
   for (let offset = 0; offset <= 50000; offset += 1000) {
     const query = new URLSearchParams({ select: columns, occurred_at: `gte.${from}`, and: `(occurred_at.lt.${to})`, order: 'occurred_at.asc', limit: '1000', offset: String(offset) });
     if (table === 'orders') {
-      query.delete('occurred_at'); query.delete('and'); query.set('created_at', `gte.${from}`); query.set('and', `(created_at.lt.${to})`); query.set('order', 'created_at.asc');
+      query.delete('occurred_at'); query.delete('and'); query.set(orderTimestamp, `gte.${from}`); query.set('and', `(${orderTimestamp}.lt.${to})`); query.set('order', `${orderTimestamp}.asc`);
     }
     const response = await fetch(`${base}/rest/v1/${table}?${query}`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store', signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error(`AffiMatik ${table} read failed (${response.status})`);
@@ -35,10 +35,10 @@ async function readRows<T>(table: string, columns: string, from: string, to: str
   return { rows, capped: true };
 }
 
-export function summarize(events: Event[], heat: Heat[], orders: Order[], includeCampaigns = true): any {
+export function summarize(events: Event[], heat: Heat[], orders: Order[], includeCampaigns = true, paidOrders?: Order[]): any {
   const stages = ['landing_view', 'demo_play', 'launch_cta_click', 'registration_started', 'registration_completed', 'email_verified', 'launch_checkout_started', 'qr_evidence_submitted', 'payment_bank_verified'];
   const funnel = Object.fromEntries(stages.map(name => [name, { events: events.filter(row => row.event_name === name).length, visitors: new Set(events.filter(row => row.event_name === name).map(row => row.visitor_id).filter(Boolean)).size }]));
-  const confirmed = orders.filter(row => row.status === 'PAID' && ['PAYMENT_CONFIRMED', 'BANK_PAYMENT_VERIFIED'].includes(row.payment_state || ''));
+  const confirmed = (paidOrders ?? orders).filter(row => row.status === 'PAID' && ['PAYMENT_CONFIRMED', 'BANK_PAYMENT_VERIFIED'].includes(row.payment_state || ''));
   const pending = orders.filter(row => !['PAYMENT_CONFIRMED', 'BANK_PAYMENT_VERIFIED'].includes(row.payment_state || ''));
   const days = new Map<string, { date: string; visitors: Set<string>; demo: Set<string>; cta: Set<string>; registrations: Set<string>; checkout: Set<string>; orders: number; verifiedOrders: number }>();
   const day = (date: string) => { const key = myDate(date); let row = days.get(key); if (!row) { row = { date: key, visitors: new Set(), demo: new Set(), cta: new Set(), registrations: new Set(), checkout: new Set(), orders: 0, verifiedOrders: 0 }; days.set(key, row); } return row; };
@@ -51,7 +51,8 @@ export function summarize(events: Event[], heat: Heat[], orders: Order[], includ
     if (event.event_name === 'registration_completed') row.registrations.add(event.visitor_id);
     if (event.event_name === 'launch_checkout_started') row.checkout.add(event.visitor_id);
   }
-  for (const order of orders) { const row = day(order.created_at); row.orders++; if (confirmed.includes(order)) row.verifiedOrders++; }
+  for (const order of orders) day(order.created_at).orders++;
+  for (const order of confirmed) day(order.paid_at || order.created_at).verifiedOrders++;
   const timeline = [...days.values()].sort((a, b) => a.date.localeCompare(b.date)).map(row => ({ date: row.date, visitors: row.visitors.size, demo: row.demo.size, cta: row.cta.size, registrations: row.registrations.size, checkout: row.checkout.size, orders: row.orders, verifiedOrders: row.verifiedOrders }));
   const makeHeatmap = (source: Heat[]) => ['all', 'mobile', 'desktop'].map(device => {
     const scoped = device === 'all' ? source : source.filter(row => row.device === device);
@@ -84,7 +85,7 @@ export function summarize(events: Event[], heat: Heat[], orders: Order[], includ
   const byCampaign = campaignKeys.map(key => ({ key, ...summarize(events.filter(row => row.metadata?.utmCampaign === key), heat.filter(row => row.campaign_key === key), [], false) }));
   const contentKeys = includeCampaigns ? [...new Set(events.filter(row => typeof row.metadata?.utmContent === 'string' && /^[a-zA-Z0-9_.-]{1,100}$/.test(row.metadata.utmContent)).map(row => `${row.metadata?.utmCampaign || ''}\u0000${row.metadata?.utmContent}`))].sort() : [];
   const byCreative = contentKeys.map(pair => { const [campaignKey, key] = pair.split('\u0000'); return { key, campaignKey, ...summarize(events.filter(row => row.metadata?.utmCampaign === campaignKey && row.metadata?.utmContent === key), [], [], false) }; });
-  return { funnel, orders: { created: orders.length, verified: confirmed.length, pending: pending.length, verifiedAmountMyr: Math.round(confirmed.reduce((sum, row) => sum + Number(row.amount_myr || 0), 0) * 100) / 100 }, heatmap, heatmapByVariant, bonusFunnel, timeline, byCampaign, byCreative, attribution: 'CAMPAIGN_AND_CREATIVE_FOR_WEB_EVENTS_ONLY_PAYMENT_AND_HEATMAP_UNLINKED' };
+  return { funnel, orders: { created: orders.length, verified: confirmed.length, pending: pending.length, verifiedAmountMyr: Math.round(confirmed.reduce((sum, row) => sum + Number(row.amount_myr || 0), 0) * 100) / 100 }, paymentDateBasis: paidOrders ? 'paid_at' : 'created_at', heatmap, heatmapByVariant, bonusFunnel, timeline, byCampaign, byCreative, attribution: 'CAMPAIGN_AND_CREATIVE_FOR_WEB_EVENTS_ONLY_PAYMENT_AND_HEATMAP_UNLINKED' };
 }
 
 export async function GET(req: NextRequest) {
@@ -96,12 +97,13 @@ export async function GET(req: NextRequest) {
   const start = Date.parse(from), end = Date.parse(to);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > 31 * 86400000 || end > Date.now() + 86400000) return NextResponse.json({ error: 'Invalid date range' }, { status: 400 });
   try {
-    const [events, heat, orders] = await Promise.all([
+    const [events, heat, orders, payments] = await Promise.all([
       readRows<Event>('conversion_events', 'event_name,visitor_id,occurred_at,metadata', from, to),
       readRows<Heat>('salespage_heatmap_events', 'session_id,kind,device,x_pct,y_pct,scroll_pct,target_type,target_key,page_variant,occurred_at,campaign_key', from, to),
-      readRows<Order>('orders', 'status,payment_state,amount_myr,created_at', from, to),
+      readRows<Order>('orders', 'status,payment_state,amount_myr,created_at,paid_at', from, to),
+      readRows<Order>('orders', 'status,payment_state,amount_myr,created_at,paid_at', from, to, 'paid_at'),
     ]);
-    return NextResponse.json({ ok: true, product: 'AffiMatik', range: { from, to }, generatedAt: new Date().toISOString(), capped: events.capped || heat.capped || orders.capped, ...summarize(events.rows, heat.rows, orders.rows) }, { headers: { 'Cache-Control': 'private, no-store' } });
+    return NextResponse.json({ ok: true, product: 'AffiMatik', range: { from, to }, generatedAt: new Date().toISOString(), capped: events.capped || heat.capped || orders.capped || payments.capped, ...summarize(events.rows, heat.rows, orders.rows, true, payments.rows) }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Analytics unavailable' }, { status: 503 });
   }
