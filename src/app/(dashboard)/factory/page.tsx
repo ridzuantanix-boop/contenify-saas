@@ -661,6 +661,8 @@ function VideoFactoryContent() {
         clientRequestId,
         styleId: selectedStyle.id,
         productName: productName.trim() || undefined,
+        productCategory: image.category || undefined,
+        productNotes: image.notes || undefined,
         creativeInstruction: creativeInstruction.trim() || undefined,
         isMuslimahModest,
         imageAssetId: images[0].assetId,

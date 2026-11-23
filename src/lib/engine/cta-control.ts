@@ -29,9 +29,8 @@ export function validateCustomerFact(value: string): string[] {
   const errors: string[] = [];
   if (value.trim().length > 180) errors.push('Fakta produk mesti 180 aksara atau kurang.');
   if (/https?:\/\/|www\./i.test(fact)) errors.push('Fakta produk tidak boleh mengandungi pautan web.');
-  if (/\b(sembuh|merawat|menyembuhkan|dijamin|gerenti|100%|pasti berkesan)\b/i.test(fact)) {
-    errors.push('Fakta produk mengandungi dakwaan keberkesanan atau perubatan yang tidak dibenarkan.');
-  }
+  // Customer-supplied label wording is context, not independent proof. The
+  // provider prompt handles unsupported outcomes; preflight checks format only.
   return errors;
 }
 

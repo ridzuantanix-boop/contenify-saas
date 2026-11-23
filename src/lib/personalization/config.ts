@@ -73,7 +73,7 @@ export function sanitizePersonalizationSettings(value: unknown): Personalization
     audioTreatment: oneOf(input.audioTreatment, AUDIO_TREATMENTS, 'voiceover'),
     customScript: '',
     customCta: typeof input.customCta === 'string' ? input.customCta.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 80) : '',
-    productFact: typeof input.productFact === 'string' ? input.productFact.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 180) : '',
+    productFact: typeof input.productFact === 'string' ? input.productFact.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim() : '',
     isMuslimahModest: input.isMuslimahModest !== false,
     creativeInstruction: typeof input.creativeInstruction === 'string' ? input.creativeInstruction.trim() : '',
   };

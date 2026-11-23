@@ -18,11 +18,11 @@ describe('AFFIMATIK V8 — creative quality regression', () => {
       const compiled = DynamicPromptCompiler.compile(profile, style, AICreativeDirector.createScenePlan(profile, style));
       expect(compiled.provider).toBe('nexabot');
       expect(compiled.spokenScript).toBeUndefined();
-      expect(compiled.providerPrompt).toContain('Nexabot writes hook, story and speech');
-      expect(compiled.visualPrompt).toContain('15s 9:16 Malaysian UGC');
-      expect(compiled.visualPrompt).toContain('Neutral daylight, true whites');
+      expect(compiled.providerPrompt).toContain('Nexabot writes hook and speech');
+      expect(compiled.visualPrompt).toContain('15s 9:16 UGC');
+      expect(compiled.visualPrompt).toContain('Daylight, true whites');
       expect(compiled.visualPrompt).toContain('no source UI');
-      expect(compiled.visualPrompt).toMatch(/covered wrists|cover wrists|Modest everyday dress/);
+      expect(compiled.visualPrompt).toMatch(/wrists covered|cover wrists|Modest everyday dress/);
       expect(compiled.providerPrompt.length).toBeLessThanOrEqual(1000);
     }
   });
@@ -45,6 +45,6 @@ describe('AFFIMATIK V8 — creative quality regression', () => {
     const legacyScript = 'Saya sudah guna dan pasti berkesan.';
     const compiled = DynamicPromptCompiler.compile(profile, style, AICreativeDirector.createScenePlan(profile, style), { customScript: legacyScript });
     expect(compiled.providerPrompt).not.toContain(legacyScript);
-    expect(compiled.providerPrompt).toContain('No invented benefits/results or fake self-use');
+    expect(compiled.providerPrompt).toContain('fake self-use/reviews/sales');
   });
 });

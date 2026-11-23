@@ -45,7 +45,7 @@ describe('Expansion V1 NX21-NX30',()=>{
   it('retains true-white and Malaysian voice direction in compact form',()=>{
     for(const id of ['NX01',...ids]){
       const prompt=DynamicPromptCompiler.compile(product,getVideoStyle(id)!,scene).providerPrompt;
-      expect(prompt).toContain('Neutral daylight, true whites');
+      expect(prompt).toContain('Daylight, true whites');
       expect(prompt).toContain('BM Malaysia');
       expect(prompt).not.toContain('warm golden cinematic lighting');
     }
@@ -67,8 +67,8 @@ describe('Expansion V1 NX21-NX30',()=>{
     expect(nx23).toContain(STYLE_DIRECTORS.NX23.concept);
     expect(nx27).toContain(STYLE_DIRECTORS.NX27.concept);
     for(const prompt of [nx23,nx27]){
-      expect(prompt).toContain('Neutral daylight, true whites');
-      expect(prompt).toContain('covered wrists');
+      expect(prompt).toContain('Daylight, true whites');
+      expect(prompt).toMatch(/wrists covered|cover wrists/);
       expect(prompt).toContain('Final CTA once');
       expect(prompt.length).toBeLessThanOrEqual(1000);
     }

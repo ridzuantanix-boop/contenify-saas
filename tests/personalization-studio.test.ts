@@ -45,7 +45,7 @@ describe('AffiMatik V7 Personalization Studio', () => {
     expect(compiled.providerPrompt).toContain('Flow: step_by_step');
     expect(compiled.providerPrompt).toContain('No CTA selected; do not invent one');
     expect(compiled.spokenScript).toBeUndefined();
-    expect(compiled.providerPrompt).toContain('Nexabot writes hook, story and speech');
+    expect(compiled.providerPrompt).toContain('Nexabot writes hook and speech');
   });
 
   it('orders and caps Nexabot media exactly as product, avatar, background', () => {

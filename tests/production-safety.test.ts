@@ -673,7 +673,8 @@ describe('AFFIMATIK V2.1.1 Mandatory Acceptance Tests', () => {
         callToAction: 'click_button',
       });
       expect(compiledGood.preflightValid).toBe(true);
-      expect(compiledGood.providerPrompt).toContain('no script supplied');
+      expect(compiledGood.providerPrompt).toContain('Nexabot writes hook and speech');
+      expect(compiledGood.spokenScript).toBeUndefined();
     });
   });
 

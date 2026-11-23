@@ -25,11 +25,12 @@ describe('REAL V3 Nexabot creative autonomy', () => {
       expect(compiled.preflightValid, style.id).toBe(true);
       expect(compiled.providerPrompt.length, style.id).toBeLessThanOrEqual(1000);
       expect(compiled.providerPrompt).toContain(`[${style.id}]`);
-      expect(compiled.providerPrompt).toContain('Nexabot writes hook, story and speech');
+      expect(compiled.providerPrompt).toContain('Nexabot writes hook and speech');
       expect(compiled.providerPrompt).toContain('8-12% frame, max 15%');
       expect(compiled.providerPrompt).toContain('unseen contents closed');
-      expect(compiled.providerPrompt).toContain('No invented benefits/results or fake self-use');
-      expect(compiled.providerPrompt).toContain('Neutral daylight, true whites');
+      expect(compiled.providerPrompt).toContain('supported benefit and angle');
+      expect(compiled.providerPrompt).toContain('fake self-use/reviews/sales');
+      expect(compiled.providerPrompt).toContain('Daylight, true whites');
       expect(compiled.providerPrompt).toContain('Final CTA once');
       return compiled.providerPrompt;
     });
@@ -48,7 +49,7 @@ describe('REAL V3 Nexabot creative autonomy', () => {
 
   it('gives Nexabot sole ownership of hooks and dialogue', () => {
     const prompt = DynamicPromptCompiler.compile(product, getVideoStyle('NX02')!, scene).providerPrompt;
-    expect(prompt).toContain('Nexabot writes hook, story and speech');
+    expect(prompt).toContain('Nexabot writes hook and speech');
     expect(prompt).not.toContain('Script:');
   });
 
@@ -61,7 +62,7 @@ describe('REAL V3 Nexabot creative autonomy', () => {
     const compiled = DynamicPromptCompiler.compile(grounded,getVideoStyle('NX17')!,scene);
     expect(compiled.preflightValid).toBe(true);
     expect(compiled.providerPrompt).toContain('Visible: clear container.');
-    expect(compiled.providerPrompt).toContain('Confirmed: manual pull handle.');
+    expect(compiled.providerPrompt).toContain('Customer info: manual pull handle.');
     expect(compiled.providerPrompt).not.toContain('Script:');
   });
 

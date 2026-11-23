@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
       clientRequestId,
       productName,
       productCategory,
+      productNotes,
       productFacts = [],
       styleId,
       presetId,
@@ -270,13 +271,15 @@ export async function POST(req: NextRequest) {
     const legacyFacts = Array.isArray(productFacts)
       ? productFacts.filter((fact): fact is string => typeof fact === 'string' && fact.trim().length > 0).map((fact) => fact.trim())
       : [];
-    const userFacts = [personalization.productFact, ...legacyFacts].filter(Boolean).slice(0, 10);
+    const userFacts = [personalization.productFact, ...legacyFacts].filter(Boolean);
+    if (userFacts.length > 10) return NextResponse.json({ error: 'Maksimum 10 fakta produk. Tiada fakta dibuang secara senyap.' }, { status: 400 });
     const productProfile: ProductProfile = {
       name: typeof productName === 'string' && productName.trim() ? productName.trim() : 'the uploaded product image',
       category: typeof productCategory === 'string' && productCategory.trim() ? productCategory.trim() : personalization.niche !== 'auto' ? personalization.niche : 'the product shown in the reference image',
       packagingFormat: 'general',
       spokenShortName: 'produk ini',
       confirmedFeatures: userFacts,
+      usageContext: typeof productNotes === 'string' && productNotes.trim() ? productNotes.trim() : undefined,
       verifiedBenefits: [],
       verifiedFacts: userFacts,
       unknownFields: ['ingredients', 'certifications', 'medical outcomes', 'personal-use results', 'prices', 'testimonials'],

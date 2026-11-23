@@ -38,8 +38,8 @@ describe('real-provider QA prompt export', () => {
     }
     expect(prompts.dishSoapVoice).not.toBe(prompts.lampVoice);
     for (const prompt of [prompts.dishSoapVoice, prompts.lampVoice, prompts.lampMotion]) {
-      expect(prompt).toContain('Nexabot writes hook, story and speech');
-      expect(prompt).toContain('No invented benefits/results or fake self-use');
+      expect(prompt).toContain('Nexabot writes hook and speech');
+      expect(prompt).toContain('fake self-use/reviews/sales');
       expect(prompt).not.toContain('If no benefit is supported, discuss a visible characteristic or the ordinary category function');
       expect(prompt).not.toMatch(/ordinary buyer benefit|supported FOMO|mandatory benefit/i);
     }

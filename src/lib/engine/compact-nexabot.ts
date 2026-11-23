@@ -48,7 +48,7 @@ export function compileCompactNexabotPrompt(
   const modesty = isMuslimah
     ? isHandOnly
       ? 'Sleeves cover wrists and forearms throughout.'
-      : 'Muslimah: hijab covers hair, neck, chest; loose opaque clothes and covered wrists.'
+      : 'Muslimah: hijab covers hair/neck/chest; loose opaque clothes, wrists covered.'
     : 'Modest everyday dress.';
   const selectedScene = getBuiltInScene(options.builtInSceneId);
   const productName = product.name.trim();
@@ -58,9 +58,13 @@ export function compileCompactNexabotPrompt(
   // Customer-authored text and confirmed facts are preserved whole or rejected.
   const context = [
     usefulProductName ? `Product: ${productName}.` : '',
+    product.category && !/^(?:image provided|product shown|the product shown|unknown|produk pengguna|produk)(?:\b|$)/i.test(product.category.trim()) ? `Category: ${product.category}.` : '',
     product.usageContext ? `Customer context: ${product.usageContext}.` : '',
+    product.buyerProblem ? `Customer buyer context: ${product.buyerProblem}.` : '',
+    product.coreFunction ? `Customer purpose: ${product.coreFunction}.` : '',
     ...(product.observedPhysicalFacts || []).map(fact => `Visible: ${fact}.`),
-    ...(product.confirmedFeatures || []).map(fact => `Confirmed: ${fact}.`),
+    ...(product.confirmedFeatures || []).map(fact => `Customer info: ${fact}.`),
+    ...(product.verifiedBenefits || []).map(fact => `Customer-supported benefit: ${fact}.`),
     selectedScene && !hasBackground ? `Scene: ${selectedScene.directive}.` : '',
     options.niche && options.niche !== 'auto' ? `Niche: ${options.niche}.` : '',
     options.voicePersonality && options.voicePersonality !== 'auto' ? `Voice: ${options.voicePersonality}.` : '',
@@ -70,19 +74,19 @@ export function compileCompactNexabotPrompt(
   const ending = spoken
     ? cta
       ? candidate === 'B'
-        ? `CTA once: "${cta}". Start by 11s, finish by ~13s; no repeat or speech after. ${mode === 'spoken_presenter' ? 'Presenter stops; smile if visible.' : 'Hands settle naturally.'}`
-        : `Final CTA once: "${cta}". Finish naturally by ~13s; no more words. ${mode === 'spoken_presenter' ? 'Presenter stops; smile if visible.' : 'Hands settle naturally.'}`
+        ? `CTA once: "${cta}". Start ~11s, end ~13s; no repeat/tail speech. ${mode === 'spoken_presenter' ? 'Presenter settles; smile if visible.' : 'Hands settle.'}`
+        : `Final CTA once: "${cta}". End by ~13s; no more words. ${mode === 'spoken_presenter' ? 'Presenter settles; smile if visible.' : 'Hands settle.'}`
       : 'No CTA selected; do not invent one.'
     : cta ? '' : 'End with a natural physical settle; no speech.';
   const parts = [
-    { kind: 'global', text: '15s 9:16 Malaysian UGC. Nexabot writes hook, story and speech.' },
+    { kind: 'global', text: '15s 9:16 UGC. Nexabot writes hook and speech.' },
     { kind: 'style', text: `[${director.id}] ${director.concept}` },
-    { kind: 'global', text: `${references} Keep product/label/colour and avatar; no source UI, captions or layout.` },
-    { kind: 'global', text: 'Natural 1x framing; compact product 8-12% frame, max 15%; no hero close-up. Others real scale; unseen contents closed.' },
-    { kind: 'global', text: 'Sell supported use or ordinary function, not packaging. No invented benefits/results or fake self-use.' },
-    { kind: 'global', text: 'Neutral daylight, true whites, natural motion; no sharpening.' },
+    { kind: 'global', text: `${references} Keep product/label/colour/avatar; no source UI/layout.` },
+    { kind: 'global', text: '1x; compact product 8-12% frame, max 15%; no close-up. Real scale; unseen contents closed.' },
+    { kind: 'global', text: "Label purpose/ingredients/use and category context guide buyer need, supported benefit and angle. Label claims aren't proof. No packaging monologue, fake self-use/reviews/sales, cures, guarantees or false facts." },
+    { kind: 'global', text: 'Daylight, true whites, natural motion; no sharpening.' },
     { kind: 'global', text: modesty },
-    hasAvatar ? { kind: 'niqab', text: 'If niqab: keep coverage; friendly eyes.' } : { kind: 'niqab', text: '' },
+    hasAvatar ? { kind: 'niqab', text: 'Niqab: full cover; friendly eyes.' } : { kind: 'niqab', text: '' },
     director.id === 'NX25' ? { kind: 'style', text: 'No child actor; garment only.' } : { kind: 'style', text: '' },
     { kind: 'style', text: audioDirective },
     { kind: 'cta', text: ending },

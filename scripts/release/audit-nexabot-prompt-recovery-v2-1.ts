@@ -9,7 +9,7 @@ import { VIDEO_STYLES_REGISTRY, getVideoStyle } from '../../src/lib/styles/regis
 import { NexabotAdapter } from '../../src/lib/providers/nexabot';
 
 const repo = resolve('.');
-const out = resolve(repo, 'output/nexabot-prompt-recovery-v2-1');
+const out = resolve(repo, process.env.AFFIMATIK_PROMPT_AUDIT_DIR || 'output/nexabot-prompt-recovery-v2-1');
 const source = resolve(repo, 'output/avatar-sales-demos-2026-11-23/manifest.json');
 const attachment = 'C:/Users/user/.codex/codex-remote-attachments/01a1a93c-06c3-7a63-9909-599706e05606/33D87D3B-C23C-4F3C-989C-DEE29CF858DF';
 mkdirSync(out, { recursive: true });
@@ -25,7 +25,7 @@ const allStyles = VIDEO_STYLES_REGISTRY.map(style => {
     const compiled = candidate === 'A' ? DynamicPromptCompiler.compile(product(), style, scene, options) : null;
     if (compiled && compiled.providerPrompt !== core.prompt) throw new Error(`${style.id}: active compiler differs from candidate A`);
     return { candidate, hash: sha(core.prompt), budget: core.budget, errors: core.errors, containsMandatory: {
-      selling: core.prompt.includes('Sell supported use'), identity: core.prompt.includes('Keep product/label/colour'), scale: core.prompt.includes('8-12%'), modesty: core.prompt.includes('wrists'), cta: core.prompt.includes('Beg Kuning'), nativeCreative: core.prompt.includes('Nexabot writes'),
+      selling: core.prompt.includes('buyer need, supported benefit and angle'), identity: core.prompt.includes('Keep product/label/colour'), scale: core.prompt.includes('8-12%'), modesty: core.prompt.includes('wrists'), cta: core.prompt.includes('Beg Kuning'), nativeCreative: core.prompt.includes('Nexabot writes'),
     } };
   });
   return { styleId: style.id, name: style.name, results };
