@@ -17,7 +17,7 @@ async function isSuperAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!await isSuperAdmin(req)) return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
   try {
-    const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?status=eq.QA_PENDING&select=id,workspace_id,preset_id,provider,duration_seconds,actual_duration_seconds,output_has_audio,qa_started_at,created_at&order=qa_started_at.asc&limit=50`;
+    const url = `${process.env.SUPABASE_URL}/rest/v1/video_jobs?status=eq.QA_PENDING&select=id,workspace_id,preset_id,provider,duration_seconds,actual_duration_seconds,output_has_audio,qa_started_at:created_at,created_at&order=created_at.asc&limit=50`;
     const response = await fetch(url, { headers: serviceHeaders(), cache: 'no-store' });
     if (!response.ok) throw new Error('QA list unavailable');
     const jobs = await response.json();
